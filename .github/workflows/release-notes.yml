@@ -2,12 +2,17 @@ name: Update release notes
 
 # Rewrites the text of an existing GitHub Release from CHANGELOG.md, without rebuilding.
 # Actions -> Update release notes -> Run workflow -> tag (e.g. v1.1.0).
+# Tick "latest" to move the Latest badge to that release (e.g. after publishing an old version).
 on:
   workflow_dispatch:
     inputs:
       tag:
         description: "Release tag to update (e.g. v1.1.0)"
         required: true
+      latest:
+        description: "Also mark this release as Latest"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -24,4 +29,5 @@ jobs:
       - name: Update the release text only
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release edit "${{ inputs.tag }}" --notes-file release-notes.md --title "Fase Groove Piano ${{ inputs.tag }}"
+        run: gh release edit "${{ inputs.tag }}" --notes-file release-notes.md --title "Fase Groove Piano ${{ inputs.tag }}" \
+            ${{ inputs.latest && '--latest' || '' }}
