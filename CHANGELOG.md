@@ -6,6 +6,28 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] - 2026-10-13
+
+### Added
+- **62 new grooves (96 in total) in 10 genres:** Soulful, Deep, Gospel, Jackin', Garage & UK,
+  Afro & Latin, Funky & Disco, '90s Piano House, Neo Soul & Broken, Chill & Pads. The groove menu
+  opens in columns with one heading per genre.
+- **STYLE:** twelve one-click setups by genre (Classic Deep House, Soulful House, Gospel House,
+  Jackin' House, '90s Piano House, Organ Jack, Nu Disco, Funky Disco, UK Garage, Afro House, Neo
+  Soul, Chill Lounge): progression, harmony, groove, feel and sound together; the key stays.
+- **RESET:** puts every setting back to its default after a confirmation (the language stays).
+
+### Changed
+- **Much more musical voicings.** Every voicing is now chosen like a pianist would: no semitone
+  rubs between neighbouring notes, no muddy small intervals in the low register, no minor 9ths,
+  no clusters of seconds, the 9th above the 3rd, smooth voice leading and a singing top line.
+  Rootless and Shell voicings now always keep the 3rd and the 7th (e.g. Am9 = C E G B).
+- **Much more musical random riffs (NEW RIFF / RND).** They are now built from house comping
+  figures: a half-bar motif, an answer, the motif again and a new ending (A B A B'), with
+  accents on the right beats, an optional push into the next bar and a simple bass figure that
+  locks to the riff, instead of random 16ths.
+- The voiced progression is cached, so the new voicing engine costs no extra CPU while playing.
+
 ## [1.6.0] - 2026-10-12
 
 ### Added

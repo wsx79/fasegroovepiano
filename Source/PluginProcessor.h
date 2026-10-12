@@ -117,6 +117,17 @@ public:
     /** Replaces the progression with a random soulful-house one of the current length. */
     void rollNewProgression();
 
+    /** Puts every setting back to its default (the interface language is not a setting
+        of the plug-in, so it stays). */
+    void resetToDefaults();
+
+    /** Ready-made genre setups: progression, harmony, groove, feel and sound in one click
+        (the key is kept). */
+    static juce::StringArray styleNames();
+    void applyStyle (int index);
+    /** Index in progressionPresets() that a style loads, or -1. */
+    static int stylePreset (int index);
+
     // Free chords (any chord, even outside the scale), set from the circle of fifths.
     void setFreeChord (int slot, int code);          // code: sgk::noFreeChord or sgk::freeChordCode()
     int freeChord (int slot) const                   { return freeChords[(size_t) juce::jlimit (0, sgk::maxProgressionLength - 1, slot)].load(); }
@@ -163,6 +174,7 @@ private:
     std::array<std::atomic<char>, sgk::userPatternLength> userRight, userLeft;
     std::array<bool, sgk::numSegments> segmentLocked {};
     std::array<std::atomic<int>, sgk::maxProgressionLength> freeChords;
+    void resetUserPattern();
     int lastBassMode = 1;
 
     sgk::GrooveEngine engine;

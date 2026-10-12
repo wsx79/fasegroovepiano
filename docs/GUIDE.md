@@ -75,6 +75,9 @@ xattr -cr ~/Library/Audio/Plug-Ins/Components/"Fase Groove Piano.component"
 
 Want something new? Press **DICE** (random progression) and **NEW RIFF** (random rhythm).
 
+**Even faster:** press **STYLE** (top left) and pick a genre, e.g. *Classic Deep House* or
+*Jackin' House*: progression, voicing, groove, feel and sound are set in one click, ready to play.
+
 ---
 
 ## 3. The interface, section by section
@@ -114,7 +117,7 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Key** | Key (C … B). |
 | **Scale / mode** | Major (Ionian), **Dorian** (the deep house classic), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, plus (v1.5) **Locrian**, **Harmonic Major** (gospel minor iv), **Lydian Dominant** (funky I7#11), **Mixolydian b6** (soulful borrowed iv) and **Phrygian Dominant** (dark, exotic deep house). |
 | **Extensions** | Triads, 7ths, 9ths, 11ths/13ths, plus (v1.5): **6/9** (the warm soulful tonic chord, no 7th), **Add 9** (pop/house triad with a 9th), **Sus (9sus4)** (the open, floating deep house chord) and **9ths + altered V** (every chord a 9th, and degree V becomes a gospel **13(b9)**, or **7(b9,b13)** in minor keys). Clashing tensions are handled automatically: a b9 on a non-dominant chord is dropped, an 11th on a major chord becomes a 13th, a 6th that would be a b6 becomes a 7th, and sus4 is used only where the 4th is perfect. |
-| **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound), *Shell (3-7-top)* (just 3rd, 7th and the top colour note: light and jazzy, leaves room for the bass and vocals), *Drop 2+4* (open, spread pianist voicing, great for pads and breaks). |
+| **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound), *Shell (3-7-top)* (just 3rd, 7th and the top colour note: light and jazzy, leaves room for the bass and vocals), *Drop 2+4* (open, spread pianist voicing, great for pads and breaks). Every voicing follows the rules a pianist uses: no semitone rubs between neighbouring notes, no muddy small intervals in the low register, the 9th above the 3rd, and the voice that moves the least (the top note sings a smooth line). |
 | **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th. |
 | **Approach chord** | The gospel **slide**: on the last 16th before each chord change the next chord (and its bass note) is played a half step **from above** or **from below**, then resolves. Only where the hand is already playing, so a muted bass stays muted. |
 | **Top +8va** | Doubles the top note of every chord an octave higher: the bright, ringing classic house piano sound. |
@@ -164,8 +167,8 @@ Outer ring = major keys, inner ring = relative minors.
 
 | Control | What it does |
 |---|---|
-| **Groove** | 34 two-hand, two-bar rhythms (see below), **Random riff** and **User pattern** (your hand-edited grid). |
-| **NEW RIFF** | Generates a new funky riff (chords + bass). If you locked some parts with **LOCK** (see *Rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
+| **Groove** | 96 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). |
+| **NEW RIFF** | Generates a new riff (chords + bass), built like a keyboard player builds one: a half-bar motif made of house comping figures, answered and repeated (A B A B'), often with a push into the next bar, over a simple bass figure that locks to it. If you locked some parts with **LOCK** (see *Rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
 | **Fills** | **Off** by default. Every 2/4/8 bars the last beat becomes a short fill leading into the next chord. |
 | **Fill style** | *Pentatonic run up*, *Pentatonic run down* or *Chord roll* (an arpeggio of the next chord). |
@@ -175,13 +178,22 @@ Outer ring = major keys, inner ring = relative minors.
 | **Humanize** | Small timing and velocity variations for a hand-played feel. |
 | **Density** | Random riffs only: from sparse stabs to busy 16th-note chops. |
 
-**The grooves:** *Classic Offbeat Stabs*, *Soulful Push*, *Deep Chords*, *Funky 16ths*,
-*Gospel Bounce*, *Chicago Jack*, *Garage Skip*, *Late Night Rhodes*, *Disco Octaves*,
-*Long Chords*, *Funk Clav Chops*, *Ghost Note Funk*, *Nile Chops*, *Anticipation Funk*,
-*Gospel Shout 16ths*, *Neo Soul Lazy*, *Boogie Stabs*, *Offbeat Doubles*, *Broken Beat*,
-*Slap Bass Funk* and the **jackin' house** ones: *Jackin' Stabs*, *Jack Bounce*, *Jackin' Push*,
-*Chicago Organ Jack*, *Ghetto Jack*, *Disco Jack Chops* (best with Swing at 30–45%), and the
-v1.2 additions: *Soulful Sunday*, *Gospel Chops*, *Neo Soul Comping*, *Deep Sway*, *Deep Dub Stabs*, *Jackin' Shuffle*, *Jack Organ Pump*, *Funky Upstrokes*.
+**The grooves: 96, by genre.** The *Groove* menu opens in columns with one heading per genre;
+*Random riff* and *User pattern* are under **Generate**. Jackin' grooves sound best with Swing at
+30–45%, UK garage ones with 45–55%.
+
+| Genre | Grooves |
+|---|---|
+| **Soulful** (9) | *Soulful Push*, *Soulful Sunday*, *Soulful Lift*, *Sunday Morning Keys*, *Soulful Offbeat 8ths*, *Soul Train Comp*, *Vocal House Stabs*, *Soulful Pianist*, *Warm Rhodes Swing* |
+| **Deep** (11) | *Deep Chords*, *Late Night Rhodes*, *Deep Sway*, *Deep Dub Stabs*, *Deep Late Pad*, *Deep Offbeat Chords*, *Larry's Chords*, *Deep Dorian Swing*, *Midnight Stabs*, *Deep Keys Rolls*, *Minimal Deep Pulse* |
+| **Gospel** (9) | *Gospel Bounce*, *Gospel Shout 16ths*, *Gospel Chops*, *Gospel Shout*, *Church Organ Swell*, *Gospel Walk*, *Praise Break*, *Sanctified Stabs*, *Gospel Ballad Swing* |
+| **Jackin'** (16) | *Chicago Jack*, *Jackin' Stabs*, *Jack Bounce*, *Jackin' Push*, *Chicago Organ Jack*, *Ghetto Jack*, *Disco Jack Chops*, *Jackin' Shuffle*, *Jack Organ Pump*, *Jack Stab Skips*, *Chicago Bounce*, *Warehouse Jack*, *Jack Your Body*, *Jackin' Organ Stabs*, *Swing Jack*, *Ghetto House Chops* |
+| **Garage & UK** (7) | *Garage Skip*, *UK Garage 2-Step*, *Speed Garage Organ*, *Shuffled 2-Step*, *Garage Chord Skips*, *Bassline House*, *UK Funky Keys* |
+| **Afro & Latin** (6) | *Afro House Keys*, *Tresillo Chords*, *Latin Montuno*, *Clave Stabs*, *Afro Deep Groove*, *Samba House* |
+| **Funky & Disco** (15) | *Funky 16ths*, *Disco Octaves*, *Funk Clav Chops*, *Ghost Note Funk*, *Nile Chops*, *Anticipation Funk*, *Boogie Stabs*, *Slap Bass Funk*, *Funky Upstrokes*, *Disco Strut*, *Nu Disco Keys*, *Funky Clavinet 16ths*, *Philly Stabs*, *Boogie Wonderland*, *French Touch Filter* |
+| **'90s Piano House** (9) | *Classic Offbeat Stabs*, *Offbeat Doubles*, *M1 Organ Stabs*, *Italo Piano Anthem*, *Hands Up Piano*, *Piano Anthem Offbeats*, *Show Me Stabs*, *Rave Piano Chords*, *Balearic Piano* |
+| **Neo Soul & Broken** (8) | *Neo Soul Lazy*, *Broken Beat*, *Neo Soul Comping*, *Lazy Swing Keys*, *Broken Beat Chords*, *Neo Soul Ghosts*, *Jazzy House Comp*, *Rhodes Broken Swing* |
+| **Chill & Pads** (6) | *Long Chords*, *Whole Bar Pads*, *Half Bar Pads*, *Chill Swells*, *Lounge Keys*, *Sunset Chords* |
 
 ### Rhythm grid
 
@@ -235,6 +247,17 @@ See the next chapter.
 
 Drag the bottom-right corner to **enlarge or shrink** the interface (60% to 200%). The size is
 remembered with your project.
+
+### STYLE and RESET
+
+- **STYLE** opens a menu of ready-made setups by genre: *Classic Deep House*, *Soulful House*,
+  *Gospel House*, *Jackin' House*, *'90s Piano House*, *Organ Jack*, *Nu Disco*, *Funky Disco*,
+  *UK Garage*, *Afro House*, *Neo Soul*, *Chill Lounge*. Each one sets the progression (and its
+  scale), extensions, voicing, groove, swing, gate, humanize, strum, Top +8va, bass, approach chord,
+  register and guide sound. **The key stays the one you chose.** Then tweak anything you like.
+- **RESET** puts **every setting back to its default** (after asking you to confirm): harmony,
+  progression, groove, user pattern, locks, free chords, sound, tempo, interface size. The
+  **language** is not touched.
 
 ### OPTIONS: settings, language and credits
 

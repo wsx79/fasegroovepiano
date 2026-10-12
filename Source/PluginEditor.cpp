@@ -153,9 +153,9 @@ void Knob::resized()
 }
 
 Choice::Choice (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& captionText)
-    : caption (captionText)
+    : caption (captionText), parameter (state.getParameter (paramId))
 {
-    fillChoiceItems (box, state.getParameter (paramId));
+    fillChoiceItems (box, parameter);
     for (int i = 0; i < box.getNumItems(); ++i)
         englishItems.add (box.getItemText (i));
     attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (state, paramId, box);
@@ -170,10 +170,58 @@ void Choice::refreshText()
 {
     label.setText (Localisation::upper (tr (caption)), juce::dontSendNotification);
 
+    if (! groups.empty())
+    {
+        rebuildGroups();
+        return;
+    }
+
     // getSelectedId() returns 0 once the shown text differs from the item, so read it first.
     const int selected = box.getSelectedId();
-    for (int i = 0; i < englishItems.size(); ++i)
-        box.changeItemText (box.getItemId (i), translateItem (englishItems[i]));
+    for (int i = 0; i < box.getNumItems(); ++i)
+    {
+        const int id = box.getItemId (i);
+        if (juce::isPositiveAndBelow (id - 1, englishItems.size()))
+            box.changeItemText (id, translateItem (englishItems[id - 1]));
+    }
+
+    box.setSelectedId (selected, juce::dontSendNotification);
+}
+
+void Choice::setGroups (std::vector<Group> newGroups)
+{
+    groups = std::move (newGroups);
+    attachment.reset();
+
+    groupedAttachment = std::make_unique<juce::ParameterAttachment> (*parameter, [this] (float value)
+    {
+        box.setSelectedId (juce::roundToInt (value) + 1, juce::dontSendNotification);
+    });
+
+    box.onChange = [this]
+    {
+        if (groupedAttachment != nullptr && box.getSelectedId() > 0)
+            groupedAttachment->setValueAsCompleteGesture ((float) (box.getSelectedId() - 1));
+    };
+
+    rebuildGroups();
+    groupedAttachment->sendInitialUpdate();
+}
+
+void Choice::rebuildGroups()
+{
+    const int selected = juce::roundToInt (parameter->convertFrom0to1 (parameter->getValue())) + 1;
+    box.clear (juce::dontSendNotification);
+
+    for (const auto& g : groups)
+    {
+        box.addSectionHeading (tr (g.heading));
+        for (int index : g.items)
+            if (juce::isPositiveAndBelow (index, englishItems.size()))
+                box.addItem (translateItem (englishItems[index]), index + 1);
+        if (g.columnBreakAfter)
+            box.getRootMenu()->addColumnBreak();
+    }
 
     box.setSelectedId (selected, juce::dontSendNotification);
 }
@@ -812,8 +860,35 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     for (auto* c : std::initializer_list<juce::Component*> { &syncButton, &tempoSlider, &dawTempo, &optionsButton })
         addAndMakeVisible (c);
 
-    optionsButton.setColour (juce::TextButton::buttonColourId, Palette::background);
-    optionsButton.setColour (juce::TextButton::textColourOffId, Palette::dim);
+    // Groove menu: grouped by genre, in columns.
+    {
+        std::vector<Choice::Group> groups;
+        const auto& patterns = sgk::groovePatterns();
+        const auto& genres = sgk::grooveCategories();
+        for (size_t g = 0; g < genres.size(); ++g)
+        {
+            Choice::Group group { genres[g], {}, false };
+            for (int i = 0; i < (int) patterns.size(); ++i)
+                if (patterns[(size_t) i].category == genres[g])
+                    group.items.push_back (i);
+
+            // Columns: soulful, deep, gospel | jackin', garage, afro | funky, '90s | neo soul, chill, generate
+            group.columnBreakAfter = g == 2 || g == 5 || g == 7;
+            groups.push_back (group);
+        }
+        groups.push_back ({ "Generate", { sgk::randomPatternIndex(), sgk::userPatternIndex() }, false });
+        pattern.setGroups (std::move (groups));
+    }
+
+    for (auto* b : { &styleMenuButton, &resetButton, &optionsButton })
+    {
+        b->setColour (juce::TextButton::buttonColourId, Palette::background);
+        b->setColour (juce::TextButton::textColourOffId, Palette::dim);
+        addAndMakeVisible (b);
+    }
+    styleMenuButton.setColour (juce::TextButton::textColourOffId, Palette::accent);
+    styleMenuButton.onClick = [this] { showStyleMenu(); };
+    resetButton.onClick = [this] { confirmReset(); };
     optionsButton.onClick = [this] { options.show (false, uiScale, processor.shrinkWhileDragging); };
 
     options.onLanguageChanged = [this] { applyLanguage(); };
@@ -929,6 +1004,58 @@ FaseGroovePianoEditor::~FaseGroovePianoEditor()
     setLookAndFeel (nullptr);
 }
 
+void FaseGroovePianoEditor::showStyleMenu()
+{
+    juce::PopupMenu menu;
+    menu.addSectionHeader (tr ("Ready-made styles (the key stays)"));
+    const auto names = FaseGroovePianoProcessor::styleNames();
+    for (int i = 0; i < names.size(); ++i)
+        menu.addItem (i + 1, tr (names[i]));
+
+    juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&styleMenuButton), [safe] (int result)
+    {
+        if (safe == nullptr || result <= 0)
+            return;
+
+        safe->processor.applyStyle (result - 1);
+        safe->presetBox.setSelectedId (FaseGroovePianoProcessor::stylePreset (result - 1) + 1, juce::dontSendNotification);
+    });
+}
+
+void FaseGroovePianoEditor::confirmReset()
+{
+    juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+    juce::AlertWindow::showAsync (juce::MessageBoxOptions()
+                                      .withIconType (juce::MessageBoxIconType::QuestionIcon)
+                                      .withTitle (tr ("RESET"))
+                                      .withMessage (tr ("Put every setting of the plug-in back to its default? The language stays as it is."))
+                                      .withButton (tr ("RESET"))
+                                      .withButton (tr ("Cancel"))
+                                      .withAssociatedComponent (this),
+                                  [safe] (int result)
+                                  {
+                                      if (safe != nullptr && result == 1)
+                                      {
+                                          safe->processor.resetToDefaults();
+                                          safe->afterReset();
+                                      }
+                                  });
+}
+
+void FaseGroovePianoEditor::afterReset()
+{
+    presetBox.setSelectedId (0, juce::dontSendNotification);
+    shrinkToggle.setToggleState (processor.shrinkWhileDragging, juce::dontSendNotification);
+    freeToggle.setToggleState (processor.freeCircle, juce::dontSendNotification);
+    circle.setFreeMode (processor.freeCircle);
+    for (auto* lock : segmentLocks)
+        lock->setToggleState (false, juce::dontSendNotification);
+    setSize (baseWidth, baseHeight);
+    timerCallback();
+    repaint();
+}
+
 void FaseGroovePianoEditor::buildPresetMenu()
 {
     // Grouped by style, one heading per group, in columns (no endless list).
@@ -984,6 +1111,10 @@ void FaseGroovePianoEditor::applyLanguage()
     previewButton.setButtonText (tr ("PREVIEW"));
     syncButton.setButtonText (tr ("SYNC DAW"));
     optionsButton.setButtonText (tr ("OPTIONS"));
+    styleMenuButton.setButtonText (tr ("STYLE"));
+    styleMenuButton.setTooltip (tr ("Ready-made setups by genre: progression, voicing, groove, feel and sound in one click (the key stays)"));
+    resetButton.setButtonText (tr ("RESET"));
+    resetButton.setTooltip (tr ("Put every setting back to its default (the language stays)"));
     soundToggle.setButtonText (tr ("Guide sound"));
     octaveToggle.setButtonText (tr ("Top +8va"));
     saveButton.setButtonText (tr ("Save .mid..."));
@@ -1335,6 +1466,8 @@ void FaseGroovePianoEditor::layoutFull()
     tempoArea = top.removeFromRight (330).reduced (0, 4);
     headerArea = top;
     optionsButton.setBounds (headerArea.getRight() - 78, headerArea.getBottom() - 22, 74, 20);
+    resetButton.setBounds (optionsButton.getBounds().translated (-62, 0).withWidth (58));
+    styleMenuButton.setBounds (resetButton.getBounds().translated (-70, 0).withWidth (66));
     options.setBounds (0, 0, baseWidth, baseHeight);
     {
         auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);

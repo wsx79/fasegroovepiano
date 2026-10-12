@@ -76,6 +76,10 @@ xattr -cr ~/Library/Audio/Plug-Ins/Components/"Fase Groove Piano.component"
 
 Vuoi qualcosa di nuovo? Premi **DICE** (progressione casuale) e **NEW RIFF** (ritmo casuale).
 
+**Ancora più veloce:** premi **STILE** (in alto a sinistra) e scegli un genere, ad esempio
+*Classic Deep House* o *Jackin' House*: progressione, voicing, groove, feel e suono vengono
+impostati con un clic, pronti da suonare.
+
 ---
 
 ## 3. L'interfaccia, sezione per sezione
@@ -115,7 +119,7 @@ I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si
 | **Key** | Tonalità (C … B). |
 | **Scale / mode** | Maggiore (Ionian), **Dorian** (il classico della deep house), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, più (v1.5) **Locrian**, **Harmonic Major** (il iv minore gospel), **Lydian Dominant** (I7#11 funky), **Mixolydian b6** (iv "preso in prestito", soulful) e **Phrygian Dominant** (deep house scura ed esotica). |
 | **Extensions** | Triadi, 7ª, 9ª, 11ª/13ª, più (v1.5): **6/9** (il caldo accordo di tonica soulful, senza 7ª), **Add 9** (triade con la 9ª, pop/house), **Sus (9sus4)** (l'accordo aperto e sospeso della deep house) e **9ths + altered V** (tutti accordi di 9ª e il V grado diventa una dominante gospel **13(b9)**, o **7(b9,b13)** nelle tonalità minori). Le tensioni che stonano vengono gestite in automatico: la b9 sugli accordi non di dominante viene tolta, la 11ª sugli accordi maggiori diventa 13ª, una 6ª che sarebbe b6 diventa 7ª, e il sus4 si usa solo dove la 4ª è giusta. |
-| **Voicing** | *Close* (posizione stretta), *Drop 2* (più aperto, da tastierista jazz), *Rootless* (senza fondamentale, ideale con un basso separato), *Wide* (due mani: fondamentale + 7ª a sinistra), *Quartal* (accordi per quarte, sound deep/moderno), *Shell (3-7-top)* (solo 3ª, 7ª e la nota di colore in alto: leggero e jazzy, lascia spazio a basso e voce), *Drop 2+4* (voicing aperto e largo da pianista, ottimo per pad e break). |
+| **Voicing** | *Close* (posizione stretta), *Drop 2* (più aperto, da tastierista jazz), *Rootless* (senza fondamentale, ideale con un basso separato), *Wide* (due mani: fondamentale + 7ª a sinistra), *Quartal* (accordi per quarte, sound deep/moderno), *Shell (3-7-top)* (solo 3ª, 7ª e la nota di colore in alto: leggero e jazzy, lascia spazio a basso e voce), *Drop 2+4* (voicing aperto e largo da pianista, ottimo per pad e break). Ogni voicing segue le regole di un pianista: niente semitoni stridenti tra note vicine, niente intervalli stretti e impastati nel registro basso, la 9ª sopra la 3ª, e le voci che si muovono il meno possibile (la nota in alto canta una linea morbida). |
 | **Left-hand bass** | La mano sinistra: Off, Root (fondamentale), Octaves (ottave), Root + 5th. |
 | **Approach chord** (Accordo di passaggio) | Lo **slide** gospel: sull'ultimo sedicesimo prima di ogni cambio d'accordo suona l'accordo successivo (e la sua nota di basso) mezzo tono **sopra** (*From above*) o **sotto** (*From below*), che poi risolve. Solo dove quella mano sta già suonando: un basso spento resta spento. |
 | **Top +8va** | Raddoppia all'ottava superiore la nota più alta di ogni accordo: il classico suono di piano house brillante. |
@@ -168,8 +172,8 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 
 | Controllo | Cosa fa |
 |---|---|
-| **Groove** | 34 ritmi a due mani su 2 battute (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
-| **NEW RIFF** | Genera un riff funky nuovo (accordi + basso). Se hai bloccato qualche parte con **LOCK** (vedi *Rhythm grid*), quelle parti restano e cambia solo il resto. Riff e modifiche vengono salvati nel progetto. |
+| **Groove** | 96 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
+| **NEW RIFF** | Genera un riff nuovo (accordi + basso), costruito come lo costruisce un tastierista: un motivo di mezza battuta fatto di figure di comping house, con risposta e ripetizione (A B A B'), spesso con un anticipo verso la battuta successiva, sopra una figura di basso semplice che lo segue. Se hai bloccato qualche parte con **LOCK** (vedi *Rhythm grid*), quelle parti restano e cambia solo il resto. Riff e modifiche vengono salvati nel progetto. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). |
 | **Fills** | **Spenti (Off)** di default. Ogni 2/4/8 battute l'ultimo quarto diventa un breve fill che porta all'accordo successivo. |
 | **Fill style** | *Pentatonic run up* (scaletta in salita), *Pentatonic run down* (in discesa) o *Chord roll* (arpeggio dell'accordo successivo). |
@@ -179,12 +183,22 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 | **Humanize** | Piccole variazioni di tempo e dinamica, per un feel suonato a mano. |
 | **Density** | Solo per i Random riff: da stab radi a chop di sedicesimi fitti. |
 
-**I groove:** *Classic Offbeat Stabs*, *Soulful Push*, *Deep Chords*, *Funky 16ths*, *Gospel Bounce*,
-*Chicago Jack*, *Garage Skip*, *Late Night Rhodes*, *Disco Octaves*, *Long Chords*,
-*Funk Clav Chops*, *Ghost Note Funk*, *Nile Chops*, *Anticipation Funk*, *Gospel Shout 16ths*,
-*Neo Soul Lazy*, *Boogie Stabs*, *Offbeat Doubles*, *Broken Beat*, *Slap Bass Funk* e i **jackin' house**:
-*Jackin' Stabs*, *Jack Bounce*, *Jackin' Push*, *Chicago Organ Jack*, *Ghetto Jack*, *Disco Jack Chops*
-(suonano al meglio con Swing 30–45%), e i nuovi della v1.2: *Soulful Sunday*, *Gospel Chops*, *Neo Soul Comping*, *Deep Sway*, *Deep Dub Stabs*, *Jackin' Shuffle*, *Jack Organ Pump*, *Funky Upstrokes*.
+**I groove: 96, divisi per genere.** Il menu *Groove* si apre a colonne con un titolo per ogni
+genere; *Random riff* e *User pattern* stanno sotto **Genera**. I groove jackin' suonano al meglio
+con Swing 30–45%, quelli UK garage con 45–55%.
+
+| Genere | Groove |
+|---|---|
+| **Soulful** (9) | *Soulful Push*, *Soulful Sunday*, *Soulful Lift*, *Sunday Morning Keys*, *Soulful Offbeat 8ths*, *Soul Train Comp*, *Vocal House Stabs*, *Soulful Pianist*, *Warm Rhodes Swing* |
+| **Deep** (11) | *Deep Chords*, *Late Night Rhodes*, *Deep Sway*, *Deep Dub Stabs*, *Deep Late Pad*, *Deep Offbeat Chords*, *Larry's Chords*, *Deep Dorian Swing*, *Midnight Stabs*, *Deep Keys Rolls*, *Minimal Deep Pulse* |
+| **Gospel** (9) | *Gospel Bounce*, *Gospel Shout 16ths*, *Gospel Chops*, *Gospel Shout*, *Church Organ Swell*, *Gospel Walk*, *Praise Break*, *Sanctified Stabs*, *Gospel Ballad Swing* |
+| **Jackin'** (16) | *Chicago Jack*, *Jackin' Stabs*, *Jack Bounce*, *Jackin' Push*, *Chicago Organ Jack*, *Ghetto Jack*, *Disco Jack Chops*, *Jackin' Shuffle*, *Jack Organ Pump*, *Jack Stab Skips*, *Chicago Bounce*, *Warehouse Jack*, *Jack Your Body*, *Jackin' Organ Stabs*, *Swing Jack*, *Ghetto House Chops* |
+| **Garage e UK** (7) | *Garage Skip*, *UK Garage 2-Step*, *Speed Garage Organ*, *Shuffled 2-Step*, *Garage Chord Skips*, *Bassline House*, *UK Funky Keys* |
+| **Afro e latin** (6) | *Afro House Keys*, *Tresillo Chords*, *Latin Montuno*, *Clave Stabs*, *Afro Deep Groove*, *Samba House* |
+| **Funky e disco** (15) | *Funky 16ths*, *Disco Octaves*, *Funk Clav Chops*, *Ghost Note Funk*, *Nile Chops*, *Anticipation Funk*, *Boogie Stabs*, *Slap Bass Funk*, *Funky Upstrokes*, *Disco Strut*, *Nu Disco Keys*, *Funky Clavinet 16ths*, *Philly Stabs*, *Boogie Wonderland*, *French Touch Filter* |
+| **Piano house anni '90** (9) | *Classic Offbeat Stabs*, *Offbeat Doubles*, *M1 Organ Stabs*, *Italo Piano Anthem*, *Hands Up Piano*, *Piano Anthem Offbeats*, *Show Me Stabs*, *Rave Piano Chords*, *Balearic Piano* |
+| **Neo soul e broken** (8) | *Neo Soul Lazy*, *Broken Beat*, *Neo Soul Comping*, *Lazy Swing Keys*, *Broken Beat Chords*, *Neo Soul Ghosts*, *Jazzy House Comp*, *Rhodes Broken Swing* |
+| **Chill e pad** (6) | *Long Chords*, *Whole Bar Pads*, *Half Bar Pads*, *Chill Swells*, *Lounge Keys*, *Sunset Chords* |
 
 ### Rhythm grid
 
@@ -238,6 +252,18 @@ Vedi il prossimo capitolo.
 
 Trascina l'angolo in basso a destra per **ingrandire o rimpicciolire** l'interfaccia (dal 60% al
 200%). La dimensione viene ricordata nel progetto.
+
+### STILE e RESET
+
+- **STILE** apre un menu di impostazioni pronte per genere: *Classic Deep House*, *Soulful House*,
+  *Gospel House*, *Jackin' House*, *'90s Piano House*, *Organ Jack*, *Nu Disco*, *Funky Disco*,
+  *UK Garage*, *Afro House*, *Neo Soul*, *Chill Lounge*. Ognuno imposta progressione (e la sua
+  scala), estensioni, voicing, groove, swing, gate, humanize, strum, Top +8va, basso, accordo di
+  passaggio, registro e suono guida. **La tonalità resta quella che hai scelto.** Poi modifica
+  quello che vuoi.
+- **RESET** riporta **tutte le impostazioni ai valori iniziali** (dopo averti chiesto conferma):
+  armonia, progressione, groove, pattern utente, blocchi, accordi liberi, suono, tempo,
+  dimensione dell'interfaccia. La **lingua** non viene toccata.
 
 ### OPZIONI: impostazioni, lingua e crediti
 

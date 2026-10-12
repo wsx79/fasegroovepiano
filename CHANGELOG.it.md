@@ -6,6 +6,30 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.7.0] - 2026-10-13
+
+### Aggiunto
+- **62 nuovi groove (96 in totale) in 10 generi:** Soulful, Deep, Gospel, Jackin', Garage e UK,
+  Afro e latin, Funky e disco, Piano house anni '90, Neo soul e broken, Chill e pad. Il menu dei
+  groove si apre a colonne con un titolo per ogni genere.
+- **STILE:** dodici impostazioni pronte per genere con un clic (Classic Deep House, Soulful House,
+  Gospel House, Jackin' House, '90s Piano House, Organ Jack, Nu Disco, Funky Disco, UK Garage, Afro
+  House, Neo Soul, Chill Lounge): progressione, armonia, groove, feel e suono insieme; la tonalità
+  resta.
+- **RESET:** riporta tutte le impostazioni ai valori iniziali dopo una conferma (la lingua resta).
+
+### Modificato
+- **Voicing molto più musicali.** Ogni voicing ora viene scelto come farebbe un pianista: niente
+  semitoni stridenti tra note vicine, niente intervalli stretti e impastati nel registro basso,
+  niente none minori, niente grappoli di seconde, la 9ª sopra la 3ª, voice leading morbido e una
+  linea in alto che canta. I voicing Rootless e Shell ora tengono sempre 3ª e 7ª (es. Am9 = C E G B).
+- **Riff casuali molto più musicali (NEW RIFF / RND).** Ora sono costruiti con figure di
+  comping house: un motivo di mezza battuta, una risposta, di nuovo il motivo e un finale nuovo
+  (A B A B'), con gli accenti sui tempi giusti, un eventuale anticipo sulla battuta successiva e
+  una figura di basso semplice che segue il riff, invece di sedicesimi a caso.
+- La progressione armonizzata viene messa in cache, così il nuovo motore dei voicing non pesa
+  sulla CPU mentre suona.
+
 ## [1.6.0] - 2026-10-12
 
 ### Aggiunto

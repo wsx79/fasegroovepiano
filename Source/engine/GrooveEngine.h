@@ -29,11 +29,15 @@ struct GroovePattern
     std::string name;
     std::string rightHand;
     std::string leftHand;
+    std::string category {};   // genre heading in the groove menu
 
     int length() const noexcept { return (int) rightHand.size(); }
 };
 
 const std::vector<GroovePattern>& groovePatterns();
+
+/** Genre headings of the groove menu, in display order. */
+const std::vector<const char*>& grooveCategories();
 
 /** Index of the "Random riff" entry, right after the preset grooves. */
 int randomPatternIndex() noexcept;
@@ -203,6 +207,22 @@ private:
     std::array<Part, 128> partOf {};
     std::vector<PendingOn> pending;
     std::vector<int> scratch;
+
+    // Cache of the voiced progression, rebuilt only when the harmony changes.
+    struct HarmonyKey
+    {
+        int key, scale, extension, voicing, centre, length;
+        std::array<int, maxProgressionLength> progression, freeChords;
+        bool operator== (const HarmonyKey& o) const noexcept
+        {
+            return key == o.key && scale == o.scale && extension == o.extension && voicing == o.voicing
+                && centre == o.centre && length == o.length && progression == o.progression && freeChords == o.freeChords;
+        }
+    };
+    HarmonyKey cachedHarmony {};
+    bool harmonyCached = false;
+    std::array<Chord, maxProgressionLength> cachedChords {};
+    std::array<VoicedChord, maxProgressionLength> cachedVoiced {};
 
     // Cache of the resolved pattern, rebuilt only when its inputs change.
     GroovePattern cachedPattern;

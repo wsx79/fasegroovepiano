@@ -40,7 +40,8 @@ Rhodes or synth.
   **DICE** for random but musical progressions.
 - ⭕ Interactive **circle of fifths**: the chords of the scale with their numerals, your progression as numbered dots and arrows, drag the dots to change chords (even outside the scale).
 - 🌈 **Harmony colours:** chords and chord changes coloured by how well they sound together (green = great, grey = clashes).
-- 🥁 **34 two-hand grooves** (soulful, gospel, deep, **jackin' house**, funky, garage, disco…)
+- 🎚️ **STYLE:** one-click setups by genre (deep, soulful, gospel, jackin', '90s piano, garage, afro, neo soul…) and **RESET** to start over.
+- 🥁 **96 two-hand grooves** in 10 genres (soulful, deep, gospel, **jackin' house**, garage, afro, funky & disco, '90s piano house, neo soul, chill)
   plus **NEW RIFF**, a random funky riff generator, and optional fills (3 styles).
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and

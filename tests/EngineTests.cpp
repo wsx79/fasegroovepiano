@@ -591,7 +591,9 @@ static void testHarmonyScores()
 
 static void testPatternsWellFormed()
 {
-    CHECK (groovePatterns().size() == 34);
+    CHECK (groovePatterns().size() == 96);
+    for (const auto& p : groovePatterns())
+        CHECK (std::find_if (grooveCategories().begin(), grooveCategories().end(), [&p] (const char* c) { return p.category == c; }) != grooveCategories().end());
 
     for (const auto& p : groovePatterns())
     {

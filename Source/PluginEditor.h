@@ -58,13 +58,23 @@ public:
     /** Re-applies the caption and the menu items in the current language. */
     void refreshText();
 
+    /** Shows the items under headings, in columns. Item ids stay "parameter index + 1",
+        so saved projects keep their value whatever the menu order. */
+    struct Group { juce::String heading; std::vector<int> items; bool columnBreakAfter = false; };
+    void setGroups (std::vector<Group>);
+
     juce::ComboBox box;
 
 private:
+    void rebuildGroups();
+
     juce::String caption;
-    juce::StringArray englishItems;
+    juce::StringArray englishItems;   // by parameter index
     juce::Label label;
+    juce::RangedAudioParameter* parameter = nullptr;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
+    std::unique_ptr<juce::ParameterAttachment> groupedAttachment;
+    std::vector<Group> groups;
 };
 
 /** One chord of the progression: degree selector + resulting chord name. */
@@ -200,6 +210,10 @@ private:
     juce::TooltipWindow tooltips { this, 600 };
 
     juce::TextButton optionsButton { "OPTIONS" };
+    juce::TextButton styleMenuButton { "STYLE" }, resetButton { "RESET" };
+    void showStyleMenu();
+    void confirmReset();
+    void afterReset();
     OptionsOverlay options;
 
     void applyLanguage();

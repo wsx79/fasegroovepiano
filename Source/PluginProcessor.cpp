@@ -135,16 +135,139 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     for (int i = 0; i < sgk::numSegments; ++i)
         segmentParams[(size_t) i] = apvts.getRawParameterValue (ParamIDs::segment (i));
 
+    clearFreeChords();
+    resetUserPattern();
+    events.reserve (1024);
+}
+
+void FaseGroovePianoProcessor::resetUserPattern()
+{
     // The user pattern starts as a copy of "Soulful Push".
     const auto& start = sgk::groovePatterns()[1];
-    clearFreeChords();
-
     for (int i = 0; i < sgk::userPatternLength; ++i)
     {
         userRight[(size_t) i] = start.rightHand[(size_t) i];
         userLeft[(size_t) i]  = start.leftHand[(size_t) i];
     }
-    events.reserve (1024);
+}
+
+void FaseGroovePianoProcessor::resetToDefaults()
+{
+    for (auto* p : getParameters())
+        if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*> (p))
+        {
+            ranged->beginChangeGesture();
+            ranged->setValueNotifyingHost (ranged->getDefaultValue());
+            ranged->endChangeGesture();
+        }
+
+    clearFreeChords();
+    resetUserPattern();
+    segmentLocked.fill (false);
+    lastBassMode = 1;
+    freeCircle = false;
+    previewOn = false;
+    editorScale = 1.0f;
+    shrinkWhileDragging = true;
+}
+
+//==============================================================================
+namespace
+{
+    struct Style
+    {
+        const char* name;
+        const char* progression;    // name of a progression preset
+        const char* groove;         // name of a groove
+        int extension, voicing, bass, approach, sound, registerNote;
+        float swing, gate, humanize, strum;
+        bool octaveTop;
+    };
+
+    // extension: 0 triads 1 7ths 2 9ths 3 11ths 4 6/9 5 add9 6 sus 7 9ths+altered V
+    // voicing: 0 close 1 drop2 2 rootless 3 wide 4 quartal 5 shell 6 drop2+4
+    // bass: 0 off 1 root 2 octaves 3 root+5th   approach: 0 off 1 above 2 below
+    // sound: 0 Rhodes 1 Soulful Grand 2 House Piano 3 House Organ
+    const Style styles[] {
+        { "Classic Deep House",   "Dorian Vamp  i - IV",               "Deep Chords",          2, 2, 1, 0, 0, 62, 0.20f, 0.60f, 0.25f, 0.10f, false },
+        { "Soulful House",        "Turnaround  I - vi - ii - V",       "Soulful Sunday",       7, 1, 1, 1, 1, 64, 0.25f, 0.55f, 0.30f, 0.20f, false },
+        { "Gospel House",         "Gospel Lift  IV - V - vi - I",      "Gospel Shout",         7, 0, 2, 1, 1, 64, 0.30f, 0.50f, 0.30f, 0.15f, true  },
+        { "Jackin' House",        "Jackin' Minor  i - iv",             "Jackin' Stabs",        1, 0, 2, 0, 2, 64, 0.45f, 0.35f, 0.20f, 0.00f, true  },
+        { "'90s Piano House",     "Deep House Classic  vi - IV - I - V", "Italo Piano Anthem", 1, 0, 2, 0, 2, 66, 0.10f, 0.45f, 0.15f, 0.00f, true  },
+        { "Organ Jack",           "Deep Dorian  i - ii - IV - i",      "M1 Organ Stabs",       1, 0, 1, 0, 3, 62, 0.35f, 0.40f, 0.20f, 0.00f, false },
+        { "Nu Disco",             "Disco Jack  ii - V - I - vi",       "Nu Disco Keys",        1, 1, 2, 0, 0, 64, 0.15f, 0.40f, 0.20f, 0.00f, false },
+        { "Funky Disco",          "Funky Dominant  I7 - IV7",          "Funky Clavinet 16ths", 2, 5, 2, 0, 2, 64, 0.20f, 0.30f, 0.20f, 0.00f, false },
+        { "UK Garage",            "Minor Flow  i - VI - III - VII",    "UK Garage 2-Step",     2, 2, 1, 0, 0, 64, 0.50f, 0.45f, 0.25f, 0.10f, false },
+        { "Afro House",           "Deep Minor  i - v",                 "Afro House Keys",      2, 4, 1, 0, 0, 62, 0.15f, 0.50f, 0.30f, 0.00f, false },
+        { "Neo Soul",             "Neo Soul  ii - iii - IV - V",       "Neo Soul Ghosts",      3, 6, 1, 2, 0, 62, 0.45f, 0.60f, 0.40f, 0.30f, false },
+        { "Chill Lounge",         "Lydian Float  I - II",              "Lounge Keys",          2, 3, 1, 0, 0, 64, 0.20f, 0.80f, 0.30f, 0.35f, false },
+    };
+
+    int indexOfGroove (const char* name)
+    {
+        const auto& patterns = sgk::groovePatterns();
+        for (int i = 0; i < (int) patterns.size(); ++i)
+            if (patterns[(size_t) i].name == name)
+                return i;
+        return 1;
+    }
+
+    int indexOfPreset (const char* name)
+    {
+        const auto& presets = sgk::progressionPresets();
+        for (int i = 0; i < (int) presets.size(); ++i)
+            if (juce::String (presets[(size_t) i].name) == name)
+                return i;
+        return -1;
+    }
+}
+
+juce::StringArray FaseGroovePianoProcessor::styleNames()
+{
+    juce::StringArray names;
+    for (const auto& s : styles)
+        names.add (s.name);
+    return names;
+}
+
+int FaseGroovePianoProcessor::stylePreset (int index)
+{
+    return juce::isPositiveAndBelow (index, (int) std::size (styles)) ? indexOfPreset (styles[index].progression) : -1;
+}
+
+void FaseGroovePianoProcessor::applyStyle (int index)
+{
+    if (! juce::isPositiveAndBelow (index, (int) std::size (styles)))
+        return;
+
+    const auto& st = styles[index];
+    clearFreeChords();
+
+    if (const int preset = indexOfPreset (st.progression); preset >= 0)
+    {
+        const auto& p = sgk::progressionPresets()[(size_t) preset];
+        setParameterFromUI (ParamIDs::scale, (float) p.scale);
+        setParameterFromUI (ParamIDs::progLength, (float) p.degrees.size());
+        for (int i = 0; i < (int) p.degrees.size(); ++i)
+            setParameterFromUI (ParamIDs::slot (i), (float) p.degrees[(size_t) i]);
+    }
+
+    setParameterFromUI (ParamIDs::pattern, (float) indexOfGroove (st.groove));
+    setParameterFromUI (ParamIDs::extension, (float) st.extension);
+    setParameterFromUI (ParamIDs::voicing, (float) st.voicing);
+    setParameterFromUI (ParamIDs::bass, (float) st.bass);
+    setParameterFromUI (ParamIDs::approach, (float) st.approach);
+    setParameterFromUI (ParamIDs::soundType, (float) st.sound);
+    setParameterFromUI (ParamIDs::registerPos, (float) st.registerNote);
+    setParameterFromUI (ParamIDs::swing, st.swing);
+    setParameterFromUI (ParamIDs::gate, st.gate);
+    setParameterFromUI (ParamIDs::humanize, st.humanize);
+    setParameterFromUI (ParamIDs::strum, st.strum);
+    setParameterFromUI (ParamIDs::octaveTop, st.octaveTop ? 1.0f : 0.0f);
+    setParameterFromUI (ParamIDs::section, 0.0f);
+    setParameterFromUI (ParamIDs::fills, 0.0f);
+    for (int i = 0; i < sgk::numSegments; ++i)
+        setParameterFromUI (ParamIDs::segment (i), (float) i);
 }
 
 float FaseGroovePianoProcessor::raw (const char* id) const

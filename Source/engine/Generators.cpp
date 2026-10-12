@@ -34,14 +34,6 @@ namespace
 
     bool isHit (char c) noexcept { return c == 'X' || c == 'x' || c == 'g' || c == '>'; }
 
-    /** Adds offbeat ("&") hits until the bar has at least `minimum` hits. */
-    void ensureHits (std::string& bar, int minimum)
-    {
-        auto hits = [&bar] { return (int) std::count_if (bar.begin(), bar.end(), isHit); };
-        for (int i = 2; hits() < minimum && i < (int) bar.size(); i += 4)
-            if (! isHit (bar[(size_t) i]))
-                bar[(size_t) i] = 'x';
-    }
 
 }
 
@@ -203,92 +195,104 @@ GroovePattern applySection (const GroovePattern& source, Section section)
 //==============================================================================
 GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
 {
+    // Built like a keyboard player builds a riff: a half-bar motif made of house
+    // comping cells, answered by a second half-bar, then repeated with a different ending
+    // that pushes into the next bar (A B A B'). The bass keeps it simple and locks to it.
     Random rng (seed);
     const double density = std::clamp ((double) densityIn, 0.0, 1.0);
 
-    // Hit probability for the four 16ths of a beat: 1, e, &, a.
-    // Funky house lives on the "&" and the "a".
-    const std::array<double, 4> weight { 0.35, 0.18, 0.75, 0.45 };
-    const double busy = 0.45 + 0.75 * density;
+    // One-beat right-hand cells (4 sixteenths), from sparse to busy.
+    static const char* const sparseCells[] { "..x.", "x...", "x=..", "..x=", "x===", "....", "...x", "x.x." };
+    static const char* const mediumCells[] { "..x.", ".x.x", "x..x", "..xx", "x.x.", "...x", ".xx.", "x..." , "..x=", "x=.x" };
+    static const char* const busyCells[]   { "x.xx", ".x.x", "xx.x", "x.x.", ".xx.", "..xx", "x..x", ".x.." };
 
-    std::string rh (16, '.'), lh (16, '.');
-
-    // ---- right hand, bar 1 ----
-    for (int i = 0; i < 16; ++i)
-        if (rng.chance (std::min (0.95, weight[(size_t) (i % 4)] * busy)))
-            rh[(size_t) i] = 'x';
-
-    if (rng.chance (0.6)) rh[0] = 'x';
-
-    // No more than three 16ths in a row: funk needs air.
-    for (int i = 3; i < 16; ++i)
-        if (rh[(size_t) i] == 'x' && rh[(size_t) i - 1] == 'x' && rh[(size_t) i - 2] == 'x' && rh[(size_t) i - 3] == 'x')
-            rh[(size_t) i] = '.';
-
-    ensureHits (rh, 4);
-
-    // Accents and holds.
-    for (int i = 0; i < 16; ++i)
+    auto pickCell = [&] () -> std::string
     {
-        if (rh[(size_t) i] != 'x')
-            continue;
-
-        if (rng.chance (0.3) || (i % 4 == 2 && rng.chance (0.3)))
-            rh[(size_t) i] = 'X';
-
-        const double holdChance = 0.35 * (1.0 - density);
-        for (int k = i + 1; k < std::min (16, i + 3) && rh[(size_t) k] == '.' && rng.chance (holdChance); ++k)
-            rh[(size_t) k] = '=';
-    }
-
-    // Ghost notes in the gaps.
-    for (int i = 0; i < 16; ++i)
-        if (rh[(size_t) i] == '.' && rng.chance (0.18 * density))
-            rh[(size_t) i] = 'g';
-
-    // ---- bass, bar 1 ----
-    lh[0] = 'x';
-    const std::array<double, 4> bassWeight { 0.3, 0.12, 0.3, 0.35 };
-    for (int i = 1; i < 16; ++i)
-        if (rng.chance (bassWeight[(size_t) (i % 4)] * (0.6 + 0.6 * density)))
-            lh[(size_t) i] = 'x';
-
-    // ---- bar 2 = bar 1 with variations (call & response) ----
-    std::string rh2 = rh, lh2 = lh;
-    for (int i = 0; i < 16; ++i)
-    {
-        if (rng.chance (0.25))
-        {
-            const char was = rh2[(size_t) i];
-            rh2[(size_t) i] = was == '.' ? (rng.chance (weight[(size_t) (i % 4)]) ? 'x' : '.') : (was == '=' ? '=' : '.');
-        }
-        if (i > 0 && rng.chance (0.15))
-            lh2[(size_t) i] = lh2[(size_t) i] == '.' ? 'x' : '.';
-    }
-
-    ensureHits (rh2, 4);
-
-    std::string right = rh + rh2, left = lh + lh2;
-
-    // ---- pushes into the next bar ----
-    auto addPush = [&] (int at)   // at = step of the push (14 or 30)
-    {
-        right[(size_t) at] = '>';
-        right[(size_t) at + 1] = '=';
-        const int next = (at + 2) % 32;
-        if (right[(size_t) next] == '.' || right[(size_t) next] == 'g')
-            right[(size_t) next] = 'x';     // tied by the engine
-
-        if (rng.chance (0.5))
-        {
-            left[(size_t) at] = '>';
-            left[(size_t) at + 1] = '=';
-            left[(size_t) next] = 'x';
-        }
+        const double r = rng.uniform();
+        const double busyShare = 0.1 + 0.6 * density;
+        const double sparseShare = 0.55 * (1.0 - density);
+        if (r < sparseShare)
+            return sparseCells[rng.below ((int) (sizeof (sparseCells) / sizeof (*sparseCells)))];
+        if (r < sparseShare + busyShare)
+            return busyCells[rng.below ((int) (sizeof (busyCells) / sizeof (*busyCells)))];
+        return mediumCells[rng.below ((int) (sizeof (mediumCells) / sizeof (*mediumCells)))];
     };
 
-    if (rng.chance (0.35 + 0.3 * density)) addPush (14);
-    if (rng.chance (0.5))                  addPush (30);
+    auto countIn = [] (const std::string& line) { return (int) std::count_if (line.begin(), line.end(), isHit); };
+
+    // A half-bar phrase (two beats) with at least one and at most six hits.
+    auto makeHalf = [&] ()
+    {
+        for (int attempt = 0; attempt < 16; ++attempt)
+        {
+            const auto half = pickCell() + pickCell();
+            const int hits = countIn (half);
+            if (hits >= 1 && hits <= 6)
+                return half;
+        }
+        return std::string ("..x...x.");
+    };
+
+    // Accents (first hit, and offbeat "&"s now and then) and, in busy riffs, ghost notes
+    // before a hit: decided per phrase, so a repeated phrase really repeats.
+    auto decorate = [&] (std::string half)
+    {
+        bool first = true;
+        for (int i = 0; i < (int) half.size(); ++i)
+        {
+            char& c = half[(size_t) i];
+            if (c != 'x')
+                continue;
+            if (first || (i % 4 == 2 && rng.chance (0.35)))
+                c = 'X';
+            first = false;
+        }
+
+        for (int i = 0; i + 1 < (int) half.size(); ++i)
+            if (half[(size_t) i] == '.' && isHit (half[(size_t) i + 1]) && rng.chance (0.22 * density))
+                half[(size_t) i] = 'g';
+
+        return half;
+    };
+
+    const auto motif = decorate (makeHalf());      // A
+    auto answer = makeHalf();                       // B
+    if (answer == motif)
+        answer = std::string (answer.rbegin(), answer.rend());
+    answer = decorate (answer);
+
+    // B': the answer with a new last beat.
+    const std::string ending = answer.substr (0, 4) + decorate (pickCell());
+
+    std::string right = motif + answer + motif + ending;
+
+    // The "a" of beat 4 pushes the next chord in (the classic house anticipation).
+    const bool pushBar2 = rng.chance (0.55 + 0.25 * density);
+    const bool pushBar1 = rng.chance (0.25 * density);
+    if (pushBar2) { right[30] = '>'; right[31] = '='; }
+    if (pushBar1) { right[14] = '>'; right[15] = '='; }
+
+    if (countIn (right) < 6)
+        for (int i = 2; i < 32 && countIn (right) < 6; i += 8)
+            if (right[(size_t) i] == '.') right[(size_t) i] = 'x';
+
+    // ---- bass: one simple figure, the same in both bars ----
+    static const char* const bassFigures[] {
+        "x=......x.......",   // 1 and 3
+        "x=.......x......",   // 1 and the "e" of 3
+        "x.....x.........",   // 1 and the "&" of 2
+        "x==.......x.....",   // 1 held, pickup on the "&" of 3
+        "x.......x.....x.",   // 1, 3 and the "&" of 4
+        "x=....x=..x.....",   // syncopated house bass
+        "x==.....x==.....",   // half notes
+        "x...........x...",   // 1 and 4
+    };
+    const std::string bassBar = bassFigures[rng.below ((int) (sizeof (bassFigures) / sizeof (*bassFigures)))];
+    std::string left = bassBar + bassBar;
+
+    // The bass follows a push into bar 1 (or lands with it).
+    if (pushBar2 && rng.chance (0.6)) { left[30] = '>'; left[31] = '='; left[0] = 'x'; }
+    if (pushBar1 && rng.chance (0.6)) { left[14] = '>'; left[15] = '='; left[16] = 'x'; }
 
     repairHolds (right);
     repairHolds (left);

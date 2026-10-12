@@ -12,3 +12,4 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 ## Fatto
 
 - v1.6.0: colori dell'armonia (gli accordi suonano bene insieme?) e nuovo circolo delle quinte.
+- v1.7.0: STILI pronti, RESET, 96 groove in 10 generi, voicing da pianista e riff casuali musicali.

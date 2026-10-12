@@ -141,37 +141,6 @@ namespace
         return shape;
     }
 
-    /** Chooses the inversion of `pcs` (absolute pitch classes) that best fits the
-        centre and voice-leads from `previous`. */
-    NoteSet bestInversion (const NoteSet& pcs, double centre, const NoteSet* previous) noexcept
-    {
-        NoteSet best;
-        double bestCost = std::numeric_limits<double>::max();
-
-        for (int first = 0; first < pcs.size; ++first)
-        {
-            const auto shape = stackFrom (pcs, first, pcs[first]);
-
-            for (int octaveNudge = -12; octaveNudge <= 12; octaveNudge += 12)
-            {
-                auto candidate = placeNear (shape, centre);
-                for (int i = 0; i < candidate.size; ++i)
-                    candidate.notes[(size_t) i] += octaveNudge;
-
-                double cost = 0.6 * std::abs (candidate.mean() - centre);
-                if (previous != nullptr && previous->size > 0)
-                    cost += movement (candidate, *previous) + 0.5 * movement (*previous, candidate);
-
-                if (cost < bestCost - 1.0e-9)
-                {
-                    bestCost = cost;
-                    best = candidate;
-                }
-            }
-        }
-
-        return best;
-    }
 }
 
 //==============================================================================
@@ -404,6 +373,123 @@ std::string chromaticNumeral (int keyRoot, const Chord& c)
 }
 
 //==============================================================================
+namespace
+{
+    /** Fixed-capacity list of candidate voicings (no allocation on the audio thread). */
+    struct Candidates
+    {
+        std::array<NoteSet, 128> items {};
+        int size = 0;
+        void add (const NoteSet& n) noexcept { if (size < (int) items.size() && n.size > 0) items[(size_t) size++] = n; }
+    };
+
+    /** How a voicing sounds on its own, like a pianist would judge it (0 = clean).
+        Punishes semitone rubs between neighbouring voices, muddy small intervals in the
+        low register, minor 9ths, holes in the middle and an over-wide hand. */
+    double voicingPenalty (const NoteSet& v, bool spread, bool flatNine) noexcept
+    {
+        double p = 0.0;
+        for (int i = 1; i < v.size; ++i)
+        {
+            const int d = v[i] - v[i - 1];
+            const int low = v[i - 1];
+
+            if (d == 0)                 p += 50.0;
+            if (d == 1)                 p += 9.0;
+            if (d == 2 && low < 52)     p += 3.0;
+            if (d <= 4 && low < 48)     p += 4.0;
+            if (d < 3 && low < 45)      p += 6.0;
+
+            // Two seconds in a row make a cluster (C D E): pianists spread those notes.
+            if (i >= 2 && d <= 2 && v[i - 1] - v[i - 2] <= 2)
+                p += 4.0;
+
+            const int maxGap = spread ? 12 : 9;
+            if (d > maxGap)             p += (d - maxGap) * 0.8;
+        }
+
+        for (int i = 0; i < v.size; ++i)
+            for (int j = i + 1; j < v.size; ++j)
+                if (v[j] - v[i] == 13 && ! flatNine)
+                    p += 5.0;
+
+        const int span = v.highest() - v.lowest();
+        const int maxSpan = spread ? 24 : 16;
+        if (span > maxSpan)
+            p += (span - maxSpan) * 0.8;
+
+        return p;
+    }
+
+    /** Close-position stacks of `pcs` in the given order, one per rotation, each placed at
+        three octaves around the centre. */
+    void addStacks (Candidates& out, const NoteSet& pcs, int centre) noexcept
+    {
+        for (int first = 0; first < pcs.size; ++first)
+        {
+            const auto shape = placeNear (stackFrom (pcs, first, pcs[first]), centre);
+            for (int shift = -12; shift <= 12; shift += 12)
+            {
+                auto c = shape;
+                for (int i = 0; i < c.size; ++i)
+                    c.notes[(size_t) i] += shift;
+                out.add (c);
+            }
+        }
+    }
+
+    /** Close stacks with one inner voice lifted an octave (e.g. C D E F# A -> C E F# A D):
+        the way pianists open a cluster without leaving the hand position. */
+    void addLiftedStacks (Candidates& out, const NoteSet& pcs, int centre) noexcept
+    {
+        if (pcs.size < 4)
+            return;
+
+        for (int first = 0; first < pcs.size; ++first)
+        {
+            const auto shape = stackFrom (pcs, first, pcs[first]);
+            for (int lift = 0; lift < shape.size - 1; ++lift)
+            {
+                auto lifted = shape;
+                lifted.notes[(size_t) lift] += 12;
+                lifted.sort();
+                lifted = placeNear (lifted, centre);
+
+                for (int shift = -12; shift <= 12; shift += 12)
+                {
+                    auto c = lifted;
+                    for (int i = 0; i < c.size; ++i)
+                        c.notes[(size_t) i] += shift;
+                    out.add (c);
+                }
+            }
+        }
+    }
+
+    NoteSet sortedFromRoot (NoteSet pcs, int rootPc) noexcept
+    {
+        std::sort (pcs.notes.begin(), pcs.notes.begin() + pcs.size,
+                   [rootPc] (int a, int b) { return mod (a - rootPc, 12) < mod (b - rootPc, 12); });
+        return pcs;
+    }
+
+    void removePc (NoteSet& pcs, int pc) noexcept
+    {
+        for (int i = 0; i < pcs.size; ++i)
+            if (pcs[i] == pc) { pcs.removeAt (i); return; }
+    }
+
+    /** Lowers voices (counted from the top: 1 = second from the top) by an octave. */
+    NoteSet dropVoices (NoteSet v, bool dropSecond, bool dropFourth) noexcept
+    {
+        v.sort();
+        if (dropSecond && v.size >= 2) v.notes[(size_t) v.size - 2] -= 12;
+        if (dropFourth && v.size >= 4) v.notes[(size_t) v.size - 4] -= 12;
+        v.sort();
+        return v;
+    }
+}
+
 VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
                         const NoteSet* previousRightHand) noexcept
 {
@@ -411,42 +497,51 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
 
     auto absolutePc = [&chord] (int interval) { return mod (chord.rootPc + interval, 12); };
 
-    // Pitch classes for the right hand, in stacking order.
+    if (voicing == Voicing::quartal)
+    {
+        // Keep the fourths shape intact; just move it by octaves.
+        NoteSet shape;
+        const int bottom = centre - 7 + mod (chord.rootPc - (centre - 7), 12);
+        for (int i = 0; i < chord.quartal.size; ++i)
+            shape.add (bottom + chord.quartal[i]);
+
+        v.rightHand = placeNear (shape, centre);
+        return v;
+    }
+
+    // All chord tones (as pitch classes) in stacked-thirds order: 1 3 5 (6) 7 9 11 13.
+    NoteSet all;
+    for (int i = 0; i < chord.tones.size; ++i)
+        all.add (absolutePc (chord.tones[i]));
+
+    const int third = absolutePc (chord.third), fifth = absolutePc (chord.fifth);
+    const bool flatNine = chord.ninth == 1;
+
+    // The notes each voicing uses.
     NoteSet pcs;
+    bool spread = false;
 
     switch (voicing)
     {
-        case Voicing::quartal:
-        {
-            // Keep the fourths shape intact; just move it by octaves.
-            NoteSet shape;
-            const int bottom = centre - 7 + mod (chord.rootPc - (centre - 7), 12);
-            for (int i = 0; i < chord.quartal.size; ++i)
-                shape.add (bottom + chord.quartal[i]);
-
-            v.rightHand = placeNear (shape, centre);
-            return v;
-        }
-
         case Voicing::rootless:
         {
-            for (int i = 1; i < chord.tones.size; ++i)
-                if (! (chord.tones.size > 4 && chord.tones[i] == chord.fifth))
-                    pcs.add (absolutePc (chord.tones[i]));
+            // 3 5 7 9 (or 3 7 9 13 / 3 7 9 11): the bass plays the root.
+            pcs = all;
+            removePc (pcs, chord.rootPc);
+            if (pcs.size > 4) removePc (pcs, fifth);
+            if (pcs.size < 3) pcs.add (chord.rootPc);   // triads: first inversion
             break;
         }
 
         case Voicing::shell:
         {
-            // Jazz / deep house shell: 3rd (or 4th), 7th (or 6th / 5th) and the top colour tone.
-            pcs.add (absolutePc (chord.third));
-            pcs.add (absolutePc (chord.seventh >= 0 ? chord.seventh : chord.sixth >= 0 ? chord.sixth : chord.fifth));
-
+            // 3rd, 7th (or 6th / 5th) and the top colour note.
+            pcs.add (third);
+            const int guide = chord.seventh >= 0 ? chord.seventh : chord.sixth >= 0 ? chord.sixth : chord.fifth;
+            pcs.add (absolutePc (guide));
             const int top = chord.tones[chord.tones.size - 1];
-            if (chord.tones.size > 3 && ! pcs.contains (absolutePc (top)))
-                pcs.add (absolutePc (top));
-            else if (! pcs.contains (chord.rootPc))
-                pcs.add (chord.rootPc);
+            const int topPc = absolutePc (top);
+            pcs.add (chord.tones.size > 3 && ! pcs.contains (topPc) ? topPc : chord.rootPc);
             break;
         }
 
@@ -457,71 +552,86 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
             v.leftHand.add (lhRoot);
             v.leftHand.add (lhRoot + (chord.seventh >= 0 ? chord.seventh : chord.fifth));
 
-            for (int i = 1; i < chord.tones.size; ++i)
-            {
-                const int t = chord.tones[i];
-                if (t == chord.seventh && chord.seventh >= 0) continue;
-                pcs.add (absolutePc (t));
-            }
+            pcs = all;
+            removePc (pcs, chord.rootPc);
+            if (chord.seventh >= 0) removePc (pcs, absolutePc (chord.seventh));
+            if (pcs.size > 3) removePc (pcs, fifth);
+            if (pcs.size < 2) pcs.add (chord.rootPc);
+            centre += 3;
+            break;
+        }
 
-            if (pcs.size > 3)                              // keep 3 notes: drop the 5th
-                for (int i = 0; i < pcs.size; ++i)
-                    if (pcs[i] == absolutePc (chord.fifth)) { pcs.removeAt (i); break; }
-
-            if (pcs.size < 2)                              // triad: borrow the root
-                pcs.add (chord.rootPc);
-
-            v.rightHand = bestInversion (pcs, centre + 3, previousRightHand);
-            v.rightHand.sort();
-            return v;
+        case Voicing::drop2:
+        case Voicing::drop24:
+        {
+            // Four (or five) voices, then open them up.
+            pcs = all;
+            if (pcs.size > 4 && voicing == Voicing::drop2) removePc (pcs, chord.rootPc);
+            if (pcs.size > 4) removePc (pcs, fifth);
+            if (pcs.size > 5) removePc (pcs, chord.rootPc);
+            spread = true;
+            break;
         }
 
         case Voicing::close:
-        case Voicing::drop2:
-        case Voicing::drop24:
+        case Voicing::quartal:
         default:
         {
-            for (int i = 0; i < chord.tones.size; ++i)
-                pcs.add (absolutePc (chord.tones[i]));
+            pcs = all;
+            if (pcs.size > 5) removePc (pcs, fifth);
+            if (pcs.size > 5) removePc (pcs, chord.rootPc);
             break;
         }
     }
 
-    // Drop 2+4 starts from a truly close position (tones within one octave).
-    if (voicing == Voicing::drop24)
-        std::sort (pcs.notes.begin(), pcs.notes.begin() + pcs.size,
-                   [&chord] (int a, int b) { return mod (a - chord.rootPc, 12) < mod (b - chord.rootPc, 12); });
+    // Candidates: every rotation of the stacked-thirds order and of the close (sorted) order.
+    Candidates candidates;
+    Candidates closeShapes;
+    addStacks (closeShapes, pcs, centre);
+    addStacks (closeShapes, sortedFromRoot (pcs, chord.rootPc), centre);
+    if (voicing != Voicing::drop2 && voicing != Voicing::drop24)
+        addLiftedStacks (closeShapes, sortedFromRoot (pcs, chord.rootPc), centre);
 
-    v.rightHand = bestInversion (pcs, centre, previousRightHand);
-    v.rightHand.sort();
-
-    if (voicing == Voicing::drop2 && v.rightHand.size >= 4)
+    for (int i = 0; i < closeShapes.size; ++i)
     {
-        v.rightHand.notes[(size_t) v.rightHand.size - 2] -= 12;
-        v.rightHand.sort();
+        const auto& c = closeShapes.items[(size_t) i];
+        if (voicing == Voicing::drop2)
+            candidates.add (dropVoices (c, true, false));
+        else if (voicing == Voicing::drop24)
+            candidates.add (dropVoices (c, true, c.size >= 4));
+        else
+            candidates.add (c);
     }
 
-    // Drop 2+4: the 2nd and 4th voices from the top go down an octave (open, pianistic).
-    if (voicing == Voicing::drop24 && v.rightHand.size >= 4)
-    {
-        v.rightHand.notes[(size_t) v.rightHand.size - 2] -= 12;
-        v.rightHand.notes[(size_t) v.rightHand.size - 4] -= 12;
-        v.rightHand.sort();
+    // Pick the best: clean on its own, near the register, smooth from the previous chord,
+    // with a top line that moves little (it is the melody the ear follows).
+    double bestCost = std::numeric_limits<double>::max();
+    NoteSet best;
 
-        // Re-centre the open shape by octaves: stay within the register, near the centre.
-        int bestShift = 0;
-        double bestCost = std::numeric_limits<double>::max();
-        for (int shift = -24; shift <= 24; shift += 12)
+    for (int i = 0; i < candidates.size; ++i)
+    {
+        auto c = candidates.items[(size_t) i];
+        c.sort();
+
+        double cost = 2.0 * voicingPenalty (c, spread, flatNine) + 0.6 * std::abs (c.mean() - centre);
+
+        // Stay inside the playing range.
+        cost += 10.0 * (std::max (0, (centre - 18) - c.lowest()) + std::max (0, c.highest() - (centre + 18)));
+
+        if (previousRightHand != nullptr && previousRightHand->size > 0)
         {
-            const int low = v.rightHand.lowest() + shift, high = v.rightHand.highest() + shift;
-            const double outside = std::max (0, (centre - 20) - low) + std::max (0, high - (centre + 20));
-            const double cost = outside * 100.0 + std::abs (v.rightHand.mean() + shift - centre);
-            if (cost < bestCost) { bestCost = cost; bestShift = shift; }
+            cost += movement (c, *previousRightHand) + 0.5 * movement (*previousRightHand, c);
+            cost += 0.35 * std::abs (c.highest() - previousRightHand->highest());
         }
-        for (int i = 0; i < v.rightHand.size; ++i)
-            v.rightHand.notes[(size_t) i] += bestShift;
+
+        if (cost < bestCost - 1.0e-9)
+        {
+            bestCost = cost;
+            best = c;
+        }
     }
 
+    v.rightHand = best;
     return v;
 }
 
