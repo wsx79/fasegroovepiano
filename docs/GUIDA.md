@@ -309,7 +309,7 @@ No. Vedi la [privacy policy](../PRIVACY.it.md).
 Fase Groove Piano è creato da **Fabio 'Pitch' Serra**, DJ e producer. Se ti piace il sound di
 questo plugin, ti piaceranno anche le mie produzioni:
 
-- 🎧 **Ascolta le mie produzioni su Spotify:** [Fabio 'Pitch' Serra su Spotify](https://open.spotify.com/album/4UEKxy0F1P7Lt3yn46wu4V)
+- 🎧 **Ascolta le mie produzioni su Spotify:** [Fabio 'Pitch' Serra su Spotify](https://open.spotify.com/artist/29iQGuXML8LEw3xRp1dNRP)
 - 🛒 **Scarica le mie canzoni** sui maggiori distributori digitali di musica: cerca
   **Fabio 'Pitch' Serra**.
 
