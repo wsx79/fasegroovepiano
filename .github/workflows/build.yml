@@ -1,10 +1,15 @@
 name: Build
 
+# Builds run only where they matter, to save GitHub Actions minutes:
+# pushes to main (not for docs-only changes), pull requests, version tags,
+# and manual runs (Actions -> Build -> Run workflow, optionally publishing a release).
 on:
   push:
-    branches: ["**"]
+    branches: [main]
     tags: ["v*"]
+    paths-ignore: ["**.md", "docs/**", "LICENSE"]
   pull_request:
+    paths-ignore: ["**.md", "docs/**", "LICENSE"]
   workflow_dispatch:
     inputs:
       release_tag:
@@ -14,6 +19,11 @@ on:
 
 permissions:
   contents: write
+
+# A newer push to the same branch cancels the older, still-running build.
+concurrency:
+  group: build-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   build:
