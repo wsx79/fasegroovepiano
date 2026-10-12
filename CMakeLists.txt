@@ -18,7 +18,8 @@ option(SGK_BUILD_TESTS  "Build the engine unit tests" ON)
 # Music engine (pure C++, no JUCE)
 add_library(sgk_engine STATIC
     Source/engine/Theory.cpp
-    Source/engine/GrooveEngine.cpp)
+    Source/engine/GrooveEngine.cpp
+    Source/engine/Generators.cpp)
 target_include_directories(sgk_engine PUBLIC Source/engine)
 set_target_properties(sgk_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -69,7 +70,8 @@ if(SGK_BUILD_PLUGIN)
 
     target_sources(SoulfulGrooveKeys PRIVATE
         Source/PluginProcessor.cpp
-        Source/PluginEditor.cpp)
+        Source/PluginEditor.cpp
+        Source/CircleOfFifths.cpp)
 
     target_compile_definitions(SoulfulGrooveKeys PUBLIC
         JUCE_WEB_BROWSER=0

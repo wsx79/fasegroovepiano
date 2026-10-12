@@ -27,6 +27,9 @@ namespace ParamIDs
     inline constexpr const char* fills       = "fills";
     inline constexpr const char* playMode    = "playMode";
     inline constexpr const char* bassChannel = "bassChannel";
+    inline constexpr const char* section     = "section";
+    inline constexpr const char* riffSeed    = "riffSeed";
+    inline constexpr const char* riffDensity = "riffDensity";
     inline constexpr const char* sound       = "sound";
     inline constexpr const char* tone        = "tone";
     inline constexpr const char* reverb      = "reverb";
@@ -74,11 +77,20 @@ public:
     /** Sets a parameter from the UI, notifying the host. */
     void setParameterFromUI (const juce::String& id, float plainValue);
 
+    /** Rolls a brand new random riff (switches the groove to "Random riff"). */
+    void rollNewRiff();
+
+    /** Replaces the progression with a random soulful-house one of the current length. */
+    void rollNewProgression();
+
     //==============================================================================
     enum class ClipPart { all = 0, chords, bass };
 
+    /** Pass as `bars` to export the whole song: intro, main, break, build-up, drop, outro. */
+    static constexpr int songArrangement = -1;
+
     /** Renders the current progression + groove as a standard MIDI file.
-        bars <= 0 means "one full loop" (progression, groove and fills all repeat). */
+        bars == 0 means "one full loop" (progression, groove and fills all repeat). */
     juce::MidiFile createMidiClip (int bars, ClipPart part) const;
 
     /** Writes the clip into Documents/Soulful Groove Keys and returns the file. */

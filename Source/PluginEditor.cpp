@@ -191,22 +191,22 @@ void ChordSlot::resized()
 }
 
 //==============================================================================
-void PatternView::setState (int patternIndex, int step, int fillEveryBars)
+void PatternView::setState (const sgk::GroovePattern& newPattern, int step)
 {
-    if (patternIndex == pattern && step == currentStep && fillEveryBars == fills)
+    if (step == currentStep && newPattern.rightHand == pattern.rightHand && newPattern.leftHand == pattern.leftHand)
         return;
 
-    pattern = patternIndex;
+    pattern = newPattern;
     currentStep = step;
-    fills = fillEveryBars;
     repaint();
 }
 
 void PatternView::paint (juce::Graphics& g)
 {
-    const auto& patterns = sgk::groovePatterns();
-    const auto& p = patterns[(size_t) juce::jlimit (0, (int) patterns.size() - 1, pattern)];
+    const auto& p = pattern;
     const int len = p.length();
+    if (len == 0)
+        return;
 
     auto area = getLocalBounds().toFloat();
     const float labelW = 44.0f;
@@ -236,9 +236,9 @@ void PatternView::paint (juce::Graphics& g)
             g.setColour (Palette::panelEdge.withAlpha (s % 4 == 0 ? 0.9f : 0.45f));
             g.fillRoundedRectangle (cell, 3.0f);
 
-            if (c == 'X' || c == 'x' || c == '>')
+            if (c == 'X' || c == 'x' || c == 'g' || c == '>')
             {
-                g.setColour (c == '>' ? Palette::accent2 : colour.withAlpha (c == 'X' ? 1.0f : 0.75f));
+                g.setColour (c == '>' ? Palette::accent2 : colour.withAlpha (c == 'X' ? 1.0f : c == 'g' ? 0.35f : 0.75f));
                 g.fillRoundedRectangle (cell, 3.0f);
             }
             else if (c == '=')
@@ -295,12 +295,14 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
       bass (p.apvts, ParamIDs::bass, "Left-hand bass"),
       registerKnob (p.apvts, ParamIDs::registerPos, "Register"),
       pattern (p.apvts, ParamIDs::pattern, "Groove"),
+      section (p.apvts, ParamIDs::section, "Song section"),
       fills (p.apvts, ParamIDs::fills, "Pentatonic fills"),
       playMode (p.apvts, ParamIDs::playMode, "Play mode"),
       swing (p.apvts, ParamIDs::swing, "Swing"),
       gate (p.apvts, ParamIDs::gate, "Gate"),
       velocity (p.apvts, ParamIDs::velocity, "Velocity"),
       humanize (p.apvts, ParamIDs::humanize, "Humanize"),
+      riffDensity (p.apvts, ParamIDs::riffDensity, "Density"),
       bassChannel (p.apvts, ParamIDs::bassChannel, "MIDI out"),
       soundAttachment (p.apvts, ParamIDs::sound, soundToggle),
       tone (p.apvts, ParamIDs::tone, "Tone"),
@@ -323,11 +325,35 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
         addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
 
     for (juce::Component* c : std::initializer_list<juce::Component*> {
-             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &registerKnob,
-             &pattern, &fills, &playMode, &swing, &gate, &velocity, &humanize,
+             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &registerKnob, &circle,
+             &diceProgression, &pattern, &section, &newRiffButton, &fills, &playMode,
+             &swing, &gate, &velocity, &humanize, &riffDensity,
              &soundToggle, &previewButton, &bassChannel, &tone, &reverb, &volume, &patternView,
              &clipLengthLabel, &clipPartLabel, &clipLength, &clipPart, &dragTile, &saveButton })
         addAndMakeVisible (c);
+
+    auto styleButton = [] (juce::TextButton& b, juce::Colour colour)
+    {
+        b.setColour (juce::TextButton::buttonColourId, colour);
+        b.setColour (juce::TextButton::textColourOffId, Palette::background);
+    };
+
+    styleButton (newRiffButton, Palette::accent);
+    newRiffButton.setTooltip ("Generate a brand new random funky riff");
+    newRiffButton.onClick = [this] { processor.rollNewRiff(); };
+
+    styleButton (diceProgression, Palette::accent2);
+    diceProgression.setTooltip ("Random soulful-house progression");
+    diceProgression.onClick = [this] { processor.rollNewProgression(); presetBox.setSelectedId (0, juce::dontSendNotification); };
+
+    circle.onPick = [this] (int pc, bool minorKey)
+    {
+        processor.setParameterFromUI (ParamIDs::key, (float) pc);
+
+        const int currentScale = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::scale)->load());
+        if (sgk::scaleIsMinor (currentScale) != minorKey)
+            processor.setParameterFromUI (ParamIDs::scale, minorKey ? 1.0f : 0.0f);   // Dorian / Major
+    };
 
     previewButton.setClickingTogglesState (true);
     previewButton.setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -339,7 +365,8 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
 
     styleCaption (clipLengthLabel, "Clip length");
     styleCaption (clipPartLabel, "Notes");
-    clipLength.addItemList ({ "Full loop", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars", "32 bars" }, 1);
+    clipLength.addItemList ({ "Full loop", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars", "32 bars",
+                              "Song: intro > drop > outro" }, 1);
     clipLength.setSelectedId (1, juce::dontSendNotification);
     clipPart.addItemList ({ "Chords + bass", "Chords only", "Bass only" }, 1);
     clipPart.setSelectedId (1, juce::dontSendNotification);
@@ -350,7 +377,7 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
     saveButton.setColour (juce::TextButton::textColourOffId, Palette::text);
     saveButton.onClick = [this] { saveClip(); };
 
-    setSize (980, 690);
+    setSize (1180, 740);
     startTimerHz (30);
     timerCallback();
 }
@@ -363,8 +390,8 @@ SoulfulGrooveKeysEditor::~SoulfulGrooveKeysEditor()
 
 int SoulfulGrooveKeysEditor::selectedClipBars() const
 {
-    static constexpr int bars[] { 0, 1, 2, 4, 8, 16, 32 };
-    return bars[juce::jlimit (0, 6, clipLength.getSelectedItemIndex())];
+    static constexpr int bars[] { 0, 1, 2, 4, 8, 16, 32, SoulfulGrooveKeysProcessor::songArrangement };
+    return bars[juce::jlimit (0, 7, clipLength.getSelectedItemIndex())];
 }
 
 SoulfulGrooveKeysProcessor::ClipPart SoulfulGrooveKeysEditor::selectedClipPart() const
@@ -448,7 +475,12 @@ void SoulfulGrooveKeysEditor::timerCallback()
         repaint (chordDisplayArea);
     }
 
-    patternView.setState (s.pattern, processor.uiStep.load(), s.fillEveryBars);
+    patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load());
+
+    std::vector<CircleOfFifths::ChordMark> marks;
+    for (int i = 0; i < s.progressionLength; ++i)
+        marks.push_back ({ chords[(size_t) i].rootPc, chords[(size_t) i].third == 3 });
+    circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), marks, playingSlot);
     previewButton.setToggleState (processor.previewOn.load(), juce::dontSendNotification);
 }
 
@@ -498,6 +530,7 @@ void SoulfulGrooveKeysEditor::paint (juce::Graphics& g)
 
     drawPanel (g, progressionPanel, "PROGRESSION");
     drawPanel (g, harmonyPanel, "HARMONY & SCALES");
+    drawPanel (g, circlePanel, "CIRCLE OF FIFTHS");
     drawPanel (g, groovePanel, "GROOVE");
     drawPanel (g, soundPanel, "GUIDE SOUND & MIDI OUT");
     drawPanel (g, gridPanel, "RHYTHM GRID");
@@ -526,7 +559,9 @@ void SoulfulGrooveKeysEditor::resized()
         inner.removeFromTop (20);
         auto leftCol = inner.removeFromLeft (240);
         presetLabel.setBounds (leftCol.removeFromTop (16));
-        presetBox.setBounds (leftCol.removeFromTop (28));
+        auto presetRow = leftCol.removeFromTop (28);
+        diceProgression.setBounds (presetRow.removeFromRight (52));
+        presetBox.setBounds (presetRow.withTrimmedRight (6));
         leftCol.removeFromTop (4);
         progLength.setBounds (leftCol.removeFromLeft (114));
         chordLength.setBounds (leftCol.withTrimmedLeft (12));
@@ -538,9 +573,11 @@ void SoulfulGrooveKeysEditor::resized()
     }
     r.removeFromTop (10);
 
-    // Three panels
-    auto mid = r.removeFromTop (252);
+    // Middle panels
+    auto mid = r.removeFromTop (300);
     harmonyPanel = mid.removeFromLeft (300);
+    mid.removeFromLeft (10);
+    circlePanel = mid.removeFromLeft (240);
     mid.removeFromLeft (10);
     soundPanel = mid.removeFromRight (250);
     mid.removeFromRight (10);
@@ -560,17 +597,22 @@ void SoulfulGrooveKeysEditor::resized()
         split (row (inner, 44), extension, voicing, 125);
         auto last = inner;
         bass.setBounds (last.removeFromLeft (150).removeFromTop (44));
-        registerKnob.setBounds (last.withTrimmedLeft (10));
+        registerKnob.setBounds (last.withTrimmedLeft (10).withSizeKeepingCentre (110, juce::jmin (120, last.getHeight())));
     }
+
+    circle.setBounds (circlePanel.reduced (10, 8).withTrimmedTop (22));
 
     {
         auto inner = groovePanel.reduced (14, 8);
         inner.removeFromTop (22);
-        pattern.setBounds (row (inner, 44));
-        split (row (inner, 44), fills, playMode, inner.getWidth() / 2 - 5);
-        const int w = inner.getWidth() / 4;
-        for (auto* k : { &swing, &gate, &velocity, &humanize })
-            k->setBounds (inner.removeFromLeft (w));
+        auto grooveRow = row (inner, 44);
+        newRiffButton.setBounds (grooveRow.removeFromRight (84).withTrimmedTop (16));
+        pattern.setBounds (grooveRow.withTrimmedRight (8));
+        split (row (inner, 44), section, fills, inner.getWidth() / 2 - 5);
+        const int w = inner.getWidth() / 5;
+        auto knobs = inner.withSizeKeepingCentre (inner.getWidth(), juce::jmin (inner.getHeight(), w + 40));
+        for (auto* k : { &swing, &gate, &velocity, &humanize, &riffDensity })
+            k->setBounds (knobs.removeFromLeft (w));
     }
 
     {
@@ -580,6 +622,7 @@ void SoulfulGrooveKeysEditor::resized()
         previewButton.setBounds (toggleRow.removeFromRight (96));
         soundToggle.setBounds (toggleRow);
         bassChannel.setBounds (row (inner, 44));
+        playMode.setBounds (row (inner, 44));
         const int w = inner.getWidth() / 3;
         for (auto* k : { &tone, &reverb, &volume })
             k->setBounds (inner.removeFromLeft (w));

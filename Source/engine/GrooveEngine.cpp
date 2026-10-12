@@ -44,14 +44,14 @@ namespace
         return count;
     }
 
-    bool isHit (char c) noexcept { return c == 'X' || c == 'x' || c == '>'; }
+    bool isHit (char c) noexcept { return c == 'X' || c == 'x' || c == 'g' || c == '>'; }
 
     /** A push ('>') held with '=' right up to a hit: that hit is tied, not re-struck. */
     bool pushTiesIntoNextHit (const std::string& line, int pos) noexcept
     {
         const int len = (int) line.size();
         const char next = line[(size_t) ((pos + 1 + holdLength (line, pos)) % len)];
-        return line[(size_t) pos] == '>' && (next == 'X' || next == 'x');
+        return line[(size_t) pos] == '>' && (next == 'X' || next == 'x' || next == 'g');
     }
 
     bool isTiedFromPush (const std::string& line, int pos) noexcept
@@ -102,9 +102,46 @@ const std::vector<GroovePattern>& groovePatterns()
         { "Long Chords",
           compact ("X=== ==== ==== ===. X=== ==== ==== ===."),
           compact ("x=== ==== ==== ===. x=== ==== ==== ===.") },
+
+        // ---- Funk ----
+        { "Funk Clav Chops",
+          compact ("x.xx .xx. x.xx .x.x x.xx .xx. x.x. xx.x"),
+          compact ("x... ..x. .x.. x... x... ..x. .x.. ..x.") },
+        { "Ghost Note Funk",
+          compact ("X.gg .gX. g.gX .g.g X.gg .gX. g.X. gXg."),
+          compact ("x... ..x. ..x. .x.. x... ..x. x... ..x.") },
+        { "Nile Chops",
+          compact ("..x. x.xx ..x. x.x. ..x. x.xx .xx. x.x."),
+          compact ("x... ...x ..x. .... x... ...x ..x. .x..") },
+        { "Anticipation Funk",
+          compact ("X.x. .x.. x.x. .x>= =.x. .x.. x.x. .x>="),
+          compact ("x..x ..x. x... ..>= =..x ..x. x... ..>=") },
+        { "Gospel Shout 16ths",
+          compact ("X.xx .xX. xx.x .Xx. X.xx .xX. x.xX .x>="),
+          compact ("x..x ..x. .x.. x... x..x ..x. .x.. ..>=") },
+        { "Neo Soul Lazy",
+          compact ("X==. ..x= .x.. x==. ..X= =.x. .x.. >==="),
+          compact ("x... ..x. .... x... x... ..x. ..x. ....") },
+        { "Boogie Stabs",
+          compact ("x.x. ..x. .x.x ..x. x.x. ..x. .x.x .x.."),
+          compact ("x... x.x. x... x.x. x... x.x. x... x..x") },
+        { "Offbeat Doubles",
+          compact ("..xx ..x. ..xx .x.. ..xx ..x. ..xx .x.x"),
+          compact ("x... ...x x... .... x... ...x x..x ....") },
+        { "Broken Beat",
+          compact ("X... ..x. ...x .x.. ..x. x... .x.. x.x."),
+          compact ("x... ...x ..x. .... .x.. ..x. ...x ....") },
+        { "Slap Bass Funk",
+          compact ("..x. ...x ..x. .x.. ..x. ...x ..xg .x.."),
+          compact ("x..x .x.. x.x. ..xx x..x .x.. x.x. x.xx") },
     };
 
     return patterns;
+}
+
+int randomPatternIndex() noexcept
+{
+    return (int) groovePatterns().size();
 }
 
 const std::vector<ProgressionPreset>& progressionPresets()
@@ -122,6 +159,11 @@ const std::vector<ProgressionPreset>& progressionPresets()
         { "Mixo Groove  I - VII - IV - I",     3, { 0, 6, 3, 0 } },
         { "Lydian Float  I - II",              4, { 0, 1 } },
         { "8-Bar Journey",                     0, { 0, 5, 3, 4, 2, 5, 1, 4 } },
+        { "Circle of 5ths  vi - ii - V - I",   0, { 5, 1, 4, 0 } },
+        { "Circle of 5ths  iii - vi - ii - V", 0, { 2, 5, 1, 4 } },
+        { "Full Circle  I-IV-vii-iii-vi-ii-V-I", 0, { 0, 3, 6, 2, 5, 1, 4, 0 } },
+        { "Minor Circle  i - iv - VII - III",  2, { 0, 3, 6, 2 } },
+        { "Dorian Circle  i - iv - VII - III", 1, { 0, 3, 6, 2 } },
     };
 
     return presets;
@@ -148,8 +190,7 @@ bool GrooveEngine::anyNoteSounding() const noexcept
 
 int GrooveEngine::loopLengthInSteps (const GrooveSettings& s) noexcept
 {
-    const auto& patterns = groovePatterns();
-    const int patternLength = patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)].length();
+    const int patternLength = GrooveEngine::patternLength (s);
     const int progression = std::clamp (s.progressionLength, 1, maxProgressionLength) * std::max (1, s.stepsPerChord);
 
     auto lcm = [] (long long a, long long b)
@@ -160,11 +201,69 @@ int GrooveEngine::loopLengthInSteps (const GrooveSettings& s) noexcept
     };
 
     long long steps = lcm (progression, patternLength);
-    if (s.fillEveryBars > 0)
+    if (s.fillEveryBars > 0 && sectionAllowsFills (s.section))
         steps = lcm (steps, 16LL * s.fillEveryBars);
 
     steps = lcm (steps, 16);                 // whole bars
     return (int) std::min<long long> (steps, 64 * 16);
+}
+
+GroovePattern GrooveEngine::resolvePattern (const GrooveSettings& s)
+{
+    const auto& patterns = groovePatterns();
+    const auto base = s.pattern >= randomPatternIndex()
+                        ? makeRandomPattern (s.riffSeed, s.riffDensity)
+                        : patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)];
+
+    return applySection (base, s.section);
+}
+
+int GrooveEngine::patternLength (const GrooveSettings& s) noexcept
+{
+    const auto& patterns = groovePatterns();
+    if (s.pattern >= randomPatternIndex())
+        return 32;   // random riffs are always two bars
+
+    return patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)].length();
+}
+
+const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
+{
+    if (s.pattern != cachedIndex || s.riffSeed != cachedSeed || s.riffDensity != cachedDensity
+        || s.section != cachedSection || cachedPattern.rightHand.empty())
+    {
+        cachedPattern = resolvePattern (s);
+        cachedIndex = s.pattern;
+        cachedSeed = s.riffSeed;
+        cachedDensity = s.riffDensity;
+        cachedSection = s.section;
+    }
+
+    return cachedPattern;
+}
+
+std::vector<NoteEvent> GrooveEngine::renderArrangement (const GrooveSettings& s, const std::vector<ArrangementPart>& parts,
+                                                        std::vector<Marker>* markers)
+{
+    GrooveEngine engine;
+    std::vector<NoteEvent> events;
+    double start = 0.0;
+
+    for (const auto& part : parts)
+    {
+        auto partSettings = s;
+        partSettings.section = part.section;
+
+        if (markers != nullptr)
+            markers->push_back ({ start, sectionName ((int) part.section) });
+
+        const double end = start + part.bars * 4.0;
+        engine.render (start, end, partSettings, events);
+        start = end;
+    }
+
+    engine.allNotesOff (start, events);
+    return events;
 }
 
 std::vector<NoteEvent> GrooveEngine::renderClip (const GrooveSettings& s, double lengthInBeats)
@@ -213,12 +312,10 @@ void GrooveEngine::voiceProgression (const GrooveSettings& s,
 }
 
 //==============================================================================
-void GrooveEngine::collectStep (long long step, const GrooveSettings& s,
+void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const GroovePattern& pattern,
                                 const std::array<Chord, maxProgressionLength>& chords,
                                 const std::array<VoicedChord, maxProgressionLength>& voiced)
 {
-    const auto& patterns = groovePatterns();
-    const auto& pattern = patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)];
     const int pos = mod (step, pattern.length());
 
     const double swingDelay = (step % 2 != 0) ? std::clamp (s.swing, 0.0f, 1.0f) * stepLength / 3.0 : 0.0;
@@ -229,7 +326,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s,
 
     auto hitVelocity = [&] (char symbol, double scale, int salt)
     {
-        double v = s.velocity * scale * (symbol == 'X' ? 1.0 : symbol == '>' ? 0.95 : 0.8);
+        double v = s.velocity * scale * sectionVelocityScale (s.section) * (symbol == 'X' ? 1.0 : symbol == '>' ? 0.95 : symbol == 'g' ? 0.45 : 0.8);
         v += human * 18.0 * (noise (step, salt + 7) - 0.5) * 2.0;
         return std::clamp ((int) std::lround (v), 1, 127);
     };
@@ -257,7 +354,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s,
     // Fill: the last beat of every N bars becomes a pentatonic pick-up run.
     const long long bar = floorDiv (step, 16);
     const int stepInBar = mod (step, 16);
-    const bool inFill = s.fillEveryBars > 0 && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1 && stepInBar >= 12;
+    const bool inFill = s.fillEveryBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1 && stepInBar >= 12;
 
     // ---- right hand (chords) ----
     if (inFill)
@@ -299,7 +396,11 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s,
     }
 
     // ---- left hand (bass) ----
-    if (s.bass != BassMode::off)
+    auto bassMode = s.bass;
+    if (s.section == Section::drop && bassMode == BassMode::root)
+        bassMode = BassMode::octaves;    // the drop hits harder
+
+    if (bassMode != BassMode::off)
     {
         const char symbol = pattern.leftHand[(size_t) pos];
         if (isHit (symbol))
@@ -311,8 +412,8 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s,
             const bool tie = isTiedFromPush (pattern.leftHand, pos);
 
             pending.push_back ({ t, root, vel, len, tie, Part::bass });
-            if (s.bass == BassMode::octaves)    pending.push_back ({ t, root + 12, (int) (vel * 0.85), len, tie, Part::bass });
-            if (s.bass == BassMode::rootFifth)  pending.push_back ({ t, root + 7,  (int) (vel * 0.85), len, tie, Part::bass });
+            if (bassMode == BassMode::octaves)    pending.push_back ({ t, root + 12, (int) (vel * 0.85), len, tie, Part::bass });
+            if (bassMode == BassMode::rootFifth)  pending.push_back ({ t, root + 7,  (int) (vel * 0.85), len, tie, Part::bass });
         }
     }
 }
@@ -353,8 +454,9 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
     const auto firstStep = (long long) std::floor (startPpq / stepLength) - 2;
     const auto lastStep  = (long long) std::floor (endPpq / stepLength);
 
+    const auto& pattern = patternFor (s);
     for (auto step = firstStep; step <= lastStep; ++step)
-        collectStep (step, s, chords, voiced);
+        collectStep (step, s, pattern, chords, voiced);
 
     pending.erase (std::remove_if (pending.begin(), pending.end(),
                                    [&] (const PendingOn& p) { return p.ppq < startPpq || p.ppq >= endPpq

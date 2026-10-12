@@ -224,14 +224,136 @@ static void testClipExport()
     CHECK (bassOns > 0 && chordOns > 0);
 }
 
+static bool wellFormed (const GroovePattern& p)
+{
+    if (p.length() != 32 && p.length() != 16) return false;
+    if (p.leftHand.size() != p.rightHand.size()) return false;
+    for (char c : p.rightHand + p.leftHand)
+        if (! (c == 'X' || c == 'x' || c == 'g' || c == '>' || c == '=' || c == '.'))
+            return false;
+    return true;
+}
+
+static int countHits (const std::string& line)
+{
+    int n = 0;
+    for (char c : line)
+        if (c == 'X' || c == 'x' || c == 'g' || c == '>') ++n;
+    return n;
+}
+
+static void testRandomRiffs()
+{
+    std::set<std::string> distinct;
+
+    for (std::uint32_t seed = 1; seed < 400; ++seed)
+    {
+        const auto p = makeRandomPattern (seed, (seed % 5) / 4.0f);
+        CHECK (wellFormed (p));
+        CHECK (p.length() == 32);
+        CHECK (countHits (p.rightHand) >= 6);
+        CHECK (p.leftHand[0] == 'x' || p.leftHand[0] == '=');
+        distinct.insert (p.rightHand);
+
+        // Same seed, same riff.
+        CHECK (makeRandomPattern (seed, (seed % 5) / 4.0f).rightHand == p.rightHand);
+    }
+
+    CHECK (distinct.size() > 350);
+
+    // Denser riffs have more hits on average.
+    int sparse = 0, busy = 0;
+    for (std::uint32_t seed = 1; seed < 200; ++seed)
+    {
+        sparse += countHits (makeRandomPattern (seed, 0.0f).rightHand);
+        busy   += countHits (makeRandomPattern (seed, 1.0f).rightHand);
+    }
+    CHECK (busy > sparse);
+
+    // The engine plays them without stuck notes, in every section.
+    for (int section = 0; section < numSections; ++section)
+    {
+        GrooveSettings s;
+        s.pattern = randomPatternIndex();
+        s.riffSeed = 1234u + (std::uint32_t) section;
+        s.section = (Section) section;
+        s.fillEveryBars = 2;
+
+        const auto clip = GrooveEngine::renderClip (s, 32.0);
+        int sounding[128] {}, ons = 0;
+        for (const auto& e : clip)
+        {
+            if (e.isNoteOn()) { CHECK (sounding[e.note] == 0); sounding[e.note] = 1; ++ons; }
+            else sounding[e.note] = 0;
+        }
+        CHECK (ons > 0);
+        for (int n = 0; n < 128; ++n) CHECK (sounding[n] == 0);
+    }
+}
+
+static void testRandomProgressions()
+{
+    for (std::uint32_t seed = 0; seed < 300; ++seed)
+        for (int len = 1; len <= maxProgressionLength; ++len)
+        {
+            const auto prog = randomProgression (seed, len);
+            CHECK ((int) prog.size() == len);
+            for (size_t i = 0; i < prog.size(); ++i)
+            {
+                CHECK (prog[i] >= 0 && prog[i] < 7);
+                if (i > 0) CHECK (prog[i] != prog[i - 1]);
+            }
+        }
+}
+
+static void testSections()
+{
+    for (const auto& base : groovePatterns())
+        for (int section = 0; section < numSections; ++section)
+        {
+            const auto p = applySection (base, (Section) section);
+            CHECK (wellFormed (p));
+            CHECK (p.length() == base.length());
+            CHECK (countHits (p.rightHand) > 0);
+
+            if (section == (int) Section::intro || section == (int) Section::breakdown)
+                CHECK (countHits (p.leftHand) == 0);
+            if (section == (int) Section::intro)
+                CHECK (countHits (p.rightHand) <= countHits (base.rightHand));
+        }
+
+    // A full arrangement: 60 bars, markers in order, nothing left hanging.
+    GrooveSettings s;
+    s.progressionLength = 4;
+    s.progression = { 3, 2, 1, 0, 0, 0, 0, 0 };
+    std::vector<GrooveEngine::Marker> markers;
+    const auto song = GrooveEngine::renderArrangement (s, defaultArrangement(), &markers);
+
+    CHECK (markers.size() == defaultArrangement().size());
+    CHECK (markers.back().ppq == (60 - 8) * 4.0);
+
+    int sounding[128] {};
+    double last = 0.0;
+    for (const auto& e : song)
+    {
+        CHECK (e.ppq >= last - 1.0e-9);
+        last = e.ppq;
+        sounding[e.note] += e.isNoteOn() ? 1 : -1;
+    }
+    CHECK (last <= 240.0);
+    for (int n = 0; n < 128; ++n) CHECK (sounding[n] == 0);
+}
+
 static void testPatternsWellFormed()
 {
+    CHECK (groovePatterns().size() == 20);
+
     for (const auto& p : groovePatterns())
     {
         CHECK (p.length() == 16 || p.length() == 32);
         CHECK (p.leftHand.size() == p.rightHand.size());
         for (char c : p.rightHand + p.leftHand)
-            CHECK (c == 'X' || c == 'x' || c == '>' || c == '=' || c == '.');
+            CHECK (c == 'X' || c == 'x' || c == 'g' || c == '>' || c == '=' || c == '.');
     }
 
     for (const auto& p : progressionPresets())
@@ -250,6 +372,9 @@ int main()
     testSwing();
     testPushIsTied();
     testClipExport();
+    testRandomRiffs();
+    testRandomProgressions();
+    testSections();
     testPatternsWellFormed();
 
     if (failures == 0)

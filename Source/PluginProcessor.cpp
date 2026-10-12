@@ -67,8 +67,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout SoulfulGrooveKeysProcessor::
     choice (ParamIDs::chordLength, "Chord Length", { "1/2 bar", "1 bar", "2 bars", "4 bars" }, 1);
 
     // Groove
-    choice (ParamIDs::pattern, "Groove", namesFrom ((int) sgk::groovePatterns().size(),
-                                                    [] (int i) { return sgk::groovePatterns()[(size_t) i].name; }), 1);
+    auto grooveNames = namesFrom ((int) sgk::groovePatterns().size(),
+                                  [] (int i) { return sgk::groovePatterns()[(size_t) i].name.c_str(); });
+    grooveNames.add ("* Random riff *");
+    choice (ParamIDs::pattern, "Groove", grooveNames, 1);
+    choice (ParamIDs::section, "Section", namesFrom (sgk::numSections, sgk::sectionName), 0);
+    layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::riffSeed, 1 }, "Riff Seed", 1, 99999, 1));
+    unitFloat (ParamIDs::riffDensity, "Riff Density", 0.0f, 0.5f);
     unitFloat (ParamIDs::swing, "Swing", 0.0f, 0.25f);
     unitFloat (ParamIDs::gate, "Gate", 0.1f, 0.55f);
     layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::velocity, 1 }, "Velocity", 1, 127, 96));
@@ -136,6 +141,9 @@ sgk::GrooveSettings SoulfulGrooveKeysProcessor::currentSettings() const
     s.velocity = asInt (ParamIDs::velocity);
     s.humanize = raw (ParamIDs::humanize);
     s.fillEveryBars = fillChoices[juce::jlimit (0, 3, asInt (ParamIDs::fills))];
+    s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
+    s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
+    s.riffDensity = raw (ParamIDs::riffDensity);
 
     return s;
 }
@@ -148,6 +156,21 @@ void SoulfulGrooveKeysProcessor::setParameterFromUI (const juce::String& id, flo
         p->setValueNotifyingHost (p->convertTo0to1 (plainValue));
         p->endChangeGesture();
     }
+}
+
+void SoulfulGrooveKeysProcessor::rollNewRiff()
+{
+    setParameterFromUI (ParamIDs::riffSeed, (float) juce::Random::getSystemRandom().nextInt ({ 1, 100000 }));
+    setParameterFromUI (ParamIDs::pattern, (float) sgk::randomPatternIndex());
+}
+
+void SoulfulGrooveKeysProcessor::rollNewProgression()
+{
+    const int length = juce::roundToInt (raw (ParamIDs::progLength));
+    const auto degrees = sgk::randomProgression ((std::uint32_t) juce::Random::getSystemRandom().nextInt(), length);
+
+    for (int i = 0; i < (int) degrees.size(); ++i)
+        setParameterFromUI (ParamIDs::slot (i), (float) degrees[(size_t) i]);
 }
 
 //==============================================================================
@@ -263,8 +286,8 @@ void SoulfulGrooveKeysProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         expectedNextPpq = internalPpq = startPpq + blockBeats;
 
         const auto step = (long long) std::floor (startPpq / sgk::stepLength);
-        const auto& pattern = sgk::groovePatterns()[(size_t) juce::jlimit (0, (int) sgk::groovePatterns().size() - 1, settings.pattern)];
-        uiStep = (int) (((step % pattern.length()) + pattern.length()) % pattern.length());
+        const int patternLength = sgk::GrooveEngine::patternLength (settings);
+        uiStep = (int) (((step % patternLength) + patternLength) % patternLength);
         uiSlot = sgk::GrooveEngine::slotForStep (step, settings);
     }
     else
@@ -326,6 +349,14 @@ int SoulfulGrooveKeysProcessor::clipLengthInBars (int bars) const
     if (bars > 0)
         return bars;
 
+    if (bars == songArrangement)
+    {
+        int total = 0;
+        for (const auto& part : sgk::defaultArrangement())
+            total += part.bars;
+        return total;
+    }
+
     return juce::jmax (1, sgk::GrooveEngine::loopLengthInSteps (currentSettings()) / 16);
 }
 
@@ -341,7 +372,21 @@ juce::MidiFile SoulfulGrooveKeysProcessor::createMidiClip (int bars, ClipPart pa
     track.addEvent (juce::MidiMessage::tempoMetaEvent (juce::roundToInt (60000000.0 / lastBpm.load())), 0.0);
     track.addEvent (juce::MidiMessage::timeSignatureMetaEvent (4, 4), 0.0);
 
-    for (const auto& e : sgk::GrooveEngine::renderClip (settings, beats))
+    std::vector<sgk::NoteEvent> clipEvents;
+    if (bars == songArrangement)
+    {
+        std::vector<sgk::GrooveEngine::Marker> markers;
+        clipEvents = sgk::GrooveEngine::renderArrangement (settings, sgk::defaultArrangement(), &markers);
+
+        for (const auto& m : markers)
+            track.addEvent (juce::MidiMessage::textMetaEvent (6, m.name), m.ppq * ticksPerQuarter);   // DAW markers
+    }
+    else
+    {
+        clipEvents = sgk::GrooveEngine::renderClip (settings, beats);
+    }
+
+    for (const auto& e : clipEvents)
     {
         if ((part == ClipPart::chords && e.part != sgk::Part::chords)
             || (part == ClipPart::bass && e.part != sgk::Part::bass))
@@ -367,7 +412,10 @@ juce::MidiFile SoulfulGrooveKeysProcessor::createMidiClip (int bars, ClipPart pa
 juce::String SoulfulGrooveKeysProcessor::clipFileName (int bars, ClipPart part) const
 {
     const auto s = currentSettings();
-    const auto& pattern = sgk::groovePatterns()[(size_t) juce::jlimit (0, (int) sgk::groovePatterns().size() - 1, s.pattern)];
+    auto patternSettings = s;
+    if (bars == songArrangement)
+        patternSettings.section = sgk::Section::main;
+    const auto pattern = sgk::GrooveEngine::resolvePattern (patternSettings);
 
     juce::StringArray chords;
     for (int i = 0; i < juce::jmin (s.progressionLength, 4); ++i)
@@ -376,7 +424,8 @@ juce::String SoulfulGrooveKeysProcessor::clipFileName (int bars, ClipPart part) 
         chords.add ("etc");
 
     const juce::String partName = part == ClipPart::chords ? " chords" : part == ClipPart::bass ? " bass" : "";
-    const auto name = chords.joinIntoString ("-") + " " + pattern.name + partName + " "
+    const juce::String length = bars == songArrangement ? juce::String ("Song ") : juce::String();
+    const auto name = chords.joinIntoString ("-") + " " + juce::String (pattern.name) + partName + " " + length
                     + juce::String (clipLengthInBars (bars)) + "bars " + juce::String (juce::roundToInt (lastBpm.load())) + "bpm";
 
     return juce::File::createLegalFileName (name) + ".mid";

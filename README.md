@@ -15,14 +15,17 @@ semplice **suono guida** (e‑piano) per farti sentire subito il riff.
 
 | Sezione | Cosa fa |
 |---|---|
-| **Progression** | 1–8 accordi per gradi della scala (I…VII), ogni accordo dura ½, 1, 2 o 4 battute. 12 preset: *Dorian Vamp i‑IV*, *Soulful Descent IV‑iii‑ii‑I*, *ii‑V*, *Royal Road*, *Minor Flow*, *8‑Bar Journey*… |
+| **Progression** | 1–8 accordi per gradi della scala (I…VII), ogni accordo dura ½, 1, 2 o 4 battute. 17 preset: *Dorian Vamp i‑IV*, *Soulful Descent IV‑iii‑ii‑I*, *ii‑V*, *Royal Road*, *Minor Flow*, *8‑Bar Journey*, e progressioni sul **circolo delle quinte** (*vi‑ii‑V‑I*, *iii‑vi‑ii‑V*, *Full Circle I‑IV‑vii‑iii‑vi‑ii‑V‑I*…). **DICE** crea una progressione casuale ma musicale, con i movimenti tipici della soulful house (ii‑V, IV‑iii‑ii, quinte discendenti…). |
+| **Circle of fifths** | Circolo delle quinte interattivo: anello esterno = tonalità maggiori, interno = relative minori. Evidenzia la tonalità e le tonalità vicine (I, IV, V), e disegna il **percorso della progressione** sul circolo con l'accordo che sta suonando. Clicca una tonalità per selezionarla (anello interno → modo minore/dorico). |
 | **Harmony & Scales** | 12 tonalità × 8 scale/modi (Maggiore, **Dorica**, Minore naturale, Misolidia, Lidia, Frigia, Minore armonica, Minore melodica). Accordi diatonici costruiti per terze: triadi, 7ª, 9ª, 11ª/13ª (le tensioni "brutte" come la b9 su accordi non di dominante vengono tolte automaticamente). |
 | **Voicing** | *Close*, *Drop 2*, *Rootless* (stile Bill Evans), *Wide* (due mani: fondamentale+7ª a sinistra), *Quartal* (quarte diatoniche, sound deep house). Il **voice leading** è automatico: ogni accordo sceglie il rivolto più vicino al precedente. **Register** sposta l'altezza della mano destra. |
-| **Groove** | 10 ritmi a due mani su 2 battute: *Classic Offbeat Stabs*, *Soulful Push* (anticipi legati sull'accordo successivo), *Deep Chords*, *Funky 16ths*, *Gospel Bounce*, *Chicago Jack*, *Garage Skip*, *Late Night Rhodes*, *Disco Octaves*, *Long Chords*. Swing (fino al feel terzinato), Gate, Velocity, Humanize. |
+| **Groove** | 20 ritmi a due mani su 2 battute: *Classic Offbeat Stabs*, *Soulful Push* (anticipi legati sull'accordo successivo), *Deep Chords*, *Funky 16ths*, *Gospel Bounce*, *Chicago Jack*, *Garage Skip*, *Late Night Rhodes*, *Disco Octaves*, *Long Chords* e i funk: *Funk Clav Chops*, *Ghost Note Funk*, *Nile Chops*, *Anticipation Funk*, *Gospel Shout 16ths*, *Neo Soul Lazy*, *Boogie Stabs*, *Offbeat Doubles*, *Broken Beat*, *Slap Bass Funk*. Swing (fino al feel terzinato), Gate, Velocity, Humanize. |
+| **NEW RIFF** | Genera sul momento un **riff funky casuale** (accordi + basso) su 2 battute: colpi sui controtempi, ghost notes, anticipi legati sulla battuta successiva, seconda battuta come "risposta" alla prima. **Density** va da stab radi a chop di sedicesimi. Il riff viene salvato col progetto (seme del riff), quindi lo ritrovi uguale alla riapertura. |
+| **Song section** | *Main groove*, *Intro* (solo accenti, niente basso), *Break* (accordi lunghi tipo pad), *Build‑up* (ottavi poi sedicesimi incalzanti), *Drop* (groove pieno, più forte, basso in ottave), *Outro*. È un parametro **automatizzabile**: puoi cambiarlo nella timeline della DAW per costruire il brano. |
 | **Fills** | Ogni 2/4/8 battute l'ultimo quarto diventa una scaletta **pentatonica** (minore o maggiore, a seconda della scala) che porta all'accordo successivo. |
 | **Bass** | Mano sinistra: Off / Fondamentale / Ottave / Fondamentale + 5ª. |
 | **Play mode** | *Host transport*: suona quando premi Play nella DAW, a tempo. *Hold a key*: suona mentre tieni premuto un tasto, e **il tasto sceglie la tonalità** (perfetto per suonare live o nello Standalone). |
-| **MIDI Clip** | **DRAG MIDI TO DAW**: trascina il riquadro su una traccia e ottieni la clip MIDI del groove. Lunghezza: *Full loop* (calcolata in automatico finché progressione, ritmo e fill si ripetono) o 1–32 battute. Note: accordi + basso, solo accordi o solo basso. **Save .mid…** salva il file dove vuoi. Una copia di ogni clip trascinata finisce in `Documenti/Soulful Groove Keys/`. |
+| **MIDI Clip** | **DRAG MIDI TO DAW**: trascina il riquadro su una traccia e ottieni la clip MIDI del groove. Lunghezza: *Full loop* (calcolata in automatico finché progressione, ritmo e fill si ripetono), 1–32 battute, oppure **Song: intro > drop > outro** = arrangiamento completo di 60 battute (Intro 8 · Main 16 · Break 8 · Build‑up 4 · Drop 16 · Outro 8) con i **marker** delle sezioni. Note: accordi + basso, solo accordi o solo basso. **Save .mid…** salva il file dove vuoi. Una copia di ogni clip trascinata finisce in `Documenti/Soulful Groove Keys/`. |
 | **Guide sound & MIDI out** | Suono guida e‑piano (Tone, Reverb, Volume, disattivabile). **PREVIEW** fa partire il groove anche a DAW ferma, per ascoltare il riff mentre cambi i parametri. *MIDI out*: tutto sul canale 1 oppure **basso sul canale 2**, per mandarlo a uno strumento diverso. |
 
 ## Download
@@ -84,6 +87,8 @@ Per usare una copia locale di JUCE: `-DJUCE_DIR=/percorso/JUCE`.
 ```
 Source/engine/Theory.*        scale, accordi diatonici, nomi accordi, voicing e voice leading (C++ puro)
 Source/engine/GrooveEngine.*  pattern ritmici, progressioni, swing/humanize, fill → eventi nota
+Source/engine/Generators.*    riff casuali, progressioni casuali, sezioni del brano, arrangiamento
+Source/CircleOfFifths.*       circolo delle quinte interattivo
 Source/EPianoVoice.h          piano elettrico FM interno
 Source/PluginProcessor.*      parametri, sincronizzazione col tempo della DAW, MIDI in/out, audio
 Source/PluginEditor.*         interfaccia grafica
@@ -91,8 +96,8 @@ tests/EngineTests.cpp         test del motore (nessuna dipendenza da JUCE)
 ```
 
 Per aggiungere un groove, aggiungi una riga in `groovePatterns()` (`GrooveEngine.cpp`):
-ogni carattere è un sedicesimo — `X` accento, `x` colpo, `>` anticipo (suona l'accordo successivo),
-`=` tieni, `.` pausa.
+ogni carattere è un sedicesimo — `X` accento, `x` colpo, `g` ghost note, `>` anticipo (suona l'accordo
+successivo), `=` tieni, `.` pausa.
 
 ## Licenza
 

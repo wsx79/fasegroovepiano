@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CircleOfFifths.h"
 #include "PluginProcessor.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -76,11 +77,12 @@ private:
 class PatternView : public juce::Component
 {
 public:
-    void setState (int patternIndex, int step, int fillEveryBars);
+    void setState (const sgk::GroovePattern& pattern, int step);
     void paint (juce::Graphics&) override;
 
 private:
-    int pattern = 0, currentStep = -1, fills = 0;
+    sgk::GroovePattern pattern;
+    int currentStep = -1;
 };
 
 /** Drag this tile into the DAW to drop the current groove as a MIDI clip. */
@@ -120,16 +122,19 @@ private:
     // Progression
     juce::Label presetLabel;
     juce::ComboBox presetBox;
+    juce::TextButton diceProgression { "DICE" };
     Choice progLength, chordLength;
     juce::OwnedArray<ChordSlot> slots;
 
     // Harmony
     Choice key, scale, extension, voicing, bass;
     Knob registerKnob;
+    CircleOfFifths circle;
 
     // Groove
-    Choice pattern, fills, playMode;
-    Knob swing, gate, velocity, humanize;
+    Choice pattern, section, fills, playMode;
+    juce::TextButton newRiffButton { "NEW RIFF" };
+    Knob swing, gate, velocity, humanize, riffDensity;
 
     // Sound & MIDI
     juce::ToggleButton soundToggle { "Guide sound" };
@@ -151,7 +156,7 @@ private:
     SoulfulGrooveKeysProcessor::ClipPart selectedClipPart() const;
     void saveClip();
 
-    juce::Rectangle<int> headerArea, chordDisplayArea, progressionPanel, harmonyPanel, groovePanel,
+    juce::Rectangle<int> headerArea, chordDisplayArea, progressionPanel, harmonyPanel, circlePanel, groovePanel,
                          soundPanel, gridPanel, clipPanel;
 
     juce::String currentChord { "-" }, currentRoman, currentKey;

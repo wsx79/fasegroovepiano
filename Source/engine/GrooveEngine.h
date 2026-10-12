@@ -3,6 +3,7 @@
 // Rhythm + progression sequencer. Turns a musical-time window (in quarter
 // notes, "ppq") into note on/off events. Pure C++ (no JUCE).
 
+#include "Generators.h"
 #include "Theory.h"
 
 #include <array>
@@ -17,12 +18,12 @@ constexpr double stepLength = 0.25;   // a 16th note, in quarter notes
 
 //==============================================================================
 /** A two-hand rhythm. Each character is one 16th step:
-      'X' accented hit   'x' normal hit   '>' push (hit with the NEXT chord)
-      '=' hold previous  '.' rest
+      'X' accented hit   'x' normal hit   'g' ghost note (very soft)
+      '>' push (hit with the NEXT chord)  '=' hold previous  '.' rest
     The right-hand line plays the chord, the left-hand line plays the bass. */
 struct GroovePattern
 {
-    const char* name;
+    std::string name;
     std::string rightHand;
     std::string leftHand;
 
@@ -30,6 +31,9 @@ struct GroovePattern
 };
 
 const std::vector<GroovePattern>& groovePatterns();
+
+/** Index of the "Random riff" entry, right after the preset grooves. */
+int randomPatternIndex() noexcept;
 
 /** Ready-made progressions (scale degrees, 0 = I). */
 struct ProgressionPreset
@@ -65,6 +69,10 @@ struct GrooveSettings
     int velocity = 96;
     float humanize = 0.25f;
     int fillEveryBars = 0;                 // 0 = no fills
+
+    Section section = Section::main;
+    std::uint32_t riffSeed = 1;            // used when pattern == randomPatternIndex()
+    float riffDensity = 0.5f;
 };
 
 enum class Part { chords = 0, bass = 1 };
@@ -93,6 +101,15 @@ public:
 
     bool anyNoteSounding() const noexcept;
 
+    /** The groove actually played: preset or random riff, adapted to the section. */
+    static GroovePattern resolvePattern (const GrooveSettings& s);
+    static int patternLength (const GrooveSettings& s) noexcept;
+
+    /** Renders a whole song (intro, main, break...) with section markers. */
+    struct Marker { double ppq; std::string name; };
+    static std::vector<NoteEvent> renderArrangement (const GrooveSettings& s, const std::vector<ArrangementPart>& parts,
+                                                     std::vector<Marker>* markers = nullptr);
+
     /** Length (in 16th steps) after which progression, groove and fills all repeat. */
     static int loopLengthInSteps (const GrooveSettings& s) noexcept;
 
@@ -110,7 +127,9 @@ public:
 private:
     struct PendingOn { double ppq; int note; int velocity; double duration; bool tie = false; Part part = Part::chords; };
 
-    void collectStep (long long step, const GrooveSettings& s,
+    const GroovePattern& patternFor (const GrooveSettings& s);
+
+    void collectStep (long long step, const GrooveSettings& s, const GroovePattern& pattern,
                       const std::array<Chord, maxProgressionLength>& chords,
                       const std::array<VoicedChord, maxProgressionLength>& voiced);
     void flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out);
@@ -119,6 +138,13 @@ private:
     std::array<Part, 128> partOf {};
     std::vector<PendingOn> pending;
     std::vector<int> scratch;
+
+    // Cache of the resolved pattern, rebuilt only when its inputs change.
+    GroovePattern cachedPattern;
+    int cachedIndex = -1;
+    std::uint32_t cachedSeed = 0;
+    float cachedDensity = -1.0f;
+    Section cachedSection = Section::main;
 };
 
 } // namespace sgk
