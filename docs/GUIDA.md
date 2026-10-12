@@ -18,6 +18,7 @@ suonarla col tuo piano, Rhodes o synth preferito.
 6. [Costruire un brano: intro, break, drop](#6-costruire-un-brano-intro-break-drop)
 7. [Ricette soulful e jackin' house](#7-ricette-soulful-house)
 8. [Domande frequenti e problemi](#8-domande-frequenti-e-problemi)
+9. [Ascolta la mia musica](#9-ascolta-la-mia-musica)
 
 ---
 
@@ -300,3 +301,16 @@ Trovi tutte le novità, versione per versione, nel [changelog](../CHANGELOG.it.m
 
 **Il plugin si collega a internet o raccoglie dati?**
 No. Vedi la [privacy policy](../PRIVACY.it.md).
+
+---
+
+## 9. Ascolta la mia musica
+
+Fase Groove Piano è creato da **Fabio 'Pitch' Serra**, DJ e producer. Se ti piace il sound di
+questo plugin, ti piaceranno anche le mie produzioni:
+
+- 🎧 **Ascolta le mie produzioni su Spotify:** [Fabio 'Pitch' Serra su Spotify](https://open.spotify.com/search/Fabio%20%27Pitch%27%20Serra)
+- 🛒 **Scarica le mie canzoni** sui maggiori distributori digitali di musica: cerca
+  **Fabio 'Pitch' Serra**.
+
+Grazie per l'ascolto e per supportare la musica indipendente! 🎹🔥

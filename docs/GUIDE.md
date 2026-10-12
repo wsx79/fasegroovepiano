@@ -18,6 +18,7 @@ your DAW** and play it with your favourite piano, Rhodes or synth.
 6. [Building a track: intro, break, drop](#6-building-a-track-intro-break-drop)
 7. [Soulful and jackin' house recipes](#7-soulful-and-jackin-house-recipes)
 8. [FAQ and troubleshooting](#8-faq-and-troubleshooting)
+9. [Listen to my music](#9-listen-to-my-music)
 
 ---
 
@@ -300,3 +301,16 @@ See the [changelog](../CHANGELOG.md) and the
 
 **Does the plug-in connect to the internet or collect data?**
 No. See the [privacy policy](../PRIVACY.md).
+
+---
+
+## 9. Listen to my music
+
+Fase Groove Piano is made by **Fabio 'Pitch' Serra**, DJ and producer. If you like the sound of
+this plug-in, you'll probably like my tracks too:
+
+- 🎧 **Listen to my productions on Spotify:** [Fabio 'Pitch' Serra on Spotify](https://open.spotify.com/search/Fabio%20%27Pitch%27%20Serra)
+- 🛒 **Download my tracks** from all the major digital music stores: just search for
+  **Fabio 'Pitch' Serra**.
+
+Thanks for listening and for supporting independent music! 🎹🔥

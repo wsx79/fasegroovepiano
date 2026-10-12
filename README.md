@@ -77,6 +77,11 @@ The same links are in the plug-in: **CREDITS → DONATE: Ko-fi / DONATE: PayPal*
 
 Thank you! A star ⭐ on the repository or a share helps a lot too.
 
+### Listen to my music
+
+- 🎧 **Listen to my productions on Spotify:** [Fabio 'Pitch' Serra on Spotify](https://open.spotify.com/search/Fabio%20%27Pitch%27%20Serra)
+- 🛒 **Download my tracks** from all the major digital music stores: search for **Fabio 'Pitch' Serra**.
+
 ## Credits
 
 <p align="center"><img src="docs/credits.png" alt="Credits" width="440"></p>

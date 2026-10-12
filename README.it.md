@@ -76,6 +76,11 @@ Le stesse donazioni si raggiungono dal plugin: **CREDITS → DONATE: Ko-fi / DON
 
 Grazie! Anche una stella ⭐ al repository o una condivisione aiutano tantissimo.
 
+### Ascolta la mia musica
+
+- 🎧 **Ascolta le mie produzioni su Spotify:** [Fabio 'Pitch' Serra su Spotify](https://open.spotify.com/search/Fabio%20%27Pitch%27%20Serra)
+- 🛒 **Scarica le mie canzoni** sui maggiori distributori digitali di musica: cerca **Fabio 'Pitch' Serra**.
+
 ## Crediti
 
 <p align="center"><img src="docs/credits.png" alt="Crediti" width="440"></p>

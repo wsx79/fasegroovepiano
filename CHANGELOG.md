@@ -6,6 +6,12 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- "Listen to my music" section in the guide and README: Fabio 'Pitch' Serra on Spotify and on the
+  major digital music stores.
+
 ## [1.1.0] - 2026-10-12
 
 This version comes from the first beta testers' suggestions. Thanks to **John Consalvo**!
