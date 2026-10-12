@@ -24,10 +24,10 @@ Nessuno di questi file lascia il tuo computer.
 
 ## Link esterni
 
-Nella pagina **CREDITS** ci sono i pulsanti *SOURCE CODE* (GitHub) e, se presente, *DONATE*
-(Ko-fi). Si aprono **solo se li clicchi**, nel tuo browser: da quel momento valgono le privacy
-policy di quei siti. Le donazioni sono gestite interamente da Ko-fi; l'autore non riceve i tuoi
-dati di pagamento.
+Nella pagina **CREDITS** ci sono i pulsanti *SOURCE CODE* (GitHub), *DONATE: Ko-fi* e
+*DONATE: PayPal*. Si aprono **solo se li clicchi**, nel tuo browser: da quel momento valgono le
+privacy policy di quei siti. Le donazioni sono gestite interamente da Ko-fi o PayPal; l'autore
+non riceve i tuoi dati di pagamento.
 
 ## Contatti
 

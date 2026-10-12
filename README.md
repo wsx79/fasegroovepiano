@@ -60,7 +60,12 @@ Per l'installazione segui la [guida](docs/GUIDA.md#1-installazione).
 Fase Groove Piano è **gratuito**. Se ti è utile e vuoi sostenerne lo sviluppo puoi fare una
 donazione libera:
 
-**☕ Ko-fi: [ko-fi.com/TUO-NOME](https://ko-fi.com/TUO-NOME)** <!-- TODO: inserire il link Ko-fi reale -->
+<p align="center">
+  <a href="https://ko-fi.com/fabios1979"><b>☕ Ko-fi – ko-fi.com/fabios1979</b></a> ·
+  <a href="https://paypal.me/fabios79"><b>💙 PayPal – paypal.me/fabios79</b></a>
+</p>
+
+Le stesse donazioni si raggiungono dal plugin: **CREDITS → DONATE: Ko-fi / DONATE: PayPal**.
 
 Grazie! Anche una stella ⭐ al repository o una condivisione aiutano tantissimo.
 
@@ -151,5 +156,5 @@ Per aggiungere un groove, aggiungi una riga in `groovePatterns()` (`GrooveEngine
 ogni carattere è un sedicesimo: `X` accento, `x` colpo, `g` ghost note, `>` anticipo (suona
 l'accordo successivo), `=` tieni, `.` pausa.
 
-Per attivare il pulsante **DONATE** nel plugin, inserisci il link Ko-fi in `donateUrl`
-(`Source/Branding.h`).
+I link di donazione e del codice sorgente sono in `Source/Branding.h` (`kofiUrl`, `paypalUrl`,
+`sourceUrl`). Se un link è vuoto, il pulsante corrispondente viene nascosto.

@@ -272,22 +272,35 @@ AboutOverlay::AboutOverlay() : artist (Branding::artistLogo())
     sourceButton.onClick = [] { juce::URL (Branding::sourceUrl).launchInDefaultBrowser(); };
     addAndMakeVisible (sourceButton);
 
-    donateButton.setColour (juce::TextButton::buttonColourId, Palette::accent2);
-    donateButton.setColour (juce::TextButton::textColourOffId, Palette::background);
-    donateButton.onClick = [] { juce::URL (Branding::donateUrl).launchInDefaultBrowser(); };
-    addChildComponent (donateButton);
-    donateButton.setVisible (juce::String (Branding::donateUrl).isNotEmpty());
+    auto setUpDonate = [this] (juce::TextButton& b, const char* url, juce::Colour colour)
+    {
+        b.setColour (juce::TextButton::buttonColourId, colour);
+        b.setColour (juce::TextButton::textColourOffId, Palette::background);
+        b.onClick = [url] { juce::URL (url).launchInDefaultBrowser(); };
+        addChildComponent (b);
+        b.setVisible (juce::String (url).isNotEmpty());
+    };
+
+    setUpDonate (kofiButton, Branding::kofiUrl, Palette::accent);
+    setUpDonate (paypalButton, Branding::paypalUrl, Palette::accent2);
 }
 
 void AboutOverlay::resized()
 {
     auto row = card().toNearestInt().reduced (36, 28).removeFromBottom (58).removeFromTop (30);
-    const bool donate = donateButton.isVisible();
-    const int w = 150, total = donate ? 2 * w + 12 : w;
-    row = row.withSizeKeepingCentre (total, row.getHeight());
-    sourceButton.setBounds (row.removeFromLeft (w));
-    if (donate)
-        donateButton.setBounds (row.removeFromRight (w));
+
+    juce::Array<juce::Component*> buttons { &sourceButton };
+    for (auto* b : { &kofiButton, &paypalButton })
+        if (b->isVisible())
+            buttons.add (b);
+
+    const int w = 150, gap = 12;
+    row = row.withSizeKeepingCentre (buttons.size() * w + (buttons.size() - 1) * gap, row.getHeight());
+    for (auto* b : buttons)
+    {
+        b->setBounds (row.removeFromLeft (w));
+        row.removeFromLeft (gap);
+    }
 }
 
 void AboutOverlay::paint (juce::Graphics& g)

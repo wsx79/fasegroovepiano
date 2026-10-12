@@ -156,7 +156,9 @@ Vedi il prossimo capitolo.
 
 ### CREDITS
 
-Il pulsante in alto a sinistra apre i crediti, la licenza e il link al codice sorgente.
+Il pulsante in alto a sinistra apre i crediti, la licenza, il link al codice sorgente e i
+pulsanti per una donazione libera (**Ko-fi** o **PayPal**): il plugin è gratuito, se ti piace
+puoi supportarne lo sviluppo.
 
 ---
 

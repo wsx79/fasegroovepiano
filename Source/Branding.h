@@ -16,8 +16,9 @@ namespace Branding
     inline constexpr const char* licence   = "Free & open source - GNU AGPL v3";
     inline constexpr const char* sourceUrl = "https://github.com/wsx79/Pianovst";
 
-    /** Ko-fi page for donations. Leave empty to hide the DONATE button. */
-    inline constexpr const char* donateUrl = "";
+    /** Donation pages (an empty URL hides its button). */
+    inline constexpr const char* kofiUrl   = "https://ko-fi.com/fabios1979";
+    inline constexpr const char* paypalUrl = "https://paypal.me/fabios79";
 
     /** The square app icon (slanted groove keys). */
     std::unique_ptr<juce::Drawable> createIcon();
