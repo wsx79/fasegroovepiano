@@ -80,6 +80,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout SoulfulGrooveKeysProcessor::
     unitFloat (ParamIDs::humanize, "Humanize", 0.0f, 0.3f);
     choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars" }, 2);
     choice (ParamIDs::playMode, "Play Mode", { "Host transport", "Hold a key" }, 0);
+
+    // Tempo: follows the DAW by default, or runs at its own BPM.
+    layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::tempoSync, 1 }, "Sync Tempo to DAW", true));
+    layout.add (std::make_unique<AudioParameterFloat> (ParameterID { ParamIDs::tempo, 1 }, "Tempo",
+                                                       NormalisableRange<float> (60.0f, 180.0f, 0.1f), 124.0f,
+                                                       AudioParameterFloatAttributes().withStringFromValueFunction ([] (float v, int)
+                                                       {
+                                                           return String (v, 1) + " BPM";
+                                                       })));
     choice (ParamIDs::bassChannel, "MIDI Out Channels", { "All on channel 1", "Bass on channel 2" }, 0);
 
     // Sound
@@ -244,30 +253,35 @@ void SoulfulGrooveKeysProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     uiHeldRoot = heldCount > 0 ? settings.keyRoot : -1;
 
     // ---- Timing ----
-    double bpm = 120.0, hostPpq = 0.0;
+    double dawBpm = 120.0, hostPpq = 0.0;
     bool hostPlaying = false, haveHostPpq = false;
 
     if (auto* ph = getPlayHead())
     {
         if (auto pos = ph->getPosition())
         {
-            if (auto b = pos->getBpm())          bpm = *b;
+            if (auto b = pos->getBpm())          dawBpm = *b;
             if (auto p = pos->getPpqPosition()) { hostPpq = *p; haveHostPpq = true; }
             hostPlaying = pos->getIsPlaying();
         }
     }
 
-    bpm = juce::jlimit (20.0, 400.0, bpm);
+    // Synced: the DAW's tempo and position. Unsynced: our own BPM and clock,
+    // still started/stopped by the DAW's play button.
+    const bool tempoSynced = raw (ParamIDs::tempoSync) > 0.5f;
+    hostBpm = juce::jlimit (20.0, 400.0, dawBpm);
+
+    const double bpm = tempoSynced ? hostBpm.load() : juce::jlimit (20.0, 400.0, (double) raw (ParamIDs::tempo));
     lastBpm = bpm;
     const double samplesPerBeat = sampleRate * 60.0 / bpm;
     const double blockBeats = numSamples / samplesPerBeat;
 
-    const bool followHost = hostPlaying && haveHostPpq;
+    const bool followHost = tempoSynced && hostPlaying && haveHostPpq;
     const bool preview = previewOn.load();
 
     // Hold mode plays while a key is down; otherwise it follows the host, and
     // Preview lets the groove run on its own clock while the host is stopped.
-    const bool running = holdMode ? (heldCount > 0 || preview) : (followHost || preview);
+    const bool running = holdMode ? (heldCount > 0 || preview) : (hostPlaying || preview);
 
     double startPpq = 0.0;
     if (followHost)

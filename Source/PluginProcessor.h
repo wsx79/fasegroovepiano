@@ -28,6 +28,8 @@ namespace ParamIDs
     inline constexpr const char* playMode    = "playMode";
     inline constexpr const char* bassChannel = "bassChannel";
     inline constexpr const char* section     = "section";
+    inline constexpr const char* tempoSync   = "tempoSync";
+    inline constexpr const char* tempo       = "tempo";
     inline constexpr const char* riffSeed    = "riffSeed";
     inline constexpr const char* riffDensity = "riffDensity";
     inline constexpr const char* sound       = "sound";
@@ -101,7 +103,8 @@ public:
     juce::AudioProcessorValueTreeState apvts;
 
     std::atomic<bool> previewOn { false };   // play the groove without the host transport
-    std::atomic<double> lastBpm { 120.0 };
+    std::atomic<double> lastBpm { 120.0 };   // tempo in use (DAW or manual)
+    std::atomic<double> hostBpm { 120.0 };   // what the DAW reports
 
     // Read by the editor for display.
     std::atomic<int> uiStep { -1 };      // current 16th within the pattern, -1 = stopped

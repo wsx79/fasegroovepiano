@@ -307,7 +307,9 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
       soundAttachment (p.apvts, ParamIDs::sound, soundToggle),
       tone (p.apvts, ParamIDs::tone, "Tone"),
       reverb (p.apvts, ParamIDs::reverb, "Reverb"),
-      volume (p.apvts, ParamIDs::volume, "Volume")
+      volume (p.apvts, ParamIDs::volume, "Volume"),
+      syncAttachment (p.apvts, ParamIDs::tempoSync, syncButton),
+      tempoAttachment (p.apvts, ParamIDs::tempo, tempoSlider)
 {
     setLookAndFeel (&lookAndFeel);
 
@@ -354,6 +356,30 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
         if (sgk::scaleIsMinor (currentScale) != minorKey)
             processor.setParameterFromUI (ParamIDs::scale, minorKey ? 1.0f : 0.0f);   // Dorian / Major
     };
+
+    // Tempo: "SYNC DAW" on = follow the DAW; off = set the BPM by hand.
+    syncButton.setClickingTogglesState (true);
+    syncButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    syncButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent);
+    syncButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    syncButton.setColour (juce::TextButton::textColourOnId, Palette::background);
+    syncButton.setTooltip ("On: follow the DAW tempo. Off: set your own BPM.");
+
+    tempoSlider.setSliderStyle (juce::Slider::LinearBar);
+    tempoSlider.setColour (juce::Slider::trackColourId, Palette::accent2.withAlpha (0.55f));
+    tempoSlider.setColour (juce::Slider::backgroundColourId, Palette::background);
+    tempoSlider.setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+    tempoSlider.setTextValueSuffix ({});
+    tempoSlider.setTooltip ("Drag, or double-click to type the BPM");
+    tempoSlider.setDoubleClickReturnValue (true, 124.0);
+
+    dawTempo.setColour (juce::Label::backgroundColourId, Palette::background);
+    dawTempo.setColour (juce::Label::textColourId, Palette::text);
+    dawTempo.setJustificationType (juce::Justification::centred);
+    dawTempo.setFont (font (15.0f, true));
+
+    for (auto* c : std::initializer_list<juce::Component*> { &syncButton, &tempoSlider, &dawTempo })
+        addAndMakeVisible (c);
 
     previewButton.setClickingTogglesState (true);
     previewButton.setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -482,6 +508,11 @@ void SoulfulGrooveKeysEditor::timerCallback()
         marks.push_back ({ chords[(size_t) i].rootPc, chords[(size_t) i].third == 3 });
     circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), marks, playingSlot);
     previewButton.setToggleState (processor.previewOn.load(), juce::dontSendNotification);
+
+    const bool synced = syncButton.getToggleState();
+    tempoSlider.setVisible (! synced);
+    dawTempo.setVisible (synced);
+    dawTempo.setText (juce::String (processor.hostBpm.load(), 1) + " BPM  (DAW)", juce::dontSendNotification);
 }
 
 void SoulfulGrooveKeysEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& title)
@@ -528,6 +559,7 @@ void SoulfulGrooveKeysEditor::paint (juce::Graphics& g)
     g.setFont (font (13.0f));
     g.drawText ((showingHold ? juce::String ("HOLD: ") : juce::String()) + currentKey, cd, juce::Justification::centredRight);
 
+    drawPanel (g, tempoArea, "TEMPO");
     drawPanel (g, progressionPanel, "PROGRESSION");
     drawPanel (g, harmonyPanel, "HARMONY & SCALES");
     drawPanel (g, circlePanel, "CIRCLE OF FIFTHS");
@@ -549,7 +581,17 @@ void SoulfulGrooveKeysEditor::resized()
     // Header
     auto top = r.removeFromTop (76);
     chordDisplayArea = top.removeFromRight (380).reduced (0, 4);
+    top.removeFromRight (10);
+    tempoArea = top.removeFromRight (330).reduced (0, 4);
     headerArea = top;
+    {
+        auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
+        auto controls = inner.withSizeKeepingCentre (inner.getWidth(), 32);
+        syncButton.setBounds (controls.removeFromLeft (96));
+        controls.removeFromLeft (8);
+        tempoSlider.setBounds (controls);
+        dawTempo.setBounds (controls);
+    }
     r.removeFromTop (10);
 
     // Progression

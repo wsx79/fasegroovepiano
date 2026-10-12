@@ -118,6 +118,7 @@ private:
 
     SoulfulGrooveKeysProcessor& processor;
     GrooveLookAndFeel lookAndFeel;
+    juce::TooltipWindow tooltips { this, 600 };
 
     // Progression
     juce::Label presetLabel;
@@ -145,6 +146,13 @@ private:
 
     PatternView patternView;
 
+    // Tempo
+    juce::TextButton syncButton { "SYNC DAW" };
+    juce::Slider tempoSlider;
+    juce::Label dawTempo;
+    juce::AudioProcessorValueTreeState::ButtonAttachment syncAttachment;
+    juce::AudioProcessorValueTreeState::SliderAttachment tempoAttachment;
+
     // MIDI clip export
     juce::Label clipLengthLabel, clipPartLabel;
     juce::ComboBox clipLength, clipPart;
@@ -156,7 +164,7 @@ private:
     SoulfulGrooveKeysProcessor::ClipPart selectedClipPart() const;
     void saveClip();
 
-    juce::Rectangle<int> headerArea, chordDisplayArea, progressionPanel, harmonyPanel, circlePanel, groovePanel,
+    juce::Rectangle<int> headerArea, tempoArea, chordDisplayArea, progressionPanel, harmonyPanel, circlePanel, groovePanel,
                          soundPanel, gridPanel, clipPanel;
 
     juce::String currentChord { "-" }, currentRoman, currentKey;
