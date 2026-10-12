@@ -142,6 +142,11 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
   quinte** (spicchi adiacenti), il punto bianco è l'accordo che sta suonando.
 - **Clicca** uno spicchio per cambiare tonalità: esterno → modo maggiore, interno → modo minore
   (Dorian). Se la scala attuale è già dello stesso tipo, viene mantenuta.
+- **Trascina un punto rosa** su un altro spicchio per cambiare quell'accordo della progressione.
+  Mentre trascini, gli accordi della scala attuale sono bordati di rosa (gli altri si spengono):
+  rilascia il punto su uno di loro e lo slot dell'accordo si aggiorna (il punto grande mostra il
+  numero dello slot). Se lo rilasci altrove l'accordo resta com'era. Se lo stesso accordo compare
+  due volte, si sposta il primo slot.
 
 ### Groove
 

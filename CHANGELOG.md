@@ -18,6 +18,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   for chords and bass (only where that hand is playing).
 - **8 new progressions** (30 in total), including Gospel Plagal, Lydian Dom Funk, Soul Borrowed,
   Dark Deep, Phrygian Deep, Deep House Classic, Jackin' Dorian and Neo Soul.
+- **Drag the dots on the circle of fifths:** drag a chord of the progression onto another chord of
+  the scale (drop targets are outlined in pink) to change it.
 - Guide: **quick harmony rules for house piano** and four new recipes.
 
 ### Changed

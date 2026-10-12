@@ -141,6 +141,10 @@ Outer ring = major keys, inner ring = relative minors.
   (adjacent slices) at a glance; the white dot is the chord that is playing.
 - **Click** a slice to change key: outer ring → major mode, inner ring → minor mode (Dorian). If
   the current scale is already of the same kind, it is kept.
+- **Drag a pink dot** onto another slice to change that chord of the progression. While you drag,
+  the chords of the current scale are outlined in pink (the others fade out); drop the dot on one
+  of them and the chord slot updates (the big dot shows the slot number). Dropping it anywhere
+  else leaves the chord as it was. When the same chord appears twice, the first slot moves.
 
 ### Groove
 

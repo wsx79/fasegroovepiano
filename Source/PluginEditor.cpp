@@ -724,6 +724,12 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
             processor.setParameterFromUI (ParamIDs::scale, minorKey ? 1.0f : 0.0f);   // Dorian / Major
     };
 
+    circle.onMoveChord = [this] (int slot, int degree)
+    {
+        processor.setParameterFromUI (ParamIDs::slot (slot), (float) degree);
+        presetBox.setSelectedId (0, juce::dontSendNotification);
+    };
+
     // Tempo: "SYNC DAW" on = follow the DAW; off = set the BPM by hand.
     syncButton.setClickingTogglesState (true);
     syncButton.setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -1121,7 +1127,13 @@ void FaseGroovePianoEditor::timerCallback()
     std::vector<CircleOfFifths::ChordMark> marks;
     for (int i = 0; i < s.progressionLength; ++i)
         marks.push_back ({ chords[(size_t) i].rootPc, chords[(size_t) i].third == 3 });
-    circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), marks, playingSlot);
+    std::vector<CircleOfFifths::ChordMark> diatonic;
+    for (int d = 0; d < 7; ++d)
+    {
+        const auto chord = sgk::buildChord (s.keyRoot, s.scale, d, s.extension);
+        diatonic.push_back ({ chord.rootPc, chord.third == 3 });
+    }
+    circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), marks, playingSlot, diatonic);
     previewButton.setToggleState (processor.previewOn.load(), juce::dontSendNotification);
 
     const bool synced = syncButton.getToggleState();

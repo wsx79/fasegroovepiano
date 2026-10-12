@@ -38,7 +38,7 @@ Rhodes or synth.
 - ↗️ **Approach chords:** the gospel half-step slide into every chord change (from above or below).
 - 🔁 **Progressions:** 1–8 chords, 30 presets (including circle-of-fifths progressions) and
   **DICE** for random but musical progressions.
-- ⭕ Interactive **circle of fifths** showing the path of your progression.
+- ⭕ Interactive **circle of fifths** showing the path of your progression: drag the dots to change chords.
 - 🥁 **34 two-hand grooves** (soulful, gospel, deep, **jackin' house**, funky, garage, disco…)
   plus **NEW RIFF**, a random funky riff generator, and optional fills (3 styles).
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).

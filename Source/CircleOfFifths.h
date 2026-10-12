@@ -5,7 +5,8 @@
 
 // Interactive circle of fifths: outer ring = major keys, inner ring = relative
 // minors. Shows the current key, its diatonic neighbours and the path the
-// progression draws around the circle. Click a key to select it.
+// progression draws around the circle. Click a key to select it; drag a dot
+// of the progression onto another chord of the scale to change that chord.
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -24,10 +25,17 @@ public:
     /** Called with the clicked root and whether the inner (minor) ring was clicked. */
     std::function<void (int pitchClass, bool minor)> onPick;
 
-    void setState (int keyRoot, bool minorKey, const std::vector<ChordMark>& progression, int playingIndex);
+    /** Called when the dot of progression slot `slot` is dropped on the chord of scale degree `degree`. */
+    std::function<void (int slot, int degree)> onMoveChord;
+
+    /** `diatonic` holds the chord on each scale degree (0..6), used as drop targets. */
+    void setState (int keyRoot, bool minorKey, const std::vector<ChordMark>& progression, int playingIndex,
+                   const std::vector<ChordMark>& diatonic);
 
     void paint (juce::Graphics&) override;
     void mouseDown (const juce::MouseEvent&) override;
+    void mouseDrag (const juce::MouseEvent&) override;
+    void mouseUp (const juce::MouseEvent&) override;
     void mouseMove (const juce::MouseEvent&) override;
     void mouseExit (const juce::MouseEvent&) override;
 
@@ -37,13 +45,20 @@ private:
     Hit segmentAt (juce::Point<float>) const;
     juce::Point<float> segmentCentre (int index, bool inner) const;
 
+    juce::Point<float> dotPosition (int slot) const;
+    int dotAt (juce::Point<float>) const;
+    /** Scale degree whose chord sits on that segment (same ring first, then same root), or -1. */
+    int degreeAt (Hit) const;
+
     float outerRadius() const;
     float ringSplit() const { return outerRadius() * 0.68f; }
     float innerRadius() const { return outerRadius() * 0.38f; }
 
     int key = 0;
     bool minor = false;
-    std::vector<ChordMark> chords;
+    std::vector<ChordMark> chords, scaleChords;
+    int dragging = -1;
+    juce::Point<float> dragPos;
     int playing = -1;
     Hit hover;
 };

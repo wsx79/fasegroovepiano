@@ -18,6 +18,8 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
   da sotto, per accordi e basso (solo dove quella mano sta suonando).
 - **8 nuove progressioni** (30 in totale), tra cui Gospel Plagal, Lydian Dom Funk, Soul Borrowed,
   Dark Deep, Phrygian Deep, Deep House Classic, Jackin' Dorian e Neo Soul.
+- **Punti trascinabili nel circolo delle quinte:** trascina un accordo della progressione su un
+  altro accordo della scala (i bersagli sono bordati di rosa) per cambiarlo.
 - Guida: **regole veloci di armonia per il piano house** e quattro nuove ricette.
 
 ### Modificato

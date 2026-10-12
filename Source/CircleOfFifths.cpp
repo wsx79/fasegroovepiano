@@ -28,20 +28,63 @@ namespace
     }
 }
 
-void CircleOfFifths::setState (int keyRoot, bool minorKey, const std::vector<ChordMark>& progression, int playingIndex)
+void CircleOfFifths::setState (int keyRoot, bool minorKey, const std::vector<ChordMark>& progression, int playingIndex,
+                               const std::vector<ChordMark>& diatonic)
 {
-    bool same = keyRoot == key && minorKey == minor && playingIndex == playing && progression.size() == chords.size();
-    for (size_t i = 0; same && i < chords.size(); ++i)
-        same = chords[i].rootPc == progression[i].rootPc && chords[i].minor == progression[i].minor;
+    auto sameMarks = [] (const std::vector<ChordMark>& a, const std::vector<ChordMark>& b)
+    {
+        if (a.size() != b.size())
+            return false;
+        for (size_t i = 0; i < a.size(); ++i)
+            if (a[i].rootPc != b[i].rootPc || a[i].minor != b[i].minor)
+                return false;
+        return true;
+    };
 
-    if (same)
+    if (keyRoot == key && minorKey == minor && playingIndex == playing
+        && sameMarks (chords, progression) && sameMarks (scaleChords, diatonic))
         return;
 
     key = keyRoot;
     minor = minorKey;
     chords = progression;
+    scaleChords = diatonic;
     playing = playingIndex;
     repaint();
+}
+
+juce::Point<float> CircleOfFifths::dotPosition (int slot) const
+{
+    const auto& ch = chords[(size_t) slot];
+    const auto c = getLocalBounds().toFloat().getCentre();
+    const auto p = segmentCentre (ch.minor ? indexOfMinor (ch.rootPc) : indexOfMajor (ch.rootPc), ch.minor);
+    return c + (p - c) * 0.82f;
+}
+
+int CircleOfFifths::dotAt (juce::Point<float> p) const
+{
+    for (int i = 0; i < (int) chords.size(); ++i)
+        if (dotPosition (i).getDistanceFrom (p) <= 9.0f)
+            return i;
+    return -1;
+}
+
+int CircleOfFifths::degreeAt (Hit h) const
+{
+    if (h.index < 0)
+        return -1;
+
+    const int pc = h.inner ? minorAt (h.index) : majorAt (h.index);
+    for (int d = 0; d < (int) scaleChords.size(); ++d)
+        if (scaleChords[(size_t) d].rootPc == pc && scaleChords[(size_t) d].minor == h.inner)
+            return d;
+
+    // Same root on the other ring (e.g. dropping on "D" when the scale has Dm).
+    for (int d = 0; d < (int) scaleChords.size(); ++d)
+        if (scaleChords[(size_t) d].rootPc == pc)
+            return d;
+
+    return -1;
 }
 
 float CircleOfFifths::outerRadius() const
@@ -69,13 +112,46 @@ CircleOfFifths::Hit CircleOfFifths::segmentAt (juce::Point<float> p) const
 
 void CircleOfFifths::mouseDown (const juce::MouseEvent& e)
 {
+    dragging = dotAt (e.position);
+    if (dragging >= 0)
+    {
+        dragPos = e.position;
+        repaint();
+        return;
+    }
+
     const auto h = segmentAt (e.position);
     if (h.index >= 0 && onPick != nullptr)
         onPick (h.inner ? minorAt (h.index) : majorAt (h.index), h.inner);
 }
 
+void CircleOfFifths::mouseDrag (const juce::MouseEvent& e)
+{
+    if (dragging < 0)
+        return;
+
+    dragPos = e.position;
+    hover = segmentAt (e.position);
+    repaint();
+}
+
+void CircleOfFifths::mouseUp (const juce::MouseEvent& e)
+{
+    if (dragging < 0)
+        return;
+
+    const int slot = dragging;
+    dragging = -1;
+    const int degree = degreeAt (segmentAt (e.position));
+    if (degree >= 0 && onMoveChord != nullptr)
+        onMoveChord (slot, degree);
+
+    repaint();
+}
+
 void CircleOfFifths::mouseMove (const juce::MouseEvent& e)
 {
+    setMouseCursor (dotAt (e.position) >= 0 ? juce::MouseCursor::DraggingHandCursor : juce::MouseCursor::PointingHandCursor);
     const auto h = segmentAt (e.position);
     if (h.index != hover.index || h.inner != hover.inner)
     {
@@ -117,10 +193,20 @@ void CircleOfFifths::paint (juce::Graphics& g)
             if (isKey)                                       fill = Palette::accent;
             if (hover.index == i && hover.inner == inner)    fill = fill.brighter (0.25f);
 
+            // While dragging a dot, the chords of the scale are the drop targets.
+            const bool target = dragging >= 0 && degreeAt ({ i, inner }) >= 0;
+            if (dragging >= 0 && ! target)                   fill = fill.withMultipliedAlpha (0.45f);
+
             g.setColour (fill);
             g.fillPath (seg);
             g.setColour (Palette::background);
             g.strokePath (seg, juce::PathStrokeType (1.5f));
+
+            if (target)
+            {
+                g.setColour (Palette::accent2.withAlpha (hover.index == i && hover.inner == inner ? 1.0f : 0.5f));
+                g.strokePath (seg, juce::PathStrokeType (2.0f));
+            }
 
             g.setColour (isKey ? Palette::background : (family ? Palette::text : Palette::dim));
             g.setFont (font (inner ? 10.5f : 13.0f, isKey || family));
@@ -134,11 +220,8 @@ void CircleOfFifths::paint (juce::Graphics& g)
     if (! chords.empty())
     {
         std::vector<juce::Point<float>> points;
-        for (const auto& ch : chords)
-        {
-            const auto p = segmentCentre (ch.minor ? indexOfMinor (ch.rootPc) : indexOfMajor (ch.rootPc), ch.minor);
-            points.push_back (c + (p - c) * 0.82f);
-        }
+        for (int i = 0; i < (int) chords.size(); ++i)
+            points.push_back (i == dragging ? dragPos : dotPosition (i));
 
         juce::Path path;
         path.startNewSubPath (points.front());
@@ -153,9 +236,17 @@ void CircleOfFifths::paint (juce::Graphics& g)
         for (size_t i = 0; i < points.size(); ++i)
         {
             const bool now = (int) i == playing;
-            const float d = now ? 11.0f : 7.0f;
-            g.setColour (now ? Palette::text : Palette::accent2);
+            const bool held = (int) i == dragging;
+            const float d = held ? 16.0f : now ? 11.0f : 7.0f;
+            g.setColour (now || held ? Palette::text : Palette::accent2);
             g.fillEllipse (juce::Rectangle<float> (d, d).withCentre (points[i]));
+
+            if (held)
+            {
+                g.setColour (Palette::background);
+                g.setFont (font (10.0f, true));
+                g.drawText (juce::String ((int) i + 1), juce::Rectangle<float> (d, d).withCentre (points[i]), juce::Justification::centred);
+            }
         }
     }
 
