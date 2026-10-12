@@ -131,11 +131,12 @@ libxext-dev libfreetype-dev libfontconfig1-dev libxcomposite-dev`.
 
 ### Pubblicare una release
 
-Crea e pubblica un tag: GitHub Actions compila per Windows, macOS e Linux e allega gli zip alla
-release.
+Su GitHub apri **Actions → Build → Run workflow**, scrivi la versione in *release_tag*
+(es. `v1.1.0`) e avvia. GitHub compila per Windows, macOS e Linux e pubblica una Release con i
+tre zip. In alternativa puoi pubblicare un tag:
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
+git tag v1.1.0 && git push origin v1.1.0
 ```
 
 ### Struttura del codice
