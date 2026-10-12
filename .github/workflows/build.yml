@@ -20,13 +20,13 @@ jobs:
         include:
           - name: Windows
             os: windows-latest
-            package: SoulfulGrooveKeys-Windows
+            package: FaseGroovePiano-Windows
           - name: macOS
             os: macos-latest
-            package: SoulfulGrooveKeys-macOS
+            package: FaseGroovePiano-macOS
           - name: Linux
             os: ubuntu-latest
-            package: SoulfulGrooveKeys-Linux
+            package: FaseGroovePiano-Linux
 
     steps:
       - uses: actions/checkout@v4
@@ -50,9 +50,9 @@ jobs:
       - name: Ad-hoc sign (macOS)
         if: runner.os == 'macOS'
         run: |
-          for f in build/SoulfulGrooveKeys_artefacts/Release/VST3/*.vst3 \
-                   build/SoulfulGrooveKeys_artefacts/Release/AU/*.component \
-                   build/SoulfulGrooveKeys_artefacts/Release/Standalone/*.app; do
+          for f in build/FaseGroovePiano_artefacts/Release/VST3/*.vst3 \
+                   build/FaseGroovePiano_artefacts/Release/AU/*.component \
+                   build/FaseGroovePiano_artefacts/Release/Standalone/*.app; do
             codesign --force --deep --sign - "$f"
           done
 
@@ -60,7 +60,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          cd build/SoulfulGrooveKeys_artefacts/Release
+          cd build/FaseGroovePiano_artefacts/Release
           for dir in VST3 AU Standalone; do
             [ -d "$dir" ] && cp -R "$dir" "$GITHUB_WORKSPACE/dist/"
           done

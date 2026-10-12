@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Branding.h"
 #include "CircleOfFifths.h"
 #include "PluginProcessor.h"
 
@@ -101,12 +102,24 @@ private:
     bool hover = false, dragStarted = false;
 };
 
-//==============================================================================
-class SoulfulGrooveKeysEditor : public juce::AudioProcessorEditor, private juce::Timer
+/** Credits page: app logo, version, artist and code credits. Click to close. */
+class AboutOverlay : public juce::Component
 {
 public:
-    explicit SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor&);
-    ~SoulfulGrooveKeysEditor() override;
+    AboutOverlay();
+    void paint (juce::Graphics&) override;
+    void mouseUp (const juce::MouseEvent&) override { setVisible (false); }
+
+private:
+    juce::Image artist;
+};
+
+//==============================================================================
+class FaseGroovePianoEditor : public juce::AudioProcessorEditor, private juce::Timer
+{
+public:
+    explicit FaseGroovePianoEditor (FaseGroovePianoProcessor&);
+    ~FaseGroovePianoEditor() override;
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -116,9 +129,12 @@ private:
     void loadPreset (int index);
     void drawPanel (juce::Graphics&, juce::Rectangle<int> area, const juce::String& title);
 
-    SoulfulGrooveKeysProcessor& processor;
+    FaseGroovePianoProcessor& processor;
     GrooveLookAndFeel lookAndFeel;
     juce::TooltipWindow tooltips { this, 600 };
+
+    juce::TextButton creditsButton { "CREDITS" };
+    AboutOverlay about;
 
     // Progression
     juce::Label presetLabel;
@@ -161,7 +177,7 @@ private:
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     int selectedClipBars() const;
-    SoulfulGrooveKeysProcessor::ClipPart selectedClipPart() const;
+    FaseGroovePianoProcessor::ClipPart selectedClipPart() const;
     void saveClip();
 
     juce::Rectangle<int> headerArea, tempoArea, chordDisplayArea, progressionPanel, harmonyPanel, circlePanel, groovePanel,
@@ -170,5 +186,5 @@ private:
     juce::String currentChord { "-" }, currentRoman, currentKey;
     bool showingHold = false;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SoulfulGrooveKeysEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FaseGroovePianoEditor)
 };

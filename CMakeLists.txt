@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SoulfulGrooveKeys VERSION 1.0.0 LANGUAGES C CXX)
+project(FaseGroovePiano VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -52,12 +52,13 @@ if(SGK_BUILD_PLUGIN)
         list(APPEND SGK_FORMATS AU)
     endif()
 
-    juce_add_plugin(SoulfulGrooveKeys
-        PRODUCT_NAME "Soulful Groove Keys"
-        COMPANY_NAME "Pianovst"
-        BUNDLE_ID "com.pianovst.soulfulgroovekeys"
-        PLUGIN_MANUFACTURER_CODE Pnvs
-        PLUGIN_CODE Sgk1
+    juce_add_plugin(FaseGroovePiano
+        PRODUCT_NAME "Fase Groove Piano"
+        COMPANY_NAME "FS Pitch"
+        BUNDLE_ID "com.fspitch.fasegroovepiano"
+        PLUGIN_MANUFACTURER_CODE FsPt
+        PLUGIN_CODE Fgp1
+        ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon_512.png"
         FORMATS ${SGK_FORMATS}
         IS_SYNTH TRUE
         NEEDS_MIDI_INPUT TRUE
@@ -68,18 +69,25 @@ if(SGK_BUILD_PLUGIN)
         VST3_CATEGORIES Instrument Generator
         AU_MAIN_TYPE kAudioUnitType_MusicDevice)
 
-    target_sources(SoulfulGrooveKeys PRIVATE
+    juce_add_binary_data(FaseGroovePianoData SOURCES
+        Resources/fgp_icon.svg
+        Resources/fs_pitch_logo.png)
+
+    target_sources(FaseGroovePiano PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
-        Source/CircleOfFifths.cpp)
+        Source/CircleOfFifths.cpp
+        Source/Branding.cpp)
 
-    target_compile_definitions(SoulfulGrooveKeys PUBLIC
+    target_compile_definitions(FaseGroovePiano PUBLIC
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_DISPLAY_SPLASH_SCREEN=0)
 
-    target_link_libraries(SoulfulGrooveKeys
+    target_link_libraries(FaseGroovePiano
+        PUBLIC
+            FaseGroovePianoData
         PRIVATE
             sgk_engine
             juce::juce_audio_utils

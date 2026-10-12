@@ -260,6 +260,68 @@ void PatternView::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+AboutOverlay::AboutOverlay() : artist (Branding::artistLogo())
+{
+    setInterceptsMouseClicks (true, false);
+}
+
+void AboutOverlay::paint (juce::Graphics& g)
+{
+    g.fillAll (juce::Colours::black.withAlpha (0.78f));
+
+    auto card = getLocalBounds().toFloat().withSizeKeepingCentre (620.0f, 520.0f);
+    g.setColour (Palette::panel);
+    g.fillRoundedRectangle (card, 16.0f);
+    g.setColour (Palette::accent.withAlpha (0.6f));
+    g.drawRoundedRectangle (card, 16.0f, 1.5f);
+
+    auto r = card.reduced (36.0f, 28.0f);
+    Branding::drawFullLogo (g, r.removeFromTop (84.0f).withSizeKeepingCentre (400.0f, 84.0f));
+
+    g.setColour (Palette::dim);
+    g.setFont (font (13.0f));
+    const auto dot = juce::String::fromUTF8 ("  \xc2\xb7  ");
+    g.drawText ("Version " + juce::String (JucePlugin_VersionString) + dot + Branding::tagline,
+                r.removeFromTop (30.0f), juce::Justification::centred);
+
+    r.removeFromTop (14.0f);
+    g.setColour (Palette::panelEdge);
+    g.fillRect (r.removeFromTop (1.0f));
+    r.removeFromTop (18.0f);
+
+    auto caption = [&g] (const juce::String& text, juce::Rectangle<float> area)
+    {
+        g.setColour (Palette::accent);
+        g.setFont (font (11.0f, true));
+        g.drawText (text, area, juce::Justification::centred);
+    };
+
+    caption ("CREATED BY", r.removeFromTop (16.0f));
+    r.removeFromTop (10.0f);
+    if (artist.isValid())
+        g.drawImageWithin (artist, (int) r.getX(), (int) r.getY(), (int) r.getWidth(), 150,
+                           juce::RectanglePlacement::centred);
+    r.removeFromTop (156.0f);
+
+    g.setColour (Palette::text);
+    g.setFont (font (14.0f));
+    g.drawText ("DJ & Producer", r.removeFromTop (22.0f), juce::Justification::centred);
+
+    r.removeFromTop (18.0f);
+    caption ("CODE", r.removeFromTop (16.0f));
+    r.removeFromTop (6.0f);
+    g.setColour (Palette::text);
+    g.setFont (font (16.0f, true));
+    g.drawText ("Claude  (Anthropic)", r.removeFromTop (24.0f), juce::Justification::centred);
+    g.setColour (Palette::dim);
+    g.setFont (font (12.0f));
+    g.drawText ("AI coding assistant", r.removeFromTop (18.0f), juce::Justification::centred);
+
+    g.setFont (font (11.0f));
+    g.drawText ("Built with JUCE" + dot + "click anywhere to close", r.removeFromBottom (16.0f), juce::Justification::centred);
+}
+
+//==============================================================================
 void MidiDragTile::paint (juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat().reduced (1.0f);
@@ -284,7 +346,7 @@ void MidiDragTile::mouseDrag (const juce::MouseEvent& e)
 }
 
 //==============================================================================
-SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
+FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     : AudioProcessorEditor (&p), processor (p),
       progLength (p.apvts, ParamIDs::progLength, "Length"),
       chordLength (p.apvts, ParamIDs::chordLength, "Each chord"),
@@ -378,8 +440,13 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
     dawTempo.setJustificationType (juce::Justification::centred);
     dawTempo.setFont (font (15.0f, true));
 
-    for (auto* c : std::initializer_list<juce::Component*> { &syncButton, &tempoSlider, &dawTempo })
+    for (auto* c : std::initializer_list<juce::Component*> { &syncButton, &tempoSlider, &dawTempo, &creditsButton })
         addAndMakeVisible (c);
+
+    creditsButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    creditsButton.setColour (juce::TextButton::textColourOffId, Palette::dim);
+    creditsButton.onClick = [this] { about.setVisible (true); about.toFront (false); };
+    addChildComponent (about);
 
     previewButton.setClickingTogglesState (true);
     previewButton.setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -408,24 +475,24 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
     timerCallback();
 }
 
-SoulfulGrooveKeysEditor::~SoulfulGrooveKeysEditor()
+FaseGroovePianoEditor::~FaseGroovePianoEditor()
 {
     stopTimer();
     setLookAndFeel (nullptr);
 }
 
-int SoulfulGrooveKeysEditor::selectedClipBars() const
+int FaseGroovePianoEditor::selectedClipBars() const
 {
-    static constexpr int bars[] { 0, 1, 2, 4, 8, 16, 32, SoulfulGrooveKeysProcessor::songArrangement };
+    static constexpr int bars[] { 0, 1, 2, 4, 8, 16, 32, FaseGroovePianoProcessor::songArrangement };
     return bars[juce::jlimit (0, 7, clipLength.getSelectedItemIndex())];
 }
 
-SoulfulGrooveKeysProcessor::ClipPart SoulfulGrooveKeysEditor::selectedClipPart() const
+FaseGroovePianoProcessor::ClipPart FaseGroovePianoEditor::selectedClipPart() const
 {
-    return (SoulfulGrooveKeysProcessor::ClipPart) juce::jlimit (0, 2, clipPart.getSelectedItemIndex());
+    return (FaseGroovePianoProcessor::ClipPart) juce::jlimit (0, 2, clipPart.getSelectedItemIndex());
 }
 
-void SoulfulGrooveKeysEditor::saveClip()
+void FaseGroovePianoEditor::saveClip()
 {
     const int bars = selectedClipBars();
     const auto part = selectedClipPart();
@@ -451,7 +518,7 @@ void SoulfulGrooveKeysEditor::saveClip()
                               });
 }
 
-void SoulfulGrooveKeysEditor::loadPreset (int index)
+void FaseGroovePianoEditor::loadPreset (int index)
 {
     const auto& presets = sgk::progressionPresets();
     if (index < 0 || index >= (int) presets.size())
@@ -466,7 +533,7 @@ void SoulfulGrooveKeysEditor::loadPreset (int index)
 }
 
 //==============================================================================
-void SoulfulGrooveKeysEditor::timerCallback()
+void FaseGroovePianoEditor::timerCallback()
 {
     auto s = processor.currentSettings();
     const int heldRoot = processor.uiHeldRoot.load();
@@ -515,7 +582,7 @@ void SoulfulGrooveKeysEditor::timerCallback()
     dawTempo.setText (juce::String (processor.hostBpm.load(), 1) + " BPM  (DAW)", juce::dontSendNotification);
 }
 
-void SoulfulGrooveKeysEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& title)
+void FaseGroovePianoEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& title)
 {
     g.setColour (Palette::panel);
     g.fillRoundedRectangle (area.toFloat(), 10.0f);
@@ -530,19 +597,16 @@ void SoulfulGrooveKeysEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int>
     }
 }
 
-void SoulfulGrooveKeysEditor::paint (juce::Graphics& g)
+void FaseGroovePianoEditor::paint (juce::Graphics& g)
 {
     g.fillAll (Palette::background);
 
-    // Header
-    auto header = headerArea.reduced (4, 0);
-    g.setGradientFill (juce::ColourGradient (Palette::accent, (float) header.getX(), 0.0f,
-                                             Palette::accent2, (float) header.getX() + 320.0f, 0.0f, false));
-    g.setFont (font (30.0f, true));
-    g.drawText ("SOULFUL GROOVE KEYS", header.removeFromTop (46).withTrimmedTop (10), juce::Justification::bottomLeft);
+    // Header: logo + credit line
+    auto header = headerArea.toFloat();
+    Branding::drawFullLogo (g, header.removeFromTop (56.0f).withWidth (330.0f));
     g.setColour (Palette::dim);
-    g.setFont (font (13.0f));
-    g.drawText ("funky piano grooves for soulful & deep house", header, juce::Justification::topLeft);
+    g.setFont (font (11.5f));
+    g.drawText (juce::String ("by ") + Branding::artist, header.withTrimmedLeft (66.0f), juce::Justification::centredLeft);
 
     // Current chord
     drawPanel (g, chordDisplayArea, {});
@@ -574,7 +638,7 @@ void SoulfulGrooveKeysEditor::paint (juce::Graphics& g)
     g.drawText ("Drop it on any instrument track (your own piano / Rhodes)", hint, juce::Justification::centredLeft);
 }
 
-void SoulfulGrooveKeysEditor::resized()
+void FaseGroovePianoEditor::resized()
 {
     auto r = getLocalBounds().reduced (20, 14);
 
@@ -584,6 +648,8 @@ void SoulfulGrooveKeysEditor::resized()
     top.removeFromRight (10);
     tempoArea = top.removeFromRight (330).reduced (0, 4);
     headerArea = top;
+    creditsButton.setBounds (headerArea.getRight() - 74, headerArea.getBottom() - 22, 70, 20);
+    about.setBounds (getLocalBounds());
     {
         auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
         auto controls = inner.withSizeKeepingCentre (inner.getWidth(), 32);

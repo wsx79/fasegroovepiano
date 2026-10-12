@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Fase Groove Piano: slanted piano keys whose different lengths draw a groove,
+       under a speed bar that echoes the FS / Pitch logo. -->
+  <defs>
+    <linearGradient id="warm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2a65a"/>
+      <stop offset="1" stop-color="#e85d75"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="256" height="256" rx="56" ry="56" fill="#17111c"/>
+
+  <g transform="translate(27 0) skewX(-12)">
+    <!-- top rail, sharp angled ends like the F of the FS logo -->
+    <path d="M 58 40 L 214 40 L 204 52 L 46 52 Z" fill="#ffffff"/>
+
+    <!-- white keys (bottoms chamfered, lengths = the groove) -->
+    <path d="M 46 60 L 82 60 L 82 186 L 70 198 L 46 198 Z" fill="url(#warm)"/>
+    <path d="M 88 60 L 124 60 L 124 156 L 112 168 L 88 168 Z" fill="url(#warm)"/>
+    <path d="M 130 60 L 166 60 L 166 200 L 154 212 L 130 212 Z" fill="url(#warm)"/>
+    <path d="M 172 60 L 208 60 L 208 172 L 196 184 L 172 184 Z" fill="url(#warm)"/>
+
+    <!-- black keys -->
+    <rect x="72" y="60" width="22" height="70" rx="3" ry="3" fill="#17111c"/>
+    <rect x="114" y="60" width="22" height="70" rx="3" ry="3" fill="#17111c"/>
+    <rect x="156" y="60" width="22" height="70" rx="3" ry="3" fill="#17111c"/>
+  </g>
+</svg>

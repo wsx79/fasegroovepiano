@@ -40,11 +40,11 @@ namespace ParamIDs
     inline juce::String slot (int index) { return "slot" + juce::String (index + 1); }
 }
 
-class SoulfulGrooveKeysProcessor : public juce::AudioProcessor
+class FaseGroovePianoProcessor : public juce::AudioProcessor
 {
 public:
-    SoulfulGrooveKeysProcessor();
-    ~SoulfulGrooveKeysProcessor() override = default;
+    FaseGroovePianoProcessor();
+    ~FaseGroovePianoProcessor() override = default;
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -95,7 +95,7 @@ public:
         bars == 0 means "one full loop" (progression, groove and fills all repeat). */
     juce::MidiFile createMidiClip (int bars, ClipPart part) const;
 
-    /** Writes the clip into Documents/Soulful Groove Keys and returns the file. */
+    /** Writes the clip into Documents/Fase Groove Piano and returns the file. */
     juce::File writeMidiClip (int bars, ClipPart part) const;
     juce::String clipFileName (int bars, ClipPart part) const;
     int clipLengthInBars (int bars) const;
@@ -135,5 +135,5 @@ private:
     bool wasRunning = false;
     bool soundWasOn = true;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SoulfulGrooveKeysProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FaseGroovePianoProcessor)
 };

@@ -28,7 +28,7 @@ namespace
 }
 
 //==============================================================================
-juce::AudioProcessorValueTreeState::ParameterLayout SoulfulGrooveKeysProcessor::createLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::createLayout()
 {
     using namespace juce;
     AudioProcessorValueTreeState::ParameterLayout layout;
@@ -105,9 +105,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout SoulfulGrooveKeysProcessor::
 }
 
 //==============================================================================
-SoulfulGrooveKeysProcessor::SoulfulGrooveKeysProcessor()
+FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-      apvts (*this, nullptr, "SoulfulGrooveKeys", createLayout())
+      apvts (*this, nullptr, "FaseGroovePiano", createLayout())
 {
     auto& toneParam = *apvts.getRawParameterValue (ParamIDs::tone);
 
@@ -121,12 +121,12 @@ SoulfulGrooveKeysProcessor::SoulfulGrooveKeysProcessor()
     events.reserve (1024);
 }
 
-float SoulfulGrooveKeysProcessor::raw (const char* id) const
+float FaseGroovePianoProcessor::raw (const char* id) const
 {
     return apvts.getRawParameterValue (id)->load();
 }
 
-sgk::GrooveSettings SoulfulGrooveKeysProcessor::currentSettings() const
+sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
 {
     sgk::GrooveSettings s;
     auto asInt = [this] (const char* id) { return juce::roundToInt (raw (id)); };
@@ -157,7 +157,7 @@ sgk::GrooveSettings SoulfulGrooveKeysProcessor::currentSettings() const
     return s;
 }
 
-void SoulfulGrooveKeysProcessor::setParameterFromUI (const juce::String& id, float plainValue)
+void FaseGroovePianoProcessor::setParameterFromUI (const juce::String& id, float plainValue)
 {
     if (auto* p = dynamic_cast<juce::RangedAudioParameter*> (apvts.getParameter (id)))
     {
@@ -167,13 +167,13 @@ void SoulfulGrooveKeysProcessor::setParameterFromUI (const juce::String& id, flo
     }
 }
 
-void SoulfulGrooveKeysProcessor::rollNewRiff()
+void FaseGroovePianoProcessor::rollNewRiff()
 {
     setParameterFromUI (ParamIDs::riffSeed, (float) juce::Random::getSystemRandom().nextInt ({ 1, 100000 }));
     setParameterFromUI (ParamIDs::pattern, (float) sgk::randomPatternIndex());
 }
 
-void SoulfulGrooveKeysProcessor::rollNewProgression()
+void FaseGroovePianoProcessor::rollNewProgression()
 {
     const int length = juce::roundToInt (raw (ParamIDs::progLength));
     const auto degrees = sgk::randomProgression ((std::uint32_t) juce::Random::getSystemRandom().nextInt(), length);
@@ -183,7 +183,7 @@ void SoulfulGrooveKeysProcessor::rollNewProgression()
 }
 
 //==============================================================================
-void SoulfulGrooveKeysProcessor::prepareToPlay (double sampleRate, int)
+void FaseGroovePianoProcessor::prepareToPlay (double sampleRate, int)
 {
     synth.setCurrentPlaybackSampleRate (sampleRate);
     reverb.setSampleRate (sampleRate);
@@ -195,13 +195,13 @@ void SoulfulGrooveKeysProcessor::prepareToPlay (double sampleRate, int)
     heldCount = 0;
 }
 
-bool SoulfulGrooveKeysProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool FaseGroovePianoProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
     const auto out = layouts.getMainOutputChannelSet();
     return out == juce::AudioChannelSet::mono() || out == juce::AudioChannelSet::stereo();
 }
 
-void SoulfulGrooveKeysProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
+void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
 
@@ -358,7 +358,7 @@ void SoulfulGrooveKeysProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 }
 
 //==============================================================================
-int SoulfulGrooveKeysProcessor::clipLengthInBars (int bars) const
+int FaseGroovePianoProcessor::clipLengthInBars (int bars) const
 {
     if (bars > 0)
         return bars;
@@ -374,7 +374,7 @@ int SoulfulGrooveKeysProcessor::clipLengthInBars (int bars) const
     return juce::jmax (1, sgk::GrooveEngine::loopLengthInSteps (currentSettings()) / 16);
 }
 
-juce::MidiFile SoulfulGrooveKeysProcessor::createMidiClip (int bars, ClipPart part) const
+juce::MidiFile FaseGroovePianoProcessor::createMidiClip (int bars, ClipPart part) const
 {
     constexpr int ticksPerQuarter = 960;
     const auto settings = currentSettings();
@@ -423,7 +423,7 @@ juce::MidiFile SoulfulGrooveKeysProcessor::createMidiClip (int bars, ClipPart pa
     return file;
 }
 
-juce::String SoulfulGrooveKeysProcessor::clipFileName (int bars, ClipPart part) const
+juce::String FaseGroovePianoProcessor::clipFileName (int bars, ClipPart part) const
 {
     const auto s = currentSettings();
     auto patternSettings = s;
@@ -445,9 +445,9 @@ juce::String SoulfulGrooveKeysProcessor::clipFileName (int bars, ClipPart part) 
     return juce::File::createLegalFileName (name) + ".mid";
 }
 
-juce::File SoulfulGrooveKeysProcessor::writeMidiClip (int bars, ClipPart part) const
+juce::File FaseGroovePianoProcessor::writeMidiClip (int bars, ClipPart part) const
 {
-    auto folder = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("Soulful Groove Keys");
+    auto folder = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("Fase Groove Piano");
     if (! folder.createDirectory())
         folder = juce::File::getSpecialLocation (juce::File::tempDirectory);
 
@@ -463,18 +463,18 @@ juce::File SoulfulGrooveKeysProcessor::writeMidiClip (int bars, ClipPart part) c
 }
 
 //==============================================================================
-juce::AudioProcessorEditor* SoulfulGrooveKeysProcessor::createEditor()
+juce::AudioProcessorEditor* FaseGroovePianoProcessor::createEditor()
 {
-    return new SoulfulGrooveKeysEditor (*this);
+    return new FaseGroovePianoEditor (*this);
 }
 
-void SoulfulGrooveKeysProcessor::getStateInformation (juce::MemoryBlock& destData)
+void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     if (auto xml = apvts.copyState().createXml())
         copyXmlToBinary (*xml, destData);
 }
 
-void SoulfulGrooveKeysProcessor::setStateInformation (const void* data, int sizeInBytes)
+void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
@@ -483,5 +483,5 @@ void SoulfulGrooveKeysProcessor::setStateInformation (const void* data, int size
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new SoulfulGrooveKeysProcessor();
+    return new FaseGroovePianoProcessor();
 }

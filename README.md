@@ -1,4 +1,8 @@
-# Soulful Groove Keys 🎹
+<p align="center"><img src="docs/logo.png" alt="Fase Groove Piano" width="720"></p>
+
+# Fase Groove Piano
+
+*by **Fabio 'Pitch' Serra***
 
 Plugin **VST3 / AU** (Windows e macOS) che **crea MIDI di giri di piano funky e soulful house**:
 scegli tonalità, scala e progressione, e il plugin genera accordi estesi (9ª, 11ª, 13ª),
@@ -26,7 +30,7 @@ semplice **suono guida** (e‑piano) per farti sentire subito il riff.
 | **Fills** | Ogni 2/4/8 battute l'ultimo quarto diventa una scaletta **pentatonica** (minore o maggiore, a seconda della scala) che porta all'accordo successivo. |
 | **Bass** | Mano sinistra: Off / Fondamentale / Ottave / Fondamentale + 5ª. |
 | **Play mode** | *Host transport*: suona quando premi Play nella DAW, a tempo. *Hold a key*: suona mentre tieni premuto un tasto, e **il tasto sceglie la tonalità** (perfetto per suonare live o nello Standalone). |
-| **MIDI Clip** | **DRAG MIDI TO DAW**: trascina il riquadro su una traccia e ottieni la clip MIDI del groove. Lunghezza: *Full loop* (calcolata in automatico finché progressione, ritmo e fill si ripetono), 1–32 battute, oppure **Song: intro > drop > outro** = arrangiamento completo di 60 battute (Intro 8 · Main 16 · Break 8 · Build‑up 4 · Drop 16 · Outro 8) con i **marker** delle sezioni. Note: accordi + basso, solo accordi o solo basso. **Save .mid…** salva il file dove vuoi. Una copia di ogni clip trascinata finisce in `Documenti/Soulful Groove Keys/`. |
+| **MIDI Clip** | **DRAG MIDI TO DAW**: trascina il riquadro su una traccia e ottieni la clip MIDI del groove. Lunghezza: *Full loop* (calcolata in automatico finché progressione, ritmo e fill si ripetono), 1–32 battute, oppure **Song: intro > drop > outro** = arrangiamento completo di 60 battute (Intro 8 · Main 16 · Break 8 · Build‑up 4 · Drop 16 · Outro 8) con i **marker** delle sezioni. Note: accordi + basso, solo accordi o solo basso. **Save .mid…** salva il file dove vuoi. Una copia di ogni clip trascinata finisce in `Documenti/Fase Groove Piano/`. |
 | **Guide sound & MIDI out** | Suono guida e‑piano (Tone, Reverb, Volume, disattivabile). **PREVIEW** fa partire il groove anche a DAW ferma, per ascoltare il riff mentre cambi i parametri. *MIDI out*: tutto sul canale 1 oppure **basso sul canale 2**, per mandarlo a uno strumento diverso. |
 
 ## Download
@@ -37,23 +41,23 @@ oppure dalle **Releases** quando viene creato un tag `v*` (es. `git tag v1.0.0 &
 
 ### Installazione
 
-**Windows** – copia `Soulful Groove Keys.vst3` in `C:\Program Files\Common Files\VST3\`.
+**Windows** – copia `Fase Groove Piano.vst3` in `C:\Program Files\Common Files\VST3\`.
 
 **macOS** – copia
-- `Soulful Groove Keys.vst3` in `~/Library/Audio/Plug-Ins/VST3/`
-- `Soulful Groove Keys.component` (AU, per Logic/GarageBand) in `~/Library/Audio/Plug-Ins/Components/`
+- `Fase Groove Piano.vst3` in `~/Library/Audio/Plug-Ins/VST3/`
+- `Fase Groove Piano.component` (AU, per Logic/GarageBand) in `~/Library/Audio/Plug-Ins/Components/`
 
 Il plugin non è firmato con un certificato Apple: se macOS lo blocca, apri il Terminale e lancia
 ```
-xattr -cr ~/Library/Audio/Plug-Ins/VST3/"Soulful Groove Keys.vst3"
-xattr -cr ~/Library/Audio/Plug-Ins/Components/"Soulful Groove Keys.component"
+xattr -cr ~/Library/Audio/Plug-Ins/VST3/"Fase Groove Piano.vst3"
+xattr -cr ~/Library/Audio/Plug-Ins/Components/"Fase Groove Piano.component"
 ```
 
 ## Come usarlo nella DAW
 
 ### Metodo 1 – Clip MIDI (consigliato, funziona in tutte le DAW, anche Logic)
 
-1. Carica **Soulful Groove Keys** come strumento su una traccia.
+1. Carica **Fase Groove Piano** come strumento su una traccia.
 2. Scegli progressione, scala, voicing e groove. Premi **PREVIEW** per sentire il riff col suono guida.
 3. Trascina **DRAG MIDI TO DAW** sulla traccia del tuo piano/Rhodes/synth (o sull'arrangiamento):
    ottieni una clip MIDI modificabile, già a tempo e pronta da loopare.
@@ -62,7 +66,7 @@ xattr -cr ~/Library/Audio/Plug-Ins/Components/"Soulful Groove Keys.component"
 ### Metodo 2 – MIDI in tempo reale
 
 Spegni *Guide sound* e instrada il MIDI in uscita verso un'altra traccia strumento:
-   - **Ableton Live**: su una nuova traccia MIDI imposta *MIDI From* → la traccia del plugin → *Soulful Groove Keys*.
+   - **Ableton Live**: su una nuova traccia MIDI imposta *MIDI From* → la traccia del plugin → *Fase Groove Piano*.
    - **FL Studio**: nel wrapper del plugin imposta una *MIDI output port* e la stessa porta in ingresso sullo strumento di destinazione.
    - **Reaper / Bitwig / Cubase / Studio One**: invia l'uscita MIDI della traccia a un'altra traccia strumento.
    - **Logic Pro**: Logic non legge il MIDI in uscita dagli strumenti AU: usa il Metodo 1 (trascina la clip).
@@ -80,7 +84,7 @@ cmake --build build --config Release --parallel
 ctest --test-dir build -C Release        # test del motore musicale
 ```
 
-I plugin compilati si trovano in `build/SoulfulGrooveKeys_artefacts/Release/`.
+I plugin compilati si trovano in `build/FaseGroovePiano_artefacts/Release/`.
 Per usare una copia locale di JUCE: `-DJUCE_DIR=/percorso/JUCE`.
 
 ## Struttura del codice
@@ -105,3 +109,13 @@ successivo), `=` tieni, `.` pausa.
 Il plugin usa [JUCE](https://juce.com), disponibile con licenza AGPLv3 o con licenza commerciale
 JUCE (gratuita sotto una certa soglia di fatturato). Se distribuisci il plugin, verifica quale
 licenza si applica al tuo caso.
+
+## Crediti
+
+<p align="center"><img src="docs/credits.png" alt="Crediti" width="460"></p>
+
+- **Idea, direzione musicale e sound:** Fabio 'Pitch' Serra — DJ & Producer (logo FS PITCH in `Resources/fs_pitch_logo.png`)
+- **Codice:** Claude (Anthropic), assistente di programmazione AI
+
+Nel plugin i crediti si aprono col pulsante **CREDITS** in alto a sinistra.
+Logo dell'app: `Resources/fgp_icon.svg` (vettoriale) e `Resources/icon_512.png`.
