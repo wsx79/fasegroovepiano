@@ -6,6 +6,25 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.8.0] - 2026-10-13
+
+### Aggiunto
+- **8 nuovi stili di fill (11 in totale):** Gospel run (2 tempi), Chromatic walk-up, Push stabs,
+  16th chord chops, Gospel thirds, Piano glissando, Blues lick e **Mix**, che a ogni fill ne suona
+  uno diverso. Ogni fill punta alla nota alta dell'accordo successivo.
+- **Fill a ogni battuta**, oltre che ogni 2, 4 o 8 battute.
+- Alcuni STILI ora includono i fill (Soulful, Gospel, Jackin', Piano anni '90, Organ Jack, Nu
+  Disco, Funky Disco, Neo Soul).
+
+### Modificato
+- **Groove più musicali:** il tocco di un pianista nel motore: i colpi d'accordo veloci ripetuti
+  suonano un voicing più leggero (le tre note alte), le ghost note solo le due note alte, e le
+  linee di basso a ottavi rimbalzano tra fondamentale e ottava come un bassista disco/house. I
+  groove più pesanti sono stati riscritti con bassi e chop più leggeri e idiomatici (Slap Bass
+  Funk, Jackin' Stabs, Disco Jack Chops, Jackin' Shuffle, Ghetto Jack, Praise Break, Funky
+  Clavinet 16ths, Samba House, Bassline House, Jack Bounce, Funky 16ths, Funk Clav Chops, Gospel
+  Shout 16ths).
+
 ## [1.7.0] - 2026-10-13
 
 ### Aggiunto

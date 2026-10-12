@@ -42,7 +42,7 @@ Rhodes or synth.
 - 🌈 **Harmony colours:** chords and chord changes coloured by how well they sound together (green = great, grey = clashes).
 - 🎚️ **STYLE:** one-click setups by genre (deep, soulful, gospel, jackin', '90s piano, garage, afro, neo soul…) and **RESET** to start over.
 - 🥁 **96 two-hand grooves** in 10 genres (soulful, deep, gospel, **jackin' house**, garage, afro, funky & disco, '90s piano house, neo soul, chill)
-  plus **NEW RIFF**, a random funky riff generator, and optional fills (3 styles).
+  plus **NEW RIFF**, a random funky riff generator, and optional fills (11 styles, from gospel runs to piano glissandos).
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and
   lock (LOCK), plus a quick **BASS ON/OFF**.

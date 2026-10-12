@@ -85,7 +85,7 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("X=== ===. ..x= ===. X=== ==.x ..x. x==."),
           compact ("x=== ==== .... ..x. x=== ==== .... ...."), "Deep" },
         { "Funky 16ths",
-          compact ("x.xx .x.x .xx. x.x. x.xx .x.x .x.x ..x."),
+          compact ("x.x. .x.x .xx. x.x. x.x. .x.x .x.x ..x."),
           compact ("x... ..x. x... .... x... ..x. x..x ...."), "Funky & Disco" },
         { "Gospel Bounce",
           compact ("X..x ..X. .x.. X..x ..X. .x.. X.x. .x.."),
@@ -108,8 +108,8 @@ const std::vector<GroovePattern>& groovePatterns()
 
         // ---- Funk ----
         { "Funk Clav Chops",
-          compact ("x.xx .xx. x.xx .x.x x.xx .xx. x.x. xx.x"),
-          compact ("x... ..x. .x.. x... x... ..x. .x.. ..x."), "Funky & Disco" },
+          compact ("x.x. .xx. x.x. .x.x x.x. .xx. x.x. .x>="),
+          compact ("x... ..x. .x.. x... x... ..x. .x.. ..>="), "Funky & Disco" },
         { "Ghost Note Funk",
           compact ("X.gg .gX. g.gX .g.g X.gg .gX. g.X. gXg."),
           compact ("x... ..x. ..x. .x.. x... ..x. x... ..x."), "Funky & Disco" },
@@ -120,7 +120,7 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("X.x. .x.. x.x. .x>= =.x. .x.. x.x. .x>="),
           compact ("x..x ..x. x... ..>= =..x ..x. x... ..>="), "Funky & Disco" },
         { "Gospel Shout 16ths",
-          compact ("X.xx .xX. xx.x .Xx. X.xx .xX. x.xX .x>="),
+          compact ("X..x .xX. .x.x .Xx. X..x .xX. .x.X .x>="),
           compact ("x..x ..x. .x.. x... x..x ..x. .x.. ..>="), "Gospel" },
         { "Neo Soul Lazy",
           compact ("X==. ..x= .x.. x==. ..X= =.x. .x.. >==="),
@@ -136,14 +136,14 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("x... ...x ..x. .... .x.. ..x. ...x ...."), "Neo Soul & Broken" },
         { "Slap Bass Funk",
           compact ("..x. ...x ..x. .x.. ..x. ...x ..xg .x.."),
-          compact ("x..x .x.. x.x. ..xx x..x .x.. x.x. x.xx"), "Funky & Disco" },
+          compact ("x..x ..x. x... .x.. x..x ..x. x.x. .x.."), "Funky & Disco" },
         // ---- Jackin' house (Chicago bounce: offbeat stabs, pumping bass, swing it!) ----
         { "Jackin' Stabs",
           compact ("..X. .x.x ..X. .x.x ..X. .x.x ..X. x.x."),
-          compact ("x..x ..x. x..x ..x. x..x ..x. x..x .xx."), "Jackin'" },
+          compact ("x..x ..x. x... ..x. x..x ..x. x... .x.."), "Jackin'" },
         { "Jack Bounce",
           compact (".x.x .x.x .x.x .X.x .x.x .x.x .x.x .X.."),
-          compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.x. x.xx"), "Jackin'" },
+          compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.x. x..x"), "Jackin'" },
         { "Jackin' Push",
           compact ("X..x ..X. .x.. x.>= =..x ..X. .x.x ..>="),
           compact ("x..x .x.. x..x ..>= =..x .x.. x..x ..>="), "Jackin'" },
@@ -151,11 +151,11 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("x.xx ..x. x.xx ..x. x.xx ..x. x.x. xx.x"),
           compact ("x... ..x. x... ..x. x... ..x. x..x ..x."), "Jackin'" },
         { "Ghetto Jack",
-          compact ("X.gx .gX. gx.X .g.x X.gx .gX. gxX. .gXg"),
+          compact ("X.gx ..X. .x.X ...x X.gx ..X. .xX. ..X."),
           compact ("x..x ..x. ...x ..x. x..x ..x. .x.x ..x."), "Jackin'" },
         { "Disco Jack Chops",
           compact ("..xx .x.. ..xx .x.x ..xx .x.. ..x. xx.x"),
-          compact ("x.x. ..x. x.x. ..xx x.x. ..x. x.x. .x.x"), "Jackin'" },
+          compact ("x... ..x. x.x. ..x. x... ..x. x.x. ..x."), "Jackin'" },
 
         // ---- v1.2: more soulful, deep, jackin' and funky ----
         { "Soulful Sunday",
@@ -175,7 +175,7 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("x=== .... .... .... x=== .... ..x. ...."), "Deep" },
         { "Jackin' Shuffle",
           compact (".x.x ..x. .x.x .xx. .x.x ..x. .x.x x.x."),
-          compact ("x..x x... x..x x.x. x..x x... x..x .xx."), "Jackin'" },
+          compact ("x..x ..x. x... ..x. x..x ..x. x..x ..x."), "Jackin'" },
         { "Jack Organ Pump",
           compact ("..x. ..x. ..x. ..xx ..x. ..x. ..x. .xx."),
           compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.xx x.x."), "Jackin'" },
@@ -235,8 +235,8 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("X..x ..x. X..x .x.x X..x ..x. X.x. x.>="),
           compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.x. x.>="), "Gospel" },
         { "Praise Break",
-          compact ("XxXx .xXx .xXx .xX. XxXx .xXx .xXx .x>="),
-          compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.x. x.>="), "Gospel" },
+          compact ("X.Xx .xX. .xX. .xX. X.Xx .xX. .xX. .x>="),
+          compact ("x... x.x. x... x.x. x... x.x. x... ..>="), "Gospel" },
         { "Sanctified Stabs",
           compact ("..X. ..X. ..X. X.>= =.X. ..X. ..X. X.>="),
           compact ("x... ..x. x... ..>= =... ..x. x... ..>="), "Gospel" },
@@ -278,7 +278,7 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("x... ...x ..x. .... x... ...x ..x. ..>="), "Garage & UK" },
         { "Bassline House",
           compact ("..x. ..x. ..x. ..x. ..x. ..x. ..x. ..x."),
-          compact ("x.xx ..x. x.xx .x.x x.xx ..x. x.xx .x.x"), "Garage & UK" },
+          compact ("x.x. ..x. x..x .x.. x.x. ..x. x..x .x.x"), "Garage & UK" },
         { "UK Funky Keys",
           compact ("x..x ..x. x..x .x.. x..x ..x. x.x. .x>="),
           compact ("x... x..x ..x. .... x... x..x ..x. ..>="), "Garage & UK" },
@@ -298,8 +298,8 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("..x= .x.. x=.. .x.. ..x= .x.. x=.. .x>="),
           compact ("x=.. ..x. ..x. .... x=.. ..x. ..x. ..>="), "Afro & Latin" },
         { "Samba House",
-          compact ("x.xx .x.x x.xx .x.x x.xx .x.x x.xx .xx."),
-          compact ("x..x x..x x..x x..x x..x x..x x..x x..x"), "Afro & Latin" },
+          compact ("x.x. .x.x ..x. .x.x x.x. .x.x ..x. .xx."),
+          compact ("x..x ..x. x..x ..x. x..x ..x. x..x ..x."), "Afro & Latin" },
         { "Disco Strut",
           compact ("..x. x.x. ..x. x.x. ..x. x.x. ..x. xx>="),
           compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.x. x.>="), "Funky & Disco" },
@@ -307,7 +307,7 @@ const std::vector<GroovePattern>& groovePatterns()
           compact (".x.x ..x. .x.x ..x. .x.x ..x. .x.x .x>="),
           compact ("x..x ..x. x..x ..x. x..x ..x. x..x ..>="), "Funky & Disco" },
         { "Funky Clavinet 16ths",
-          compact ("xgxg x.xg xgx. xgx. xgxg x.xg xgx. x.>="),
+          compact ("x.xg x.x. xgx. .xx. x.xg x.x. xgx. x.>="),
           compact ("x... ..x. .x.. x... x... ..x. .x.. ..>="), "Funky & Disco" },
         { "Philly Stabs",
           compact ("X... ..x. .x.. x... X... ..x. .x.. x.>="),
@@ -448,8 +448,55 @@ const std::vector<ProgressionPreset>& progressionPresets()
 
 const char* fillStyleName (int style) noexcept
 {
-    static const char* const names[numFillStyles] { "Pentatonic run up", "Pentatonic run down", "Chord roll (next chord)" };
+    static const char* const names[numFillStyles] { "Pentatonic run up", "Pentatonic run down", "Chord roll (next chord)",
+                                                    "Gospel run (2 beats)", "Chromatic walk-up", "Push stabs", "16th chord chops",
+                                                    "Gospel thirds", "Piano glissando", "Blues lick", "Mix (changes every fill)" };
     return names[mod (style, numFillStyles)];
+}
+
+int fillStartStep (FillStyle style) noexcept
+{
+    return style == FillStyle::gospelRun ? 8 : 12;
+}
+
+namespace
+{
+    /** The style a fill bar really plays: "Mix" picks a different one for each fill. */
+    FillStyle effectiveFillStyle (FillStyle style, long long bar) noexcept
+    {
+        if (style != FillStyle::mix)
+            return style;
+
+        static constexpr FillStyle rotation[] { FillStyle::pentatonicUp, FillStyle::chordRoll, FillStyle::gospelRun,
+                                                FillStyle::pushStabs, FillStyle::chromaticWalk, FillStyle::gospelThirds,
+                                                FillStyle::glissando, FillStyle::chordChops, FillStyle::bluesLick };
+        const auto n = (long long) (sizeof (rotation) / sizeof (*rotation));
+        return rotation[(size_t) (((bar * 5 + 2) % n + n) % n)];
+    }
+
+    /** Notes of a scale (given as semitones above the key) between low and high, ascending. */
+    NoteSet notesOf (int keyRoot, const int* degrees, int count, int low, int high) noexcept
+    {
+        bool member[12] {};
+        for (int i = 0; i < count; ++i)
+            member[mod (keyRoot + degrees[i], 12)] = true;
+
+        NoteSet out;
+        for (int n = low; n <= high && out.size < (int) out.notes.size(); ++n)
+            if (member[mod (n, 12)])
+                out.add (n);
+        return out;
+    }
+
+    /** Index of the highest note <= target (0 if none). */
+    int indexAtOrBelow (const NoteSet& notes, int target) noexcept
+    {
+        int idx = 0;
+        for (int i = 0; i < notes.size; ++i)
+            if (notes[i] <= target)
+                idx = i;
+        return idx;
+    }
 }
 
 const char* approachStyleName (int style) noexcept
@@ -706,10 +753,13 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         return slotForStep ((floorDiv (step, grid) + 1) * grid, s);
     };
 
-    // Fill: the last beat of every N bars becomes a pentatonic pick-up run.
+    // Fill: the end of every N bars becomes a pick-up into the next chord.
     const long long bar = floorDiv (step, 16);
     const int stepInBar = mod (step, 16);
-    const bool inFill = s.fillEveryBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1 && stepInBar >= 12;
+    const auto fillStyle = effectiveFillStyle (s.fillStyle, bar);
+    const int fillStart = fillStartStep (fillStyle);
+    const bool inFill = s.fillEveryBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1
+                     && stepInBar >= fillStart;
 
     // Approach ("slide"): the last 16th before a real chord change.
     const int slotNow = slotForStep (step, s);
@@ -736,11 +786,80 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     // ---- right hand (chords) ----
     if (inFill)
     {
-        const int k = stepInBar - 12;
-        const double len = (k == 3 ? 2.0 : std::clamp (s.gate, 0.3f, 1.0f)) * stepLength;
-        const int vel = hitVelocity ('x', k == 3 ? 1.0 : 0.85, 32);
+        const int k = stepInBar - fillStart;
+        const int lastK = 15 - fillStart;
+        const double len = (k == lastK ? 2.0 : std::clamp (s.gate, 0.3f, 1.0f)) * stepLength;
+        const int vel = hitVelocity ('x', k == lastK ? 1.0 : 0.85, 32);
 
-        if (s.fillStyle == FillStyle::chordRoll)
+        const long long nextBarStep = (bar + 1) * 16;
+        const auto& nextChord = voiced[(size_t) slotForStep (nextBarStep, s)].rightHand;
+        const auto& thisChord = voiced[(size_t) slotForStep (step, s)].rightHand;
+        const int target = nextChord.size > 0 ? nextChord.highest() : s.centre + 7;   // where the fill lands
+        const auto& scale = scaleIntervals (s.scale);
+        const auto scaleRun = notesOf (s.keyRoot, scale.data(), 7, target - 26, target + 14);
+        const int iTarget = indexAtOrBelow (scaleRun, target);
+        const double t = hitTime (31);
+
+        // Top notes of a chord, as a lighter voicing for fast hits.
+        auto topNotes = [] (const NoteSet& chord, int count, auto&& add)
+        {
+            for (int i = std::max (0, chord.size - count); i < chord.size; ++i)
+                add (chord[i], i);
+        };
+
+        if (fillStyle == FillStyle::gospelRun)
+        {
+            // Eight 16ths up the scale, ending on the note just below where the next chord lands.
+            const int idx = std::clamp (iTarget - 8 + k, 0, scaleRun.size - 1);
+            pending.push_back ({ t, scaleRun[idx], hitVelocity ('x', 0.7 + 0.04 * k, 32), std::clamp (s.gate, 0.3f, 0.9f) * stepLength });
+        }
+        else if (fillStyle == FillStyle::chromaticWalk)
+        {
+            // Four chromatic steps up into the top note of the next chord.
+            pending.push_back ({ t, target - 4 + k, hitVelocity ('x', 0.75 + 0.07 * k, 32), 0.8 * stepLength });
+        }
+        else if (fillStyle == FillStyle::pushStabs)
+        {
+            // Short stab of this chord, ghost, then the next chord pushed in on the "&" of 4.
+            if (k == 0) topNotes (thisChord, 4, [&] (int n, int i) { pending.push_back ({ t + 0.004 * i, n, hitVelocity ('x', 0.85, 70 + i), 0.5 * stepLength }); });
+            if (k == 1) topNotes (thisChord, 2, [&] (int n, int i) { pending.push_back ({ t, n, hitVelocity ('g', 1.0, 70 + i), 0.4 * stepLength }); });
+            if (k == 2) topNotes (nextChord, 4, [&] (int n, int i) { pending.push_back ({ t + 0.004 * i, n, hitVelocity ('X', 1.0, 70 + i), 1.4 * stepLength }); });
+        }
+        else if (fillStyle == FillStyle::chordChops)
+        {
+            // Four 16th chops of this chord with a crescendo (light voicing: top three notes).
+            topNotes (thisChord, 3, [&] (int n, int i)
+            {
+                pending.push_back ({ t + 0.003 * i, n, hitVelocity ('x', 0.6 + 0.12 * k, 70 + i), 0.5 * stepLength });
+            });
+        }
+        else if (fillStyle == FillStyle::gospelThirds)
+        {
+            // Parallel thirds walking down the scale onto the next chord.
+            const int idx = std::clamp (iTarget + 4 - k, 2, scaleRun.size - 1);
+            pending.push_back ({ t, scaleRun[idx], vel, len * 0.8 });
+            pending.push_back ({ t, scaleRun[idx - 2], hitVelocity ('x', 0.8, 33), len * 0.8 });
+        }
+        else if (fillStyle == FillStyle::glissando)
+        {
+            // Eight 32nd notes sweeping up the scale.
+            for (int half = 0; half < 2; ++half)
+            {
+                const int idx = std::clamp (iTarget - 8 + 2 * k + half, 0, scaleRun.size - 1);
+                pending.push_back ({ t + half * stepLength * 0.5, scaleRun[idx], hitVelocity ('x', 0.65 + 0.05 * (2 * k + half), 34 + half),
+                                     (k == lastK && half == 1 ? 1.0 : 0.45) * stepLength });
+            }
+        }
+        else if (fillStyle == FillStyle::bluesLick)
+        {
+            // Down the blues scale (minor pentatonic + b5), the classic house piano lick.
+            static constexpr int blues[] { 0, 3, 5, 6, 7, 10 };
+            const auto lick = notesOf (s.keyRoot, blues, 6, target - 14, target + 8);
+            const int start = indexAtOrBelow (lick, target + 5);
+            const int idx = std::clamp (start - k, 0, lick.size - 1);
+            pending.push_back ({ t, lick[idx], vel, len });
+        }
+        else if (fillStyle == FillStyle::chordRoll)
         {
             // Arpeggiate the NEXT chord upwards, landing on its top note.
             const long long nextBar = (floorDiv (step, 16) + 1) * 16;
@@ -766,7 +885,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
                     if (run[i] <= top)
                         iTop = i;
 
-                const int idx = s.fillStyle == FillStyle::pentatonicDown ? iTop + 2 - k : iTop - 2 + k;
+                const int idx = fillStyle == FillStyle::pentatonicDown ? iTop + 2 - k : iTop - 2 + k;
                 pending.push_back ({ hitTime (31), run[std::clamp (idx, 0, run.size - 1)], vel, len });
             }
         }
@@ -792,7 +911,13 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             // Strum: roll the chord upwards, up to ~1/32 note between the notes.
             const double roll = std::clamp (s.strum, 0.0f, 1.0f) * 0.06;
 
-            for (int i = 0; i < v.rightHand.size; ++i)
+            // A pianist's touch: ghost notes are just the top two notes, and a hit right after
+            // another one (fast 16th chops) uses the top three, so busy riffs stay light.
+            const bool fastRepeat = isHit (pattern.rightHand[(size_t) mod (pos - 1, pattern.length())]);
+            const int firstNote = symbol == 'g' ? std::max (0, v.rightHand.size - 2)
+                                : fastRepeat    ? std::max (0, v.rightHand.size - 3) : 0;
+
+            for (int i = firstNote; i < v.rightHand.size; ++i)
                 pending.push_back ({ t + 0.004 * human * noise (step, 50 + i) + i * roll, v.rightHand[i],
                                      hitVelocity (symbol, 1.0 - 0.03 * (v.rightHand.size - 1 - i), 60 + i), len, tie });
 
@@ -800,8 +925,9 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
                 pending.push_back ({ t + v.rightHand.size * roll, v.rightHand.highest() + 12,
                                      hitVelocity (symbol, 0.8, 70), len, tie });
 
-            for (int i = 0; i < v.leftHand.size; ++i)
-                pending.push_back ({ t, v.leftHand[i], hitVelocity (symbol, 0.85, 80 + i), len, tie });
+            if (firstNote == 0)
+                for (int i = 0; i < v.leftHand.size; ++i)
+                    pending.push_back ({ t, v.leftHand[i], hitVelocity (symbol, 0.85, 80 + i), len, tie });
         }
     }
 
@@ -826,7 +952,13 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             const int vel = hitVelocity (symbol, 0.9, 91);
             const bool tie = isTiedFromPush (pattern.leftHand, pos);
 
-            pending.push_back ({ t, root, vel, len, tie, Part::bass });
+            // Steady 8ths (x.x.) bounce between root and octave, like a disco / house bass player.
+            const auto& lh = pattern.leftHand;
+            const int n = (int) lh.size();
+            const bool octaveBounce = bassMode == BassMode::root && symbol != '>' && mod (pos, 4) == 2
+                                   && isHit (lh[(size_t) mod (pos - 2, n)]) && lh[(size_t) mod (pos - 1, n)] == '.';
+
+            pending.push_back ({ t, octaveBounce ? root + 12 : root, octaveBounce ? (int) (vel * 0.9) : vel, len, tie, Part::bass });
             if (bassMode == BassMode::octaves)    pending.push_back ({ t, root + 12, (int) (vel * 0.85), len, tie, Part::bass });
             if (bassMode == BassMode::rootFifth)  pending.push_back ({ t, root + 7,  (int) (vel * 0.85), len, tie, Part::bass });
         }

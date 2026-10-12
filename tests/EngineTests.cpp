@@ -184,10 +184,10 @@ static void testSwing()
     std::vector<NoteEvent> events;
     engine.render (0.0, 4.0, s, events);
 
-    // Step 3 (the "a" of beat 1) is an odd 16th, so full swing delays it by a third of a step.
+    // Step 5 (the "e" of beat 2) is an odd 16th, so full swing delays it by a third of a step.
     bool sawSwungHit = false;
     for (const auto& e : events)
-        if (e.isNoteOn() && std::abs (e.ppq - (0.75 + 0.25 / 3.0)) < 1.0e-6)
+        if (e.isNoteOn() && std::abs (e.ppq - (1.25 + 0.25 / 3.0)) < 1.0e-6)
             sawSwungHit = true;
 
     CHECK (sawSwungHit);
@@ -432,16 +432,36 @@ static void testFillStylesStrumOctave()
         s.pattern = 9;   // Long Chords: nothing else plays on the last beat of bar 2
 
         const auto clip = GrooveEngine::renderClip (s, 8.0);
+        const double from = 4.0 + fillStartStep ((FillStyle) style) * 0.25;   // bar 2
         std::vector<int> fill;
+        int sounding[128] {};
         for (const auto& e : clip)
-            if (e.isNoteOn() && e.ppq >= 7.0 && e.ppq < 8.0)
-                fill.push_back (e.note);
-
-        CHECK (fill.size() == 4);
-        if (fill.size() == 4)
         {
-            if (style == (int) FillStyle::pentatonicUp)   CHECK (fill[0] < fill[3]);
-            if (style == (int) FillStyle::pentatonicDown) CHECK (fill[0] > fill[3]);
+            if (e.isNoteOn() && e.ppq >= from && e.ppq < 8.0)
+                fill.push_back (e.note);
+            sounding[e.note] += e.isNoteOn() ? 1 : -1;
+        }
+        for (int n : sounding)
+            CHECK (n == 0);   // nothing left hanging
+
+        const auto st = (FillStyle) style;
+        if (st == FillStyle::pentatonicUp || st == FillStyle::pentatonicDown || st == FillStyle::chordRoll
+            || st == FillStyle::chromaticWalk || st == FillStyle::bluesLick)
+            CHECK (fill.size() == 4);
+        if (st == FillStyle::gospelRun || st == FillStyle::gospelThirds || st == FillStyle::glissando)
+            CHECK (fill.size() == 8);
+        if (st == FillStyle::chordChops)
+            CHECK (fill.size() == 12);
+        if (st == FillStyle::pushStabs || st == FillStyle::mix)
+            CHECK (fill.size() >= 4);
+
+        if (fill.size() >= 4)
+        {
+            if (st == FillStyle::pentatonicUp)   CHECK (fill[0] < fill[3]);
+            if (st == FillStyle::pentatonicDown) CHECK (fill[0] > fill[3]);
+            if (st == FillStyle::chromaticWalk)  CHECK (fill[3] - fill[0] == 3);
+            if (st == FillStyle::bluesLick)      CHECK (fill[0] > fill[3]);
+            if (st == FillStyle::gospelRun)      CHECK (fill.back() > fill.front());
         }
     }
 

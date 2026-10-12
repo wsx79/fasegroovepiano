@@ -27,7 +27,7 @@ namespace
     juce::String percent (float v, int) { return juce::String (juce::roundToInt (v * 100.0f)) + " %"; }
 
     constexpr int stepsPerChordChoices[] { 8, 16, 32, 64 };
-    constexpr int fillChoices[] { 0, 2, 4, 8 };
+    constexpr int fillChoices[] { 0, 2, 4, 8, 1 };   // "Every bar" was added last
 }
 
 //==============================================================================
@@ -86,7 +86,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     unitFloat (ParamIDs::gate, "Gate", 0.1f, 0.55f);
     layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::velocity, 1 }, "Velocity", 1, 127, 96));
     unitFloat (ParamIDs::humanize, "Humanize", 0.0f, 0.3f);
-    choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars" }, 0);
+    choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars", "Every bar" }, 0);
     choice (ParamIDs::fillStyle, "Fill Style", namesFrom (sgk::numFillStyles, sgk::fillStyleName), 0);
     unitFloat (ParamIDs::strum, "Strum", 0.0f, 0.0f);
     layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::octaveTop, 1 }, "Top Note +8va", false));
@@ -182,6 +182,7 @@ namespace
         int extension, voicing, bass, approach, sound, registerNote;
         float swing, gate, humanize, strum;
         bool octaveTop;
+        int fills = 0, fillStyle = 0;   // fills: 0 off 1 every 2 bars 2 every 4 3 every 8 4 every bar
     };
 
     // extension: 0 triads 1 7ths 2 9ths 3 11ths 4 6/9 5 add9 6 sus 7 9ths+altered V
@@ -190,16 +191,16 @@ namespace
     // sound: 0 Rhodes 1 Soulful Grand 2 House Piano 3 House Organ
     const Style styles[] {
         { "Classic Deep House",   "Dorian Vamp  i - IV",               "Deep Chords",          2, 2, 1, 0, 0, 62, 0.20f, 0.60f, 0.25f, 0.10f, false },
-        { "Soulful House",        "Turnaround  I - vi - ii - V",       "Soulful Sunday",       7, 1, 1, 1, 1, 64, 0.25f, 0.55f, 0.30f, 0.20f, false },
-        { "Gospel House",         "Gospel Lift  IV - V - vi - I",      "Gospel Shout",         7, 0, 2, 1, 1, 64, 0.30f, 0.50f, 0.30f, 0.15f, true  },
-        { "Jackin' House",        "Jackin' Minor  i - iv",             "Jackin' Stabs",        1, 0, 2, 0, 2, 64, 0.45f, 0.35f, 0.20f, 0.00f, true  },
-        { "'90s Piano House",     "Deep House Classic  vi - IV - I - V", "Italo Piano Anthem", 1, 0, 2, 0, 2, 66, 0.10f, 0.45f, 0.15f, 0.00f, true  },
-        { "Organ Jack",           "Deep Dorian  i - ii - IV - i",      "M1 Organ Stabs",       1, 0, 1, 0, 3, 62, 0.35f, 0.40f, 0.20f, 0.00f, false },
-        { "Nu Disco",             "Disco Jack  ii - V - I - vi",       "Nu Disco Keys",        1, 1, 2, 0, 0, 64, 0.15f, 0.40f, 0.20f, 0.00f, false },
-        { "Funky Disco",          "Funky Dominant  I7 - IV7",          "Funky Clavinet 16ths", 2, 5, 2, 0, 2, 64, 0.20f, 0.30f, 0.20f, 0.00f, false },
+        { "Soulful House",        "Turnaround  I - vi - ii - V",       "Soulful Sunday",       7, 1, 1, 1, 1, 64, 0.25f, 0.55f, 0.30f, 0.20f, false, 3, 7 },
+        { "Gospel House",         "Gospel Lift  IV - V - vi - I",      "Gospel Shout",         7, 0, 2, 1, 1, 64, 0.30f, 0.50f, 0.30f, 0.15f, true, 2, 3 },
+        { "Jackin' House",        "Jackin' Minor  i - iv",             "Jackin' Stabs",        1, 0, 2, 0, 2, 64, 0.45f, 0.35f, 0.20f, 0.00f, true, 2, 5 },
+        { "'90s Piano House",     "Deep House Classic  vi - IV - I - V", "Italo Piano Anthem", 1, 0, 2, 0, 2, 66, 0.10f, 0.45f, 0.15f, 0.00f, true, 3, 8 },
+        { "Organ Jack",           "Deep Dorian  i - ii - IV - i",      "M1 Organ Stabs",       1, 0, 1, 0, 3, 62, 0.35f, 0.40f, 0.20f, 0.00f, false, 2, 6 },
+        { "Nu Disco",             "Disco Jack  ii - V - I - vi",       "Nu Disco Keys",        1, 1, 2, 0, 0, 64, 0.15f, 0.40f, 0.20f, 0.00f, false, 3, 4 },
+        { "Funky Disco",          "Funky Dominant  I7 - IV7",          "Funky Clavinet 16ths", 2, 5, 2, 0, 2, 64, 0.20f, 0.30f, 0.20f, 0.00f, false, 2, 9 },
         { "UK Garage",            "Minor Flow  i - VI - III - VII",    "UK Garage 2-Step",     2, 2, 1, 0, 0, 64, 0.50f, 0.45f, 0.25f, 0.10f, false },
         { "Afro House",           "Deep Minor  i - v",                 "Afro House Keys",      2, 4, 1, 0, 0, 62, 0.15f, 0.50f, 0.30f, 0.00f, false },
-        { "Neo Soul",             "Neo Soul  ii - iii - IV - V",       "Neo Soul Ghosts",      3, 6, 1, 2, 0, 62, 0.45f, 0.60f, 0.40f, 0.30f, false },
+        { "Neo Soul",             "Neo Soul  ii - iii - IV - V",       "Neo Soul Ghosts",      3, 6, 1, 2, 0, 62, 0.45f, 0.60f, 0.40f, 0.30f, false, 3, 7 },
         { "Chill Lounge",         "Lydian Float  I - II",              "Lounge Keys",          2, 3, 1, 0, 0, 64, 0.20f, 0.80f, 0.30f, 0.35f, false },
     };
 
@@ -265,7 +266,8 @@ void FaseGroovePianoProcessor::applyStyle (int index)
     setParameterFromUI (ParamIDs::strum, st.strum);
     setParameterFromUI (ParamIDs::octaveTop, st.octaveTop ? 1.0f : 0.0f);
     setParameterFromUI (ParamIDs::section, 0.0f);
-    setParameterFromUI (ParamIDs::fills, 0.0f);
+    setParameterFromUI (ParamIDs::fills, (float) st.fills);
+    setParameterFromUI (ParamIDs::fillStyle, (float) st.fillStyle);
     for (int i = 0; i < sgk::numSegments; ++i)
         setParameterFromUI (ParamIDs::segment (i), (float) i);
 }
@@ -298,7 +300,7 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.gate = raw (ParamIDs::gate);
     s.velocity = asInt (ParamIDs::velocity);
     s.humanize = raw (ParamIDs::humanize);
-    s.fillEveryBars = fillChoices[juce::jlimit (0, 3, asInt (ParamIDs::fills))];
+    s.fillEveryBars = fillChoices[juce::jlimit (0, 4, asInt (ParamIDs::fills))];
     s.fillStyle = (sgk::FillStyle) juce::jlimit (0, sgk::numFillStyles - 1, asInt (ParamIDs::fillStyle));
     s.strum = raw (ParamIDs::strum);
     s.octaveTop = raw (ParamIDs::octaveTop) > 0.5f;

@@ -171,6 +171,17 @@ namespace
         { "* Random riff *", "* Riff casuale *", "* Riff aleatorio *", "* Riff aléatoire *", "* Zufallsriff *", "* Riff aleatório *" },
         { "* User pattern *", "* Pattern utente *", "* Patrón de usuario *", "* Motif utilisateur *", "* Eigenes Pattern *", "* Padrão do usuário *" },
 
+        // ---- v1.8 fills ----
+        { "Every bar", "Ogni battuta", "Cada compás", "Chaque mesure", "Jeden Takt", "Todo compasso" },
+        { "Gospel run (2 beats)", "Scala gospel (2 tempi)", "Escala gospel (2 tiempos)", "Gamme gospel (2 temps)", "Gospel-Lauf (2 Schläge)", "Escala gospel (2 tempos)" },
+        { "Chromatic walk-up", "Salita cromatica", "Subida cromática", "Montée chromatique", "Chromatischer Aufgang", "Subida cromática" },
+        { "Push stabs", "Stab di anticipo", "Stabs de anticipo", "Stabs d'anticipation", "Push-Stabs", "Stabs de antecipação" },
+        { "16th chord chops", "Accordi a sedicesimi", "Acordes en semicorcheas", "Accords en doubles croches", "Akkord-Chops in 16teln", "Acordes em semicolcheias" },
+        { "Gospel thirds", "Terze gospel", "Terceras gospel", "Tierces gospel", "Gospel-Terzen", "Terças gospel" },
+        { "Piano glissando", "Glissato di piano", "Glissando de piano", "Glissando de piano", "Klavier-Glissando", "Glissando de piano" },
+        { "Blues lick", "Fraseggio blues", "Frase blues", "Plan blues", "Blues-Lick", "Frase blues" },
+        { "Mix (changes every fill)", "Misto (cambia a ogni fill)", "Mezcla (cambia en cada relleno)", "Mélange (change à chaque fill)", "Mix (wechselt bei jedem Fill)", "Mistura (muda a cada virada)" },
+
         // ---- v1.7 styles, reset, genres ----
         { "STYLE", "STILE", "ESTILO", "STYLE", "STIL", "ESTILO" },
         { "RESET", "RESET", "REINICIAR", "RÉINIT.", "RESET", "REINICIAR" },

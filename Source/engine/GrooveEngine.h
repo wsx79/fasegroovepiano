@@ -73,8 +73,12 @@ const std::vector<ProgressionPreset>& progressionPresets();
 enum class BassMode { off = 0, root, octaves, rootFifth };
 
 /** What the last beat of a fill bar plays. */
-enum class FillStyle { pentatonicUp = 0, pentatonicDown, chordRoll };
-constexpr int numFillStyles = 3;
+enum class FillStyle { pentatonicUp = 0, pentatonicDown, chordRoll,
+                       gospelRun, chromaticWalk, pushStabs, chordChops, gospelThirds, glissando, bluesLick, mix };
+constexpr int numFillStyles = 11;
+
+/** First 16th (in the bar) a fill style takes over: most use the last beat, the gospel run two. */
+int fillStartStep (FillStyle style) noexcept;
 const char* fillStyleName (int style) noexcept;
 constexpr int numBassModes = 4;
 
