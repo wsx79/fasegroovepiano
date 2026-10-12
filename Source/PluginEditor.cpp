@@ -651,6 +651,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       extension (p.apvts, ParamIDs::extension, "Extensions"),
       voicing (p.apvts, ParamIDs::voicing, "Voicing"),
       bass (p.apvts, ParamIDs::bass, "Left-hand bass"),
+      approach (p.apvts, ParamIDs::approach, "Approach chord"),
       registerKnob (p.apvts, ParamIDs::registerPos, "Register"),
       strumKnob (p.apvts, ParamIDs::strum, "Strum"),
       pattern (p.apvts, ParamIDs::pattern, "Groove"),
@@ -689,7 +690,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
 
     for (juce::Component* c : std::initializer_list<juce::Component*> {
-             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &registerKnob, &strumKnob,
+             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &registerKnob, &strumKnob,
              &octaveToggle, &circle,
              &diceProgression, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
              &swing, &gate, &velocity, &humanize, &riffDensity,
@@ -869,7 +870,7 @@ void FaseGroovePianoEditor::applyLanguage()
     for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume })
         k->refreshText();
 
-    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &pattern, &section,
+    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &pattern, &section,
                      &fills, &fillStyle, &playMode, &bassChannel, &soundType })
         c->refreshText();
 
@@ -902,6 +903,7 @@ void FaseGroovePianoEditor::applyLanguage()
     shrinkToggle.setButtonText (tr ("Mini window while dragging"));
 
     octaveToggle.setTooltip (tr ("Double the top note of every chord an octave higher (bright house piano)"));
+    approach.box.setTooltip (tr ("Gospel slide: on the last 16th before a chord change, play the next chord a half step above or below"));
     newRiffButton.setTooltip (tr ("New random funky riff (locked parts are kept)"));
     diceProgression.setTooltip (tr ("Random soulful-house progression"));
     syncButton.setTooltip (tr ("On: follow the DAW tempo. Off: set your own BPM."));
@@ -1289,6 +1291,8 @@ void FaseGroovePianoEditor::layoutFull()
         bass.setBounds (leftCol.removeFromTop (44));
         leftCol.removeFromTop (8);
         octaveToggle.setBounds (leftCol.removeFromTop (24));
+        leftCol.removeFromTop (10);
+        approach.setBounds (leftCol.removeFromTop (44));
         last.removeFromLeft (6);
         const int kw = last.getWidth() / 2;
         const int kh = juce::jmin (kw + 34, last.getHeight());

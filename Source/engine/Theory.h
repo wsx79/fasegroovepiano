@@ -30,12 +30,13 @@ struct NoteSet
 };
 
 //==============================================================================
-enum class Extension { triad = 0, seventh, ninth, eleventh };
-enum class Voicing   { close = 0, drop2, rootless, wide, quartal };
+// New entries are always appended so saved projects keep their settings.
+enum class Extension { triad = 0, seventh, ninth, eleventh, sixNine, add9, sus, alteredDominant };
+enum class Voicing   { close = 0, drop2, rootless, wide, quartal, shell, drop24 };
 
-constexpr int numScales     = 8;
-constexpr int numExtensions = 4;
-constexpr int numVoicings   = 5;
+constexpr int numScales     = 13;
+constexpr int numExtensions = 8;
+constexpr int numVoicings   = 7;
 
 const char* scaleName (int scale) noexcept;
 const std::array<int, 7>& scaleIntervals (int scale) noexcept;
@@ -54,6 +55,8 @@ struct Chord
 {
     int rootPc = 0;
     int third = -1, fifth = -1, seventh = -1, ninth = -1, eleventh = -1, thirteenth = -1;
+    int sixth = -1;            // added 6th (6 and 6/9 chords, no 7th)
+    bool suspended = false;    // "third" holds the perfect 4th (sus4)
 
     NoteSet tones;    // intervals above the root, stacked in thirds (ascending)
     NoteSet quartal;  // diatonic stack of fourths built on the same degree
@@ -62,7 +65,9 @@ struct Chord
 /** Builds the diatonic chord on a scale degree (0..6) of keyRoot/scale.
     Ugly diatonic tensions are tidied up the way a keyboard player would:
     b9 is dropped on non-dominant chords, and the 11th becomes a 13th on
-    chords with a major third. */
+    chords with a major third. A 6th that would be a b6 becomes a 7th, a sus4
+    is only used where the 4th is perfect, and "altered V" turns degree V into
+    a gospel dominant 13(b9) (or 7(b9,b13) in minor keys). */
 Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept;
 
 /** e.g. "Am9", "D13", "Fmaj9", "Bm7b5", "Em7(11)". */

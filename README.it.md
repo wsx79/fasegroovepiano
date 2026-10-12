@@ -28,10 +28,14 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 
 ## Funzioni
 
-- 🎹 **Armonia:** 12 tonalità × 8 scale/modi (Maggiore, Dorian, Minore, Mixolydian, Lydian,
-  Phrygian, Minore armonica e melodica). Accordi diatonici a 3–6 voci con tensioni gestite in automatico.
-- 🎛️ **Voicing:** Close, Drop 2, Rootless, Wide (due mani), Quartal, con voice leading automatico.
-- 🔁 **Progressioni:** 1–8 accordi, 22 preset (tra cui le progressioni sul circolo delle quinte)
+- 🎹 **Armonia:** 12 tonalità × 13 scale/modi (Maggiore, Dorian, Minore, Mixolydian, Lydian,
+  Phrygian, Locrian, Minore armonica e melodica, Maggiore armonica, Lidia dominante, Misolidia b6,
+  Frigia dominante). Triadi, 7ª, 9ª, 11ª/13ª, **6/9**, **add9**, **9sus4** e il **V alterato
+  13(b9)** gospel; tensioni gestite in automatico.
+- 🎛️ **Voicing:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (due mani), Quartal, con voice
+  leading automatico.
+- ↗️ **Accordi di passaggio:** lo slide gospel di mezzo tono verso ogni cambio d'accordo (da sopra o da sotto).
+- 🔁 **Progressioni:** 1–8 accordi, 30 preset (tra cui le progressioni sul circolo delle quinte)
   e **DICE** per progressioni casuali ma musicali.
 - ⭕ **Circolo delle quinte** interattivo, con il percorso della progressione.
 - 🥁 **34 groove** a due mani (soulful, gospel, deep, **jackin' house**, funky, garage, disco…)

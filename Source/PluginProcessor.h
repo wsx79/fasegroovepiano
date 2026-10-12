@@ -37,6 +37,7 @@ namespace ParamIDs
     inline constexpr const char* fillStyle   = "fillStyle";
     inline constexpr const char* strum       = "strum";
     inline constexpr const char* octaveTop   = "octaveTop";
+    inline constexpr const char* approach    = "approach";
     inline constexpr const char* riffSeed    = "riffSeed";
     inline constexpr const char* riffDensity = "riffDensity";
     inline constexpr const char* sound       = "sound";

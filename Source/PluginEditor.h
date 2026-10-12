@@ -199,7 +199,7 @@ private:
     juce::OwnedArray<ChordSlot> slots;
 
     // Harmony
-    Choice key, scale, extension, voicing, bass;
+    Choice key, scale, extension, voicing, bass, approach;
     Knob registerKnob, strumKnob;
     juce::ToggleButton octaveToggle { "Top +8va" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> octaveAttachment;

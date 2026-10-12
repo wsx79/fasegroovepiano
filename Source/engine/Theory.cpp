@@ -71,11 +71,17 @@ namespace
         { 0, 1, 3, 5, 7, 8, 10 },  // Phrygian
         { 0, 2, 3, 5, 7, 8, 11 },  // Harmonic minor
         { 0, 2, 3, 5, 7, 9, 11 },  // Melodic minor
+        { 0, 1, 3, 5, 6, 8, 10 },  // Locrian
+        { 0, 2, 4, 5, 7, 8, 11 },  // Harmonic major (gospel minor iv)
+        { 0, 2, 4, 6, 7, 9, 10 },  // Lydian dominant (funky I7#11)
+        { 0, 2, 4, 5, 7, 8, 10 },  // Mixolydian b6 (soulful iv, bVI, bVII)
+        { 0, 1, 4, 5, 7, 8, 10 },  // Phrygian dominant (dark deep house)
     }};
 
     const char* const scaleNames[numScales] {
         "Major (Ionian)", "Dorian", "Minor (Aeolian)", "Mixolydian",
-        "Lydian", "Phrygian", "Harmonic Minor", "Melodic Minor"
+        "Lydian", "Phrygian", "Harmonic Minor", "Melodic Minor",
+        "Locrian", "Harmonic Major", "Lydian Dominant", "Mixolydian b6", "Phrygian Dominant"
     };
 
     const char* const noteNames[12] { "C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" };
@@ -175,13 +181,15 @@ const char* noteName (int pitchClass) noexcept      { return noteNames[mod (pitc
 
 const char* extensionName (int ext) noexcept
 {
-    static const char* const names[numExtensions] { "Triads", "7ths", "9ths", "11ths / 13ths" };
+    static const char* const names[numExtensions] { "Triads", "7ths", "9ths", "11ths / 13ths",
+                                                       "6/9", "Add 9", "Sus (9sus4)", "9ths + altered V" };
     return names[mod (ext, numExtensions)];
 }
 
 const char* voicingName (int voicing) noexcept
 {
-    static const char* const names[numVoicings] { "Close", "Drop 2", "Rootless", "Wide (2 hands)", "Quartal (4ths)" };
+    static const char* const names[numVoicings] { "Close", "Drop 2", "Rootless", "Wide (2 hands)", "Quartal (4ths)",
+                                                     "Shell (3-7-top)", "Drop 2+4" };
     return names[mod (voicing, numVoicings)];
 }
 
@@ -204,19 +212,47 @@ Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept
     c.third  = above (2);
     c.fifth  = above (4);
 
-    if (ext >= Extension::seventh)
+    bool wantsSeventh = ext == Extension::seventh || ext == Extension::ninth || ext == Extension::eleventh
+                     || ext == Extension::sus || ext == Extension::alteredDominant;
+    bool wantsNinth   = ext == Extension::ninth || ext == Extension::eleventh || ext == Extension::sixNine
+                     || ext == Extension::add9 || ext == Extension::sus || ext == Extension::alteredDominant;
+
+    if (ext == Extension::sixNine)
+    {
+        const int sixth = above (5) % 12;
+        if (sixth == 9 && c.fifth == 7)
+            c.sixth = sixth;
+        else
+            wantsSeventh = true;   // a b6 (or a diminished chord) sounds better as a 9th chord
+    }
+
+    if (wantsSeventh)
         c.seventh = above (6) % 12;
+
+    // Gospel / soulful dominant on degree V, whatever the scale says.
+    const bool alteredV = ext == Extension::alteredDominant && degree == 4;
+    if (alteredV)
+    {
+        c.third = 4;
+        c.fifth = 7;
+        c.seventh = 10;
+    }
 
     const bool dominant = (c.third == 4 && c.seventh == 10);
 
-    if (ext >= Extension::ninth)
+    if (wantsNinth)
     {
         const int ninth = above (8) % 12;
-        if (ninth != 1 || dominant)   // b9 only sounds right on dominants
+        if (alteredV)
+            c.ninth = 1;                    // b9
+        else if (ninth != 1 || dominant)    // b9 only sounds right on dominants
             c.ninth = ninth;
     }
 
-    if (ext >= Extension::eleventh)
+    if (alteredV)
+        c.thirteenth = scaleIsMinor (scale) ? 8 : 9;   // b13 in minor keys, 13 in major keys
+
+    if (ext == Extension::eleventh)
     {
         if (c.third == 4)
             c.thirteenth = above (12) % 12;  // the 11th clashes with a major third
@@ -224,10 +260,18 @@ Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept
             c.eleventh = above (10) % 12;
     }
 
+    // sus4: the 4th replaces the 3rd, only where it is a perfect 4th over a perfect 5th.
+    if (ext == Extension::sus && above (3) % 12 == 5 && c.fifth == 7)
+    {
+        c.third = 5;
+        c.suspended = true;
+    }
+
     // Stack the tones upwards in their natural (compound) order.
     c.tones.add (0);
     c.tones.add (c.third);
     c.tones.add (c.fifth);
+    if (c.sixth      >= 0) c.tones.add (c.sixth);
     if (c.seventh    >= 0) c.tones.add (c.seventh);
     if (c.ninth      >= 0) c.tones.add (c.ninth + 12);
     if (c.eleventh   >= 0) c.tones.add (c.eleventh + 12);
@@ -243,6 +287,18 @@ Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept
 
 std::string chordName (const Chord& c)
 {
+    const std::string root = noteName (c.rootPc);
+
+    if (c.suspended)
+    {
+        if (c.seventh == 10) return root + (c.ninth == 2 ? "9sus4" : "7sus4");
+        if (c.seventh == 11) return root + (c.ninth == 2 ? "maj9sus4" : "maj7sus4");
+        return root + (c.ninth == 2 ? "sus4(9)" : "sus4");
+    }
+
+    if (c.sixth >= 0 && c.seventh < 0 && c.fifth == 7 && (c.third == 3 || c.third == 4))
+        return root + (c.third == 3 ? "m" : "") + (c.ninth == 2 ? "6/9" : "6");
+
     std::string quality;
     bool canExtend = false;   // base ends in a "7" that a natural 9/11/13 may replace
 
@@ -287,10 +343,19 @@ std::string chordName (const Chord& c)
     std::string suffix;
     auto addParen = [&suffix] (const char* t) { suffix += "("; suffix += t; suffix += ")"; };
 
+    // Dominant with an altered 9th and a natural 13th: "G13(b9)".
+    const bool alteredThirteen = canExtend && c.seventh == 10 && c.ninth >= 0 && c.ninth != 2 && c.thirteenth == 9;
+    if (alteredThirteen)
+        number = 13;
+
     if (canExtend && number > 7)
     {
         const auto pos = quality.find ('7');
         quality.replace (pos, 1, std::to_string (number));
+    }
+    else if (number == 9 && c.seventh < 0 && (quality.empty() || quality == "m"))
+    {
+        quality += "add9";
     }
     else if (number > 7)
     {
@@ -301,10 +366,10 @@ std::string chordName (const Chord& c)
     if (c.ninth == 3)       addParen ("#9");
     if (c.ninth < 0 && c.eleventh == 5)    addParen ("11");
     if (c.eleventh == 6)    addParen ("#11");
-    if (c.ninth < 0 && c.thirteenth == 9)  addParen ("13");
+    if (c.ninth < 0 && c.thirteenth == 9 && ! alteredThirteen)  addParen ("13");
     if (c.thirteenth == 8)  addParen ("b13");
 
-    return std::string (noteName (c.rootPc)) + quality + suffix;
+    return root + quality + suffix;
 }
 
 std::string romanNumeral (int degree, const Chord& c)
@@ -313,6 +378,9 @@ std::string romanNumeral (int degree, const Chord& c)
     static const char* const lower[7] { "i", "ii", "iii", "iv", "v", "vi", "vii" };
 
     const int d = mod (degree, 7);
+    if (c.suspended)
+        return std::string (upper[d]) + "sus";
+
     std::string r = (c.third == 4) ? upper[d] : lower[d];
 
     if (c.third == 3 && c.fifth == 6)  r += (c.seventh == 10 ? "\xc3\xb8" : "\xc2\xb0");  // ø / °
@@ -354,6 +422,20 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
             break;
         }
 
+        case Voicing::shell:
+        {
+            // Jazz / deep house shell: 3rd (or 4th), 7th (or 6th / 5th) and the top colour tone.
+            pcs.add (absolutePc (chord.third));
+            pcs.add (absolutePc (chord.seventh >= 0 ? chord.seventh : chord.sixth >= 0 ? chord.sixth : chord.fifth));
+
+            const int top = chord.tones[chord.tones.size - 1];
+            if (chord.tones.size > 3 && ! pcs.contains (absolutePc (top)))
+                pcs.add (absolutePc (top));
+            else if (! pcs.contains (chord.rootPc))
+                pcs.add (chord.rootPc);
+            break;
+        }
+
         case Voicing::wide:
         {
             // Left hand: root + 7th (or 5th) about an octave and a half below the centre.
@@ -382,6 +464,7 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
 
         case Voicing::close:
         case Voicing::drop2:
+        case Voicing::drop24:
         default:
         {
             for (int i = 0; i < chord.tones.size; ++i)
@@ -390,6 +473,11 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
         }
     }
 
+    // Drop 2+4 starts from a truly close position (tones within one octave).
+    if (voicing == Voicing::drop24)
+        std::sort (pcs.notes.begin(), pcs.notes.begin() + pcs.size,
+                   [&chord] (int a, int b) { return mod (a - chord.rootPc, 12) < mod (b - chord.rootPc, 12); });
+
     v.rightHand = bestInversion (pcs, centre, previousRightHand);
     v.rightHand.sort();
 
@@ -397,6 +485,27 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
     {
         v.rightHand.notes[(size_t) v.rightHand.size - 2] -= 12;
         v.rightHand.sort();
+    }
+
+    // Drop 2+4: the 2nd and 4th voices from the top go down an octave (open, pianistic).
+    if (voicing == Voicing::drop24 && v.rightHand.size >= 4)
+    {
+        v.rightHand.notes[(size_t) v.rightHand.size - 2] -= 12;
+        v.rightHand.notes[(size_t) v.rightHand.size - 4] -= 12;
+        v.rightHand.sort();
+
+        // Re-centre the open shape by octaves: stay within the register, near the centre.
+        int bestShift = 0;
+        double bestCost = std::numeric_limits<double>::max();
+        for (int shift = -24; shift <= 24; shift += 12)
+        {
+            const int low = v.rightHand.lowest() + shift, high = v.rightHand.highest() + shift;
+            const double outside = std::max (0, (centre - 20) - low) + std::max (0, high - (centre + 20));
+            const double cost = outside * 100.0 + std::abs (v.rightHand.mean() + shift - centre);
+            if (cost < bestCost) { bestCost = cost; bestShift = shift; }
+        }
+        for (int i = 0; i < v.rightHand.size; ++i)
+            v.rightHand.notes[(size_t) i] += bestShift;
     }
 
     return v;

@@ -222,6 +222,15 @@ const std::vector<ProgressionPreset>& progressionPresets()
         { "Soulful Gospel  I - iii - IV - V",  0, { 0, 2, 3, 4 } },
         { "Deep Dorian  i - ii - IV - i",      1, { 0, 1, 3, 0 } },
         { "Funky Mixo  I - IV - VII - IV",     3, { 0, 3, 6, 3 } },
+        // v1.5: progressions for the new scales and classic house moves
+        { "Gospel Plagal  I - iv - V - I",     9, { 0, 3, 4, 0 } },
+        { "Lydian Dom Funk  I7#11 - II",       10, { 0, 1 } },
+        { "Soul Borrowed  I - iv - bVII - I",  11, { 0, 3, 6, 0 } },
+        { "Dark Deep  I - II (Phrygian dom.)", 12, { 0, 1 } },
+        { "Phrygian Deep  i - II - i - vii",   5, { 0, 1, 0, 6 } },
+        { "Deep House Classic  vi - IV - I - V", 0, { 5, 3, 0, 4 } },
+        { "Jackin' Dorian  i - IV - i - v",    1, { 0, 3, 0, 4 } },
+        { "Neo Soul  ii - iii - IV - V",       0, { 1, 2, 3, 4 } },
     };
 
     return presets;
@@ -231,6 +240,12 @@ const char* fillStyleName (int style) noexcept
 {
     static const char* const names[numFillStyles] { "Pentatonic run up", "Pentatonic run down", "Chord roll (next chord)" };
     return names[mod (style, numFillStyles)];
+}
+
+const char* approachStyleName (int style) noexcept
+{
+    static const char* const names[numApproachStyles] { "Off", "From above", "From below" };
+    return names[mod (style, numApproachStyles)];
 }
 
 const char* bassModeName (int m) noexcept
@@ -441,6 +456,28 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     const int stepInBar = mod (step, 16);
     const bool inFill = s.fillEveryBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1 && stepInBar >= 12;
 
+    // Approach ("slide"): the last 16th before a real chord change.
+    const int slotNow = slotForStep (step, s);
+    const int slotNext = slotForStep (step + 1, s);
+    const int approachShift = s.approach == ApproachStyle::fromAbove ? 1 : s.approach == ApproachStyle::fromBelow ? -1 : 0;
+    const bool approachHere = approachShift != 0 && s.stepsPerChord >= 8 && slotNext != slotNow
+                           && (chords[(size_t) slotNext].rootPc != chords[(size_t) slotNow].rootPc
+                               || chords[(size_t) slotNext].third != chords[(size_t) slotNow].third);
+    // Only where that hand is playing (a muted bass in the break stays muted).
+    auto canApproach = [pos] (const std::string& line)
+    {
+        const char symbol = line[(size_t) pos];
+        if (symbol == '>' || symbol == '=')
+            return false;
+
+        const int len = (int) line.size();
+        for (int k = 1; k < 16; ++k)
+            if (isHit (line[(size_t) mod (pos - k, len)]))
+                return true;
+        return false;
+    };
+    const double approachLength = std::clamp (s.gate, 0.2f, 0.6f) * stepLength;
+
     // ---- right hand (chords) ----
     if (inFill)
     {
@@ -479,6 +516,14 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             }
         }
     }
+    else if (approachHere && canApproach (pattern.rightHand))
+    {
+        const auto& next = voiced[(size_t) slotNext];
+        const double t = hitTime (1);
+        const double roll = std::clamp (s.strum, 0.0f, 1.0f) * 0.03;
+        for (int i = 0; i < next.rightHand.size; ++i)
+            pending.push_back ({ t + i * roll, next.rightHand[i] + approachShift, hitVelocity ('x', 0.8, 60 + i), approachLength });
+    }
     else
     {
         const char symbol = pattern.rightHand[(size_t) pos];
@@ -510,7 +555,12 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     if (s.section == Section::drop && bassMode == BassMode::root)
         bassMode = BassMode::octaves;    // the drop hits harder
 
-    if (bassMode != BassMode::off)
+    if (bassMode != BassMode::off && approachHere && canApproach (pattern.leftHand))
+    {
+        const int target = 36 + chords[(size_t) slotNext].rootPc;
+        pending.push_back ({ hitTime (90), target + approachShift, hitVelocity ('x', 0.8, 91), approachLength, false, Part::bass });
+    }
+    else if (bassMode != BassMode::off)
     {
         const char symbol = pattern.leftHand[(size_t) pos];
         if (isHit (symbol))

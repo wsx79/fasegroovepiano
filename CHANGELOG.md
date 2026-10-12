@@ -6,6 +6,23 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-10-12
+
+### Added
+- **5 new scales:** Locrian, Harmonic Major (gospel minor iv), Lydian Dominant (funky I7#11),
+  Mixolydian b6 (soulful borrowed iv) and Phrygian Dominant (dark deep house): 13 in total.
+- **4 new extensions:** 6/9, Add 9, Sus (9sus4) and *9ths + altered V* (degree V becomes a gospel
+  13(b9), or 7(b9,b13) in minor keys).
+- **2 new voicings:** Shell (3rd, 7th and top colour note) and Drop 2+4 (open pianist voicing).
+- **Approach chord:** the gospel half-step slide into each chord change, from above or from below,
+  for chords and bass (only where that hand is playing).
+- **8 new progressions** (30 in total), including Gospel Plagal, Lydian Dom Funk, Soul Borrowed,
+  Dark Deep, Phrygian Deep, Deep House Classic, Jackin' Dorian and Neo Soul.
+- Guide: **quick harmony rules for house piano** and four new recipes.
+
+### Changed
+- Mode names (Dorian, Lydian…) are translated in the interface languages.
+
 ## [1.4.0] - 2026-10-12
 
 ### Added

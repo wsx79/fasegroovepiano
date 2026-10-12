@@ -43,6 +43,22 @@ static void testChordNames()
     checkName (C, 0, 4, Extension::eleventh, "G13");
     checkName (C, 0, 1, Extension::ninth,    "Dm9");
     checkName (C, 0, 2, Extension::ninth,    "Em7");      // b9 dropped
+    // v1.5 extensions
+    checkName (C, 0, 0, Extension::sixNine,  "C6/9");
+    checkName (A, 1, 0, Extension::sixNine,  "Am6/9");    // Dorian: natural 6
+    checkName (A, 2, 0, Extension::sixNine,  "Am9");      // Aeolian b6 -> 9th chord instead
+    checkName (C, 0, 0, Extension::add9,     "Cadd9");
+    checkName (C, 0, 1, Extension::add9,     "Dmadd9");
+    checkName (C, 0, 4, Extension::sus,      "G9sus4");
+    checkName (C, 0, 1, Extension::sus,      "D9sus4");
+    checkName (C, 0, 3, Extension::sus,      "Fmaj9");    // #4: no sus
+    checkName (C, 0, 4, Extension::alteredDominant, "G13(b9)");
+    checkName (A, 2, 4, Extension::alteredDominant, "E7(b9)(b13)");
+    checkName (A, 1, 0, Extension::alteredDominant, "Am9");
+    checkName (C, 10, 0, Extension::seventh, "C7");       // Lydian dominant
+    checkName (C, 9, 3, Extension::seventh,  "Fm(maj7)"); // Harmonic major iv
+    checkName (C, 11, 6, Extension::seventh, "Bb7");      // Mixolydian b6 bVII
+    CHECK (romanNumeral (4, buildChord (C, 0, 4, Extension::sus)) == "Vsus");
     checkName (C, 0, 2, Extension::eleventh, "Em7(11)");
     checkName (C, 0, 6, Extension::seventh,  "Bm7b5");
     checkName (C, 0, 0, Extension::triad,    "C");
@@ -455,6 +471,59 @@ static void testFillStylesStrumOctave()
     CHECK (top == voiced[0].rightHand.highest() + 12);
 }
 
+static void testApproachChords()
+{
+    GrooveSettings s;
+    s.humanize = 0.0f;
+    s.swing = 0.0f;
+    s.progression = { 0, 3, 0, 3, 0, 3, 0, 3 };
+    s.progressionLength = 2;
+    s.stepsPerChord = 16;
+    s.pattern = userPatternIndex();
+    s.userRight.fill ('.');
+    s.userLeft.fill ('.');
+    for (int i : { 0, 8, 16, 24 }) { s.userRight[(size_t) i] = 'x'; s.userLeft[(size_t) i] = 'x'; }
+
+    std::array<Chord, maxProgressionLength> chords;
+    std::array<VoicedChord, maxProgressionLength> voiced;
+    GrooveEngine::voiceProgression (s, chords, voiced);
+
+    for (int style = 0; style < numApproachStyles; ++style)
+    {
+        s.approach = (ApproachStyle) style;
+        const int shift = style == 1 ? 1 : style == 2 ? -1 : 0;
+        const auto clip = GrooveEngine::renderClip (s, 8.0);
+
+        std::set<int> chordNotes, bassNotes;
+        for (const auto& e : clip)
+            if (e.isNoteOn() && std::abs (e.ppq - 3.75) < 0.05)
+                (e.part == Part::bass ? bassNotes : chordNotes).insert (e.note);
+
+        if (shift == 0)
+        {
+            CHECK (chordNotes.empty() && bassNotes.empty());
+            continue;
+        }
+
+        std::set<int> expected;
+        for (int i = 0; i < voiced[1].rightHand.size; ++i)
+            expected.insert (voiced[1].rightHand[i] + shift);
+        CHECK (chordNotes == expected);
+        CHECK ((bassNotes == std::set<int> { 36 + chords[1].rootPc + shift }));
+
+        // Every note is closed before the clip ends.
+        int balance = 0;
+        for (const auto& e : clip) balance += e.isNoteOn() ? 1 : -1;
+        CHECK (balance == 0);
+    }
+
+    // A muted bass (break) stays muted.
+    s.approach = ApproachStyle::fromBelow;
+    s.userLeft.fill ('.');
+    for (const auto& e : GrooveEngine::renderClip (s, 8.0))
+        CHECK (e.part != Part::bass);
+}
+
 static void testPatternsWellFormed()
 {
     CHECK (groovePatterns().size() == 34);
@@ -488,6 +557,7 @@ int main()
     testSections();
     testSegmentsAndUserPattern();
     testFillStylesStrumOctave();
+    testApproachChords();
     testPatternsWellFormed();
 
     if (failures == 0)

@@ -58,6 +58,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
                         return String (sgk::noteName (v)) + String (v / 12 - 1);
                     })));
     choice (ParamIDs::bass, "Bass", namesFrom (sgk::numBassModes, sgk::bassModeName), 1);
+    choice (ParamIDs::approach, "Approach Chord", namesFrom (sgk::numApproachStyles, sgk::approachStyleName), 0);
 
     // Progression
     const StringArray degrees { "I", "II", "III", "IV", "V", "VI", "VII" };
@@ -176,6 +177,7 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.fillStyle = (sgk::FillStyle) juce::jlimit (0, sgk::numFillStyles - 1, asInt (ParamIDs::fillStyle));
     s.strum = raw (ParamIDs::strum);
     s.octaveTop = raw (ParamIDs::octaveTop) > 0.5f;
+    s.approach = (sgk::ApproachStyle) juce::jlimit (0, sgk::numApproachStyles - 1, asInt (ParamIDs::approach));
     s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
     s.riffDensity = raw (ParamIDs::riffDensity);

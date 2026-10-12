@@ -29,11 +29,14 @@ Rhodes or synth.
 
 ## Features
 
-- 🎹 **Harmony:** 12 keys × 8 scales/modes (Major, Dorian, Minor, Mixolydian, Lydian, Phrygian,
-  Harmonic and Melodic Minor). Diatonic chords with 3–6 voices; clashing tensions are handled
-  automatically.
-- 🎛️ **Voicings:** Close, Drop 2, Rootless, Wide (two hands), Quartal, with automatic voice leading.
-- 🔁 **Progressions:** 1–8 chords, 22 presets (including circle-of-fifths progressions) and
+- 🎹 **Harmony:** 12 keys × 13 scales/modes (Major, Dorian, Minor, Mixolydian, Lydian, Phrygian,
+  Locrian, Harmonic and Melodic Minor, Harmonic Major, Lydian Dominant, Mixolydian b6, Phrygian
+  Dominant). Triads, 7ths, 9ths, 11ths/13ths, **6/9**, **add9**, **9sus4** and the gospel
+  **altered V 13(b9)**; clashing tensions are handled automatically.
+- 🎛️ **Voicings:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (two hands), Quartal, with
+  automatic voice leading.
+- ↗️ **Approach chords:** the gospel half-step slide into every chord change (from above or below).
+- 🔁 **Progressions:** 1–8 chords, 30 presets (including circle-of-fifths progressions) and
   **DICE** for random but musical progressions.
 - ⭕ Interactive **circle of fifths** showing the path of your progression.
 - 🥁 **34 two-hand grooves** (soulful, gospel, deep, **jackin' house**, funky, garage, disco…)

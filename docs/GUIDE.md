@@ -99,7 +99,7 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 
 | Control | What it does |
 |---|---|
-| **Load a progression…** | 22 ready-made progressions (soulful, deep, jackin', funky, circle of fifths). Loading one also sets the recommended scale. |
+| **Load a progression…** | 30 ready-made progressions (soulful, deep, jackin', funky, circle of fifths). Loading one also sets the recommended scale. |
 | **DICE** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
 | **Length** | How many chords (1–8). Slots beyond the length are greyed out. |
 | **Each chord** | How long each chord lasts: ½, 1, 2 or 4 bars. |
@@ -112,13 +112,24 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | Control | What it does |
 |---|---|
 | **Key** | Key (C … B). |
-| **Scale / mode** | Major (Ionian), **Dorian** (the deep house classic), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor. |
-| **Extensions** | Triads, 7ths, 9ths, 11ths/13ths. Clashing tensions are handled automatically (e.g. a b9 on a non-dominant chord is dropped, an 11th on a major chord becomes a 13th). |
-| **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound). |
+| **Scale / mode** | Major (Ionian), **Dorian** (the deep house classic), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, plus (v1.5) **Locrian**, **Harmonic Major** (gospel minor iv), **Lydian Dominant** (funky I7#11), **Mixolydian b6** (soulful borrowed iv) and **Phrygian Dominant** (dark, exotic deep house). |
+| **Extensions** | Triads, 7ths, 9ths, 11ths/13ths, plus (v1.5): **6/9** (the warm soulful tonic chord, no 7th), **Add 9** (pop/house triad with a 9th), **Sus (9sus4)** (the open, floating deep house chord) and **9ths + altered V** (every chord a 9th, and degree V becomes a gospel **13(b9)**, or **7(b9,b13)** in minor keys). Clashing tensions are handled automatically: a b9 on a non-dominant chord is dropped, an 11th on a major chord becomes a 13th, a 6th that would be a b6 becomes a 7th, and sus4 is used only where the 4th is perfect. |
+| **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound), *Shell (3-7-top)* (just 3rd, 7th and the top colour note: light and jazzy, leaves room for the bass and vocals), *Drop 2+4* (open, spread pianist voicing, great for pads and breaks). |
 | **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th. |
+| **Approach chord** | The gospel **slide**: on the last 16th before each chord change the next chord (and its bass note) is played a half step **from above** or **from below**, then resolves. Only where the hand is already playing, so a muted bass stays muted. |
 | **Top +8va** | Doubles the top note of every chord an octave higher: the bright, ringing classic house piano sound. |
 | **Strum** | Rolls the chord notes upwards like a real pianist instead of hitting them all at once (0% = together, 100% = clear roll). 15–35% sounds natural. |
 | **Register** | Moves the right hand up or down. Chords automatically pick the inversion closest to the previous one (voice leading), so the progression flows without jumps. |
+
+#### Quick harmony rules for house piano
+
+- **Dorian is home**: i – IV in Dorian (Am9 – D9) is the deep house sound. Minor 9ths on the i chord, dominant 9ths/13ths on IV.
+- **Tonic colours**: on a major I try **6/9** or **maj9**; avoid the plain triad if you want the soulful sound.
+- **Sus for space**: *Sus (9sus4)* chords float and never clash with the vocal: perfect for intros and breaks.
+- **Gospel V**: use *9ths + altered V* with progressions that have a V (e.g. *Turnaround*, *Gospel Lift*): the 13(b9) pulls strongly back to I.
+- **Slides**: *Approach chord → From above* is the classic gospel/soulful move; *From below* is softer and more jazzy. Use them with grooves that leave the last 16th of the bar free.
+- **Voice leading beats big jumps**: keep *Register* still and let the plug-in choose the inversions; use *Shell* or *Rootless* when a bass line or a vocal needs space.
+- **Jackin' = fewer notes, more rhythm**: 7ths, *Close*, Top +8va and short gate. **Deep = more colour, less rhythm**: 9ths/11ths, *Wide* or *Drop 2+4*, longer gate.
 
 ### Circle of fifths
 
@@ -307,6 +318,10 @@ Two ways to use it:
 | **'90s house piano** | C Minor (Aeolian) · *Jackin' Minor i – iv* · 7ths · Close · Top +8va · Sound: *House Piano (M1 style)* · *Classic Offbeat Stabs* |
 | **Jackin' organ** | G Dorian · *Deep Dorian i – ii – IV – i* · 7ths · Close · Sound: *House Organ* · *Jack Organ Pump* · Swing 40% |
 | **Jackin' house** | A Minor (Aeolian) · *Jackin' Minor i – iv* · 7ths · Close · *Jackin' Stabs* or *Jack Bounce* · Swing 40% · Gate 35% · Bass: Octaves |
+| **Gospel slide** | Eb Major · *Turnaround I – vi – ii – V* · 9ths + altered V · Drop 2 · Approach chord: From above · *Gospel Bounce* · Strum 20% |
+| **Floating deep sus** | F Dorian · *Dorian Vamp i – IV* · Sus (9sus4) · Wide · *Deep Chords* · Reverb 40% |
+| **Lydian dominant funk** | E Lydian Dominant · *Lydian Dom Funk I7#11 – II* · 9ths · Shell · *Funky Upstrokes* · Swing 30% |
+| **Dark Afro-deep** | A Phrygian Dominant · *Dark Deep I – II* · 7ths · Drop 2+4 · *Deep Sway* · Gate 70% |
 | **Random inspiration** | DICE + NEW RIFF a few times, Density 30–60%, then export what you like |
 
 ---

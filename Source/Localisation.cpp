@@ -170,6 +170,29 @@ namespace
         { "Melodic Minor", "Minore melodica", "Menor melódica", "Mineur mélodique", "Melodisch Moll", "Menor melódica" },
         { "* Random riff *", "* Riff casuale *", "* Riff aleatorio *", "* Riff aléatoire *", "* Zufallsriff *", "* Riff aleatório *" },
         { "* User pattern *", "* Pattern utente *", "* Patrón de usuario *", "* Motif utilisateur *", "* Eigenes Pattern *", "* Padrão do usuário *" },
+
+        // ---- v1.5 harmony pack ----
+        { "Approach chord", "Accordo di passaggio", "Acorde de aproximación", "Accord d'approche", "Annäherungsakkord", "Acorde de aproximação" },
+        { "From above", "Da sopra", "Desde arriba", "Par le haut", "Von oben", "De cima" },
+        { "From below", "Da sotto", "Desde abajo", "Par le bas", "Von unten", "De baixo" },
+        { "Gospel slide: on the last 16th before a chord change, play the next chord a half step above or below",
+          "Slide gospel: sull'ultimo sedicesimo prima del cambio, suona l'accordo successivo mezzo tono sopra o sotto",
+          "Slide gospel: en la última semicorchea antes del cambio, toca el acorde siguiente medio tono arriba o abajo",
+          "Glissé gospel : sur la dernière double croche avant le changement, joue l'accord suivant un demi-ton au-dessus ou en dessous",
+          "Gospel-Slide: auf der letzten Sechzehntel vor dem Wechsel den nächsten Akkord einen Halbton höher oder tiefer spielen",
+          "Slide gospel: na última semicolcheia antes da troca, toca o próximo acorde meio tom acima ou abaixo" },
+        { "Add 9", "Add 9", "Add 9", "Add 9", "Add 9", "Add 9" },
+        { "9ths + altered V", "None + V alterata", "Novenas + V alterado", "Neuvièmes + V altéré", "Nonen + alteriertes V", "Nonas + V alterado" },
+        { "Shell (3-7-top)", "Shell (3-7-nota alta)", "Shell (3-7-arriba)", "Shell (3-7-aigu)", "Shell (3-7-oben)", "Shell (3-7-topo)" },
+        { "Locrian", "Locrio", "Locrio", "Locrien", "Lokrisch", "Lócrio" },
+        { "Harmonic Major", "Maggiore armonica", "Mayor armónica", "Majeur harmonique", "Harmonisch Dur", "Maior harmônica" },
+        { "Lydian Dominant", "Lidia dominante", "Lidia dominante", "Lydien dominant", "Lydisch dominant", "Lídia dominante" },
+        { "Mixolydian b6", "Misolidia b6", "Mixolidia b6", "Mixolydien b6", "Mixolydisch b6", "Mixolídia b6" },
+        { "Phrygian Dominant", "Frigia dominante", "Frigia dominante", "Phrygien dominant", "Phrygisch dominant", "Frígia dominante" },
+        { "Dorian", "Dorica", "Dórica", "Dorien", "Dorisch", "Dórica" },
+        { "Mixolydian", "Misolidia", "Mixolidia", "Mixolydien", "Mixolydisch", "Mixolídia" },
+        { "Lydian", "Lidia", "Lidia", "Lydien", "Lydisch", "Lídia" },
+        { "Phrygian", "Frigia", "Frigia", "Phrygien", "Phrygisch", "Frígia" },
     };
     // clang-format on
 

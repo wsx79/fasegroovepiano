@@ -61,6 +61,12 @@ enum class FillStyle { pentatonicUp = 0, pentatonicDown, chordRoll };
 constexpr int numFillStyles = 3;
 const char* fillStyleName (int style) noexcept;
 constexpr int numBassModes = 4;
+
+/** Gospel "slide": on the last 16th before a chord change, play the next chord
+    (and bass note) a half step above or below, resolving onto the new chord. */
+enum class ApproachStyle { off = 0, fromAbove, fromBelow };
+constexpr int numApproachStyles = 3;
+const char* approachStyleName (int style) noexcept;
 const char* bassModeName (int mode) noexcept;
 
 struct GrooveSettings
@@ -85,6 +91,7 @@ struct GrooveSettings
     FillStyle fillStyle = FillStyle::pentatonicUp;
     float strum = 0.0f;                    // 0..1: roll the chord notes like a pianist
     bool octaveTop = false;                // double the top note an octave higher
+    ApproachStyle approach = ApproachStyle::off;
 
     Section section = Section::main;
     std::uint32_t riffSeed = 1;            // used when pattern == randomPatternIndex()
