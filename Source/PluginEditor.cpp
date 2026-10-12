@@ -361,6 +361,10 @@ void AboutOverlay::paint (juce::Graphics& g)
                 r.removeFromBottom (16.0f), juce::Justification::centred);
 
     r.removeFromBottom (44.0f);   // buttons
+    g.setColour (Palette::dim);
+    g.setFont (font (12.0f));
+    g.drawText (juce::String (Branding::sourceUrl).fromFirstOccurrenceOf ("://", false, false),
+                r.removeFromBottom (18.0f), juce::Justification::centred);
     g.setColour (Palette::text);
     g.setFont (font (12.0f, true));
     g.drawText (Branding::licence, r.removeFromBottom (18.0f), juce::Justification::centred);

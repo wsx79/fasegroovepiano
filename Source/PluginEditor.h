@@ -115,7 +115,7 @@ public:
     void mouseUp (const juce::MouseEvent&) override { setVisible (false); }
 
 private:
-    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (620.0f, 560.0f); }
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (620.0f, 580.0f); }
 
     juce::Image artist;
     juce::TextButton sourceButton { "SOURCE CODE" }, kofiButton { "DONATE: Ko-fi" }, paypalButton { "DONATE: PayPal" };
