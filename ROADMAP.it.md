@@ -7,8 +7,12 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Prossima release
 
-- **Colori degli accordi in base all'armonia:** colorare ogni accordo (slot della progressione e
-  circolo delle quinte) in base a quanto si adatta alla tonalità e all'accordo precedente. Gli
-  accordi molto armonici (nella scala, vicini sul circolo delle quinte) hanno un colore vivo e
-  acceso; quelli poco armonici (accordi liberi fuori scala, salti lontani) sfumano verso un colore
-  spento e grigio. Così vedi subito quali accordi sono "sicuri" e quali sono azzardati.
+- **Colori degli accordi: suonano bene insieme o no?** Colorare ogni accordo della progressione
+  (slot e punti sul circolo delle quinte) in base a quanto suona bene **con gli accordi vicini**:
+  quello prima e quello dopo, e la progressione nel suo insieme.
+  - **Colore vivo e acceso:** accordi che stanno benissimo insieme (note in comune, voice leading
+    morbido, movimenti forti del basso come la discesa di quinta, ii–V–I, IV–iii–ii).
+  - **Colore spento e sbiadito:** accordi che stridono con i vicini (poche o nessuna nota in comune,
+    scontri di semitono, salti lontani sul circolo, accordi liberi che non risolvono).
+  - Forse anche un colore sulla linea tra due punti del circolo, per vedere quanto suona bene quel
+    singolo passaggio.
