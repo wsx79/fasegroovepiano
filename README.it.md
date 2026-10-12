@@ -35,7 +35,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 🎛️ **Voicing:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (due mani), Quartal, con voice
   leading automatico.
 - ↗️ **Accordi di passaggio:** lo slide gospel di mezzo tono verso ogni cambio d'accordo (da sopra o da sotto).
-- 🔁 **Progressioni:** 1–8 accordi, 30 preset (tra cui le progressioni sul circolo delle quinte)
+- 🔁 **Progressioni:** 1–8 accordi, 38 preset in un menu diviso per stile (tra cui le progressioni sul circolo delle quinte)
   e **DICE** per progressioni casuali ma musicali.
 - ⭕ **Circolo delle quinte** interattivo, con il percorso della progressione: trascina i punti per cambiare gli accordi.
 - 🥁 **34 groove** a due mani (soulful, gospel, deep, **jackin' house**, funky, garage, disco…)

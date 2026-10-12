@@ -49,7 +49,19 @@ struct ProgressionPreset
     const char* name;
     int scale;
     std::vector<int> degrees;
+    const char* category = "";   // shown as a heading in the preset menu
 };
+
+/** Preset menu headings, in display order. */
+const std::vector<const char*>& progressionCategories();
+
+/** A chord outside the scale ("free" chord from the circle of fifths), or none.
+    The root is stored in semitones above the key, so free chords follow key changes. */
+constexpr int noFreeChord = -1;
+constexpr int freeChordCode (int semitonesAboveKey, bool minor) noexcept
+{
+    return ((semitonesAboveKey % 12) + 12) % 12 + (minor ? 12 : 0);
+}
 
 const std::vector<ProgressionPreset>& progressionPresets();
 
@@ -80,6 +92,9 @@ struct GrooveSettings
 
     std::array<int, maxProgressionLength> progression { 0, 3, 0, 3, 0, 3, 0, 3 };
     int progressionLength = 2;
+
+    // Per slot: noFreeChord, or freeChordCode() to play that chord instead of the scale degree.
+    std::array<int, maxProgressionLength> freeChords { -1, -1, -1, -1, -1, -1, -1, -1 };
     int stepsPerChord = 16;                // 8 = half bar, 16 = 1 bar ...
 
     int pattern = 0;
@@ -151,6 +166,12 @@ public:
 
     /** Chord slot that is active at a given step. */
     static int slotForStep (long long step, const GrooveSettings& s) noexcept;
+
+    /** The chord of one slot: its scale degree, or its free chord when it has one. */
+    static Chord chordForSlot (const GrooveSettings& s, int slot) noexcept;
+
+    /** Roman numeral of a slot ("IV", or "bVI" for a free chord). */
+    static std::string numeralForSlot (const GrooveSettings& s, int slot);
 
     /** Chord (and its voicing) for every slot of the progression, voice-led in order. */
     static void voiceProgression (const GrooveSettings& s,

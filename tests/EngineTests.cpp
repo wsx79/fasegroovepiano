@@ -524,6 +524,38 @@ static void testApproachChords()
         CHECK (e.part != Part::bass);
 }
 
+static void testFreeChords()
+{
+    GrooveSettings s;
+    s.keyRoot = 0;
+    s.scale = 0;
+    s.extension = Extension::ninth;
+    s.progression = { 0, 3, 4, 0, 0, 0, 0, 0 };
+    s.progressionLength = 3;
+    s.freeChords[1] = freeChordCode (8, false);   // Ab major in C: bVI (8 semitones above C)
+    s.freeChords[2] = freeChordCode (6, true);    // F# minor: #iv
+
+    CHECK (chordName (GrooveEngine::chordForSlot (s, 0)) == "Cmaj9");
+    CHECK (chordName (GrooveEngine::chordForSlot (s, 1)) == "Abmaj9");
+    CHECK (GrooveEngine::numeralForSlot (s, 1) == "bVI");
+    CHECK (chordName (GrooveEngine::chordForSlot (s, 2)) == "F#m9");
+    CHECK (GrooveEngine::numeralForSlot (s, 2) == "#iv");
+
+    std::array<Chord, maxProgressionLength> chords;
+    std::array<VoicedChord, maxProgressionLength> voiced;
+    GrooveEngine::voiceProgression (s, chords, voiced);
+    CHECK (chords[1].rootPc == 8);
+    const std::set<int> abMaj9 { 8, 0, 3, 7, 10 };   // Ab C Eb G Bb
+
+    for (int i = 0; i < voiced[1].rightHand.size; ++i)
+        CHECK (abMaj9.count (voiced[1].rightHand[i] % 12) == 1);
+
+    // Free chords follow the key: in D, the same slot is Bbmaj9 (bVI).
+    s.keyRoot = 2;
+    CHECK (chordName (GrooveEngine::chordForSlot (s, 1)) == "Bbmaj9");
+    CHECK (GrooveEngine::numeralForSlot (s, 1) == "bVI");
+}
+
 static void testPatternsWellFormed()
 {
     CHECK (groovePatterns().size() == 34);
@@ -540,6 +572,8 @@ static void testPatternsWellFormed()
     {
         CHECK (! p.degrees.empty() && (int) p.degrees.size() <= maxProgressionLength);
         CHECK (p.scale >= 0 && p.scale < numScales);
+        const auto& cats = progressionCategories();
+        CHECK (std::find_if (cats.begin(), cats.end(), [&p] (const char* c) { return std::string (c) == p.category; }) != cats.end());
     }
 }
 
@@ -558,6 +592,7 @@ int main()
     testSegmentsAndUserPattern();
     testFillStylesStrumOctave();
     testApproachChords();
+    testFreeChords();
     testPatternsWellFormed();
 
     if (failures == 0)

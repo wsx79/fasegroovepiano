@@ -142,9 +142,20 @@ void CircleOfFifths::mouseUp (const juce::MouseEvent& e)
 
     const int slot = dragging;
     dragging = -1;
-    const int degree = degreeAt (segmentAt (e.position));
-    if (degree >= 0 && onMoveChord != nullptr)
-        onMoveChord (slot, degree);
+    const auto h = segmentAt (e.position);
+    const int degree = degreeAt (h);
+    const int pc = h.inner ? minorAt (h.index) : majorAt (h.index);
+
+    if (onMoveChord != nullptr && h.index >= 0)
+    {
+        // In free mode only an exact match (same root and ring) counts as a scale chord.
+        const bool exact = degree >= 0 && scaleChords[(size_t) degree].rootPc == pc && scaleChords[(size_t) degree].minor == h.inner;
+
+        if (freeMode && ! exact)
+            onMoveChord (slot, -1, pc, h.inner);
+        else if (degree >= 0)
+            onMoveChord (slot, degree, pc, h.inner);
+    }
 
     repaint();
 }
@@ -194,7 +205,8 @@ void CircleOfFifths::paint (juce::Graphics& g)
             if (hover.index == i && hover.inner == inner)    fill = fill.brighter (0.25f);
 
             // While dragging a dot, the chords of the scale are the drop targets.
-            const bool target = dragging >= 0 && degreeAt ({ i, inner }) >= 0;
+            const bool inScale = degreeAt ({ i, inner }) >= 0;
+            const bool target = dragging >= 0 && (inScale || freeMode);
             if (dragging >= 0 && ! target)                   fill = fill.withMultipliedAlpha (0.45f);
 
             g.setColour (fill);
@@ -204,7 +216,8 @@ void CircleOfFifths::paint (juce::Graphics& g)
 
             if (target)
             {
-                g.setColour (Palette::accent2.withAlpha (hover.index == i && hover.inner == inner ? 1.0f : 0.5f));
+                const bool hovered = hover.index == i && hover.inner == inner;
+                g.setColour (Palette::accent2.withAlpha (hovered ? 1.0f : inScale ? 0.5f : 0.18f));
                 g.strokePath (seg, juce::PathStrokeType (2.0f));
             }
 

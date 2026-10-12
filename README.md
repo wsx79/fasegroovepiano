@@ -36,7 +36,7 @@ Rhodes or synth.
 - 🎛️ **Voicings:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (two hands), Quartal, with
   automatic voice leading.
 - ↗️ **Approach chords:** the gospel half-step slide into every chord change (from above or below).
-- 🔁 **Progressions:** 1–8 chords, 30 presets (including circle-of-fifths progressions) and
+- 🔁 **Progressions:** 1–8 chords, 38 presets in a menu grouped by style (including circle-of-fifths progressions) and
   **DICE** for random but musical progressions.
 - ⭕ Interactive **circle of fifths** showing the path of your progression: drag the dots to change chords.
 - 🥁 **34 two-hand grooves** (soulful, gospel, deep, **jackin' house**, funky, garage, disco…)

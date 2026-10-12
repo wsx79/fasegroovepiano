@@ -73,13 +73,26 @@ class ChordSlot : public juce::Component
 public:
     ChordSlot (juce::AudioProcessorValueTreeState&, int index);
 
-    void setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing);
+    /** Called when the user picks a degree from the menu (it replaces a free chord). */
+    std::function<void()> onDegreePicked;
+
+    /** isFree: the slot plays a free chord (from the circle), shown instead of a degree. */
+    void setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing,
+                  bool isFree, int degreeValue);
     void paint (juce::Graphics&) override;
     void resized() override;
 
 private:
+    /** Tells apart a degree picked by the user from a change coming from the parameter. */
+    struct DegreeBox : public juce::ComboBox
+    {
+        bool userOpened = false;
+        void showPopup() override { userOpened = true; juce::ComboBox::showPopup(); }
+    };
+
     int index;
-    juce::ComboBox degree;
+    DegreeBox degree;
+    bool showingFree = false;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
     juce::String name, numeral;
     bool isEnabledSlot = true, isPlaying = false;
@@ -189,6 +202,7 @@ private:
     OptionsOverlay options;
 
     void applyLanguage();
+    void buildPresetMenu();
     void mouseUp (const juce::MouseEvent&) override;
 
     // Progression
@@ -204,6 +218,7 @@ private:
     juce::ToggleButton octaveToggle { "Top +8va" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> octaveAttachment;
     CircleOfFifths circle;
+    juce::ToggleButton freeToggle { "Free" };
 
     // Groove
     Choice pattern, section, fills, fillStyle, playMode;

@@ -100,11 +100,11 @@ Con *Play mode → Hold a key* mostra anche "HOLD" e la tonalità scelta col tas
 
 | Controllo | Cosa fa |
 |---|---|
-| **Load a progression…** | 30 progressioni pronte (soulful, deep, jackin', funky, circolo delle quinte). Caricarne una imposta anche la scala consigliata. |
+| **Load a progression…** | 38 progressioni pronte in un menu a tre colonne, divise per stile: *Soulful e gospel*, *Circolo delle quinte*, *Deep house*, *Modali ed esotiche*, *Jackin' e funky*. Caricarne una imposta anche la scala consigliata. (Anche i menu lunghi come *Groove* si aprono a colonne.) |
 | **DICE** | Progressione casuale ma musicale, coi movimenti tipici della soulful house (ii–V, IV–iii–ii, quinte discendenti). Mantiene la lunghezza attuale. |
 | **Length** | Quanti accordi (1–8). Quelli oltre la lunghezza appaiono spenti. |
 | **Each chord** | Durata di ogni accordo: ½, 1, 2 o 4 battute. |
-| **Slot 1–8** | Ogni slot è un grado della scala (I…VII). Sopra vedi il nome dell'accordo e il numero romano (maiuscolo = maggiore, minuscolo = minore, ø = semidiminuito). Lo slot che suona si illumina. |
+| **Slot 1–8** | Ogni slot è un grado della scala (I…VII). Sopra vedi il nome dell'accordo e il numero romano (maiuscolo = maggiore, minuscolo = minore, ø = semidiminuito). Lo slot che suona si illumina. Uno slot che mostra **Libero** suona un accordo libero scelto dal circolo delle quinte (es. *bVI*); scegli un grado dal suo menu per tornare alla scala. |
 
 I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si trasporta da sola.
 
@@ -147,6 +147,13 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
   rilascia il punto su uno di loro e lo slot dell'accordo si aggiorna (il punto grande mostra il
   numero dello slot). Se lo rilasci altrove l'accordo resta com'era. Se lo stesso accordo compare
   due volte, si sposta il primo slot.
+- **Accordi liberi** (interruttore sotto il cerchio): ogni spicchio diventa un bersaglio, quindi
+  puoi rilasciare un punto ovunque, anche su accordi fuori scala (es. Ab in Do maggiore = *bVI*,
+  il classico accordo soulful "preso in prestito"). Gli spicchi maggiori danno un accordo maggiore
+  7/9, quelli minori un minore 7/9, con le *Extensions* attuali. Gli accordi liberi sono salvati
+  rispetto alla tonalità, quindi la seguono se la cambi. Lo slot mostra **Libero** e un numero
+  romano cromatico (bVI, #iv…). Può suonare "sbagliato": scelta tua!
+  Caricare una progressione pronta o premere DICE cancella gli accordi liberi.
 
 ### Groove
 

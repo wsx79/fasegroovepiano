@@ -37,7 +37,17 @@ namespace
     {
         if (auto* c = dynamic_cast<juce::AudioParameterChoice*> (param))
         {
-            box.addItemList (c->choices, 1);
+            // Long lists open in columns instead of one endless menu.
+            const int n = c->choices.size();
+            const int columns = n > 16 ? (n + 13) / 14 : 1;
+            const int perColumn = (n + columns - 1) / columns;
+
+            for (int i = 0; i < n; ++i)
+            {
+                box.addItem (c->choices[i], i + 1);
+                if (columns > 1 && (i + 1) % perColumn == 0 && i < n - 1)
+                    box.getRootMenu()->addColumnBreak();
+            }
         }
         else if (auto* i = dynamic_cast<juce::AudioParameterInt*> (param))
         {
@@ -182,11 +192,25 @@ ChordSlot::ChordSlot (juce::AudioProcessorValueTreeState& state, int i) : index 
     fillChoiceItems (degree, state.getParameter (id));
     attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (state, id, degree);
     degree.setJustificationType (juce::Justification::centred);
+    degree.onChange = [this]
+    {
+        if (degree.userOpened && onDegreePicked != nullptr)
+            onDegreePicked();
+        degree.userOpened = false;
+    };
     addAndMakeVisible (degree);
 }
 
-void ChordSlot::setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing)
+void ChordSlot::setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing,
+                         bool isFree, int degreeValue)
 {
+    // A free chord has no scale degree: the menu shows "Free" until a degree is picked.
+    if (isFree && (! showingFree || degree.getText() != tr ("Free")))
+        degree.setText (tr ("Free"), juce::dontSendNotification);
+    else if (! isFree && showingFree)
+        degree.setSelectedId (degreeValue + 1, juce::dontSendNotification);
+    showingFree = isFree;
+
     if (chordName == name && roman == numeral && enabled == isEnabledSlot && playing == isPlaying)
         return;
 
@@ -680,10 +704,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     addAndMakeVisible (presetLabel);
 
     presetBox.setTextWhenNothingSelected ("Load a progression...");
-    const auto& presets = sgk::progressionPresets();
-    for (int i = 0; i < (int) presets.size(); ++i)
-        presetBox.addItem (presets[(size_t) i].name + juce::String ("   (") + sgk::scaleName (presets[(size_t) i].scale) + ")", i + 1);
-    presetBox.onChange = [this] { loadPreset (presetBox.getSelectedItemIndex()); };
+    buildPresetMenu();
+    presetBox.onChange = [this] { loadPreset (presetBox.getSelectedId() - 1); };
     addAndMakeVisible (presetBox);
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
@@ -724,11 +746,33 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
             processor.setParameterFromUI (ParamIDs::scale, minorKey ? 1.0f : 0.0f);   // Dorian / Major
     };
 
-    circle.onMoveChord = [this] (int slot, int degree)
+    circle.onMoveChord = [this] (int slot, int degree, int rootPc, bool minorChord)
     {
-        processor.setParameterFromUI (ParamIDs::slot (slot), (float) degree);
+        if (degree >= 0)
+        {
+            processor.setFreeChord (slot, sgk::noFreeChord);
+            processor.setParameterFromUI (ParamIDs::slot (slot), (float) degree);
+        }
+        else
+        {
+            const int key = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::key)->load());
+            processor.setFreeChord (slot, sgk::freeChordCode (rootPc - key, minorChord));
+        }
         presetBox.setSelectedId (0, juce::dontSendNotification);
     };
+
+    // Free mode: drag the dots anywhere, even outside the scale.
+    freeToggle.setToggleState (processor.freeCircle, juce::dontSendNotification);
+    freeToggle.onClick = [this]
+    {
+        processor.freeCircle = freeToggle.getToggleState();
+        circle.setFreeMode (processor.freeCircle);
+    };
+    circle.setFreeMode (processor.freeCircle);
+    addAndMakeVisible (freeToggle);
+
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+        slots[i]->onDegreePicked = [this, i] { processor.setFreeChord (i, sgk::noFreeChord); };
 
     // Tempo: "SYNC DAW" on = follow the DAW; off = set the BPM by hand.
     syncButton.setClickingTogglesState (true);
@@ -871,6 +915,29 @@ FaseGroovePianoEditor::~FaseGroovePianoEditor()
     setLookAndFeel (nullptr);
 }
 
+void FaseGroovePianoEditor::buildPresetMenu()
+{
+    // Grouped by style, one heading per group, in columns (no endless list).
+    const int selected = presetBox.getSelectedId();
+    presetBox.clear (juce::dontSendNotification);
+
+    const auto& presets = sgk::progressionPresets();
+    const auto& categories = sgk::progressionCategories();
+    for (size_t c = 0; c < categories.size(); ++c)
+    {
+        // Columns: soulful + circle | deep + modal | jackin'
+        if (c == 2 || c == 4)
+            presetBox.getRootMenu()->addColumnBreak();
+
+        presetBox.addSectionHeading (tr (categories[c]));
+        for (int i = 0; i < (int) presets.size(); ++i)
+            if (juce::String (presets[(size_t) i].category) == categories[c])
+                presetBox.addItem (presets[(size_t) i].name + juce::String ("   (") + tr (sgk::scaleName (presets[(size_t) i].scale)) + ")", i + 1);
+    }
+
+    presetBox.setSelectedId (selected, juce::dontSendNotification);
+}
+
 void FaseGroovePianoEditor::applyLanguage()
 {
     for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume })
@@ -909,6 +976,9 @@ void FaseGroovePianoEditor::applyLanguage()
     shrinkToggle.setButtonText (tr ("Mini window while dragging"));
 
     octaveToggle.setTooltip (tr ("Double the top note of every chord an octave higher (bright house piano)"));
+    freeToggle.setButtonText (tr ("Free chords"));
+    freeToggle.setTooltip (tr ("Free chords: drag the dots anywhere on the circle, even outside the scale"));
+    buildPresetMenu();
     approach.box.setTooltip (tr ("Gospel slide: on the last 16th before a chord change, play the next chord a half step above or below"));
     newRiffButton.setTooltip (tr ("New random funky riff (locked parts are kept)"));
     diceProgression.setTooltip (tr ("Random soulful-house progression"));
@@ -1061,6 +1131,7 @@ void FaseGroovePianoEditor::loadPreset (int index)
         return;
 
     const auto& preset = presets[(size_t) index];
+    processor.clearFreeChords();
     processor.setParameterFromUI (ParamIDs::scale, (float) preset.scale);
     processor.setParameterFromUI (ParamIDs::progLength, (float) preset.degrees.size());
 
@@ -1094,14 +1165,14 @@ void FaseGroovePianoEditor::timerCallback()
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
     {
         const bool enabled = i < s.progressionLength;
-        const auto chord = sgk::buildChord (s.keyRoot, s.scale, s.progression[(size_t) i], s.extension);
-        slots[i]->setInfo (sgk::chordName (chord), juce::String::fromUTF8 (sgk::romanNumeral (s.progression[(size_t) i], chord).c_str()),
-                           enabled, enabled && i == playingSlot);
+        const auto chord = sgk::GrooveEngine::chordForSlot (s, i);
+        slots[i]->setInfo (sgk::chordName (chord), juce::String::fromUTF8 (sgk::GrooveEngine::numeralForSlot (s, i).c_str()),
+                           enabled, enabled && i == playingSlot, s.freeChords[(size_t) i] >= 0, s.progression[(size_t) i]);
     }
 
     const int shown = playingSlot >= 0 ? playingSlot : 0;
     const juce::String chordText = sgk::chordName (chords[(size_t) shown]);
-    const juce::String romanText = juce::String::fromUTF8 (sgk::romanNumeral (s.progression[(size_t) shown], chords[(size_t) shown]).c_str());
+    const juce::String romanText = juce::String::fromUTF8 (sgk::GrooveEngine::numeralForSlot (s, shown).c_str());
     const juce::String keyText = juce::String (sgk::noteName (s.keyRoot)) + " " + tr (sgk::scaleName (s.scale));
 
     if (chordText != currentChord || romanText != currentRoman || keyText != currentKey || showingHold != (heldRoot >= 0))
@@ -1312,7 +1383,11 @@ void FaseGroovePianoEditor::layoutFull()
         strumKnob.setBounds (last.withSizeKeepingCentre (kw, kh));
     }
 
-    circle.setBounds (circlePanel.reduced (10, 8).withTrimmedTop (22));
+    {
+        auto inner = circlePanel.reduced (10, 8).withTrimmedTop (22);
+        freeToggle.setBounds (inner.removeFromBottom (24).withTrimmedLeft (4));
+        circle.setBounds (inner);
+    }
 
     {
         auto inner = groovePanel.reduced (14, 8);

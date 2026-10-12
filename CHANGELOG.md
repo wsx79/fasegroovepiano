@@ -16,13 +16,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **2 new voicings:** Shell (3rd, 7th and top colour note) and Drop 2+4 (open pianist voicing).
 - **Approach chord:** the gospel half-step slide into each chord change, from above or from below,
   for chords and bass (only where that hand is playing).
-- **8 new progressions** (30 in total), including Gospel Plagal, Lydian Dom Funk, Soul Borrowed,
-  Dark Deep, Phrygian Deep, Deep House Classic, Jackin' Dorian and Neo Soul.
+- **16 new progressions** (38 in total), including Gospel Plagal, Lydian Dom Funk, Soul Borrowed,
+  Dark Deep, Deep House Classic, Neo Soul and eight new jackin' & funky ones (Jackin' Stab, Jack
+  Swing, Funky Dominant, Disco Jack, Ghetto Funk, Phrygian Jack, Lydian Jack, Chicago Bounce).
 - **Drag the dots on the circle of fifths:** drag a chord of the progression onto another chord of
   the scale (drop targets are outlined in pink) to change it.
+- **Free chords:** with the switch under the circle on, drop a dot anywhere, even outside the scale
+  (e.g. bVI). The slot shows "Free" and a chromatic numeral; free chords follow key changes.
 - Guide: **quick harmony rules for house piano** and four new recipes.
 
 ### Changed
+- The progression menu is grouped by style (*Soulful & Gospel*, *Circle of 5ths*, *Deep house*,
+  *Modal & exotic*, *Jackin' & funky*) and opens in three columns instead of one endless list.
+  Long menus such as *Groove* also open in columns.
 - Mode names (Dorian, Lydian…) are translated in the interface languages.
 
 ## [1.4.0] - 2026-10-12

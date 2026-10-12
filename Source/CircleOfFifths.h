@@ -25,8 +25,13 @@ public:
     /** Called with the clicked root and whether the inner (minor) ring was clicked. */
     std::function<void (int pitchClass, bool minor)> onPick;
 
-    /** Called when the dot of progression slot `slot` is dropped on the chord of scale degree `degree`. */
-    std::function<void (int slot, int degree)> onMoveChord;
+    /** Called when the dot of progression slot `slot` is dropped: on the chord of scale degree
+        `degree` (>= 0), or, in free mode, on any other chord: then degree is -1 and
+        `rootPc` / `minor` describe it. */
+    std::function<void (int slot, int degree, int rootPc, bool minor)> onMoveChord;
+
+    /** Free mode: every chord of the circle is a drop target, even outside the scale. */
+    void setFreeMode (bool shouldBeFree)   { freeMode = shouldBeFree; repaint(); }
 
     /** `diatonic` holds the chord on each scale degree (0..6), used as drop targets. */
     void setState (int keyRoot, bool minorKey, const std::vector<ChordMark>& progression, int playingIndex,
@@ -58,6 +63,7 @@ private:
     bool minor = false;
     std::vector<ChordMark> chords, scaleChords;
     int dragging = -1;
+    bool freeMode = false;
     juce::Point<float> dragPos;
     int playing = -1;
     Hit hover;

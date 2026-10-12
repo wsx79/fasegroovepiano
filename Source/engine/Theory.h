@@ -76,6 +76,9 @@ std::string chordName (const Chord& chord);
 /** Roman numeral for the degree, cased by chord quality: "i", "IV", "vii°". */
 std::string romanNumeral (int degree, const Chord& chord);
 
+/** Roman numeral of any chord relative to the key, with b/# for chromatic roots: "bVI", "#iv". */
+std::string chromaticNumeral (int keyRoot, const Chord& chord);
+
 //==============================================================================
 struct VoicedChord
 {

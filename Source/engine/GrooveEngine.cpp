@@ -197,40 +197,56 @@ int userPatternIndex() noexcept
     return randomPatternIndex() + 1;
 }
 
+const std::vector<const char*>& progressionCategories()
+{
+    static const std::vector<const char*> categories { "Soulful & Gospel", "Circle of 5ths", "Deep house",
+                                                       "Modal & exotic", "Jackin' & funky" };
+    return categories;
+}
+
 const std::vector<ProgressionPreset>& progressionPresets()
 {
+    // New presets are appended (saved projects only store the chords, not the preset).
     static const std::vector<ProgressionPreset> presets {
-        { "Dorian Vamp  i - IV",               1, { 0, 3 } },
-        { "Deep Minor  i - v",                 1, { 0, 4 } },
-        { "Soulful Descent  IV - iii - ii - I", 0, { 3, 2, 1, 0 } },
-        { "Jazzy  ii - V",                     0, { 1, 4 } },
-        { "Turnaround  I - vi - ii - V",       0, { 0, 5, 1, 4 } },
-        { "Royal Road  IV - V - iii - vi",     0, { 3, 4, 2, 5 } },
-        { "Minor Flow  i - VI - III - VII",    2, { 0, 5, 2, 6 } },
-        { "Late Night  i - VII - VI - VII",    2, { 0, 6, 5, 6 } },
-        { "Gospel Lift  IV - V - vi - I",      0, { 3, 4, 5, 0 } },
-        { "Mixo Groove  I - VII - IV - I",     3, { 0, 6, 3, 0 } },
-        { "Lydian Float  I - II",              4, { 0, 1 } },
-        { "8-Bar Journey",                     0, { 0, 5, 3, 4, 2, 5, 1, 4 } },
-        { "Circle of 5ths  vi - ii - V - I",   0, { 5, 1, 4, 0 } },
-        { "Circle of 5ths  iii - vi - ii - V", 0, { 2, 5, 1, 4 } },
-        { "Full Circle  I-IV-vii-iii-vi-ii-V-I", 0, { 0, 3, 6, 2, 5, 1, 4, 0 } },
-        { "Minor Circle  i - iv - VII - III",  2, { 0, 3, 6, 2 } },
-        { "Dorian Circle  i - iv - VII - III", 1, { 0, 3, 6, 2 } },
-        { "Jackin' Minor  i - iv",             2, { 0, 3 } },
-        { "Jackin' Groove  i - VII - VI - v",  2, { 0, 6, 5, 4 } },
-        { "Soulful Gospel  I - iii - IV - V",  0, { 0, 2, 3, 4 } },
-        { "Deep Dorian  i - ii - IV - i",      1, { 0, 1, 3, 0 } },
-        { "Funky Mixo  I - IV - VII - IV",     3, { 0, 3, 6, 3 } },
-        // v1.5: progressions for the new scales and classic house moves
-        { "Gospel Plagal  I - iv - V - I",     9, { 0, 3, 4, 0 } },
-        { "Lydian Dom Funk  I7#11 - II",       10, { 0, 1 } },
-        { "Soul Borrowed  I - iv - bVII - I",  11, { 0, 3, 6, 0 } },
-        { "Dark Deep  I - II (Phrygian dom.)", 12, { 0, 1 } },
-        { "Phrygian Deep  i - II - i - vii",   5, { 0, 1, 0, 6 } },
-        { "Deep House Classic  vi - IV - I - V", 0, { 5, 3, 0, 4 } },
-        { "Jackin' Dorian  i - IV - i - v",    1, { 0, 3, 0, 4 } },
-        { "Neo Soul  ii - iii - IV - V",       0, { 1, 2, 3, 4 } },
+        { "Dorian Vamp  i - IV",               1, { 0, 3 },       "Deep house" },
+        { "Deep Minor  i - v",                 1, { 0, 4 },       "Deep house" },
+        { "Soulful Descent  IV - iii - ii - I", 0, { 3, 2, 1, 0 }, "Soulful & Gospel" },
+        { "Jazzy  ii - V",                     0, { 1, 4 },       "Soulful & Gospel" },
+        { "Turnaround  I - vi - ii - V",       0, { 0, 5, 1, 4 }, "Soulful & Gospel" },
+        { "Royal Road  IV - V - iii - vi",     0, { 3, 4, 2, 5 }, "Soulful & Gospel" },
+        { "Minor Flow  i - VI - III - VII",    2, { 0, 5, 2, 6 }, "Deep house" },
+        { "Late Night  i - VII - VI - VII",    2, { 0, 6, 5, 6 }, "Deep house" },
+        { "Gospel Lift  IV - V - vi - I",      0, { 3, 4, 5, 0 }, "Soulful & Gospel" },
+        { "Mixo Groove  I - VII - IV - I",     3, { 0, 6, 3, 0 }, "Jackin' & funky" },
+        { "Lydian Float  I - II",              4, { 0, 1 },       "Modal & exotic" },
+        { "8-Bar Journey",                     0, { 0, 5, 3, 4, 2, 5, 1, 4 }, "Soulful & Gospel" },
+        { "Circle of 5ths  vi - ii - V - I",   0, { 5, 1, 4, 0 }, "Circle of 5ths" },
+        { "Circle of 5ths  iii - vi - ii - V", 0, { 2, 5, 1, 4 }, "Circle of 5ths" },
+        { "Full Circle  I-IV-vii-iii-vi-ii-V-I", 0, { 0, 3, 6, 2, 5, 1, 4, 0 }, "Circle of 5ths" },
+        { "Minor Circle  i - iv - VII - III",  2, { 0, 3, 6, 2 }, "Circle of 5ths" },
+        { "Dorian Circle  i - iv - VII - III", 1, { 0, 3, 6, 2 }, "Circle of 5ths" },
+        { "Jackin' Minor  i - iv",             2, { 0, 3 },       "Jackin' & funky" },
+        { "Jackin' Groove  i - VII - VI - v",  2, { 0, 6, 5, 4 }, "Jackin' & funky" },
+        { "Soulful Gospel  I - iii - IV - V",  0, { 0, 2, 3, 4 }, "Soulful & Gospel" },
+        { "Deep Dorian  i - ii - IV - i",      1, { 0, 1, 3, 0 }, "Deep house" },
+        { "Funky Mixo  I - IV - VII - IV",     3, { 0, 3, 6, 3 }, "Jackin' & funky" },
+        // v1.5
+        { "Gospel Plagal  I - iv - V - I",     9, { 0, 3, 4, 0 }, "Soulful & Gospel" },
+        { "Lydian Dom Funk  I7#11 - II",       10, { 0, 1 },      "Modal & exotic" },
+        { "Soul Borrowed  I - iv - bVII - I",  11, { 0, 3, 6, 0 }, "Soulful & Gospel" },
+        { "Dark Deep  I - II (Phrygian dom.)", 12, { 0, 1 },      "Modal & exotic" },
+        { "Phrygian Deep  i - II - i - vii",   5, { 0, 1, 0, 6 }, "Modal & exotic" },
+        { "Deep House Classic  vi - IV - I - V", 0, { 5, 3, 0, 4 }, "Deep house" },
+        { "Jackin' Dorian  i - IV - i - v",    1, { 0, 3, 0, 4 }, "Jackin' & funky" },
+        { "Neo Soul  ii - iii - IV - V",       0, { 1, 2, 3, 4 }, "Soulful & Gospel" },
+        { "Jackin' Stab  i - III - IV",        1, { 0, 2, 3, 3 }, "Jackin' & funky" },
+        { "Jack Swing  i - v - VII - IV",      1, { 0, 4, 6, 3 }, "Jackin' & funky" },
+        { "Funky Dominant  I7 - IV7",          3, { 0, 3 },       "Jackin' & funky" },
+        { "Disco Jack  ii - V - I - vi",       0, { 1, 4, 0, 5 }, "Jackin' & funky" },
+        { "Ghetto Funk  i - iv - v - iv",      2, { 0, 3, 4, 3 }, "Jackin' & funky" },
+        { "Phrygian Jack  i - bII",            5, { 0, 1 },       "Jackin' & funky" },
+        { "Lydian Jack  I7 - bVII",           10, { 0, 6, 0, 6 }, "Jackin' & funky" },
+        { "Chicago Bounce  i - VII - i - IV",  1, { 0, 6, 0, 3 }, "Jackin' & funky" },
     };
 
     return presets;
@@ -383,6 +399,25 @@ int GrooveEngine::slotForStep (long long step, const GrooveSettings& s) noexcept
     return mod (floorDiv (step, std::max (1, s.stepsPerChord)), len);
 }
 
+Chord GrooveEngine::chordForSlot (const GrooveSettings& s, int slot) noexcept
+{
+    const int i = std::clamp (slot, 0, maxProgressionLength - 1);
+    const int free = s.freeChords[(size_t) i];
+    if (free >= 0 && free < 24)
+        return buildChord ((s.keyRoot + free % 12) % 12, free >= 12 ? 1 : 0, 0, s.extension);   // minor = Dorian i, major = Ionian I
+
+    return buildChord (s.keyRoot, s.scale, s.progression[(size_t) i], s.extension);
+}
+
+std::string GrooveEngine::numeralForSlot (const GrooveSettings& s, int slot)
+{
+    const auto chord = chordForSlot (s, slot);
+    if (s.freeChords[(size_t) std::clamp (slot, 0, maxProgressionLength - 1)] >= 0)
+        return chromaticNumeral (s.keyRoot, chord);
+
+    return romanNumeral (s.progression[(size_t) std::clamp (slot, 0, maxProgressionLength - 1)], chord);
+}
+
 void GrooveEngine::voiceProgression (const GrooveSettings& s,
                                      std::array<Chord, maxProgressionLength>& chords,
                                      std::array<VoicedChord, maxProgressionLength>& voiced) noexcept
@@ -390,7 +425,7 @@ void GrooveEngine::voiceProgression (const GrooveSettings& s,
     const int len = std::clamp (s.progressionLength, 1, maxProgressionLength);
 
     for (int i = 0; i < len; ++i)
-        chords[(size_t) i] = buildChord (s.keyRoot, s.scale, s.progression[(size_t) i], s.extension);
+        chords[(size_t) i] = chordForSlot (s, i);
 
     auto pass = [&] (int first, const NoteSet* previous)
     {

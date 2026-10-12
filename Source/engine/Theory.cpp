@@ -389,6 +389,20 @@ std::string romanNumeral (int degree, const Chord& c)
     return r;
 }
 
+std::string chromaticNumeral (int keyRoot, const Chord& c)
+{
+    static const char* const upper[12] { "I", "bII", "II", "bIII", "III", "IV", "#IV", "V", "bVI", "VI", "bVII", "VII" };
+    static const char* const lower[12] { "i", "bii", "ii", "biii", "iii", "iv", "#iv", "v", "bvi", "vi", "bvii", "vii" };
+
+    const int semis = mod (c.rootPc - keyRoot, 12);
+    if (c.suspended)
+        return std::string (upper[semis]) + "sus";
+
+    std::string r = c.third == 3 ? lower[semis] : upper[semis];
+    if (c.third == 3 && c.fifth == 6)  r += (c.seventh == 10 ? "\xc3\xb8" : "\xc2\xb0");
+    return r;
+}
+
 //==============================================================================
 VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
                         const NoteSet* previousRightHand) noexcept

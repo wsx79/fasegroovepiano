@@ -137,6 +137,8 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
 
     // The user pattern starts as a copy of "Soulful Push".
     const auto& start = sgk::groovePatterns()[1];
+    clearFreeChords();
+
     for (int i = 0; i < sgk::userPatternLength; ++i)
     {
         userRight[(size_t) i] = start.rightHand[(size_t) i];
@@ -190,6 +192,9 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
         s.userRight[(size_t) i] = userRight[(size_t) i].load();
         s.userLeft[(size_t) i]  = userLeft[(size_t) i].load();
     }
+
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+        s.freeChords[(size_t) i] = freeChords[(size_t) i].load();
 
     return s;
 }
@@ -303,8 +308,21 @@ void FaseGroovePianoProcessor::toggleBass()
     }
 }
 
+void FaseGroovePianoProcessor::setFreeChord (int slot, int code)
+{
+    if (slot >= 0 && slot < sgk::maxProgressionLength)
+        freeChords[(size_t) slot] = (code >= 0 && code < 24) ? code : sgk::noFreeChord;
+}
+
+void FaseGroovePianoProcessor::clearFreeChords()
+{
+    for (auto& f : freeChords)
+        f = sgk::noFreeChord;
+}
+
 void FaseGroovePianoProcessor::rollNewProgression()
 {
+    clearFreeChords();
     const int length = juce::roundToInt (raw (ParamIDs::progLength));
     const auto degrees = sgk::randomProgression ((std::uint32_t) juce::Random::getSystemRandom().nextInt(), length);
 
@@ -563,7 +581,7 @@ juce::String FaseGroovePianoProcessor::clipFileName (int bars, ClipPart part) co
 
     juce::StringArray chords;
     for (int i = 0; i < juce::jmin (s.progressionLength, 4); ++i)
-        chords.add (sgk::chordName (sgk::buildChord (s.keyRoot, s.scale, s.progression[(size_t) i], s.extension)));
+        chords.add (sgk::chordName (sgk::GrooveEngine::chordForSlot (s, i)));
     if (s.progressionLength > 4)
         chords.add ("etc");
 
@@ -618,6 +636,12 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("editorScale", editorScale, nullptr);
     state.setProperty ("shrinkWhileDragging", shrinkWhileDragging, nullptr);
 
+    juce::StringArray free;
+    for (const auto& f : freeChords)
+        free.add (juce::String (f.load()));
+    state.setProperty ("freeChords", free.joinIntoString (","), nullptr);
+    state.setProperty ("freeCircle", freeCircle, nullptr);
+
     if (auto xml = state.createXml())
         copyXmlToBinary (*xml, destData);
 }
@@ -654,6 +678,11 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     lastBassMode = juce::jlimit (1, sgk::numBassModes - 1, (int) state.getProperty ("lastBassMode", 1));
     editorScale = juce::jlimit (0.6f, 2.0f, (float) state.getProperty ("editorScale", 1.0f));
     shrinkWhileDragging = (bool) state.getProperty ("shrinkWhileDragging", true);
+
+    const auto free = juce::StringArray::fromTokens (state.getProperty ("freeChords").toString(), ",", {});
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+        setFreeChord (i, i < free.size() ? free[i].getIntValue() : sgk::noFreeChord);
+    freeCircle = (bool) state.getProperty ("freeCircle", false);
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

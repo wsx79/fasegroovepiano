@@ -99,11 +99,11 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 
 | Control | What it does |
 |---|---|
-| **Load a progression…** | 30 ready-made progressions (soulful, deep, jackin', funky, circle of fifths). Loading one also sets the recommended scale. |
+| **Load a progression…** | 38 ready-made progressions in a three-column menu, grouped by style: *Soulful & Gospel*, *Circle of 5ths*, *Deep house*, *Modal & exotic*, *Jackin' & funky*. Loading one also sets the recommended scale. (Long menus like *Groove* also open in columns.) |
 | **DICE** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
 | **Length** | How many chords (1–8). Slots beyond the length are greyed out. |
 | **Each chord** | How long each chord lasts: ½, 1, 2 or 4 bars. |
-| **Slots 1–8** | Each slot is a scale degree (I…VII). Above it you see the chord name and the Roman numeral (upper case = major, lower case = minor, ø = half-diminished). The playing slot lights up. |
+| **Slots 1–8** | Each slot is a scale degree (I…VII). Above it you see the chord name and the Roman numeral (upper case = major, lower case = minor, ø = half-diminished). The playing slot lights up. A slot that shows **Free** plays a free chord set from the circle of fifths (e.g. *bVI*); pick a degree from its menu to go back to the scale. |
 
 Degrees are relative to the scale: change the key or mode and the progression follows.
 
@@ -145,6 +145,12 @@ Outer ring = major keys, inner ring = relative minors.
   the chords of the current scale are outlined in pink (the others fade out); drop the dot on one
   of them and the chord slot updates (the big dot shows the slot number). Dropping it anywhere
   else leaves the chord as it was. When the same chord appears twice, the first slot moves.
+- **Free chords** (switch under the circle): every slice becomes a target, so you can drop a dot
+  anywhere, even on chords outside the scale (e.g. Ab in C major = *bVI*, the soulful borrowed
+  chord). Major slices give a major 7/9 chord, minor slices a minor 7/9 chord, with the current
+  *Extensions*. Free chords are stored relative to the key, so they follow a key change. The slot
+  shows **Free** and a chromatic numeral (bVI, #iv…). It may sound "wrong": your choice!
+  Loading a preset or pressing DICE clears the free chords.
 
 ### Groove
 

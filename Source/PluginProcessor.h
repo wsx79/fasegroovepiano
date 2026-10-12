@@ -117,6 +117,12 @@ public:
     /** Replaces the progression with a random soulful-house one of the current length. */
     void rollNewProgression();
 
+    // Free chords (any chord, even outside the scale), set from the circle of fifths.
+    void setFreeChord (int slot, int code);          // code: sgk::noFreeChord or sgk::freeChordCode()
+    int freeChord (int slot) const                   { return freeChords[(size_t) juce::jlimit (0, sgk::maxProgressionLength - 1, slot)].load(); }
+    void clearFreeChords();
+    bool freeCircle = false;                         // circle of fifths accepts any chord (saved with the project)
+
     //==============================================================================
     enum class ClipPart { all = 0, chords, bass };
 
@@ -156,6 +162,7 @@ private:
     // The user pattern, readable from the audio thread without locks.
     std::array<std::atomic<char>, sgk::userPatternLength> userRight, userLeft;
     std::array<bool, sgk::numSegments> segmentLocked {};
+    std::array<std::atomic<int>, sgk::maxProgressionLength> freeChords;
     int lastBassMode = 1;
 
     sgk::GrooveEngine engine;
