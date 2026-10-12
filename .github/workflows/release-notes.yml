@@ -21,8 +21,7 @@ jobs:
       - name: Release notes from CHANGELOG.md
         run: .github/scripts/release-notes.sh "${{ inputs.tag }}" > release-notes.md
 
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ inputs.tag }}
-          name: Fase Groove Piano ${{ inputs.tag }}
-          body_path: release-notes.md
+      - name: Update the release text only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "${{ inputs.tag }}" --notes-file release-notes.md --title "Fase Groove Piano ${{ inputs.tag }}"
