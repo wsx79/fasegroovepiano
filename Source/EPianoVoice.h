@@ -1,3 +1,6 @@
+// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 #pragma once
 
 // A small FM electric piano (Rhodes-like): a sine carrier, a 1:1 modulator whose

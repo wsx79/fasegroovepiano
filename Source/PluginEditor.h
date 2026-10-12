@@ -1,3 +1,6 @@
+// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 #pragma once
 
 #include "Branding.h"
@@ -108,10 +111,14 @@ class AboutOverlay : public juce::Component
 public:
     AboutOverlay();
     void paint (juce::Graphics&) override;
+    void resized() override;
     void mouseUp (const juce::MouseEvent&) override { setVisible (false); }
 
 private:
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (620.0f, 560.0f); }
+
     juce::Image artist;
+    juce::TextButton sourceButton { "SOURCE CODE" }, donateButton { "DONATE (Ko-fi)" };
 };
 
 //==============================================================================

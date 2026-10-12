@@ -65,7 +65,8 @@ jobs:
             [ -d "$dir" ] && cp -R "$dir" "$GITHUB_WORKSPACE/dist/"
           done
           cd "$GITHUB_WORKSPACE"
-          cp README.md dist/
+          cp README.md LICENSE PRIVACY.md THIRD_PARTY_NOTICES.md dist/
+          cp docs/GUIDA.md dist/GUIDA.md
           if [ "$RUNNER_OS" = "Windows" ]; then
             7z a "${{ matrix.package }}.zip" ./dist/*
           else

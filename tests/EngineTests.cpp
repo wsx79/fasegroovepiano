@@ -1,3 +1,6 @@
+// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // Unit tests for the music engine (no JUCE needed).
 
 #include "../Source/engine/GrooveEngine.h"

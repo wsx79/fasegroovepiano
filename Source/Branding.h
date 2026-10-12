@@ -1,3 +1,6 @@
+// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 #pragma once
 
 // App identity: the Fase Groove Piano logo (icon + wordmark) and the credits
@@ -10,6 +13,11 @@ namespace Branding
     inline constexpr const char* appName   = "Fase Groove Piano";
     inline constexpr const char* tagline   = "funky piano grooves for soulful & deep house";
     inline constexpr const char* artist    = "Fabio 'Pitch' Serra";
+    inline constexpr const char* licence   = "Free & open source - GNU AGPL v3";
+    inline constexpr const char* sourceUrl = "https://github.com/wsx79/Pianovst";
+
+    /** Ko-fi page for donations. Leave empty to hide the DONATE button. */
+    inline constexpr const char* donateUrl = "";
 
     /** The square app icon (slanted groove keys). */
     std::unique_ptr<juce::Drawable> createIcon();

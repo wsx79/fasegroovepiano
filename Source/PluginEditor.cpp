@@ -1,3 +1,6 @@
+// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 #include "PluginEditor.h"
 
 namespace
@@ -262,14 +265,36 @@ void PatternView::paint (juce::Graphics& g)
 //==============================================================================
 AboutOverlay::AboutOverlay() : artist (Branding::artistLogo())
 {
-    setInterceptsMouseClicks (true, false);
+    setInterceptsMouseClicks (true, true);
+
+    sourceButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    sourceButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    sourceButton.onClick = [] { juce::URL (Branding::sourceUrl).launchInDefaultBrowser(); };
+    addAndMakeVisible (sourceButton);
+
+    donateButton.setColour (juce::TextButton::buttonColourId, Palette::accent2);
+    donateButton.setColour (juce::TextButton::textColourOffId, Palette::background);
+    donateButton.onClick = [] { juce::URL (Branding::donateUrl).launchInDefaultBrowser(); };
+    addChildComponent (donateButton);
+    donateButton.setVisible (juce::String (Branding::donateUrl).isNotEmpty());
+}
+
+void AboutOverlay::resized()
+{
+    auto row = card().toNearestInt().reduced (36, 28).removeFromBottom (58).removeFromTop (30);
+    const bool donate = donateButton.isVisible();
+    const int w = 150, total = donate ? 2 * w + 12 : w;
+    row = row.withSizeKeepingCentre (total, row.getHeight());
+    sourceButton.setBounds (row.removeFromLeft (w));
+    if (donate)
+        donateButton.setBounds (row.removeFromRight (w));
 }
 
 void AboutOverlay::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colours::black.withAlpha (0.78f));
 
-    auto card = getLocalBounds().toFloat().withSizeKeepingCentre (620.0f, 520.0f);
+    auto card = this->card();
     g.setColour (Palette::panel);
     g.fillRoundedRectangle (card, 16.0f);
     g.setColour (Palette::accent.withAlpha (0.6f));
@@ -299,9 +324,9 @@ void AboutOverlay::paint (juce::Graphics& g)
     caption ("CREATED BY", r.removeFromTop (16.0f));
     r.removeFromTop (10.0f);
     if (artist.isValid())
-        g.drawImageWithin (artist, (int) r.getX(), (int) r.getY(), (int) r.getWidth(), 150,
+        g.drawImageWithin (artist, (int) r.getX(), (int) r.getY(), (int) r.getWidth(), 130,
                            juce::RectanglePlacement::centred);
-    r.removeFromTop (156.0f);
+    r.removeFromTop (136.0f);
 
     g.setColour (Palette::text);
     g.setFont (font (14.0f));
@@ -318,7 +343,14 @@ void AboutOverlay::paint (juce::Graphics& g)
     g.drawText ("AI coding assistant", r.removeFromTop (18.0f), juce::Justification::centred);
 
     g.setFont (font (11.0f));
-    g.drawText ("Built with JUCE" + dot + "click anywhere to close", r.removeFromBottom (16.0f), juce::Justification::centred);
+    g.drawText ("Built with JUCE" + dot + "VST is a registered trademark of Steinberg Media Technologies GmbH"
+                    + dot + "click to close",
+                r.removeFromBottom (16.0f), juce::Justification::centred);
+
+    r.removeFromBottom (44.0f);   // buttons
+    g.setColour (Palette::text);
+    g.setFont (font (12.0f, true));
+    g.drawText (Branding::licence, r.removeFromBottom (18.0f), juce::Justification::centred);
 }
 
 //==============================================================================
