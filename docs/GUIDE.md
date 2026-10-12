@@ -309,7 +309,7 @@ No. See the [privacy policy](../PRIVACY.md).
 Fase Groove Piano is made by **Fabio 'Pitch' Serra**, DJ and producer. If you like the sound of
 this plug-in, you'll probably like my tracks too:
 
-- 🎧 **Listen to my productions on Spotify:** [Fabio 'Pitch' Serra on Spotify](https://open.spotify.com/search/Fabio%20%27Pitch%27%20Serra)
+- 🎧 **Listen to my productions on Spotify:** [Fabio 'Pitch' Serra on Spotify](https://open.spotify.com/album/4UEKxy0F1P7Lt3yn46wu4V)
 - 🛒 **Download my tracks** from all the major digital music stores: just search for
   **Fabio 'Pitch' Serra**.
 

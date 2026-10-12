@@ -78,7 +78,7 @@ Grazie! Anche una stella ⭐ al repository o una condivisione aiutano tantissimo
 
 ### Ascolta la mia musica
 
-- 🎧 **Ascolta le mie produzioni su Spotify:** [Fabio 'Pitch' Serra su Spotify](https://open.spotify.com/search/Fabio%20%27Pitch%27%20Serra)
+- 🎧 **Ascolta le mie produzioni su Spotify:** [Fabio 'Pitch' Serra su Spotify](https://open.spotify.com/album/4UEKxy0F1P7Lt3yn46wu4V)
 - 🛒 **Scarica le mie canzoni** sui maggiori distributori digitali di musica: cerca **Fabio 'Pitch' Serra**.
 
 ## Crediti
