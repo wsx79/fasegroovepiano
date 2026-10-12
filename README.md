@@ -7,6 +7,7 @@
 
 <p align="center">
   <a href="docs/GUIDA.md"><b>📖 Guida di utilizzo</b></a> ·
+  <a href="CHANGELOG.md">🆕 Novità</a> ·
   <a href="#download">⬇️ Download</a> ·
   <a href="#supporta-il-progetto">☕ Supporta il progetto</a> ·
   <a href="#crediti">Crediti</a> ·
@@ -134,13 +135,20 @@ libxext-dev libfreetype-dev libfontconfig1-dev libxcomposite-dev`.
 
 ### Pubblicare una release
 
-Su GitHub apri **Actions → Build → Run workflow**, scrivi la versione in *release_tag*
-(es. `v1.1.0`) e avvia. GitHub compila per Windows, macOS e Linux e pubblica una Release con i
-tre zip. In alternativa puoi pubblicare un tag:
+1. Aggiungi in cima a [CHANGELOG.md](CHANGELOG.md) la sezione della nuova versione
+   (es. `## [1.2.0] - data`) e aggiorna `VERSION` in `CMakeLists.txt`, guida e README.
+2. Su GitHub apri **Actions → Build → Run workflow**, scrivi la versione in *release_tag*
+   (es. `v1.2.0`) e avvia. GitHub compila per Windows, macOS e Linux e pubblica una Release con
+   i tre zip. Il testo della release viene preso in automatico dalla sezione del changelog.
+
+In alternativa al punto 2 puoi pubblicare un tag:
 
 ```bash
 git tag v1.1.0 && git push origin v1.1.0
 ```
+
+Per correggere il testo di una release già pubblicata senza ricompilare:
+**Actions → Update release notes → Run workflow** con il tag (es. `v1.1.0`).
 
 ### Struttura del codice
 

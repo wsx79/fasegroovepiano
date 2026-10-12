@@ -292,5 +292,9 @@ lancia anche il comando `xattr` indicato sopra.
 **I progetti si ricordano le impostazioni?**
 Sì, tutti i parametri (compreso il riff casuale) vengono salvati con il progetto della DAW.
 
+**Cosa c'è di nuovo nell'ultima versione?**
+Trovi tutte le novità, versione per versione, nel [changelog](../CHANGELOG.md) e nella pagina
+[Releases](https://github.com/wsx79/fasegroovepiano/releases).
+
 **Il plugin si collega a internet o raccoglie dati?**
 No. Vedi la [privacy policy](../PRIVACY.md).
