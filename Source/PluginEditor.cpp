@@ -1,0 +1,506 @@
+#include "PluginEditor.h"
+
+namespace
+{
+    juce::Font font (float height, bool bold = false)
+    {
+        return juce::Font (juce::FontOptions (height).withStyle (bold ? "Bold" : "Regular"));
+    }
+
+    void styleCaption (juce::Label& label, const juce::String& text)
+    {
+        label.setText (text.toUpperCase(), juce::dontSendNotification);
+        label.setFont (font (11.0f, true));
+        label.setColour (juce::Label::textColourId, Palette::dim);
+        label.setJustificationType (juce::Justification::centredLeft);
+        label.setInterceptsMouseClicks (false, false);
+    }
+
+    void fillChoiceItems (juce::ComboBox& box, juce::RangedAudioParameter* param)
+    {
+        if (auto* c = dynamic_cast<juce::AudioParameterChoice*> (param))
+        {
+            box.addItemList (c->choices, 1);
+        }
+        else if (auto* i = dynamic_cast<juce::AudioParameterInt*> (param))
+        {
+            for (int v = i->getRange().getStart(); v <= i->getRange().getEnd(); ++v)
+                box.addItem (juce::String (v) + (v == 1 ? " chord" : " chords"), v - i->getRange().getStart() + 1);
+        }
+    }
+}
+
+//==============================================================================
+GrooveLookAndFeel::GrooveLookAndFeel()
+{
+    setColour (juce::ResizableWindow::backgroundColourId, Palette::background);
+    setColour (juce::ComboBox::backgroundColourId, Palette::background);
+    setColour (juce::ComboBox::outlineColourId, Palette::panelEdge);
+    setColour (juce::ComboBox::textColourId, Palette::text);
+    setColour (juce::ComboBox::arrowColourId, Palette::accent);
+    setColour (juce::ComboBox::focusedOutlineColourId, Palette::accent);
+    setColour (juce::PopupMenu::backgroundColourId, Palette::panel);
+    setColour (juce::PopupMenu::textColourId, Palette::text);
+    setColour (juce::PopupMenu::highlightedBackgroundColourId, Palette::accent.withAlpha (0.85f));
+    setColour (juce::PopupMenu::highlightedTextColourId, Palette::background);
+    setColour (juce::Slider::textBoxTextColourId, Palette::text);
+    setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+    setColour (juce::Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
+    setColour (juce::Label::textColourId, Palette::text);
+    setColour (juce::ToggleButton::textColourId, Palette::text);
+}
+
+void GrooveLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float pos,
+                                          float startAngle, float endAngle, juce::Slider&)
+{
+    const auto bounds = juce::Rectangle<int> (x, y, width, height).toFloat().reduced (4.0f);
+    const float radius = juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.5f;
+    const auto centre = bounds.getCentre();
+    const float angle = startAngle + pos * (endAngle - startAngle);
+    const float lineW = juce::jmax (2.5f, radius * 0.16f);
+    const float arcR = radius - lineW * 0.5f;
+
+    juce::Path track;
+    track.addCentredArc (centre.x, centre.y, arcR, arcR, 0.0f, startAngle, endAngle, true);
+    g.setColour (Palette::panelEdge);
+    g.strokePath (track, juce::PathStrokeType (lineW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+    juce::Path value;
+    value.addCentredArc (centre.x, centre.y, arcR, arcR, 0.0f, startAngle, angle, true);
+    g.setGradientFill (juce::ColourGradient (Palette::accent2, bounds.getBottomLeft(), Palette::accent, bounds.getTopRight(), false));
+    g.strokePath (value, juce::PathStrokeType (lineW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+    const float knobR = arcR - lineW * 1.3f;
+    g.setColour (Palette::panel.brighter (0.25f));
+    g.fillEllipse (centre.x - knobR, centre.y - knobR, knobR * 2.0f, knobR * 2.0f);
+
+    const auto tip = centre.getPointOnCircumference (knobR * 0.75f, angle);
+    g.setColour (Palette::text);
+    g.drawLine ({ centre.getPointOnCircumference (knobR * 0.25f, angle), tip }, 2.2f);
+}
+
+void GrooveLookAndFeel::drawToggleButton (juce::Graphics& g, juce::ToggleButton& b, bool highlighted, bool)
+{
+    auto r = b.getLocalBounds().toFloat();
+    auto pill = r.removeFromLeft (40.0f).withSizeKeepingCentre (36.0f, 18.0f);
+    const bool on = b.getToggleState();
+
+    g.setColour (on ? Palette::accent : Palette::panelEdge);
+    g.fillRoundedRectangle (pill, 9.0f);
+
+    const float d = 14.0f;
+    const float cx = on ? pill.getRight() - d - 2.0f : pill.getX() + 2.0f;
+    g.setColour (highlighted ? Palette::text : Palette::text.withAlpha (0.9f));
+    g.fillEllipse (cx, pill.getCentreY() - d * 0.5f, d, d);
+
+    g.setColour (Palette::text);
+    g.setFont (font (14.0f));
+    g.drawText (b.getButtonText(), r.withTrimmedLeft (6.0f), juce::Justification::centredLeft);
+}
+
+//==============================================================================
+Knob::Knob (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& caption)
+    : attachment (state, paramId, slider)
+{
+    slider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 70, 16);
+    slider.setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+    slider.setColour (juce::Slider::textBoxTextColourId, Palette::text);
+    addAndMakeVisible (slider);
+
+    styleCaption (label, caption);
+    label.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (label);
+}
+
+void Knob::resized()
+{
+    auto r = getLocalBounds();
+    label.setBounds (r.removeFromTop (16));
+    slider.setBounds (r);
+}
+
+Choice::Choice (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& caption)
+{
+    fillChoiceItems (box, state.getParameter (paramId));
+    attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (state, paramId, box);
+    addAndMakeVisible (box);
+
+    styleCaption (label, caption);
+    addAndMakeVisible (label);
+}
+
+void Choice::resized()
+{
+    auto r = getLocalBounds();
+    label.setBounds (r.removeFromTop (16));
+    box.setBounds (r.removeFromTop (28));
+}
+
+//==============================================================================
+ChordSlot::ChordSlot (juce::AudioProcessorValueTreeState& state, int i) : index (i)
+{
+    const auto id = ParamIDs::slot (i);
+    fillChoiceItems (degree, state.getParameter (id));
+    attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (state, id, degree);
+    degree.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (degree);
+}
+
+void ChordSlot::setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing)
+{
+    if (chordName == name && roman == numeral && enabled == isEnabledSlot && playing == isPlaying)
+        return;
+
+    name = chordName;
+    numeral = roman;
+    isEnabledSlot = enabled;
+    isPlaying = playing;
+    degree.setAlpha (enabled ? 1.0f : 0.4f);
+    repaint();
+}
+
+void ChordSlot::paint (juce::Graphics& g)
+{
+    auto r = getLocalBounds().toFloat().reduced (1.0f);
+    const float alpha = isEnabledSlot ? 1.0f : 0.35f;
+
+    if (isPlaying)
+    {
+        g.setGradientFill (juce::ColourGradient (Palette::accent2.withAlpha (0.35f), r.getTopLeft(),
+                                                 Palette::accent.withAlpha (0.25f), r.getBottomRight(), false));
+        g.fillRoundedRectangle (r, 8.0f);
+    }
+
+    g.setColour ((isPlaying ? Palette::accent : Palette::panelEdge).withMultipliedAlpha (alpha));
+    g.drawRoundedRectangle (r, 8.0f, isPlaying ? 2.0f : 1.0f);
+
+    auto text = getLocalBounds().reduced (4, 6).withTrimmedBottom (34);
+    g.setColour (Palette::dim.withMultipliedAlpha (alpha));
+    g.setFont (font (11.0f, true));
+    g.drawText (juce::String (index + 1) + "  " + numeral, text.removeFromTop (14), juce::Justification::centred);
+
+    g.setColour (Palette::text.withMultipliedAlpha (alpha));
+    g.setFont (font (name.length() > 7 ? 14.0f : 17.0f, true));
+    g.drawFittedText (name, text, juce::Justification::centred, 1, 0.7f);
+}
+
+void ChordSlot::resized()
+{
+    degree.setBounds (getLocalBounds().reduced (6, 6).removeFromBottom (26));
+}
+
+//==============================================================================
+void PatternView::setState (int patternIndex, int step, int fillEveryBars)
+{
+    if (patternIndex == pattern && step == currentStep && fillEveryBars == fills)
+        return;
+
+    pattern = patternIndex;
+    currentStep = step;
+    fills = fillEveryBars;
+    repaint();
+}
+
+void PatternView::paint (juce::Graphics& g)
+{
+    const auto& patterns = sgk::groovePatterns();
+    const auto& p = patterns[(size_t) juce::jlimit (0, (int) patterns.size() - 1, pattern)];
+    const int len = p.length();
+
+    auto area = getLocalBounds().toFloat();
+    const float labelW = 44.0f;
+    const float rowH = (area.getHeight() - 16.0f) / 2.0f;
+    const float cellW = (area.getWidth() - labelW) / (float) len;
+
+    g.setFont (font (11.0f, true));
+
+    // Beat numbers
+    for (int s = 0; s < len; s += 4)
+    {
+        g.setColour (s % 16 == 0 ? Palette::accent : Palette::dim);
+        g.drawText (juce::String ((s / 4) % 4 + 1), juce::Rectangle<float> (labelW + s * cellW, 0.0f, cellW * 2.0f, 14.0f),
+                    juce::Justification::centredLeft);
+    }
+
+    auto drawRow = [&] (const std::string& line, float y, const juce::String& caption, juce::Colour colour)
+    {
+        g.setColour (Palette::dim);
+        g.drawText (caption, juce::Rectangle<float> (0.0f, y, labelW, rowH), juce::Justification::centredLeft);
+
+        for (int s = 0; s < len; ++s)
+        {
+            auto cell = juce::Rectangle<float> (labelW + s * cellW, y, cellW, rowH).reduced (1.5f, 3.0f);
+            const char c = line[(size_t) s];
+
+            g.setColour (Palette::panelEdge.withAlpha (s % 4 == 0 ? 0.9f : 0.45f));
+            g.fillRoundedRectangle (cell, 3.0f);
+
+            if (c == 'X' || c == 'x' || c == '>')
+            {
+                g.setColour (c == '>' ? Palette::accent2 : colour.withAlpha (c == 'X' ? 1.0f : 0.75f));
+                g.fillRoundedRectangle (cell, 3.0f);
+            }
+            else if (c == '=')
+            {
+                g.setColour (colour.withAlpha (0.35f));
+                g.fillRoundedRectangle (cell.withSizeKeepingCentre (cell.getWidth() + 3.0f, cell.getHeight() * 0.45f), 2.0f);
+            }
+
+            if (s == currentStep)
+            {
+                g.setColour (Palette::text);
+                g.drawRoundedRectangle (cell.expanded (1.0f), 3.0f, 1.5f);
+            }
+        }
+    };
+
+    drawRow (p.rightHand, 16.0f, "CHORDS", Palette::accent);
+    drawRow (p.leftHand, 16.0f + rowH, "BASS", Palette::accent2.brighter (0.2f));
+}
+
+//==============================================================================
+SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
+    : AudioProcessorEditor (&p), processor (p),
+      progLength (p.apvts, ParamIDs::progLength, "Length"),
+      chordLength (p.apvts, ParamIDs::chordLength, "Each chord"),
+      key (p.apvts, ParamIDs::key, "Key"),
+      scale (p.apvts, ParamIDs::scale, "Scale / mode"),
+      extension (p.apvts, ParamIDs::extension, "Extensions"),
+      voicing (p.apvts, ParamIDs::voicing, "Voicing"),
+      bass (p.apvts, ParamIDs::bass, "Left-hand bass"),
+      registerKnob (p.apvts, ParamIDs::registerPos, "Register"),
+      pattern (p.apvts, ParamIDs::pattern, "Groove"),
+      fills (p.apvts, ParamIDs::fills, "Pentatonic fills"),
+      playMode (p.apvts, ParamIDs::playMode, "Play mode"),
+      swing (p.apvts, ParamIDs::swing, "Swing"),
+      gate (p.apvts, ParamIDs::gate, "Gate"),
+      velocity (p.apvts, ParamIDs::velocity, "Velocity"),
+      humanize (p.apvts, ParamIDs::humanize, "Humanize"),
+      soundAttachment (p.apvts, ParamIDs::sound, soundToggle),
+      tone (p.apvts, ParamIDs::tone, "Tone"),
+      reverb (p.apvts, ParamIDs::reverb, "Reverb"),
+      volume (p.apvts, ParamIDs::volume, "Volume")
+{
+    setLookAndFeel (&lookAndFeel);
+
+    styleCaption (presetLabel, "Progression presets");
+    addAndMakeVisible (presetLabel);
+
+    presetBox.setTextWhenNothingSelected ("Load a progression...");
+    const auto& presets = sgk::progressionPresets();
+    for (int i = 0; i < (int) presets.size(); ++i)
+        presetBox.addItem (presets[(size_t) i].name + juce::String ("   (") + sgk::scaleName (presets[(size_t) i].scale) + ")", i + 1);
+    presetBox.onChange = [this] { loadPreset (presetBox.getSelectedItemIndex()); };
+    addAndMakeVisible (presetBox);
+
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+        addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
+
+    for (juce::Component* c : std::initializer_list<juce::Component*> {
+             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &registerKnob,
+             &pattern, &fills, &playMode, &swing, &gate, &velocity, &humanize,
+             &soundToggle, &tone, &reverb, &volume, &patternView })
+        addAndMakeVisible (c);
+
+    setSize (980, 640);
+    startTimerHz (30);
+    timerCallback();
+}
+
+SoulfulGrooveKeysEditor::~SoulfulGrooveKeysEditor()
+{
+    stopTimer();
+    setLookAndFeel (nullptr);
+}
+
+void SoulfulGrooveKeysEditor::loadPreset (int index)
+{
+    const auto& presets = sgk::progressionPresets();
+    if (index < 0 || index >= (int) presets.size())
+        return;
+
+    const auto& preset = presets[(size_t) index];
+    processor.setParameterFromUI (ParamIDs::scale, (float) preset.scale);
+    processor.setParameterFromUI (ParamIDs::progLength, (float) preset.degrees.size());
+
+    for (int i = 0; i < (int) preset.degrees.size(); ++i)
+        processor.setParameterFromUI (ParamIDs::slot (i), (float) preset.degrees[(size_t) i]);
+}
+
+//==============================================================================
+void SoulfulGrooveKeysEditor::timerCallback()
+{
+    auto s = processor.currentSettings();
+    const int heldRoot = processor.uiHeldRoot.load();
+    if (heldRoot >= 0)
+        s.keyRoot = heldRoot;
+
+    std::array<sgk::Chord, sgk::maxProgressionLength> chords;
+    std::array<sgk::VoicedChord, sgk::maxProgressionLength> voiced;
+    sgk::GrooveEngine::voiceProgression (s, chords, voiced);
+
+    const int playingSlot = processor.uiSlot.load();
+
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+    {
+        const bool enabled = i < s.progressionLength;
+        const auto chord = sgk::buildChord (s.keyRoot, s.scale, s.progression[(size_t) i], s.extension);
+        slots[i]->setInfo (sgk::chordName (chord), juce::String::fromUTF8 (sgk::romanNumeral (s.progression[(size_t) i], chord).c_str()),
+                           enabled, enabled && i == playingSlot);
+    }
+
+    const int shown = playingSlot >= 0 ? playingSlot : 0;
+    const juce::String chordText = sgk::chordName (chords[(size_t) shown]);
+    const juce::String romanText = juce::String::fromUTF8 (sgk::romanNumeral (s.progression[(size_t) shown], chords[(size_t) shown]).c_str());
+    const juce::String keyText = juce::String (sgk::noteName (s.keyRoot)) + " " + sgk::scaleName (s.scale);
+
+    if (chordText != currentChord || romanText != currentRoman || keyText != currentKey || showingHold != (heldRoot >= 0))
+    {
+        currentChord = chordText;
+        currentRoman = romanText;
+        currentKey = keyText;
+        showingHold = heldRoot >= 0;
+        repaint (chordDisplayArea);
+    }
+
+    patternView.setState (s.pattern, processor.uiStep.load(), s.fillEveryBars);
+}
+
+void SoulfulGrooveKeysEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& title)
+{
+    g.setColour (Palette::panel);
+    g.fillRoundedRectangle (area.toFloat(), 10.0f);
+    g.setColour (Palette::panelEdge);
+    g.drawRoundedRectangle (area.toFloat().reduced (0.5f), 10.0f, 1.0f);
+
+    if (title.isNotEmpty())
+    {
+        g.setColour (Palette::accent);
+        g.setFont (font (12.0f, true));
+        g.drawText (title, area.reduced (14, 8).removeFromTop (16), juce::Justification::centredLeft);
+    }
+}
+
+void SoulfulGrooveKeysEditor::paint (juce::Graphics& g)
+{
+    g.fillAll (Palette::background);
+
+    // Header
+    auto header = headerArea.reduced (4, 0);
+    g.setGradientFill (juce::ColourGradient (Palette::accent, (float) header.getX(), 0.0f,
+                                             Palette::accent2, (float) header.getX() + 320.0f, 0.0f, false));
+    g.setFont (font (30.0f, true));
+    g.drawText ("SOULFUL GROOVE KEYS", header.removeFromTop (46).withTrimmedTop (10), juce::Justification::bottomLeft);
+    g.setColour (Palette::dim);
+    g.setFont (font (13.0f));
+    g.drawText ("funky piano grooves for soulful & deep house", header, juce::Justification::topLeft);
+
+    // Current chord
+    drawPanel (g, chordDisplayArea, {});
+    auto cd = chordDisplayArea.reduced (16, 8);
+    auto left = cd.removeFromLeft (cd.getWidth() / 2);
+    g.setColour (Palette::text);
+    g.setFont (font (34.0f, true));
+    g.drawFittedText (currentChord, left, juce::Justification::centredLeft, 1, 0.6f);
+
+    g.setColour (Palette::accent);
+    g.setFont (font (18.0f, true));
+    g.drawText (currentRoman, cd.removeFromTop (cd.getHeight() / 2), juce::Justification::bottomRight);
+    g.setColour (showingHold ? Palette::accent2 : Palette::dim);
+    g.setFont (font (13.0f));
+    g.drawText ((showingHold ? juce::String ("HOLD: ") : juce::String()) + currentKey, cd, juce::Justification::centredRight);
+
+    drawPanel (g, progressionPanel, "PROGRESSION");
+    drawPanel (g, harmonyPanel, "HARMONY & SCALES");
+    drawPanel (g, groovePanel, "GROOVE");
+    drawPanel (g, soundPanel, "SOUND & MIDI");
+    drawPanel (g, gridPanel, "RHYTHM GRID");
+
+    // Hints
+    auto hint = soundPanel.reduced (16, 12).removeFromBottom (54);
+    g.setColour (Palette::dim);
+    g.setFont (font (11.5f));
+    g.drawFittedText ("MIDI OUT: route this track's MIDI to any synth or piano in your DAW.\n"
+                      "Hold mode: press a key to play the groove in that key.",
+                      hint, juce::Justification::bottomLeft, 4);
+}
+
+void SoulfulGrooveKeysEditor::resized()
+{
+    auto r = getLocalBounds().reduced (20, 14);
+
+    // Header
+    auto top = r.removeFromTop (76);
+    chordDisplayArea = top.removeFromRight (380).reduced (0, 4);
+    headerArea = top;
+    r.removeFromTop (10);
+
+    // Progression
+    progressionPanel = r.removeFromTop (128);
+    {
+        auto inner = progressionPanel.reduced (14, 8);
+        inner.removeFromTop (20);
+        auto leftCol = inner.removeFromLeft (240);
+        presetLabel.setBounds (leftCol.removeFromTop (16));
+        presetBox.setBounds (leftCol.removeFromTop (28));
+        leftCol.removeFromTop (4);
+        progLength.setBounds (leftCol.removeFromLeft (114));
+        chordLength.setBounds (leftCol.withTrimmedLeft (12));
+
+        inner.removeFromLeft (14);
+        const int w = inner.getWidth() / sgk::maxProgressionLength;
+        for (auto* slot : slots)
+            slot->setBounds (inner.removeFromLeft (w).reduced (3, 0));
+    }
+    r.removeFromTop (10);
+
+    // Three panels
+    auto mid = r.removeFromTop (244);
+    harmonyPanel = mid.removeFromLeft (300);
+    mid.removeFromLeft (10);
+    soundPanel = mid.removeFromRight (250);
+    mid.removeFromRight (10);
+    groovePanel = mid;
+
+    auto row = [] (juce::Rectangle<int>& area, int h) { auto out = area.removeFromTop (h); area.removeFromTop (8); return out; };
+    auto split = [] (juce::Rectangle<int> area, juce::Component& a, juce::Component& b, int leftWidth)
+    {
+        a.setBounds (area.removeFromLeft (leftWidth));
+        b.setBounds (area.withTrimmedLeft (10));
+    };
+
+    {
+        auto inner = harmonyPanel.reduced (14, 8);
+        inner.removeFromTop (22);
+        split (row (inner, 44), key, scale, 80);
+        split (row (inner, 44), extension, voicing, 125);
+        auto last = inner;
+        bass.setBounds (last.removeFromLeft (150).removeFromTop (44));
+        registerKnob.setBounds (last.withTrimmedLeft (10));
+    }
+
+    {
+        auto inner = groovePanel.reduced (14, 8);
+        inner.removeFromTop (22);
+        pattern.setBounds (row (inner, 44));
+        split (row (inner, 44), fills, playMode, inner.getWidth() / 2 - 5);
+        const int w = inner.getWidth() / 4;
+        for (auto* k : { &swing, &gate, &velocity, &humanize })
+            k->setBounds (inner.removeFromLeft (w));
+    }
+
+    {
+        auto inner = soundPanel.reduced (14, 8);
+        inner.removeFromTop (24);
+        soundToggle.setBounds (row (inner, 26));
+        auto knobs = inner.removeFromTop (100);
+        const int w = knobs.getWidth() / 3;
+        for (auto* k : { &tone, &reverb, &volume })
+            k->setBounds (knobs.removeFromLeft (w));
+    }
+
+    r.removeFromTop (10);
+    gridPanel = r;
+    patternView.setBounds (gridPanel.reduced (14, 8).withTrimmedTop (22));
+}

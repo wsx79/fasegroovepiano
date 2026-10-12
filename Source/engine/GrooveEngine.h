@@ -1,0 +1,114 @@
+#pragma once
+
+// Rhythm + progression sequencer. Turns a musical-time window (in quarter
+// notes, "ppq") into note on/off events. Pure C++ (no JUCE).
+
+#include "Theory.h"
+
+#include <array>
+#include <string>
+#include <vector>
+
+namespace sgk
+{
+
+constexpr int maxProgressionLength = 8;
+constexpr double stepLength = 0.25;   // a 16th note, in quarter notes
+
+//==============================================================================
+/** A two-hand rhythm. Each character is one 16th step:
+      'X' accented hit   'x' normal hit   '>' push (hit with the NEXT chord)
+      '=' hold previous  '.' rest
+    The right-hand line plays the chord, the left-hand line plays the bass. */
+struct GroovePattern
+{
+    const char* name;
+    std::string rightHand;
+    std::string leftHand;
+
+    int length() const noexcept { return (int) rightHand.size(); }
+};
+
+const std::vector<GroovePattern>& groovePatterns();
+
+/** Ready-made progressions (scale degrees, 0 = I). */
+struct ProgressionPreset
+{
+    const char* name;
+    int scale;
+    std::vector<int> degrees;
+};
+
+const std::vector<ProgressionPreset>& progressionPresets();
+
+//==============================================================================
+enum class BassMode { off = 0, root, octaves, rootFifth };
+constexpr int numBassModes = 4;
+const char* bassModeName (int mode) noexcept;
+
+struct GrooveSettings
+{
+    int keyRoot = 9;                       // A
+    int scale = 1;                         // Dorian
+    Extension extension = Extension::ninth;
+    Voicing voicing = Voicing::close;
+    int centre = 64;                       // middle of the right hand (MIDI note)
+    BassMode bass = BassMode::root;
+
+    std::array<int, maxProgressionLength> progression { 0, 3, 0, 3, 0, 3, 0, 3 };
+    int progressionLength = 2;
+    int stepsPerChord = 16;                // 8 = half bar, 16 = 1 bar ...
+
+    int pattern = 0;
+    float swing = 0.25f;                   // 0 = straight, 1 = full triplet shuffle
+    float gate = 0.55f;                    // portion of a step a non-held hit lasts
+    int velocity = 96;
+    float humanize = 0.25f;
+    int fillEveryBars = 0;                 // 0 = no fills
+};
+
+struct NoteEvent
+{
+    double ppq;
+    int note;
+    int velocity;   // 0 for note-off
+    bool isNoteOn() const noexcept { return velocity > 0; }
+};
+
+//==============================================================================
+class GrooveEngine
+{
+public:
+    GrooveEngine();
+
+    /** Appends (time-ordered) events falling in [startPpq, endPpq). */
+    void render (double startPpq, double endPpq, const GrooveSettings& settings,
+                 std::vector<NoteEvent>& out);
+
+    /** Releases everything currently sounding at the given time. */
+    void allNotesOff (double ppq, std::vector<NoteEvent>& out);
+
+    bool anyNoteSounding() const noexcept;
+
+    /** Chord slot that is active at a given step. */
+    static int slotForStep (long long step, const GrooveSettings& s) noexcept;
+
+    /** Chord (and its voicing) for every slot of the progression, voice-led in order. */
+    static void voiceProgression (const GrooveSettings& s,
+                                  std::array<Chord, maxProgressionLength>& chords,
+                                  std::array<VoicedChord, maxProgressionLength>& voiced) noexcept;
+
+private:
+    struct PendingOn { double ppq; int note; int velocity; double duration; bool tie = false; };
+
+    void collectStep (long long step, const GrooveSettings& s,
+                      const std::array<Chord, maxProgressionLength>& chords,
+                      const std::array<VoicedChord, maxProgressionLength>& voiced);
+    void flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out);
+
+    std::array<double, 128> offTime {};    // < 0 when the note is not sounding
+    std::vector<PendingOn> pending;
+    std::vector<int> scratch;
+};
+
+} // namespace sgk

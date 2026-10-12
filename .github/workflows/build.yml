@@ -1,0 +1,84 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            package: SoulfulGrooveKeys-Windows
+          - name: macOS
+            os: macos-latest
+            package: SoulfulGrooveKeys-macOS
+          - name: Linux
+            os: ubuntu-latest
+            package: SoulfulGrooveKeys-Linux
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxext-dev libfreetype-dev libfontconfig1-dev libxcomposite-dev
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Engine tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Ad-hoc sign (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          for f in build/SoulfulGrooveKeys_artefacts/Release/VST3/*.vst3 \
+                   build/SoulfulGrooveKeys_artefacts/Release/AU/*.component \
+                   build/SoulfulGrooveKeys_artefacts/Release/Standalone/*.app; do
+            codesign --force --deep --sign - "$f"
+          done
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p dist
+          cd build/SoulfulGrooveKeys_artefacts/Release
+          for dir in VST3 AU Standalone; do
+            [ -d "$dir" ] && cp -R "$dir" "$GITHUB_WORKSPACE/dist/"
+          done
+          cd "$GITHUB_WORKSPACE"
+          cp README.md dist/
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            7z a "${{ matrix.package }}.zip" ./dist/*
+          else
+            (cd dist && zip -qry "../${{ matrix.package }}.zip" .)
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.package }}
+          path: ${{ matrix.package }}.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.package }}.zip

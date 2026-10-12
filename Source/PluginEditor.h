@@ -1,0 +1,132 @@
+#pragma once
+
+#include "PluginProcessor.h"
+
+#include <juce_gui_basics/juce_gui_basics.h>
+
+namespace Palette
+{
+    const juce::Colour background { 0xff17111c };
+    const juce::Colour panel      { 0xff231a2b };
+    const juce::Colour panelEdge  { 0xff3b2c46 };
+    const juce::Colour accent     { 0xfff2a65a };   // warm orange
+    const juce::Colour accent2    { 0xffe85d75 };   // soulful pink
+    const juce::Colour text       { 0xfff4e9dc };
+    const juce::Colour dim        { 0xff9c8ca8 };
+}
+
+//==============================================================================
+class GrooveLookAndFeel : public juce::LookAndFeel_V4
+{
+public:
+    GrooveLookAndFeel();
+
+    void drawRotarySlider (juce::Graphics&, int x, int y, int width, int height, float sliderPos,
+                           float startAngle, float endAngle, juce::Slider&) override;
+    void drawToggleButton (juce::Graphics&, juce::ToggleButton&, bool highlighted, bool down) override;
+};
+
+//==============================================================================
+/** Rotary knob with a caption. */
+class Knob : public juce::Component
+{
+public:
+    Knob (juce::AudioProcessorValueTreeState&, const juce::String& paramId, const juce::String& caption);
+    void resized() override;
+
+private:
+    juce::Slider slider;
+    juce::Label label;
+    juce::AudioProcessorValueTreeState::SliderAttachment attachment;
+};
+
+/** Drop-down menu with a caption above it. */
+class Choice : public juce::Component
+{
+public:
+    Choice (juce::AudioProcessorValueTreeState&, const juce::String& paramId, const juce::String& caption);
+    void resized() override;
+
+    juce::ComboBox box;
+
+private:
+    juce::Label label;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
+};
+
+/** One chord of the progression: degree selector + resulting chord name. */
+class ChordSlot : public juce::Component
+{
+public:
+    ChordSlot (juce::AudioProcessorValueTreeState&, int index);
+
+    void setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing);
+    void paint (juce::Graphics&) override;
+    void resized() override;
+
+private:
+    int index;
+    juce::ComboBox degree;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
+    juce::String name, numeral;
+    bool isEnabledSlot = true, isPlaying = false;
+};
+
+/** Shows the two-hand rhythm of the selected groove and the playhead. */
+class PatternView : public juce::Component
+{
+public:
+    void setState (int patternIndex, int step, int fillEveryBars);
+    void paint (juce::Graphics&) override;
+
+private:
+    int pattern = 0, currentStep = -1, fills = 0;
+};
+
+//==============================================================================
+class SoulfulGrooveKeysEditor : public juce::AudioProcessorEditor, private juce::Timer
+{
+public:
+    explicit SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor&);
+    ~SoulfulGrooveKeysEditor() override;
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+
+private:
+    void timerCallback() override;
+    void loadPreset (int index);
+    void drawPanel (juce::Graphics&, juce::Rectangle<int> area, const juce::String& title);
+
+    SoulfulGrooveKeysProcessor& processor;
+    GrooveLookAndFeel lookAndFeel;
+
+    // Progression
+    juce::Label presetLabel;
+    juce::ComboBox presetBox;
+    Choice progLength, chordLength;
+    juce::OwnedArray<ChordSlot> slots;
+
+    // Harmony
+    Choice key, scale, extension, voicing, bass;
+    Knob registerKnob;
+
+    // Groove
+    Choice pattern, fills, playMode;
+    Knob swing, gate, velocity, humanize;
+
+    // Sound
+    juce::ToggleButton soundToggle { "Internal e-piano" };
+    juce::AudioProcessorValueTreeState::ButtonAttachment soundAttachment;
+    Knob tone, reverb, volume;
+
+    PatternView patternView;
+
+    juce::Rectangle<int> headerArea, chordDisplayArea, progressionPanel, harmonyPanel, groovePanel,
+                         soundPanel, gridPanel;
+
+    juce::String currentChord { "-" }, currentRoman, currentKey;
+    bool showingHold = false;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SoulfulGrooveKeysEditor)
+};
