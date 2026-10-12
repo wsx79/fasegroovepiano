@@ -6,6 +6,21 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-10-12
+
+### Added
+- **Harmony colours:** every chord is coloured by how well it sounds with the chords next to it
+  (shared notes, voice leading, root movement, staying in the key): green = sounds great,
+  amber = good, grey = clashes. You see it as a bar on top of each chord slot (with a hint on
+  hover) and on the dots and arrows of the circle of fifths.
+
+### Changed
+- **New circle of fifths:** the chords of the scale are highlighted with their Roman numerals,
+  the centre shows key and mode, the progression is drawn as numbered dots with arrows showing
+  the order, dots sit outside the rings so the chord names stay readable, repeated chords are
+  spread out so every dot can be grabbed, a colour legend sits under the wheel, and tooltips
+  explain every slice.
+
 ## [1.5.0] - 2026-10-12
 
 ### Added

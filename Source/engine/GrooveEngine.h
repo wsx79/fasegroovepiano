@@ -173,6 +173,17 @@ public:
     /** Roman numeral of a slot ("IV", or "bVI" for a free chord). */
     static std::string numeralForSlot (const GrooveSettings& s, int slot);
 
+    /** How well the chords sound together, 0..1. transition[i] scores the move from slot i to
+        the next one (the last wraps to the first); slot[i] is the average of the moves into and
+        out of slot i (a single chord scores by how well it fits the key). */
+    struct HarmonyScores
+    {
+        std::array<float, maxProgressionLength> slot {}, transition {};
+    };
+    static HarmonyScores harmonyScores (const GrooveSettings& s,
+                                        const std::array<Chord, maxProgressionLength>& chords,
+                                        const std::array<VoicedChord, maxProgressionLength>& voiced) noexcept;
+
     /** Chord (and its voicing) for every slot of the progression, voice-led in order. */
     static void voiceProgression (const GrooveSettings& s,
                                   std::array<Chord, maxProgressionLength>& chords,

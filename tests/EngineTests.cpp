@@ -556,6 +556,39 @@ static void testFreeChords()
     CHECK (GrooveEngine::numeralForSlot (s, 1) == "bVI");
 }
 
+static void testHarmonyScores()
+{
+    auto scoreOf = [] (GrooveSettings s)
+    {
+        std::array<Chord, maxProgressionLength> chords;
+        std::array<VoicedChord, maxProgressionLength> voiced;
+        GrooveEngine::voiceProgression (s, chords, voiced);
+        return GrooveEngine::harmonyScores (s, chords, voiced);
+    };
+
+    GrooveSettings s;
+    s.keyRoot = 0;
+    s.scale = 0;
+    s.progressionLength = 3;
+    s.progression = { 1, 4, 0, 0, 0, 0, 0, 0 };   // ii - V - I
+    const auto good = scoreOf (s);
+
+    // Same, but the V becomes a free F#maj chord (tritone away, outside the key).
+    s.freeChords[1] = freeChordCode (6, false);
+    const auto bad = scoreOf (s);
+
+    for (int i = 0; i < 3; ++i)
+    {
+        CHECK (good.slot[(size_t) i] >= 0.0f && good.slot[(size_t) i] <= 1.0f);
+        CHECK (bad.slot[(size_t) i] >= 0.0f && bad.slot[(size_t) i] <= 1.0f);
+    }
+    CHECK (good.slot[1] > bad.slot[1] + 0.15f);
+    CHECK (good.transition[0] > 0.7f);   // ii -> V: down a fifth, shared notes
+
+    std::printf ("  harmony ii-V-I: %.2f %.2f %.2f  |  ii-F#-I: %.2f %.2f %.2f\n",
+                 good.slot[0], good.slot[1], good.slot[2], bad.slot[0], bad.slot[1], bad.slot[2]);
+}
+
 static void testPatternsWellFormed()
 {
     CHECK (groovePatterns().size() == 34);
@@ -593,6 +626,7 @@ int main()
     testFillStylesStrumOctave();
     testApproachChords();
     testFreeChords();
+    testHarmonyScores();
     testPatternsWellFormed();
 
     if (failures == 0)

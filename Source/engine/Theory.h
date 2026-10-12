@@ -91,6 +91,16 @@ struct VoicedChord
 VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
                         const NoteSet* previousRightHand) noexcept;
 
+//==============================================================================
+/** How well chord `b` sounds after chord `a`, from 0 (clashes) to 1 (sounds great):
+    shared notes, strength of the root move (down a fifth is best, a tritone worst),
+    smooth voice leading between the two voicings, and how much both stay in the key. */
+float transitionScore (const Chord& a, const VoicedChord& va, const Chord& b, const VoicedChord& vb,
+                       int keyRoot, int scale) noexcept;
+
+/** Share (0..1) of the chord's notes that belong to the key's scale. */
+float scaleFit (const Chord& chord, int keyRoot, int scale) noexcept;
+
 /** Pentatonic flavour of the current scale, as absolute MIDI notes in [low, high]. */
 NoteSet pentatonicNotes (int keyRoot, int scale, int low, int high) noexcept;
 

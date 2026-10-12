@@ -171,6 +171,24 @@ namespace
         { "* Random riff *", "* Riff casuale *", "* Riff aleatorio *", "* Riff aléatoire *", "* Zufallsriff *", "* Riff aleatório *" },
         { "* User pattern *", "* Pattern utente *", "* Patrón de usuario *", "* Motif utilisateur *", "* Eigenes Pattern *", "* Padrão do usuário *" },
 
+        // ---- v1.6 harmony colours & circle ----
+        { "Chord", "Accordo", "Acorde", "Accord", "Akkord", "Acorde" },
+        { "drag it onto another chord", "trascinalo su un altro accordo", "arrástralo a otro acorde", "fais-le glisser sur un autre accord", "auf einen anderen Akkord ziehen", "arraste-o para outro acorde" },
+        { "Outer ring: major chords. Inner ring: minor chords. Bright slices are the chords of the scale.",
+          "Anello esterno: accordi maggiori. Anello interno: accordi minori. Gli spicchi chiari sono gli accordi della scala.",
+          "Anillo exterior: acordes mayores. Anillo interior: acordes menores. Las porciones claras son los acordes de la escala.",
+          "Anneau extérieur : accords majeurs. Anneau intérieur : accords mineurs. Les parts claires sont les accords de la gamme.",
+          "Außenring: Dur-Akkorde. Innenring: Moll-Akkorde. Helle Felder sind die Akkorde der Skala.",
+          "Anel externo: acordes maiores. Anel interno: acordes menores. As fatias claras são os acordes da escala." },
+        { "in the scale", "nella scala", "en la escala", "dans la gamme", "in der Skala", "na escala" },
+        { "outside the scale", "fuori scala", "fuera de la escala", "hors de la gamme", "außerhalb der Skala", "fora da escala" },
+        { "Click: change key", "Clic: cambia tonalità", "Clic: cambia la tonalidad", "Clic : change de tonalité", "Klick: Tonart wechseln", "Clique: muda o tom" },
+        { "sounds great", "suona benissimo", "suena genial", "sonne très bien", "klingt super", "soa muito bem" },
+        { "clashes", "stride", "choca", "dissonant", "reibt sich", "destoa" },
+        { "Sounds great with the chords next to it", "Suona benissimo con gli accordi vicini", "Suena genial con los acordes vecinos", "Sonne très bien avec les accords voisins", "Klingt super mit den Nachbarakkorden", "Soa muito bem com os acordes vizinhos" },
+        { "Sounds good with the chords next to it", "Suona bene con gli accordi vicini", "Suena bien con los acordes vecinos", "Sonne bien avec les accords voisins", "Klingt gut mit den Nachbarakkorden", "Soa bem com os acordes vizinhos" },
+        { "Bold: it clashes with the chords next to it", "Azzardato: stride con gli accordi vicini", "Atrevido: choca con los acordes vecinos", "Osé : dissonant avec les accords voisins", "Gewagt: reibt sich mit den Nachbarakkorden", "Ousado: destoa dos acordes vizinhos" },
+
         // ---- v1.5 harmony pack ----
         { "Soulful & Gospel", "Soulful e gospel", "Soulful y gospel", "Soulful et gospel", "Soulful & Gospel", "Soulful e gospel" },
         { "Circle of 5ths", "Circolo delle quinte", "Círculo de quintas", "Cycle des quintes", "Quintenzirkel", "Círculo das quintas" },

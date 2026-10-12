@@ -202,7 +202,7 @@ ChordSlot::ChordSlot (juce::AudioProcessorValueTreeState& state, int i) : index 
 }
 
 void ChordSlot::setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing,
-                         bool isFree, int degreeValue)
+                         bool isFree, int degreeValue, float harmonyScore)
 {
     // A free chord has no scale degree: the menu shows "Free" until a degree is picked.
     if (isFree && (! showingFree || degree.getText() != tr ("Free")))
@@ -211,8 +211,15 @@ void ChordSlot::setInfo (const juce::String& chordName, const juce::String& roma
         degree.setSelectedId (degreeValue + 1, juce::dontSendNotification);
     showingFree = isFree;
 
-    if (chordName == name && roman == numeral && enabled == isEnabledSlot && playing == isPlaying)
+    if (chordName == name && roman == numeral && enabled == isEnabledSlot && playing == isPlaying
+        && std::abs (harmonyScore - harmony) < 0.005f)
         return;
+
+    harmony = harmonyScore;
+    setTooltip (! enabled ? juce::String()
+                : harmony >= 0.72f ? tr ("Sounds great with the chords next to it")
+                : harmony >= 0.58f ? tr ("Sounds good with the chords next to it")
+                                   : tr ("Bold: it clashes with the chords next to it"));
 
     name = chordName;
     numeral = roman;
@@ -236,6 +243,13 @@ void ChordSlot::paint (juce::Graphics& g)
 
     g.setColour ((isPlaying ? Palette::accent : Palette::panelEdge).withMultipliedAlpha (alpha));
     g.drawRoundedRectangle (r, 8.0f, isPlaying ? 2.0f : 1.0f);
+
+    // Harmony bar: vivid = sounds great with its neighbours, dull = clashes.
+    if (isEnabledSlot)
+    {
+        g.setColour (CircleOfFifths::harmonyColour (harmony));
+        g.fillRoundedRectangle (r.reduced (10.0f, 0.0f).removeFromTop (3.5f).translated (0.0f, 1.0f), 1.75f);
+    }
 
     auto text = getLocalBounds().reduced (4, 6).withTrimmedBottom (34);
     g.setColour (Palette::dim.withMultipliedAlpha (alpha));
@@ -1161,13 +1175,15 @@ void FaseGroovePianoEditor::timerCallback()
     sgk::GrooveEngine::voiceProgression (s, chords, voiced);
 
     const int playingSlot = processor.uiSlot.load();
+    const auto harmony = sgk::GrooveEngine::harmonyScores (s, chords, voiced);
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
     {
         const bool enabled = i < s.progressionLength;
         const auto chord = sgk::GrooveEngine::chordForSlot (s, i);
         slots[i]->setInfo (sgk::chordName (chord), juce::String::fromUTF8 (sgk::GrooveEngine::numeralForSlot (s, i).c_str()),
-                           enabled, enabled && i == playingSlot, s.freeChords[(size_t) i] >= 0, s.progression[(size_t) i]);
+                           enabled, enabled && i == playingSlot, s.freeChords[(size_t) i] >= 0, s.progression[(size_t) i],
+                           enabled ? harmony.slot[(size_t) i] : 1.0f);
     }
 
     const int shown = playingSlot >= 0 ? playingSlot : 0;
@@ -1196,15 +1212,19 @@ void FaseGroovePianoEditor::timerCallback()
                                          juce::dontSendNotification);
 
     std::vector<CircleOfFifths::ChordMark> marks;
+    std::vector<float> moves;
     for (int i = 0; i < s.progressionLength; ++i)
-        marks.push_back ({ chords[(size_t) i].rootPc, chords[(size_t) i].third == 3 });
+    {
+        marks.push_back ({ chords[(size_t) i].rootPc, chords[(size_t) i].third == 3, {}, harmony.slot[(size_t) i] });
+        moves.push_back (harmony.transition[(size_t) i]);
+    }
     std::vector<CircleOfFifths::ChordMark> diatonic;
     for (int d = 0; d < 7; ++d)
     {
         const auto chord = sgk::buildChord (s.keyRoot, s.scale, d, s.extension);
-        diatonic.push_back ({ chord.rootPc, chord.third == 3 });
+        diatonic.push_back ({ chord.rootPc, chord.third == 3, juce::String::fromUTF8 (sgk::romanNumeral (d, chord).c_str()) });
     }
-    circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), marks, playingSlot, diatonic);
+    circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), tr (sgk::scaleName (s.scale)), marks, moves, playingSlot, diatonic);
     previewButton.setToggleState (processor.previewOn.load(), juce::dontSendNotification);
 
     const bool synced = syncButton.getToggleState();

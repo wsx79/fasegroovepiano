@@ -7,17 +7,8 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Prossima release
 
-- **Colori degli accordi: suonano bene insieme o no?** Colorare ogni accordo della progressione
-  (slot e punti sul circolo delle quinte) in base a quanto suona bene **con gli accordi vicini**:
-  quello prima e quello dopo, e la progressione nel suo insieme.
-  - **Colore vivo e acceso:** accordi che stanno benissimo insieme (note in comune, voice leading
-    morbido, movimenti forti del basso come la discesa di quinta, ii–V–I, IV–iii–ii).
-  - **Colore spento e sbiadito:** accordi che stridono con i vicini (poche o nessuna nota in comune,
-    scontri di semitono, salti lontani sul circolo, accordi liberi che non risolvono).
-  - Forse anche un colore sulla linea tra due punti del circolo, per vedere quanto suona bene quel
-    singolo passaggio.
-- **Nuova grafica del circolo delle quinte:** più bella e facile da usare. Idee: spicchi e
-  scritte più grandi e chiari, colori più morbidi e sfumati, i colori di armonia qui sopra su punti
-  e linee, punti numerati, frecce che mostrano la direzione della progressione, una piccola legenda
-  (esterno = maggiori, interno = minori), suggerimenti al passaggio del mouse con nome e numero
-  romano dell'accordo, ed evidenziazione chiara di dove si può rilasciare un punto.
+- Ancora niente in programma: i suggerimenti sono benvenuti!
+
+## Fatto
+
+- v1.6.0: colori dell'armonia (gli accordi suonano bene insieme?) e nuovo circolo delle quinte.

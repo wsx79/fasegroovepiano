@@ -104,7 +104,7 @@ Con *Play mode → Hold a key* mostra anche "HOLD" e la tonalità scelta col tas
 | **DICE** | Progressione casuale ma musicale, coi movimenti tipici della soulful house (ii–V, IV–iii–ii, quinte discendenti). Mantiene la lunghezza attuale. |
 | **Length** | Quanti accordi (1–8). Quelli oltre la lunghezza appaiono spenti. |
 | **Each chord** | Durata di ogni accordo: ½, 1, 2 o 4 battute. |
-| **Slot 1–8** | Ogni slot è un grado della scala (I…VII). Sopra vedi il nome dell'accordo e il numero romano (maiuscolo = maggiore, minuscolo = minore, ø = semidiminuito). Lo slot che suona si illumina. Uno slot che mostra **Libero** suona un accordo libero scelto dal circolo delle quinte (es. *bVI*); scegli un grado dal suo menu per tornare alla scala. |
+| **Slot 1–8** | Ogni slot è un grado della scala (I…VII). Sopra vedi il nome dell'accordo e il numero romano (maiuscolo = maggiore, minuscolo = minore, ø = semidiminuito). Lo slot che suona si illumina. Una barra colorata in alto in ogni slot mostra quanto quell'accordo suona bene con quelli vicini (verde = benissimo, grigio = stride; passa il mouse per un suggerimento). Uno slot che mostra **Libero** suona un accordo libero scelto dal circolo delle quinte (es. *bVI*); scegli un grado dal suo menu per tornare alla scala. |
 
 I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si trasporta da sola.
 
@@ -136,10 +136,19 @@ I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si
 
 Anello esterno = tonalità maggiori, anello interno = relative minori.
 
-- Lo spicchio arancione è la **tonalità attuale**; quelli evidenziati accanto sono le tonalità
-  "vicine" (IV e V), dove le modulazioni suonano naturali.
-- La linea rosa collega gli accordi della progressione: vedi a colpo d'occhio i **movimenti per
-  quinte** (spicchi adiacenti), il punto bianco è l'accordo che sta suonando.
+- Lo spicchio arancione è la **tonalità attuale**. Gli **spicchi chiari sono gli accordi della
+  scala**, ognuno col suo numero romano (I, ii, iii…); quelli scuri sono fuori scala. Al centro
+  vedi tonalità e modo.
+- La progressione è disegnata con **punti numerati** (1, 2, 3…, attorno alla ruota per gli
+  accordi maggiori, attorno al centro per i minori) uniti da **frecce** che mostrano l'ordine degli
+  accordi. Il punto con l'anello bianco è l'accordo che sta suonando.
+- **Colori dell'armonia:** ogni punto e ogni freccia è colorato in base a **quanto gli accordi
+  suonano bene insieme** (note in comune, voice leading morbido, movimenti forti del basso come la
+  discesa di quinta, restare nella tonalità): **verde = suona benissimo**, **ambra = bene**,
+  **grigio = stride**. La legenda è sotto la ruota. Lo stesso colore compare come barra in alto in
+  ogni slot della progressione.
+- Passa il mouse su uno spicchio per vedere accordo, numero romano e se è nella scala; sul centro
+  per un promemoria su cosa indicano gli anelli.
 - **Clicca** uno spicchio per cambiare tonalità: esterno → modo maggiore, interno → modo minore
   (Dorian). Se la scala attuale è già dello stesso tipo, viene mantenuta.
 - **Trascina un punto rosa** su un altro spicchio per cambiare quell'accordo della progressione.

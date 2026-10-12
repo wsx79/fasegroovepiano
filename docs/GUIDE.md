@@ -103,7 +103,7 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 | **DICE** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
 | **Length** | How many chords (1–8). Slots beyond the length are greyed out. |
 | **Each chord** | How long each chord lasts: ½, 1, 2 or 4 bars. |
-| **Slots 1–8** | Each slot is a scale degree (I…VII). Above it you see the chord name and the Roman numeral (upper case = major, lower case = minor, ø = half-diminished). The playing slot lights up. A slot that shows **Free** plays a free chord set from the circle of fifths (e.g. *bVI*); pick a degree from its menu to go back to the scale. |
+| **Slots 1–8** | Each slot is a scale degree (I…VII). Above it you see the chord name and the Roman numeral (upper case = major, lower case = minor, ø = half-diminished). The playing slot lights up. A coloured bar on top of each slot shows how well that chord sounds with the chords next to it (green = great, grey = clashes; hover for a hint). A slot that shows **Free** plays a free chord set from the circle of fifths (e.g. *bVI*); pick a degree from its menu to go back to the scale. |
 
 Degrees are relative to the scale: change the key or mode and the progression follows.
 
@@ -135,10 +135,18 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 
 Outer ring = major keys, inner ring = relative minors.
 
-- The orange slice is the **current key**; the highlighted neighbours are the "closest" keys
-  (IV and V), where modulations sound natural.
-- The pink line connects the chords of your progression: you can see the **moves by fifths**
-  (adjacent slices) at a glance; the white dot is the chord that is playing.
+- The orange slice is the **current key**. The **bright slices are the chords of the scale**,
+  each with its Roman numeral (I, ii, iii…); the dark ones are outside the scale. The centre shows
+  the key and the mode.
+- Your progression is drawn as **numbered dots** (1, 2, 3…, around the wheel for major chords,
+  around the centre for minor ones) joined by **arrows** that show the order of the chords. The
+  dot with the white ring is the chord that is playing.
+- **Harmony colours:** every dot and every arrow is coloured by **how well the chords sound
+  together** (shared notes, smooth voice leading, strong root moves like down a fifth, staying in
+  the key): **green = sounds great**, **amber = good**, **grey = clashes**. The legend is under
+  the wheel. The same colour appears as a bar on top of each chord slot.
+- Hover over a slice to see the chord, its numeral and whether it is in the scale; hover over
+  the centre for a reminder of what the rings mean.
 - **Click** a slice to change key: outer ring → major mode, inner ring → minor mode (Dorian). If
   the current scale is already of the same kind, it is kept.
 - **Drag a pink dot** onto another slice to change that chord of the progression. While you drag,

@@ -6,6 +6,21 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.6.0] - 2026-10-12
+
+### Aggiunto
+- **Colori dell'armonia:** ogni accordo è colorato in base a quanto suona bene con gli accordi
+  vicini (note in comune, voice leading, movimento del basso, restare nella tonalità): verde =
+  suona benissimo, ambra = bene, grigio = stride. Lo vedi come barra in alto in ogni slot della
+  progressione (con un suggerimento passando il mouse) e su punti e frecce del circolo delle quinte.
+
+### Modificato
+- **Nuovo circolo delle quinte:** gli accordi della scala sono evidenziati coi numeri romani, al
+  centro ci sono tonalità e modo, la progressione è disegnata con punti numerati e frecce che ne
+  mostrano l'ordine, i punti stanno fuori dagli anelli così i nomi degli accordi restano leggibili,
+  gli accordi ripetuti sono separati così ogni punto si può afferrare, sotto la ruota c'è la
+  legenda dei colori e i suggerimenti spiegano ogni spicchio.
+
 ## [1.5.0] - 2026-10-12
 
 ### Aggiunto

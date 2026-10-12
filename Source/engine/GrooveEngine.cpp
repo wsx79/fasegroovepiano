@@ -418,6 +418,32 @@ std::string GrooveEngine::numeralForSlot (const GrooveSettings& s, int slot)
     return romanNumeral (s.progression[(size_t) std::clamp (slot, 0, maxProgressionLength - 1)], chord);
 }
 
+GrooveEngine::HarmonyScores GrooveEngine::harmonyScores (const GrooveSettings& s,
+                                                         const std::array<Chord, maxProgressionLength>& chords,
+                                                         const std::array<VoicedChord, maxProgressionLength>& voiced) noexcept
+{
+    HarmonyScores h;
+    const int len = std::clamp (s.progressionLength, 1, maxProgressionLength);
+
+    if (len == 1)
+    {
+        h.slot[0] = h.transition[0] = scaleFit (chords[0], s.keyRoot, s.scale);
+        return h;
+    }
+
+    for (int i = 0; i < len; ++i)
+    {
+        const int next = (i + 1) % len;
+        h.transition[(size_t) i] = transitionScore (chords[(size_t) i], voiced[(size_t) i],
+                                                    chords[(size_t) next], voiced[(size_t) next], s.keyRoot, s.scale);
+    }
+
+    for (int i = 0; i < len; ++i)
+        h.slot[(size_t) i] = 0.5f * (h.transition[(size_t) ((i + len - 1) % len)] + h.transition[(size_t) i]);
+
+    return h;
+}
+
 void GrooveEngine::voiceProgression (const GrooveSettings& s,
                                      std::array<Chord, maxProgressionLength>& chords,
                                      std::array<VoicedChord, maxProgressionLength>& voiced) noexcept

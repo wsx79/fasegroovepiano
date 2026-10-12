@@ -525,6 +525,52 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
     return v;
 }
 
+float scaleFit (const Chord& chord, int keyRoot, int scale) noexcept
+{
+    if (chord.tones.size == 0)
+        return 1.0f;
+
+    const auto& s = scaleIntervals (scale);
+    int inside = 0;
+    for (int i = 0; i < chord.tones.size; ++i)
+    {
+        const int pc = mod (chord.rootPc + chord.tones[i] - keyRoot, 12);
+        inside += std::find (s.begin(), s.end(), pc) != s.end() ? 1 : 0;
+    }
+
+    return (float) inside / (float) chord.tones.size;
+}
+
+float transitionScore (const Chord& a, const VoicedChord& va, const Chord& b, const VoicedChord& vb,
+                       int keyRoot, int scale) noexcept
+{
+    // Shared pitch classes.
+    bool inA[12] {}, inB[12] {};
+    for (int i = 0; i < a.tones.size; ++i) inA[mod (a.rootPc + a.tones[i], 12)] = true;
+    for (int i = 0; i < b.tones.size; ++i) inB[mod (b.rootPc + b.tones[i], 12)] = true;
+
+    int shared = 0, sizeA = 0, sizeB = 0;
+    for (int pc = 0; pc < 12; ++pc)
+    {
+        shared += (inA[pc] && inB[pc]) ? 1 : 0;
+        sizeA += inA[pc] ? 1 : 0;
+        sizeB += inB[pc] ? 1 : 0;
+    }
+    const float common = std::min (1.0f, (float) shared / (float) std::max (1, std::min (sizeA, sizeB) - 1));
+
+    // Root motion, by interval upwards: up a 4th (= down a 5th) is the strongest.
+    static constexpr float rootMove[12] { 0.6f, 0.4f, 0.75f, 0.8f, 0.7f, 1.0f, 0.3f, 0.85f, 0.75f, 0.8f, 0.75f, 0.45f };
+    const float root = rootMove[mod (b.rootPc - a.rootPc, 12)];
+
+    // Voice leading: average distance each voice has to move.
+    const double move = movement (vb.rightHand, va.rightHand);
+    const float voiceLeading = std::clamp (1.0f - (float) (move - 1.0) / 4.0f, 0.0f, 1.0f);
+
+    const float fit = 0.5f * (scaleFit (a, keyRoot, scale) + scaleFit (b, keyRoot, scale));
+
+    return std::clamp (0.3f * common + 0.3f * root + 0.2f * voiceLeading + 0.2f * fit, 0.0f, 1.0f);
+}
+
 NoteSet pentatonicNotes (int keyRoot, int scale, int low, int high) noexcept
 {
     // Minor-third scales use 1 b3 4 5 b7, major-third scales 1 2 3 5 6.

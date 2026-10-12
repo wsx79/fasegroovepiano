@@ -68,7 +68,7 @@ private:
 };
 
 /** One chord of the progression: degree selector + resulting chord name. */
-class ChordSlot : public juce::Component
+class ChordSlot : public juce::Component, public juce::SettableTooltipClient
 {
 public:
     ChordSlot (juce::AudioProcessorValueTreeState&, int index);
@@ -78,7 +78,7 @@ public:
 
     /** isFree: the slot plays a free chord (from the circle), shown instead of a degree. */
     void setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing,
-                  bool isFree, int degreeValue);
+                  bool isFree, int degreeValue, float harmonyScore);
     void paint (juce::Graphics&) override;
     void resized() override;
 
@@ -96,6 +96,7 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
     juce::String name, numeral;
     bool isEnabledSlot = true, isPlaying = false;
+    float harmony = 1.0f;   // how well it sounds with the chords next to it (0..1)
 };
 
 /** Shows the two-hand rhythm of the selected groove and the playhead. */

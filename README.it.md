@@ -37,7 +37,8 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - ↗️ **Accordi di passaggio:** lo slide gospel di mezzo tono verso ogni cambio d'accordo (da sopra o da sotto).
 - 🔁 **Progressioni:** 1–8 accordi, 38 preset in un menu diviso per stile (tra cui le progressioni sul circolo delle quinte)
   e **DICE** per progressioni casuali ma musicali.
-- ⭕ **Circolo delle quinte** interattivo, con il percorso della progressione: trascina i punti per cambiare gli accordi.
+- ⭕ **Circolo delle quinte** interattivo: gli accordi della scala coi numeri romani, la progressione con punti numerati e frecce, trascina i punti per cambiare gli accordi (anche fuori scala).
+- 🌈 **Colori dell'armonia:** accordi e passaggi colorati in base a quanto suonano bene insieme (verde = benissimo, grigio = stride).
 - 🥁 **34 groove** a due mani (soulful, gospel, deep, **jackin' house**, funky, garage, disco…)
   più **NEW RIFF**, che genera riff funky casuali sul momento, e fill opzionali (3 stili).
 - 🎚️ **Strum** (accordi arpeggiati come un pianista vero) e **Top +8va** (nota alta raddoppiata all'ottava).

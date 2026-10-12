@@ -4,22 +4,25 @@
 #pragma once
 
 // Interactive circle of fifths: outer ring = major keys, inner ring = relative
-// minors. Shows the current key, its diatonic neighbours and the path the
-// progression draws around the circle. Click a key to select it; drag a dot
-// of the progression onto another chord of the scale to change that chord.
+// minors. Shows the current key, the chords of its scale, and the path the
+// progression draws around the circle, coloured by how well the chords sound
+// together. Click a key to select it; drag a dot of the progression onto
+// another chord to change that chord.
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include <functional>
 #include <vector>
 
-class CircleOfFifths : public juce::Component
+class CircleOfFifths : public juce::Component, public juce::SettableTooltipClient
 {
 public:
     struct ChordMark
     {
         int rootPc;
         bool minor;
+        juce::String numeral {};   // scale chords: "ii", "V"...
+        float harmony = 1.0f;      // progression chords: how well it sounds with its neighbours (0..1)
     };
 
     /** Called with the clicked root and whether the inner (minor) ring was clicked. */
@@ -33,9 +36,14 @@ public:
     /** Free mode: every chord of the circle is a drop target, even outside the scale. */
     void setFreeMode (bool shouldBeFree)   { freeMode = shouldBeFree; repaint(); }
 
-    /** `diatonic` holds the chord on each scale degree (0..6), used as drop targets. */
-    void setState (int keyRoot, bool minorKey, const std::vector<ChordMark>& progression, int playingIndex,
-                   const std::vector<ChordMark>& diatonic);
+    /** `diatonic` holds the chord on each scale degree (0..6); `transitions[i]` scores the move
+        from progression chord i to the next one (0..1). */
+    void setState (int keyRoot, bool minorKey, const juce::String& scaleName,
+                   const std::vector<ChordMark>& progression, const std::vector<float>& transitions,
+                   int playingIndex, const std::vector<ChordMark>& diatonic);
+
+    /** Colour for a harmony score: dull grey (clashes) to vivid (sounds great). */
+    static juce::Colour harmonyColour (float score);
 
     void paint (juce::Graphics&) override;
     void mouseDown (const juce::MouseEvent&) override;
@@ -49,11 +57,13 @@ private:
 
     Hit segmentAt (juce::Point<float>) const;
     juce::Point<float> segmentCentre (int index, bool inner) const;
+    juce::Point<float> centre() const;
 
     juce::Point<float> dotPosition (int slot) const;
     int dotAt (juce::Point<float>) const;
     /** Scale degree whose chord sits on that segment (same ring first, then same root), or -1. */
     int degreeAt (Hit) const;
+    void updateTooltip (juce::Point<float>);
 
     float outerRadius() const;
     float ringSplit() const { return outerRadius() * 0.68f; }
@@ -61,7 +71,9 @@ private:
 
     int key = 0;
     bool minor = false;
+    juce::String modeName;
     std::vector<ChordMark> chords, scaleChords;
+    std::vector<float> moves;
     int dragging = -1;
     bool freeMode = false;
     juce::Point<float> dragPos;
