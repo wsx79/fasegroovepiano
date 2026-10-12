@@ -16,3 +16,8 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
     scontri di semitono, salti lontani sul circolo, accordi liberi che non risolvono).
   - Forse anche un colore sulla linea tra due punti del circolo, per vedere quanto suona bene quel
     singolo passaggio.
+- **Nuova grafica del circolo delle quinte:** più bella e facile da usare. Idee: spicchi e
+  scritte più grandi e chiari, colori più morbidi e sfumati, i colori di armonia qui sopra su punti
+  e linee, punti numerati, frecce che mostrano la direzione della progressione, una piccola legenda
+  (esterno = maggiori, interno = minori), suggerimenti al passaggio del mouse con nome e numero
+  romano dell'accordo, ed evidenziazione chiara di dove si può rilasciare un punto.
