@@ -347,9 +347,65 @@ static void testSections()
     for (int n = 0; n < 128; ++n) CHECK (sounding[n] == 0);
 }
 
+static void testSegmentsAndUserPattern()
+{
+    const auto& base = groovePatterns()[1];   // Soulful Push
+
+    // Identity order changes nothing; A A A A repeats the first half bar.
+    CHECK (applySegmentOrder (base, { 0, 1, 2, 3 }).rightHand == base.rightHand);
+    const auto aaaa = applySegmentOrder (base, { 0, 0, 0, 0 });
+    CHECK (wellFormed (aaaa));
+    for (int i = 0; i < 32; ++i)
+        CHECK (aaaa.rightHand[(size_t) i] == base.rightHand[(size_t) (i % 8)]
+               || (aaaa.rightHand[(size_t) i] == '.' && base.rightHand[(size_t) (i % 8)] == '='));
+
+    // Reordering every preset keeps it well formed and playable.
+    for (const auto& p : groovePatterns())
+    {
+        const auto r = applySegmentOrder (p, { 3, 1, 0, 2 });
+        CHECK (wellFormed (r));
+        CHECK (r.length() == p.length());
+    }
+
+    // copySegment only touches the chosen segment.
+    auto target = groovePatterns()[0];
+    const auto& other = groovePatterns()[3];
+    copySegment (target, other, 2);
+    for (int i = 0; i < 32; ++i)
+    {
+        if (i >= 16 && i < 24) CHECK (target.rightHand[(size_t) i] == other.rightHand[(size_t) i] || target.rightHand[(size_t) i] == '.');
+        else                   CHECK (target.rightHand[(size_t) i] == groovePatterns()[0].rightHand[(size_t) i] || target.rightHand[(size_t) i] == '.');
+    }
+
+    // The user pattern plays exactly what is written in the grid.
+    GrooveSettings s;
+    s.pattern = userPatternIndex();
+    s.bass = BassMode::root;
+    s.humanize = 0.0f;
+    s.swing = 0.0f;
+    s.userRight.fill ('.');
+    s.userLeft.fill ('.');
+    s.userRight[0] = 'X';
+    s.userRight[6] = 'x';
+    s.userLeft[0] = 'x';
+
+    CHECK (GrooveEngine::resolvePattern (s).rightHand == "X.....x.........................");
+    const auto clip = GrooveEngine::renderClip (s, 8.0);
+    std::set<double> chordHits, bassHits;
+    for (const auto& e : clip)
+        if (e.isNoteOn()) (e.part == Part::bass ? bassHits : chordHits).insert (e.ppq);
+
+    CHECK ((chordHits == std::set<double> { 0.0, 1.5 }));
+    CHECK ((bassHits == std::set<double> { 0.0 }));
+
+    // Segment order also applies to the user pattern: D C B A moves the hit at 0 to bar 2, beat 3.
+    s.segmentOrder = { 3, 2, 1, 0 };
+    CHECK (GrooveEngine::resolvePattern (s).rightHand.substr (24, 8) == "X.....x.");
+}
+
 static void testPatternsWellFormed()
 {
-    CHECK (groovePatterns().size() == 20);
+    CHECK (groovePatterns().size() == 26);
 
     for (const auto& p : groovePatterns())
     {
@@ -378,6 +434,7 @@ int main()
     testRandomRiffs();
     testRandomProgressions();
     testSections();
+    testSegmentsAndUserPattern();
     testPatternsWellFormed();
 
     if (failures == 0)

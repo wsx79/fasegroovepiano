@@ -28,11 +28,14 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 🎹 **Armonia:** 12 tonalità × 8 scale/modi (Maggiore, Dorian, Minore, Mixolydian, Lydian,
   Phrygian, Minore armonica e melodica). Accordi diatonici a 3–6 voci con tensioni gestite in automatico.
 - 🎛️ **Voicing:** Close, Drop 2, Rootless, Wide (due mani), Quartal, con voice leading automatico.
-- 🔁 **Progressioni:** 1–8 accordi, 17 preset (tra cui le progressioni sul circolo delle quinte)
+- 🔁 **Progressioni:** 1–8 accordi, 19 preset (tra cui le progressioni sul circolo delle quinte)
   e **DICE** per progressioni casuali ma musicali.
 - ⭕ **Circolo delle quinte** interattivo, con il percorso della progressione.
-- 🥁 **20 groove** a due mani (offbeat stabs, push, clav chops, ghost notes, gospel, garage,
-  disco…) più **NEW RIFF**, che genera riff funky casuali sul momento.
+- 🥁 **26 groove** a due mani (offbeat stabs, push, clav chops, ghost notes, gospel, garage,
+  disco, **jackin' house**…) più **NEW RIFF**, che genera riff funky casuali sul momento.
+- ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,
+  randomizzare (RND) e bloccare (LOCK), e **BASS ON/OFF** al volo.
+- 🔍 **Interfaccia ridimensionabile** e finestra mini durante il trascinamento della clip.
 - 🎬 **Sezioni del brano:** Intro, Main, Break, Build-up, Drop, Outro, automatizzabili, ed
   esportazione di un **arrangiamento completo di 60 battute** con i marker.
 - ⏱️ **Tempo:** agganciato alla DAW o impostato a mano.

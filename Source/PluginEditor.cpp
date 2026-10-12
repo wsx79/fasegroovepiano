@@ -194,13 +194,56 @@ void ChordSlot::resized()
 }
 
 //==============================================================================
-void PatternView::setState (const sgk::GroovePattern& newPattern, int step)
+void PatternView::setState (const sgk::GroovePattern& newPattern, int step, bool bassOn)
 {
-    if (step == currentStep && newPattern.rightHand == pattern.rightHand && newPattern.leftHand == pattern.leftHand)
+    if (step == currentStep && bassOn == bassEnabled
+        && newPattern.rightHand == pattern.rightHand && newPattern.leftHand == pattern.leftHand)
         return;
 
     pattern = newPattern;
     currentStep = step;
+    bassEnabled = bassOn;
+    repaint();
+}
+
+bool PatternView::cellAt (juce::Point<float> p, bool& bassRow, int& step) const
+{
+    const int len = pattern.length();
+    const float rowH = (getHeight() - headerHeight) / 2.0f;
+    if (len == 0 || p.x < labelWidth || p.y < headerHeight)
+        return false;
+
+    step = juce::jlimit (0, len - 1, (int) ((p.x - labelWidth) / ((getWidth() - labelWidth) / (float) len)));
+    bassRow = p.y >= headerHeight + rowH;
+    return true;
+}
+
+void PatternView::mouseDown (const juce::MouseEvent& e)
+{
+    bool bassRow = false;
+    int step = 0;
+    if (cellAt (e.position, bassRow, step) && onCellClicked != nullptr)
+        onCellClicked (bassRow, step, e);
+}
+
+void PatternView::mouseMove (const juce::MouseEvent& e)
+{
+    bool bassRow = false;
+    int step = -1;
+    if (! cellAt (e.position, bassRow, step))
+        step = -1;
+
+    if (step != hoverStep || bassRow != hoverBass)
+    {
+        hoverStep = step;
+        hoverBass = bassRow;
+        repaint();
+    }
+}
+
+void PatternView::mouseExit (const juce::MouseEvent&)
+{
+    hoverStep = -1;
     repaint();
 }
 
@@ -212,8 +255,8 @@ void PatternView::paint (juce::Graphics& g)
         return;
 
     auto area = getLocalBounds().toFloat();
-    const float labelW = 44.0f;
-    const float rowH = (area.getHeight() - 16.0f) / 2.0f;
+    const float labelW = labelWidth;
+    const float rowH = (area.getHeight() - headerHeight) / 2.0f;
     const float cellW = (area.getWidth() - labelW) / (float) len;
 
     g.setFont (font (11.0f, true));
@@ -226,10 +269,29 @@ void PatternView::paint (juce::Graphics& g)
                     juce::Justification::centredLeft);
     }
 
-    auto drawRow = [&] (const std::string& line, float y, const juce::String& caption, juce::Colour colour)
+    // Segment separators (A | B | C | D)
+    if (len % sgk::numSegments == 0)
+    {
+        g.setColour (Palette::accent.withAlpha (0.35f));
+        for (int k = 1; k < sgk::numSegments; ++k)
+        {
+            const float x = labelW + (float) (k * len / sgk::numSegments) * cellW;
+            g.fillRect (x - 0.75f, headerHeight, 1.5f, area.getHeight() - headerHeight);
+        }
+    }
+
+    auto drawRow = [&] (const std::string& line, float y, const juce::String& caption, juce::Colour colour, bool isBass)
     {
         g.setColour (Palette::dim);
         g.drawText (caption, juce::Rectangle<float> (0.0f, y, labelW, rowH), juce::Justification::centredLeft);
+
+        if (isBass && ! bassEnabled)
+        {
+            g.setColour (Palette::dim.withAlpha (0.6f));
+            g.drawText ("Bass off  -  click BASS to turn it back on",
+                        juce::Rectangle<float> (labelW, y, area.getWidth() - labelW, rowH), juce::Justification::centred);
+            return;
+        }
 
         for (int s = 0; s < len; ++s)
         {
@@ -255,11 +317,16 @@ void PatternView::paint (juce::Graphics& g)
                 g.setColour (Palette::text);
                 g.drawRoundedRectangle (cell.expanded (1.0f), 3.0f, 1.5f);
             }
+            else if (s == hoverStep && isBass == hoverBass)
+            {
+                g.setColour (Palette::text.withAlpha (0.5f));
+                g.drawRoundedRectangle (cell.expanded (0.5f), 3.0f, 1.0f);
+            }
         }
     };
 
-    drawRow (p.rightHand, 16.0f, "CHORDS", Palette::accent);
-    drawRow (p.leftHand, 16.0f + rowH, "BASS", Palette::accent2.brighter (0.2f));
+    drawRow (p.rightHand, headerHeight, "CHORDS", Palette::accent, false);
+    drawRow (p.leftHand, headerHeight + rowH, "BASS", Palette::accent2.brighter (0.2f), true);
 }
 
 //==============================================================================
@@ -390,8 +457,18 @@ void MidiDragTile::mouseDrag (const juce::MouseEvent& e)
 
     dragStarted = true;
     const auto file = createFile();
-    if (file.existsAsFile())
-        juce::DragAndDropContainer::performExternalDragDropOfFiles ({ file.getFullPathName() }, false, this);
+    if (! file.existsAsFile())
+        return;
+
+    if (onDragStart != nullptr)
+        onDragStart();
+
+    juce::Component::SafePointer<MidiDragTile> safeThis (this);
+    juce::DragAndDropContainer::performExternalDragDropOfFiles ({ file.getFullPathName() }, false, this, [safeThis]
+    {
+        if (safeThis != nullptr && safeThis->onDragEnd != nullptr)
+            safeThis->onDragEnd();
+    });
 }
 
 //==============================================================================
@@ -515,11 +592,77 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
 
     dragTile.createFile = [this] { return processor.writeMidiClip (selectedClipBars(), selectedClipPart()); };
 
+    // Mini window while dragging: frees the screen so you can see where to drop.
+    dragTile.onDragStart = [this]
+    {
+        if (processor.shrinkWhileDragging)
+        {
+            juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+            juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->enterMiniMode(); });
+        }
+    };
+    dragTile.onDragEnd = [this]
+    {
+        juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+        juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->exitMiniMode(); });
+    };
+
+    shrinkToggle.setToggleState (processor.shrinkWhileDragging, juce::dontSendNotification);
+    shrinkToggle.setTooltip ("Shrink the plug-in window while you drag a clip, so you can see your DAW");
+    shrinkToggle.onClick = [this] { processor.shrinkWhileDragging = shrinkToggle.getToggleState(); };
+    addAndMakeVisible (shrinkToggle);
+
+    // Rhythm grid: editable cells, A/B/C/D segments, quick bass on/off.
+    patternView.onCellClicked = [this] (bool bassRow, int step, const juce::MouseEvent& e) { cellClicked (bassRow, step, e); };
+    patternView.setTooltip ("Click a step: hit > accent > ghost > rest.  Right-click: more options");
+
+    bassButton.setClickingTogglesState (false);
+    bassButton.setTooltip ("Left-hand bass on / off");
+    bassButton.onClick = [this] { processor.toggleBass(); };
+    addAndMakeVisible (bassButton);
+
+    for (int i = 0; i < sgk::numSegments; ++i)
+    {
+        auto* box = segmentBoxes.add (new juce::ComboBox());
+        fillChoiceItems (*box, p.apvts.getParameter (ParamIDs::segment (i)));
+        box->setJustificationType (juce::Justification::centred);
+        box->setTooltip ("Which part (A-D) plays here: combine parts like A A B C");
+        segmentAttachments.add (new juce::AudioProcessorValueTreeState::ComboBoxAttachment (p.apvts, ParamIDs::segment (i), *box));
+        addAndMakeVisible (box);
+
+        auto* dice = segmentDice.add (new juce::TextButton ("RND"));
+        dice->setColour (juce::TextButton::buttonColourId, Palette::background);
+        dice->setColour (juce::TextButton::textColourOffId, Palette::accent);
+        dice->setTooltip ("New random rhythm for this part");
+        dice->onClick = [this, i] { processor.randomizeSegment (processor.segmentAtStep (i * sgk::userPatternLength / sgk::numSegments)); };
+        addAndMakeVisible (dice);
+
+        auto* lock = segmentLocks.add (new juce::TextButton ("LOCK"));
+        lock->setClickingTogglesState (true);
+        lock->setColour (juce::TextButton::buttonColourId, Palette::background);
+        lock->setColour (juce::TextButton::buttonOnColourId, Palette::accent2);
+        lock->setColour (juce::TextButton::textColourOffId, Palette::dim);
+        lock->setColour (juce::TextButton::textColourOnId, Palette::background);
+        lock->setTooltip ("Keep this part when you press NEW RIFF");
+        lock->onClick = [this, i, lock]
+        {
+            processor.setSegmentLocked (processor.segmentAtStep (i * sgk::userPatternLength / sgk::numSegments), lock->getToggleState());
+        };
+        addAndMakeVisible (lock);
+    }
+
+    newRiffButton.setTooltip ("New random funky riff (locked parts are kept)");
+
     saveButton.setColour (juce::TextButton::buttonColourId, Palette::background);
     saveButton.setColour (juce::TextButton::textColourOffId, Palette::text);
     saveButton.onClick = [this] { saveClip(); };
 
-    setSize (1180, 740);
+    // Read the saved size first: setting the limits resizes (and re-saves) the window.
+    const float savedScale = juce::jlimit (0.6f, 2.0f, processor.editorScale);
+    setResizable (true, true);
+    setResizeLimits ((int) (baseWidth * 0.6f), (int) (baseHeight * 0.6f), baseWidth * 2, baseHeight * 2);
+    getConstrainer()->setFixedAspectRatio ((double) baseWidth / baseHeight);
+    setSize (juce::roundToInt (baseWidth * savedScale), juce::roundToInt (baseHeight * savedScale));
     startTimerHz (30);
     timerCallback();
 }
@@ -567,6 +710,79 @@ void FaseGroovePianoEditor::saveClip()
                               });
 }
 
+void FaseGroovePianoEditor::cellClicked (bool bassRow, int step, const juce::MouseEvent& e)
+{
+    const char current = processor.stepSymbol (bassRow, step);
+
+    if (e.mods.isPopupMenu())
+    {
+        juce::PopupMenu menu;
+        menu.addSectionHeader (juce::String (bassRow ? "Bass" : "Chords") + " - step " + juce::String (step + 1));
+        menu.addItem (1, "Hit", true, current == 'x');
+        menu.addItem (2, "Accent", true, current == 'X');
+        menu.addItem (3, "Ghost note", true, current == 'g');
+        menu.addItem (4, "Push (anticipate the next chord)", true, current == '>');
+        menu.addItem (5, "Hold (tie from the previous note)", true, current == '=');
+        menu.addItem (6, "Rest", true, current == '.');
+
+        juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+        menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&patternView),
+                            [safe, bassRow, step] (int result)
+                            {
+                                static constexpr char symbols[] { 0, 'x', 'X', 'g', '>', '=', '.' };
+                                if (safe != nullptr && result > 0 && result < 7)
+                                    safe->processor.editStep (bassRow, step, symbols[result]);
+                            });
+        return;
+    }
+
+    // Click cycles: rest -> hit -> accent -> ghost -> rest.
+    const char next = current == 'x' ? 'X' : current == 'X' ? 'g' : current == 'g' ? '.' : 'x';
+    processor.editStep (bassRow, step, next);
+}
+
+void FaseGroovePianoEditor::enterMiniMode()
+{
+    if (miniMode)
+        return;
+
+    miniMode = true;
+    fullSize = { getWidth(), getHeight() };
+    miniStartedAt = juce::Time::getMillisecondCounter();
+
+    hiddenForMini.clear();
+    for (auto* c : getChildren())
+    {
+        if (c == &dragTile || ! c->isVisible()
+            || dynamic_cast<juce::ResizableCornerComponent*> (c) != nullptr
+            || dynamic_cast<juce::TooltipWindow*> (c) != nullptr)
+            continue;
+
+        hiddenForMini.push_back (c);
+        c->setVisible (false);
+    }
+
+    getConstrainer()->setFixedAspectRatio (0.0);
+    setResizeLimits (miniWidth / 2, miniHeight / 2, baseWidth * 2, baseHeight * 2);
+    setSize (juce::roundToInt (miniWidth * uiScale), juce::roundToInt (miniHeight * uiScale));
+}
+
+void FaseGroovePianoEditor::exitMiniMode()
+{
+    if (! miniMode)
+        return;
+
+    miniMode = false;
+    for (auto& c : hiddenForMini)
+        if (c != nullptr)
+            c->setVisible (true);
+    hiddenForMini.clear();
+
+    setResizeLimits ((int) (baseWidth * 0.6f), (int) (baseHeight * 0.6f), baseWidth * 2, baseHeight * 2);
+    getConstrainer()->setFixedAspectRatio ((double) baseWidth / baseHeight);
+    setSize (fullSize.x, fullSize.y);
+}
+
 void FaseGroovePianoEditor::loadPreset (int index)
 {
     const auto& presets = sgk::progressionPresets();
@@ -584,6 +800,15 @@ void FaseGroovePianoEditor::loadPreset (int index)
 //==============================================================================
 void FaseGroovePianoEditor::timerCallback()
 {
+    if (miniMode)
+    {
+        // Safety net: leave mini mode once the drag is over, even if the host never told us.
+        if (juce::Time::getMillisecondCounter() - miniStartedAt > 800
+            && ! juce::ModifierKeys::getCurrentModifiersRealtime().isAnyMouseButtonDown())
+            exitMiniMode();
+        return;
+    }
+
     auto s = processor.currentSettings();
     const int heldRoot = processor.uiHeldRoot.load();
     if (heldRoot >= 0)
@@ -614,10 +839,19 @@ void FaseGroovePianoEditor::timerCallback()
         currentRoman = romanText;
         currentKey = keyText;
         showingHold = heldRoot >= 0;
-        repaint (chordDisplayArea);
+        repaint (chordDisplayArea.toFloat().transformedBy (juce::AffineTransform::scale (uiScale)).getSmallestIntegerContainer().expanded (2));
     }
 
-    patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load());
+    const bool bassOn = processor.isBassOn();
+    patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load(), bassOn);
+
+    bassButton.setButtonText (bassOn ? "BASS: ON" : "BASS: OFF");
+    bassButton.setColour (juce::TextButton::buttonColourId, bassOn ? Palette::accent2 : Palette::background);
+    bassButton.setColour (juce::TextButton::textColourOffId, bassOn ? Palette::background : Palette::dim);
+
+    for (int i = 0; i < sgk::numSegments; ++i)
+        segmentLocks[i]->setToggleState (processor.isSegmentLocked (processor.segmentAtStep (i * sgk::userPatternLength / sgk::numSegments)),
+                                         juce::dontSendNotification);
 
     std::vector<CircleOfFifths::ChordMark> marks;
     for (int i = 0; i < s.progressionLength; ++i)
@@ -649,6 +883,16 @@ void FaseGroovePianoEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> a
 void FaseGroovePianoEditor::paint (juce::Graphics& g)
 {
     g.fillAll (Palette::background);
+    g.addTransform (juce::AffineTransform::scale (uiScale));
+
+    if (miniMode)
+    {
+        g.setColour (Palette::dim);
+        g.setFont (font (11.0f));
+        g.drawText ("Drop the clip on a track in your DAW", juce::Rectangle<int> (0, miniHeight - 22, miniWidth, 18),
+                    juce::Justification::centred);
+        return;
+    }
 
     // Header: logo + credit line
     auto header = headerArea.toFloat();
@@ -689,7 +933,32 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
 
 void FaseGroovePianoEditor::resized()
 {
-    auto r = getLocalBounds().reduced (20, 14);
+    if (miniMode)
+    {
+        uiScale = juce::jmax (0.3f, getHeight() / (float) miniHeight);
+        layoutMini();
+    }
+    else
+    {
+        uiScale = juce::jmax (0.3f, getWidth() / (float) baseWidth);
+        processor.editorScale = uiScale;
+        layoutFull();
+    }
+
+    // Everything is laid out at base size and scaled as a whole.
+    for (auto* c : getChildren())
+        if (dynamic_cast<juce::ResizableCornerComponent*> (c) == nullptr && dynamic_cast<juce::TooltipWindow*> (c) == nullptr)
+            c->setTransform (juce::AffineTransform::scale (uiScale));
+}
+
+void FaseGroovePianoEditor::layoutMini()
+{
+    dragTile.setBounds (juce::Rectangle<int> (0, 0, miniWidth, miniHeight).reduced (10).withTrimmedBottom (14));
+}
+
+void FaseGroovePianoEditor::layoutFull()
+{
+    auto r = juce::Rectangle<int> (0, 0, baseWidth, baseHeight).reduced (20, 14);
 
     // Header
     auto top = r.removeFromTop (76);
@@ -698,7 +967,7 @@ void FaseGroovePianoEditor::resized()
     tempoArea = top.removeFromRight (330).reduced (0, 4);
     headerArea = top;
     creditsButton.setBounds (headerArea.getRight() - 74, headerArea.getBottom() - 22, 70, 20);
-    about.setBounds (getLocalBounds());
+    about.setBounds (0, 0, baseWidth, baseHeight);
     {
         auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
         auto controls = inner.withSizeKeepingCentre (inner.getWidth(), 32);
@@ -789,7 +1058,26 @@ void FaseGroovePianoEditor::resized()
     clipPanel = r.removeFromRight (300);
     r.removeFromRight (10);
     gridPanel = r;
-    patternView.setBounds (gridPanel.reduced (14, 8).withTrimmedTop (22));
+    {
+        auto inner = gridPanel.reduced (14, 8);
+        bassButton.setBounds (inner.removeFromTop (22).removeFromRight (92).withTrimmedBottom (2));
+
+        auto strip = inner.removeFromTop (24);
+        strip.removeFromLeft ((int) PatternView::labelWidth);
+        const int segW = strip.getWidth() / sgk::numSegments;
+        for (int i = 0; i < sgk::numSegments; ++i)
+        {
+            auto cell = strip.removeFromLeft (segW).reduced (4, 1);
+            segmentBoxes[i]->setBounds (cell.removeFromLeft (54));
+            cell.removeFromLeft (6);
+            segmentLocks[i]->setBounds (cell.removeFromRight (52));
+            cell.removeFromRight (6);
+            segmentDice[i]->setBounds (cell.removeFromRight (46));
+        }
+
+        inner.removeFromTop (2);
+        patternView.setBounds (inner);
+    }
 
     {
         auto inner = clipPanel.reduced (14, 8);
@@ -805,5 +1093,7 @@ void FaseGroovePianoEditor::resized()
         auto buttons = inner.removeFromTop (juce::jmin (44, inner.getHeight()));
         saveButton.setBounds (buttons.removeFromRight (96));
         dragTile.setBounds (buttons.withTrimmedRight (8));
+        inner.removeFromTop (4);
+        shrinkToggle.setBounds (inner.removeFromTop (22));
     }
 }

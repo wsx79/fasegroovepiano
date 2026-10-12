@@ -6,6 +6,7 @@
 // On-the-fly material: random funky riffs, random progressions and the
 // song-section variations (intro / break / build-up / drop ...).
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -29,6 +30,20 @@ double sectionVelocityScale (Section section) noexcept;
 bool sectionAllowsFills (Section section) noexcept;
 
 //==============================================================================
+//==============================================================================
+/** A groove is split into four equal segments, A B C D (half a bar each for
+    a two-bar groove). */
+constexpr int numSegments = 4;
+
+/** Rebuilds the groove playing the segments in the given order (e.g. A A B C). */
+GroovePattern applySegmentOrder (const GroovePattern& source, const std::array<int, numSegments>& order);
+
+/** Copies segment `segment` of `from` into `into` (same length patterns). */
+void copySegment (GroovePattern& into, const GroovePattern& from, int segment);
+
+/** Removes holds ('=') that no longer follow a note, e.g. after editing. */
+void repairHolds (std::string& line);
+
 /** A brand new two-bar funky house riff (chords + bass) from a seed.
     density 0..1 goes from sparse stabs to busy 16th chops. Same seed = same riff. */
 GroovePattern makeRandomPattern (std::uint32_t seed, float density);

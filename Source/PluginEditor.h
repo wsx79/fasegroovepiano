@@ -78,15 +78,29 @@ private:
 };
 
 /** Shows the two-hand rhythm of the selected groove and the playhead. */
-class PatternView : public juce::Component
+class PatternView : public juce::Component, public juce::SettableTooltipClient
 {
 public:
-    void setState (const sgk::GroovePattern& pattern, int step);
+    static constexpr float labelWidth = 44.0f;
+    static constexpr float headerHeight = 16.0f;
+
+    /** Called when a cell is clicked (right click / ctrl-click = popup menu). */
+    std::function<void (bool bassRow, int step, const juce::MouseEvent&)> onCellClicked;
+
+    void setState (const sgk::GroovePattern& pattern, int step, bool bassOn);
     void paint (juce::Graphics&) override;
+    void mouseDown (const juce::MouseEvent&) override;
+    void mouseMove (const juce::MouseEvent&) override;
+    void mouseExit (const juce::MouseEvent&) override;
 
 private:
+    bool cellAt (juce::Point<float>, bool& bassRow, int& step) const;
+
     sgk::GroovePattern pattern;
     int currentStep = -1;
+    bool bassEnabled = true;
+    int hoverStep = -1;
+    bool hoverBass = false;
 };
 
 /** Drag this tile into the DAW to drop the current groove as a MIDI clip. */
@@ -94,6 +108,7 @@ class MidiDragTile : public juce::Component
 {
 public:
     std::function<juce::File()> createFile;
+    std::function<void()> onDragStart, onDragEnd;
 
     void paint (juce::Graphics&) override;
     void mouseEnter (const juce::MouseEvent&) override { hover = true; repaint(); }
@@ -131,9 +146,16 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+    /** Mini window shown while a clip is being dragged to the DAW. */
+    void enterMiniMode();
+    void exitMiniMode();
+
 private:
     void timerCallback() override;
     void loadPreset (int index);
+    void layoutFull();
+    void layoutMini();
+    void cellClicked (bool bassRow, int step, const juce::MouseEvent&);
     void drawPanel (juce::Graphics&, juce::Rectangle<int> area, const juce::String& title);
 
     FaseGroovePianoProcessor& processor;
@@ -168,6 +190,19 @@ private:
     Knob tone, reverb, volume;
 
     PatternView patternView;
+    juce::TextButton bassButton { "BASS" };
+    juce::OwnedArray<juce::ComboBox> segmentBoxes;
+    juce::OwnedArray<juce::AudioProcessorValueTreeState::ComboBoxAttachment> segmentAttachments;
+    juce::OwnedArray<juce::TextButton> segmentDice, segmentLocks;
+
+    // Scaling (the whole UI is laid out at base size, then scaled) and mini mode.
+    static constexpr int baseWidth = 1180, baseHeight = 740;
+    static constexpr int miniWidth = 320, miniHeight = 96;
+    float uiScale = 1.0f;
+    bool miniMode = false;
+    juce::Point<int> fullSize;
+    std::vector<juce::Component::SafePointer<juce::Component>> hiddenForMini;
+    juce::uint32 miniStartedAt = 0;
 
     // Tempo
     juce::TextButton syncButton { "SYNC DAW" };
@@ -181,6 +216,7 @@ private:
     juce::ComboBox clipLength, clipPart;
     MidiDragTile dragTile;
     juce::TextButton saveButton { "Save .mid..." };
+    juce::ToggleButton shrinkToggle { "Mini window while dragging" };
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     int selectedClipBars() const;

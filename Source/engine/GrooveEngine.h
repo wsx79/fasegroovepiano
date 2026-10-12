@@ -38,6 +38,11 @@ const std::vector<GroovePattern>& groovePatterns();
 /** Index of the "Random riff" entry, right after the preset grooves. */
 int randomPatternIndex() noexcept;
 
+/** Index of the "User pattern" entry (editable grid), after "Random riff". */
+int userPatternIndex() noexcept;
+
+constexpr int userPatternLength = 32;   // two bars of 16ths
+
 /** Ready-made progressions (scale degrees, 0 = I). */
 struct ProgressionPreset
 {
@@ -76,6 +81,12 @@ struct GrooveSettings
     Section section = Section::main;
     std::uint32_t riffSeed = 1;            // used when pattern == randomPatternIndex()
     float riffDensity = 0.5f;
+
+    std::array<int, numSegments> segmentOrder { 0, 1, 2, 3 };   // A B C D
+
+    // Used when pattern == userPatternIndex(): the hand-edited grid.
+    std::array<char, userPatternLength> userRight {};
+    std::array<char, userPatternLength> userLeft {};
 };
 
 enum class Part { chords = 0, bass = 1 };
@@ -104,7 +115,11 @@ public:
 
     bool anyNoteSounding() const noexcept;
 
-    /** The groove actually played: preset or random riff, adapted to the section. */
+    /** The groove before segment order and section are applied: a preset,
+        the random riff or the user pattern. */
+    static GroovePattern basePattern (const GrooveSettings& s);
+
+    /** The groove actually played: base pattern, segment order, then section. */
     static GroovePattern resolvePattern (const GrooveSettings& s);
     static int patternLength (const GrooveSettings& s) noexcept;
 
@@ -148,6 +163,8 @@ private:
     std::uint32_t cachedSeed = 0;
     float cachedDensity = -1.0f;
     Section cachedSection = Section::main;
+    std::array<int, numSegments> cachedOrder {};
+    std::array<char, userPatternLength> cachedUserRight {}, cachedUserLeft {};
 };
 
 } // namespace sgk

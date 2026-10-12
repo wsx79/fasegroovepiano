@@ -43,17 +43,68 @@ namespace
                 bar[(size_t) i] = 'x';
     }
 
-    /** Removes '=' that no longer follow a note (after we deleted hits). */
-    void repairHolds (std::string& line)
+}
+
+void repairHolds (std::string& line)
+{
+    // A hold at the very start may continue a note from the end of the loop.
+    bool sounding = false;
+    for (int pass = 0; pass < 2; ++pass)
     {
-        bool sounding = false;
         for (auto& c : line)
         {
             if (isHit (c))      sounding = true;
             else if (c == '.')  sounding = false;
-            else if (c == '=' && ! sounding) c = '.';
+            else if (c == '=' && ! sounding && pass == 1) c = '.';
         }
     }
+}
+
+GroovePattern applySegmentOrder (const GroovePattern& source, const std::array<int, numSegments>& order)
+{
+    const int len = source.length();
+    if (len % numSegments != 0)
+        return source;
+
+    bool identity = true;
+    for (int i = 0; i < numSegments; ++i)
+        identity = identity && order[(size_t) i] == i;
+    if (identity)
+        return source;
+
+    const int seg = len / numSegments;
+    GroovePattern p = source;
+
+    for (int i = 0; i < numSegments; ++i)
+    {
+        const int from = std::clamp (order[(size_t) i], 0, numSegments - 1) * seg;
+        for (int k = 0; k < seg; ++k)
+        {
+            p.rightHand[(size_t) (i * seg + k)] = source.rightHand[(size_t) (from + k)];
+            p.leftHand[(size_t) (i * seg + k)]  = source.leftHand[(size_t) (from + k)];
+        }
+    }
+
+    repairHolds (p.rightHand);
+    repairHolds (p.leftHand);
+    return p;
+}
+
+void copySegment (GroovePattern& into, const GroovePattern& from, int segment)
+{
+    const int len = into.length();
+    if (len != from.length() || len % numSegments != 0 || segment < 0 || segment >= numSegments)
+        return;
+
+    const int seg = len / numSegments;
+    for (int k = segment * seg; k < (segment + 1) * seg; ++k)
+    {
+        into.rightHand[(size_t) k] = from.rightHand[(size_t) k];
+        into.leftHand[(size_t) k]  = from.leftHand[(size_t) k];
+    }
+
+    repairHolds (into.rightHand);
+    repairHolds (into.leftHand);
 }
 
 //==============================================================================

@@ -73,10 +73,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     auto grooveNames = namesFrom ((int) sgk::groovePatterns().size(),
                                   [] (int i) { return sgk::groovePatterns()[(size_t) i].name.c_str(); });
     grooveNames.add ("* Random riff *");
+    grooveNames.add ("* User pattern *");
     choice (ParamIDs::pattern, "Groove", grooveNames, 1);
     choice (ParamIDs::section, "Section", namesFrom (sgk::numSections, sgk::sectionName), 0);
     layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::riffSeed, 1 }, "Riff Seed", 1, 99999, 1));
     unitFloat (ParamIDs::riffDensity, "Riff Density", 0.0f, 0.5f);
+
+    for (int i = 0; i < sgk::numSegments; ++i)
+        choice (ParamIDs::segment (i), "Segment " + String (i + 1), { "A", "B", "C", "D" }, i);
     unitFloat (ParamIDs::swing, "Swing", 0.0f, 0.25f);
     unitFloat (ParamIDs::gate, "Gate", 0.1f, 0.55f);
     layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::velocity, 1 }, "Velocity", 1, 127, 96));
@@ -121,6 +125,17 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         slotParams[(size_t) i] = apvts.getRawParameterValue (ParamIDs::slot (i));
+
+    for (int i = 0; i < sgk::numSegments; ++i)
+        segmentParams[(size_t) i] = apvts.getRawParameterValue (ParamIDs::segment (i));
+
+    // The user pattern starts as a copy of "Soulful Push".
+    const auto& start = sgk::groovePatterns()[1];
+    for (int i = 0; i < sgk::userPatternLength; ++i)
+    {
+        userRight[(size_t) i] = start.rightHand[(size_t) i];
+        userLeft[(size_t) i]  = start.leftHand[(size_t) i];
+    }
     events.reserve (1024);
 }
 
@@ -157,6 +172,15 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
     s.riffDensity = raw (ParamIDs::riffDensity);
 
+    for (int i = 0; i < sgk::numSegments; ++i)
+        s.segmentOrder[(size_t) i] = juce::jlimit (0, sgk::numSegments - 1, juce::roundToInt (segmentParams[(size_t) i]->load()));
+
+    for (int i = 0; i < sgk::userPatternLength; ++i)
+    {
+        s.userRight[(size_t) i] = userRight[(size_t) i].load();
+        s.userLeft[(size_t) i]  = userLeft[(size_t) i].load();
+    }
+
     return s;
 }
 
@@ -172,8 +196,101 @@ void FaseGroovePianoProcessor::setParameterFromUI (const juce::String& id, float
 
 void FaseGroovePianoProcessor::rollNewRiff()
 {
-    setParameterFromUI (ParamIDs::riffSeed, (float) juce::Random::getSystemRandom().nextInt ({ 1, 100000 }));
-    setParameterFromUI (ParamIDs::pattern, (float) sgk::randomPatternIndex());
+    const auto seed = juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
+    const auto s = currentSettings();
+    auto current = sgk::GrooveEngine::basePattern (s);
+
+    const bool anyLocked = std::any_of (segmentLocked.begin(), segmentLocked.end(), [] (bool b) { return b; });
+
+    if (! anyLocked || current.length() != sgk::userPatternLength)
+    {
+        setParameterFromUI (ParamIDs::riffSeed, (float) seed);
+        setParameterFromUI (ParamIDs::pattern, (float) sgk::randomPatternIndex());
+        return;
+    }
+
+    const auto fresh = sgk::makeRandomPattern ((std::uint32_t) seed, s.riffDensity);
+    for (int seg = 0; seg < sgk::numSegments; ++seg)
+        if (! segmentLocked[(size_t) seg])
+            sgk::copySegment (current, fresh, seg);
+
+    setUserPattern (current);
+}
+
+void FaseGroovePianoProcessor::randomizeSegment (int segment)
+{
+    const auto s = currentSettings();
+    auto current = sgk::GrooveEngine::basePattern (s);
+    if (current.length() != sgk::userPatternLength)
+        return;
+
+    const auto seed = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
+    sgk::copySegment (current, sgk::makeRandomPattern (seed, s.riffDensity), segment);
+    setUserPattern (current);
+}
+
+void FaseGroovePianoProcessor::setUserPattern (const sgk::GroovePattern& p)
+{
+    for (int i = 0; i < sgk::userPatternLength; ++i)
+    {
+        userRight[(size_t) i] = i < p.length() ? p.rightHand[(size_t) i] : '.';
+        userLeft[(size_t) i]  = i < p.length() ? p.leftHand[(size_t) i]  : '.';
+    }
+
+    if (juce::roundToInt (raw (ParamIDs::pattern)) != sgk::userPatternIndex())
+        setParameterFromUI (ParamIDs::pattern, (float) sgk::userPatternIndex());
+}
+
+int FaseGroovePianoProcessor::segmentAtStep (int displayedStep) const
+{
+    const int pos = juce::jlimit (0, sgk::numSegments - 1, displayedStep / (sgk::userPatternLength / sgk::numSegments));
+    return juce::jlimit (0, sgk::numSegments - 1, juce::roundToInt (segmentParams[(size_t) pos]->load()));
+}
+
+char FaseGroovePianoProcessor::stepSymbol (bool bassRow, int displayedStep) const
+{
+    const auto p = sgk::GrooveEngine::resolvePattern (currentSettings());
+    const auto& line = bassRow ? p.leftHand : p.rightHand;
+    return displayedStep >= 0 && displayedStep < (int) line.size() ? line[(size_t) displayedStep] : '.';
+}
+
+void FaseGroovePianoProcessor::editStep (bool bassRow, int displayedStep, char symbol)
+{
+    auto current = sgk::GrooveEngine::basePattern (currentSettings());
+    if (current.length() != sgk::userPatternLength || displayedStep < 0 || displayedStep >= sgk::userPatternLength)
+        return;
+
+    // Map the displayed step back through the segment order.
+    const int segLength = sgk::userPatternLength / sgk::numSegments;
+    const int index = segmentAtStep (displayedStep) * segLength + displayedStep % segLength;
+
+    auto& line = bassRow ? current.leftHand : current.rightHand;
+    line[(size_t) index] = symbol;
+    sgk::repairHolds (line);
+
+    if (bassRow && symbol != '.' && ! isBassOn())
+        toggleBass();
+
+    setUserPattern (current);
+}
+
+bool FaseGroovePianoProcessor::isBassOn() const
+{
+    return juce::roundToInt (raw (ParamIDs::bass)) != (int) sgk::BassMode::off;
+}
+
+void FaseGroovePianoProcessor::toggleBass()
+{
+    const int mode = juce::roundToInt (raw (ParamIDs::bass));
+    if (mode != (int) sgk::BassMode::off)
+    {
+        lastBassMode = mode;
+        setParameterFromUI (ParamIDs::bass, 0.0f);
+    }
+    else
+    {
+        setParameterFromUI (ParamIDs::bass, (float) juce::jmax (1, lastBassMode));
+    }
 }
 
 void FaseGroovePianoProcessor::rollNewProgression()
@@ -473,15 +590,60 @@ juce::AudioProcessorEditor* FaseGroovePianoProcessor::createEditor()
 
 void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    if (auto xml = apvts.copyState().createXml())
+    auto state = apvts.copyState();
+
+    juce::String right, left, locks;
+    for (int i = 0; i < sgk::userPatternLength; ++i)
+    {
+        right += juce::String::charToString (userRight[(size_t) i].load());
+        left  += juce::String::charToString (userLeft[(size_t) i].load());
+    }
+    for (bool locked : segmentLocked)
+        locks += locked ? "1" : "0";
+
+    state.setProperty ("userRight", right, nullptr);
+    state.setProperty ("userLeft", left, nullptr);
+    state.setProperty ("segmentLocks", locks, nullptr);
+    state.setProperty ("lastBassMode", lastBassMode, nullptr);
+    state.setProperty ("editorScale", editorScale, nullptr);
+    state.setProperty ("shrinkWhileDragging", shrinkWhileDragging, nullptr);
+
+    if (auto xml = state.createXml())
         copyXmlToBinary (*xml, destData);
 }
 
 void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    if (auto xml = getXmlFromBinary (data, sizeInBytes))
-        if (xml->hasTagName (apvts.state.getType()))
-            apvts.replaceState (juce::ValueTree::fromXml (*xml));
+    auto xml = getXmlFromBinary (data, sizeInBytes);
+    if (xml == nullptr || ! xml->hasTagName (apvts.state.getType()))
+        return;
+
+    apvts.replaceState (juce::ValueTree::fromXml (*xml));
+    const auto& state = apvts.state;
+
+    const auto right = state.getProperty ("userRight").toString();
+    const auto left  = state.getProperty ("userLeft").toString();
+    auto valid = [] (const juce::String& line)
+    {
+        return line.length() == sgk::userPatternLength && line.containsOnly ("Xxg>=.");
+    };
+
+    if (valid (right) && valid (left))
+    {
+        for (int i = 0; i < sgk::userPatternLength; ++i)
+        {
+            userRight[(size_t) i] = (char) right[i];
+            userLeft[(size_t) i]  = (char) left[i];
+        }
+    }
+
+    const auto locks = state.getProperty ("segmentLocks").toString();
+    for (int i = 0; i < sgk::numSegments; ++i)
+        segmentLocked[(size_t) i] = locks[i] == '1';
+
+    lastBassMode = juce::jlimit (1, sgk::numBassModes - 1, (int) state.getProperty ("lastBassMode", 1));
+    editorScale = juce::jlimit (0.6f, 2.0f, (float) state.getProperty ("editorScale", 1.0f));
+    shrinkWhileDragging = (bool) state.getProperty ("shrinkWhileDragging", true);
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

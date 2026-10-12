@@ -137,6 +137,25 @@ const std::vector<GroovePattern>& groovePatterns()
         { "Slap Bass Funk",
           compact ("..x. ...x ..x. .x.. ..x. ...x ..xg .x.."),
           compact ("x..x .x.. x.x. ..xx x..x .x.. x.x. x.xx") },
+        // ---- Jackin' house (Chicago bounce: offbeat stabs, pumping bass, swing it!) ----
+        { "Jackin' Stabs",
+          compact ("..X. .x.x ..X. .x.x ..X. .x.x ..X. x.x."),
+          compact ("x..x ..x. x..x ..x. x..x ..x. x..x .xx.") },
+        { "Jack Bounce",
+          compact (".x.x .x.x .x.x .X.x .x.x .x.x .x.x .X.."),
+          compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.x. x.xx") },
+        { "Jackin' Push",
+          compact ("X..x ..X. .x.. x.>= =..x ..X. .x.x ..>="),
+          compact ("x..x .x.. x..x ..>= =..x .x.. x..x ..>=") },
+        { "Chicago Organ Jack",
+          compact ("x.xx ..x. x.xx ..x. x.xx ..x. x.x. xx.x"),
+          compact ("x... ..x. x... ..x. x... ..x. x..x ..x.") },
+        { "Ghetto Jack",
+          compact ("X.gx .gX. gx.X .g.x X.gx .gX. gxX. .gXg"),
+          compact ("x..x ..x. ...x ..x. x..x ..x. .x.x ..x.") },
+        { "Disco Jack Chops",
+          compact ("..xx .x.. ..xx .x.x ..xx .x.. ..x. xx.x"),
+          compact ("x.x. ..x. x.x. ..xx x.x. ..x. x.x. .x.x") },
     };
 
     return patterns;
@@ -145,6 +164,11 @@ const std::vector<GroovePattern>& groovePatterns()
 int randomPatternIndex() noexcept
 {
     return (int) groovePatterns().size();
+}
+
+int userPatternIndex() noexcept
+{
+    return randomPatternIndex() + 1;
 }
 
 const std::vector<ProgressionPreset>& progressionPresets()
@@ -167,6 +191,8 @@ const std::vector<ProgressionPreset>& progressionPresets()
         { "Full Circle  I-IV-vii-iii-vi-ii-V-I", 0, { 0, 3, 6, 2, 5, 1, 4, 0 } },
         { "Minor Circle  i - iv - VII - III",  2, { 0, 3, 6, 2 } },
         { "Dorian Circle  i - iv - VII - III", 1, { 0, 3, 6, 2 } },
+        { "Jackin' Minor  i - iv",             2, { 0, 3 } },
+        { "Jackin' Groove  i - VII - VI - v",  2, { 0, 6, 5, 4 } },
     };
 
     return presets;
@@ -211,21 +237,38 @@ int GrooveEngine::loopLengthInSteps (const GrooveSettings& s) noexcept
     return (int) std::min<long long> (steps, 64 * 16);
 }
 
+GroovePattern GrooveEngine::basePattern (const GrooveSettings& s)
+{
+    if (s.pattern >= userPatternIndex())
+    {
+        GroovePattern p;
+        p.name = "User Pattern";
+        for (int i = 0; i < userPatternLength; ++i)
+        {
+            const char r = s.userRight[(size_t) i], l = s.userLeft[(size_t) i];
+            p.rightHand += (r == 0 ? '.' : r);
+            p.leftHand  += (l == 0 ? '.' : l);
+        }
+        return p;
+    }
+
+    if (s.pattern == randomPatternIndex())
+        return makeRandomPattern (s.riffSeed, s.riffDensity);
+
+    const auto& patterns = groovePatterns();
+    return patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)];
+}
+
 GroovePattern GrooveEngine::resolvePattern (const GrooveSettings& s)
 {
-    const auto& patterns = groovePatterns();
-    const auto base = s.pattern >= randomPatternIndex()
-                        ? makeRandomPattern (s.riffSeed, s.riffDensity)
-                        : patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)];
-
-    return applySection (base, s.section);
+    return applySection (applySegmentOrder (basePattern (s), s.segmentOrder), s.section);
 }
 
 int GrooveEngine::patternLength (const GrooveSettings& s) noexcept
 {
     const auto& patterns = groovePatterns();
     if (s.pattern >= randomPatternIndex())
-        return 32;   // random riffs are always two bars
+        return 32;   // random riffs and the user pattern are always two bars
 
     return patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)].length();
 }
@@ -233,13 +276,17 @@ int GrooveEngine::patternLength (const GrooveSettings& s) noexcept
 const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
 {
     if (s.pattern != cachedIndex || s.riffSeed != cachedSeed || s.riffDensity != cachedDensity
-        || s.section != cachedSection || cachedPattern.rightHand.empty())
+        || s.section != cachedSection || s.segmentOrder != cachedOrder
+        || s.userRight != cachedUserRight || s.userLeft != cachedUserLeft || cachedPattern.rightHand.empty())
     {
         cachedPattern = resolvePattern (s);
         cachedIndex = s.pattern;
         cachedSeed = s.riffSeed;
         cachedDensity = s.riffDensity;
         cachedSection = s.section;
+        cachedOrder = s.segmentOrder;
+        cachedUserRight = s.userRight;
+        cachedUserLeft = s.userLeft;
     }
 
     return cachedPattern;
