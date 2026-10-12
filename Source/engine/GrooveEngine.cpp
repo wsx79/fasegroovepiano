@@ -146,6 +146,38 @@ bool GrooveEngine::anyNoteSounding() const noexcept
     return std::any_of (offTime.begin(), offTime.end(), [] (double t) { return t >= 0.0; });
 }
 
+int GrooveEngine::loopLengthInSteps (const GrooveSettings& s) noexcept
+{
+    const auto& patterns = groovePatterns();
+    const int patternLength = patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)].length();
+    const int progression = std::clamp (s.progressionLength, 1, maxProgressionLength) * std::max (1, s.stepsPerChord);
+
+    auto lcm = [] (long long a, long long b)
+    {
+        long long x = a, y = b;
+        while (y != 0) { const auto t = x % y; x = y; y = t; }
+        return a / x * b;
+    };
+
+    long long steps = lcm (progression, patternLength);
+    if (s.fillEveryBars > 0)
+        steps = lcm (steps, 16LL * s.fillEveryBars);
+
+    steps = lcm (steps, 16);                 // whole bars
+    return (int) std::min<long long> (steps, 64 * 16);
+}
+
+std::vector<NoteEvent> GrooveEngine::renderClip (const GrooveSettings& s, double lengthInBeats)
+{
+    GrooveEngine engine;
+    std::vector<NoteEvent> events;
+    engine.render (0.0, lengthInBeats, s, events);
+
+    // Clip notes at the end so the clip loops cleanly.
+    engine.allNotesOff (lengthInBeats, events);
+    return events;
+}
+
 int GrooveEngine::slotForStep (long long step, const GrooveSettings& s) noexcept
 {
     const int len = std::clamp (s.progressionLength, 1, maxProgressionLength);
@@ -278,9 +310,9 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s,
             const int vel = hitVelocity (symbol, 0.9, 91);
             const bool tie = isTiedFromPush (pattern.leftHand, pos);
 
-            pending.push_back ({ t, root, vel, len, tie });
-            if (s.bass == BassMode::octaves)    pending.push_back ({ t, root + 12, (int) (vel * 0.85), len, tie });
-            if (s.bass == BassMode::rootFifth)  pending.push_back ({ t, root + 7,  (int) (vel * 0.85), len, tie });
+            pending.push_back ({ t, root, vel, len, tie, Part::bass });
+            if (s.bass == BassMode::octaves)    pending.push_back ({ t, root + 12, (int) (vel * 0.85), len, tie, Part::bass });
+            if (s.bass == BassMode::rootFifth)  pending.push_back ({ t, root + 7,  (int) (vel * 0.85), len, tie, Part::bass });
         }
     }
 }
@@ -300,7 +332,7 @@ void GrooveEngine::flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEv
 
     for (int n : scratch)
     {
-        out.push_back ({ offTime[(size_t) n], n, 0 });
+        out.push_back ({ offTime[(size_t) n], n, 0, partOf[(size_t) n] });
         offTime[(size_t) n] = -1.0;
     }
 }
@@ -349,10 +381,11 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
                 continue;
             }
 
-            out.push_back ({ p.ppq, p.note, 0 });  // retrigger
+            out.push_back ({ p.ppq, p.note, 0, partOf[(size_t) p.note] });  // retrigger
         }
 
-        out.push_back ({ p.ppq, p.note, p.velocity });
+        out.push_back ({ p.ppq, p.note, p.velocity, p.part });
+        partOf[(size_t) p.note] = p.part;
         off = p.ppq + p.duration;
         onTime[(size_t) p.note] = p.ppq;
     }
@@ -366,7 +399,7 @@ void GrooveEngine::allNotesOff (double ppq, std::vector<NoteEvent>& out)
     {
         if (offTime[(size_t) n] >= 0.0)
         {
-            out.push_back ({ ppq, n, 0 });
+            out.push_back ({ ppq, n, 0, partOf[(size_t) n] });
             offTime[(size_t) n] = -1.0;
         }
     }

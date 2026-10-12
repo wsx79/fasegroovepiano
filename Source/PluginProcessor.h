@@ -26,6 +26,7 @@ namespace ParamIDs
     inline constexpr const char* humanize    = "humanize";
     inline constexpr const char* fills       = "fills";
     inline constexpr const char* playMode    = "playMode";
+    inline constexpr const char* bassChannel = "bassChannel";
     inline constexpr const char* sound       = "sound";
     inline constexpr const char* tone        = "tone";
     inline constexpr const char* reverb      = "reverb";
@@ -73,7 +74,22 @@ public:
     /** Sets a parameter from the UI, notifying the host. */
     void setParameterFromUI (const juce::String& id, float plainValue);
 
+    //==============================================================================
+    enum class ClipPart { all = 0, chords, bass };
+
+    /** Renders the current progression + groove as a standard MIDI file.
+        bars <= 0 means "one full loop" (progression, groove and fills all repeat). */
+    juce::MidiFile createMidiClip (int bars, ClipPart part) const;
+
+    /** Writes the clip into Documents/Soulful Groove Keys and returns the file. */
+    juce::File writeMidiClip (int bars, ClipPart part) const;
+    juce::String clipFileName (int bars, ClipPart part) const;
+    int clipLengthInBars (int bars) const;
+
     juce::AudioProcessorValueTreeState apvts;
+
+    std::atomic<bool> previewOn { false };   // play the groove without the host transport
+    std::atomic<double> lastBpm { 120.0 };
 
     // Read by the editor for display.
     std::atomic<int> uiStep { -1 };      // current 16th within the pattern, -1 = stopped

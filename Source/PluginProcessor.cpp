@@ -75,9 +75,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout SoulfulGrooveKeysProcessor::
     unitFloat (ParamIDs::humanize, "Humanize", 0.0f, 0.3f);
     choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars" }, 2);
     choice (ParamIDs::playMode, "Play Mode", { "Host transport", "Hold a key" }, 0);
+    choice (ParamIDs::bassChannel, "MIDI Out Channels", { "All on channel 1", "Bass on channel 2" }, 0);
 
     // Sound
-    layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::sound, 1 }, "Internal Sound", true));
+    layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::sound, 1 }, "Guide Sound", true));
     unitFloat (ParamIDs::tone, "Tone", 0.0f, 0.5f);
     unitFloat (ParamIDs::reverb, "Reverb", 0.0f, 0.3f);
     layout.add (std::make_unique<AudioParameterFloat> (ParameterID { ParamIDs::volume, 1 }, "Volume",
@@ -234,26 +235,22 @@ void SoulfulGrooveKeysProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     }
 
     bpm = juce::jlimit (20.0, 400.0, bpm);
+    lastBpm = bpm;
     const double samplesPerBeat = sampleRate * 60.0 / bpm;
     const double blockBeats = numSamples / samplesPerBeat;
 
-    bool running = false;
+    const bool followHost = hostPlaying && haveHostPpq;
+    const bool preview = previewOn.load();
+
+    // Hold mode plays while a key is down; otherwise it follows the host, and
+    // Preview lets the groove run on its own clock while the host is stopped.
+    const bool running = holdMode ? (heldCount > 0 || preview) : (followHost || preview);
+
     double startPpq = 0.0;
-
-    if (holdMode)
-    {
-        running = heldCount > 0;
-
-        if (hostPlaying && haveHostPpq)
-            startPpq = hostPpq;
-        else
-            startPpq = wasRunning ? internalPpq : 0.0;   // free-running clock from the key press
-    }
-    else
-    {
-        running = hostPlaying && haveHostPpq;
+    if (followHost)
         startPpq = hostPpq;
-    }
+    else if (running)
+        startPpq = wasRunning ? internalPpq : 0.0;   // free-running clock from the start
 
     events.clear();
 
@@ -281,11 +278,14 @@ void SoulfulGrooveKeysProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     wasRunning = running;
 
+    const bool bassOnChannel2 = juce::roundToInt (raw (ParamIDs::bassChannel)) == 1;
+
     for (const auto& e : events)
     {
         const int pos = juce::jlimit (0, numSamples - 1, (int) std::floor ((e.ppq - startPpq) * samplesPerBeat));
-        outMidi.addEvent (e.isNoteOn() ? juce::MidiMessage::noteOn (1, e.note, (juce::uint8) e.velocity)
-                                       : juce::MidiMessage::noteOff (1, e.note),
+        const int channel = (bassOnChannel2 && e.part == sgk::Part::bass) ? 2 : 1;
+        outMidi.addEvent (e.isNoteOn() ? juce::MidiMessage::noteOn (channel, e.note, (juce::uint8) e.velocity)
+                                       : juce::MidiMessage::noteOff (channel, e.note),
                           pos);
     }
 
@@ -318,6 +318,85 @@ void SoulfulGrooveKeysProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     }
 
     midi.swapWith (outMidi);
+}
+
+//==============================================================================
+int SoulfulGrooveKeysProcessor::clipLengthInBars (int bars) const
+{
+    if (bars > 0)
+        return bars;
+
+    return juce::jmax (1, sgk::GrooveEngine::loopLengthInSteps (currentSettings()) / 16);
+}
+
+juce::MidiFile SoulfulGrooveKeysProcessor::createMidiClip (int bars, ClipPart part) const
+{
+    constexpr int ticksPerQuarter = 960;
+    const auto settings = currentSettings();
+    const double beats = clipLengthInBars (bars) * 4.0;
+    const bool bassOnChannel2 = juce::roundToInt (raw (ParamIDs::bassChannel)) == 1;
+
+    juce::MidiMessageSequence track;
+    track.addEvent (juce::MidiMessage::textMetaEvent (3, clipFileName (bars, part).upToLastOccurrenceOf (".", false, false)), 0.0);
+    track.addEvent (juce::MidiMessage::tempoMetaEvent (juce::roundToInt (60000000.0 / lastBpm.load())), 0.0);
+    track.addEvent (juce::MidiMessage::timeSignatureMetaEvent (4, 4), 0.0);
+
+    for (const auto& e : sgk::GrooveEngine::renderClip (settings, beats))
+    {
+        if ((part == ClipPart::chords && e.part != sgk::Part::chords)
+            || (part == ClipPart::bass && e.part != sgk::Part::bass))
+            continue;
+
+        const int channel = (bassOnChannel2 && e.part == sgk::Part::bass) ? 2 : 1;
+        const double tick = std::round (juce::jlimit (0.0, beats, e.ppq) * ticksPerQuarter);
+
+        track.addEvent (e.isNoteOn() ? juce::MidiMessage::noteOn (channel, e.note, (juce::uint8) e.velocity)
+                                     : juce::MidiMessage::noteOff (channel, e.note),
+                        tick);
+    }
+
+    track.addEvent (juce::MidiMessage::endOfTrack(), beats * ticksPerQuarter);
+    track.updateMatchedPairs();
+
+    juce::MidiFile file;
+    file.setTicksPerQuarterNote (ticksPerQuarter);
+    file.addTrack (track);
+    return file;
+}
+
+juce::String SoulfulGrooveKeysProcessor::clipFileName (int bars, ClipPart part) const
+{
+    const auto s = currentSettings();
+    const auto& pattern = sgk::groovePatterns()[(size_t) juce::jlimit (0, (int) sgk::groovePatterns().size() - 1, s.pattern)];
+
+    juce::StringArray chords;
+    for (int i = 0; i < juce::jmin (s.progressionLength, 4); ++i)
+        chords.add (sgk::chordName (sgk::buildChord (s.keyRoot, s.scale, s.progression[(size_t) i], s.extension)));
+    if (s.progressionLength > 4)
+        chords.add ("etc");
+
+    const juce::String partName = part == ClipPart::chords ? " chords" : part == ClipPart::bass ? " bass" : "";
+    const auto name = chords.joinIntoString ("-") + " " + pattern.name + partName + " "
+                    + juce::String (clipLengthInBars (bars)) + "bars " + juce::String (juce::roundToInt (lastBpm.load())) + "bpm";
+
+    return juce::File::createLegalFileName (name) + ".mid";
+}
+
+juce::File SoulfulGrooveKeysProcessor::writeMidiClip (int bars, ClipPart part) const
+{
+    auto folder = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("Soulful Groove Keys");
+    if (! folder.createDirectory())
+        folder = juce::File::getSpecialLocation (juce::File::tempDirectory);
+
+    auto file = folder.getChildFile (clipFileName (bars, part));
+    file.deleteFile();
+
+    juce::FileOutputStream stream (file);
+    if (! stream.openedOk())
+        return {};
+
+    createMidiClip (bars, part).writeTo (stream);
+    return file;
 }
 
 //==============================================================================

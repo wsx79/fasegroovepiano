@@ -199,6 +199,31 @@ static void testPushIsTied()
     CHECK (onsAtBar2 == 0);
 }
 
+static void testClipExport()
+{
+    GrooveSettings s;
+    s.progressionLength = 3;          // 3 bars of chords vs a 2-bar groove -> 6-bar loop
+    s.fillEveryBars = 4;              // ...and fills every 4 bars -> 12 bars
+    CHECK (GrooveEngine::loopLengthInSteps (s) == 12 * 16);
+
+    s.fillEveryBars = 0;
+    s.bass = BassMode::octaves;
+    const auto clip = GrooveEngine::renderClip (s, 6 * 4.0);
+
+    int sounding[128] {}, bassOns = 0, chordOns = 0;
+    for (const auto& e : clip)
+    {
+        CHECK (e.ppq >= 0.0 && e.ppq <= 24.0);
+        if (e.isNoteOn()) { ++sounding[e.note]; (e.part == Part::bass ? bassOns : chordOns)++; }
+        else              { --sounding[e.note]; }
+    }
+
+    for (int n = 0; n < 128; ++n)
+        CHECK (sounding[n] == 0);
+
+    CHECK (bassOns > 0 && chordOns > 0);
+}
+
 static void testPatternsWellFormed()
 {
     for (const auto& p : groovePatterns())
@@ -224,6 +249,7 @@ int main()
     testBlockSizeIndependence();
     testSwing();
     testPushIsTied();
+    testClipExport();
     testPatternsWellFormed();
 
     if (failures == 0)

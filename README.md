@@ -1,10 +1,13 @@
 # Soulful Groove Keys 🎹
 
-Plugin **VST3 / AU** (Windows e macOS) che suona **giri di piano funky e soulful house**:
+Plugin **VST3 / AU** (Windows e macOS) che **crea MIDI di giri di piano funky e soulful house**:
 scegli tonalità, scala e progressione, e il plugin genera accordi estesi (9ª, 11ª, 13ª),
 voicing da tastierista, groove ritmici sincopati con swing, basso alla mano sinistra e
-fill pentatonici. Ha un **piano elettrico interno** (FM stile Rhodes) e manda tutto anche
-in **uscita MIDI**, così puoi usarlo per pilotare qualsiasi piano/synth della tua DAW.
+fill pentatonici.
+
+Il MIDI è il prodotto principale: lo **trascini nella DAW come clip** (o lo salvi in `.mid`),
+oppure lo mandi in tempo reale al **tuo** piano/Rhodes/synth preferito. Il plugin ha solo un
+semplice **suono guida** (e‑piano) per farti sentire subito il riff.
 
 ![Interfaccia](docs/screenshot.png)
 
@@ -19,7 +22,8 @@ in **uscita MIDI**, così puoi usarlo per pilotare qualsiasi piano/synth della t
 | **Fills** | Ogni 2/4/8 battute l'ultimo quarto diventa una scaletta **pentatonica** (minore o maggiore, a seconda della scala) che porta all'accordo successivo. |
 | **Bass** | Mano sinistra: Off / Fondamentale / Ottave / Fondamentale + 5ª. |
 | **Play mode** | *Host transport*: suona quando premi Play nella DAW, a tempo. *Hold a key*: suona mentre tieni premuto un tasto, e **il tasto sceglie la tonalità** (perfetto per suonare live o nello Standalone). |
-| **Sound & MIDI** | E‑piano interno con Tone, Reverb, Volume (disattivabile). Tutte le note generate escono anche come **MIDI**. |
+| **MIDI Clip** | **DRAG MIDI TO DAW**: trascina il riquadro su una traccia e ottieni la clip MIDI del groove. Lunghezza: *Full loop* (calcolata in automatico finché progressione, ritmo e fill si ripetono) o 1–32 battute. Note: accordi + basso, solo accordi o solo basso. **Save .mid…** salva il file dove vuoi. Una copia di ogni clip trascinata finisce in `Documenti/Soulful Groove Keys/`. |
+| **Guide sound & MIDI out** | Suono guida e‑piano (Tone, Reverb, Volume, disattivabile). **PREVIEW** fa partire il groove anche a DAW ferma, per ascoltare il riff mentre cambi i parametri. *MIDI out*: tutto sul canale 1 oppure **basso sul canale 2**, per mandarlo a uno strumento diverso. |
 
 ## Download
 
@@ -43,15 +47,23 @@ xattr -cr ~/Library/Audio/Plug-Ins/Components/"Soulful Groove Keys.component"
 
 ## Come usarlo nella DAW
 
+### Metodo 1 – Clip MIDI (consigliato, funziona in tutte le DAW, anche Logic)
+
 1. Carica **Soulful Groove Keys** come strumento su una traccia.
-2. Scegli un preset di progressione, una scala e un groove, poi premi Play.
-3. Per usare un altro suono (es. un Rhodes o un piano campionato) spegni *Internal e‑piano*
-   e instrada il MIDI in uscita:
+2. Scegli progressione, scala, voicing e groove. Premi **PREVIEW** per sentire il riff col suono guida.
+3. Trascina **DRAG MIDI TO DAW** sulla traccia del tuo piano/Rhodes/synth (o sull'arrangiamento):
+   ottieni una clip MIDI modificabile, già a tempo e pronta da loopare.
+4. Vuoi accordi e basso su strumenti diversi? Esporta due clip: *Chords only* e *Bass only*.
+
+### Metodo 2 – MIDI in tempo reale
+
+Spegni *Guide sound* e instrada il MIDI in uscita verso un'altra traccia strumento:
    - **Ableton Live**: su una nuova traccia MIDI imposta *MIDI From* → la traccia del plugin → *Soulful Groove Keys*.
    - **FL Studio**: nel wrapper del plugin imposta una *MIDI output port* e la stessa porta in ingresso sullo strumento di destinazione.
    - **Reaper / Bitwig / Cubase / Studio One**: invia l'uscita MIDI della traccia a un'altra traccia strumento.
-   - **Logic Pro**: Logic non legge il MIDI in uscita dagli strumenti AU: usa il suono interno, oppure registra/trascina il MIDI dal VST3 in un'altra DAW.
-4. Per registrare il MIDI generato in una clip, registra sulla traccia che riceve il MIDI dal plugin.
+   - **Logic Pro**: Logic non legge il MIDI in uscita dagli strumenti AU: usa il Metodo 1 (trascina la clip).
+Per registrare il MIDI generato, registra sulla traccia che riceve il MIDI dal plugin.
+Con *MIDI out → Bass on channel 2* puoi separare il basso su un altro strumento.
 
 ## Compilare da sorgente
 

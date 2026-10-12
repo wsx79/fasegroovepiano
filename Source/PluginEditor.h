@@ -83,6 +83,22 @@ private:
     int pattern = 0, currentStep = -1, fills = 0;
 };
 
+/** Drag this tile into the DAW to drop the current groove as a MIDI clip. */
+class MidiDragTile : public juce::Component
+{
+public:
+    std::function<juce::File()> createFile;
+
+    void paint (juce::Graphics&) override;
+    void mouseEnter (const juce::MouseEvent&) override { hover = true; repaint(); }
+    void mouseExit (const juce::MouseEvent&) override  { hover = false; repaint(); }
+    void mouseDown (const juce::MouseEvent&) override  { dragStarted = false; }
+    void mouseDrag (const juce::MouseEvent&) override;
+
+private:
+    bool hover = false, dragStarted = false;
+};
+
 //==============================================================================
 class SoulfulGrooveKeysEditor : public juce::AudioProcessorEditor, private juce::Timer
 {
@@ -115,15 +131,28 @@ private:
     Choice pattern, fills, playMode;
     Knob swing, gate, velocity, humanize;
 
-    // Sound
-    juce::ToggleButton soundToggle { "Internal e-piano" };
+    // Sound & MIDI
+    juce::ToggleButton soundToggle { "Guide sound" };
+    juce::TextButton previewButton { "PREVIEW" };
+    Choice bassChannel;
     juce::AudioProcessorValueTreeState::ButtonAttachment soundAttachment;
     Knob tone, reverb, volume;
 
     PatternView patternView;
 
+    // MIDI clip export
+    juce::Label clipLengthLabel, clipPartLabel;
+    juce::ComboBox clipLength, clipPart;
+    MidiDragTile dragTile;
+    juce::TextButton saveButton { "Save .mid..." };
+    std::unique_ptr<juce::FileChooser> fileChooser;
+
+    int selectedClipBars() const;
+    SoulfulGrooveKeysProcessor::ClipPart selectedClipPart() const;
+    void saveClip();
+
     juce::Rectangle<int> headerArea, chordDisplayArea, progressionPanel, harmonyPanel, groovePanel,
-                         soundPanel, gridPanel;
+                         soundPanel, gridPanel, clipPanel;
 
     juce::String currentChord { "-" }, currentRoman, currentKey;
     bool showingHold = false;

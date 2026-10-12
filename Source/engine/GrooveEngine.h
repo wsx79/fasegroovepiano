@@ -67,11 +67,14 @@ struct GrooveSettings
     int fillEveryBars = 0;                 // 0 = no fills
 };
 
+enum class Part { chords = 0, bass = 1 };
+
 struct NoteEvent
 {
     double ppq;
     int note;
     int velocity;   // 0 for note-off
+    Part part = Part::chords;
     bool isNoteOn() const noexcept { return velocity > 0; }
 };
 
@@ -90,6 +93,12 @@ public:
 
     bool anyNoteSounding() const noexcept;
 
+    /** Length (in 16th steps) after which progression, groove and fills all repeat. */
+    static int loopLengthInSteps (const GrooveSettings& s) noexcept;
+
+    /** Offline render of a whole clip starting at bar 1, with every note closed. */
+    static std::vector<NoteEvent> renderClip (const GrooveSettings& s, double lengthInBeats);
+
     /** Chord slot that is active at a given step. */
     static int slotForStep (long long step, const GrooveSettings& s) noexcept;
 
@@ -99,7 +108,7 @@ public:
                                   std::array<VoicedChord, maxProgressionLength>& voiced) noexcept;
 
 private:
-    struct PendingOn { double ppq; int note; int velocity; double duration; bool tie = false; };
+    struct PendingOn { double ppq; int note; int velocity; double duration; bool tie = false; Part part = Part::chords; };
 
     void collectStep (long long step, const GrooveSettings& s,
                       const std::array<Chord, maxProgressionLength>& chords,
@@ -107,6 +116,7 @@ private:
     void flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out);
 
     std::array<double, 128> offTime {};    // < 0 when the note is not sounding
+    std::array<Part, 128> partOf {};
     std::vector<PendingOn> pending;
     std::vector<int> scratch;
 };

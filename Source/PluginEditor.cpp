@@ -260,6 +260,30 @@ void PatternView::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+void MidiDragTile::paint (juce::Graphics& g)
+{
+    auto r = getLocalBounds().toFloat().reduced (1.0f);
+    g.setGradientFill (juce::ColourGradient (Palette::accent.withAlpha (hover ? 1.0f : 0.85f), r.getTopLeft(),
+                                             Palette::accent2.withAlpha (hover ? 1.0f : 0.85f), r.getBottomRight(), false));
+    g.fillRoundedRectangle (r, 8.0f);
+
+    g.setColour (Palette::background);
+    g.setFont (juce::Font (juce::FontOptions (15.0f).withStyle ("Bold")));
+    g.drawText ("DRAG MIDI TO DAW", r, juce::Justification::centred);
+}
+
+void MidiDragTile::mouseDrag (const juce::MouseEvent& e)
+{
+    if (dragStarted || e.getDistanceFromDragStart() < 4 || createFile == nullptr)
+        return;
+
+    dragStarted = true;
+    const auto file = createFile();
+    if (file.existsAsFile())
+        juce::DragAndDropContainer::performExternalDragDropOfFiles ({ file.getFullPathName() }, false, this);
+}
+
+//==============================================================================
 SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
     : AudioProcessorEditor (&p), processor (p),
       progLength (p.apvts, ParamIDs::progLength, "Length"),
@@ -277,6 +301,7 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
       gate (p.apvts, ParamIDs::gate, "Gate"),
       velocity (p.apvts, ParamIDs::velocity, "Velocity"),
       humanize (p.apvts, ParamIDs::humanize, "Humanize"),
+      bassChannel (p.apvts, ParamIDs::bassChannel, "MIDI out"),
       soundAttachment (p.apvts, ParamIDs::sound, soundToggle),
       tone (p.apvts, ParamIDs::tone, "Tone"),
       reverb (p.apvts, ParamIDs::reverb, "Reverb"),
@@ -300,10 +325,32 @@ SoulfulGrooveKeysEditor::SoulfulGrooveKeysEditor (SoulfulGrooveKeysProcessor& p)
     for (juce::Component* c : std::initializer_list<juce::Component*> {
              &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &registerKnob,
              &pattern, &fills, &playMode, &swing, &gate, &velocity, &humanize,
-             &soundToggle, &tone, &reverb, &volume, &patternView })
+             &soundToggle, &previewButton, &bassChannel, &tone, &reverb, &volume, &patternView,
+             &clipLengthLabel, &clipPartLabel, &clipLength, &clipPart, &dragTile, &saveButton })
         addAndMakeVisible (c);
 
-    setSize (980, 640);
+    previewButton.setClickingTogglesState (true);
+    previewButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    previewButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent2);
+    previewButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    previewButton.setColour (juce::TextButton::textColourOnId, Palette::background);
+    previewButton.setTooltip ("Play the groove with the guide sound without starting the DAW");
+    previewButton.onClick = [this] { processor.previewOn = previewButton.getToggleState(); };
+
+    styleCaption (clipLengthLabel, "Clip length");
+    styleCaption (clipPartLabel, "Notes");
+    clipLength.addItemList ({ "Full loop", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars", "32 bars" }, 1);
+    clipLength.setSelectedId (1, juce::dontSendNotification);
+    clipPart.addItemList ({ "Chords + bass", "Chords only", "Bass only" }, 1);
+    clipPart.setSelectedId (1, juce::dontSendNotification);
+
+    dragTile.createFile = [this] { return processor.writeMidiClip (selectedClipBars(), selectedClipPart()); };
+
+    saveButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    saveButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    saveButton.onClick = [this] { saveClip(); };
+
+    setSize (980, 690);
     startTimerHz (30);
     timerCallback();
 }
@@ -312,6 +359,43 @@ SoulfulGrooveKeysEditor::~SoulfulGrooveKeysEditor()
 {
     stopTimer();
     setLookAndFeel (nullptr);
+}
+
+int SoulfulGrooveKeysEditor::selectedClipBars() const
+{
+    static constexpr int bars[] { 0, 1, 2, 4, 8, 16, 32 };
+    return bars[juce::jlimit (0, 6, clipLength.getSelectedItemIndex())];
+}
+
+SoulfulGrooveKeysProcessor::ClipPart SoulfulGrooveKeysEditor::selectedClipPart() const
+{
+    return (SoulfulGrooveKeysProcessor::ClipPart) juce::jlimit (0, 2, clipPart.getSelectedItemIndex());
+}
+
+void SoulfulGrooveKeysEditor::saveClip()
+{
+    const int bars = selectedClipBars();
+    const auto part = selectedClipPart();
+    const auto folder = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory);
+
+    fileChooser = std::make_unique<juce::FileChooser> ("Save MIDI clip",
+                                                       folder.getChildFile (processor.clipFileName (bars, part)), "*.mid");
+
+    fileChooser->launchAsync (juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
+                                  | juce::FileBrowserComponent::warnAboutOverwriting,
+                              [this, bars, part] (const juce::FileChooser& chooser)
+                              {
+                                  auto file = chooser.getResult();
+                                  if (file == juce::File())
+                                      return;
+
+                                  file = file.withFileExtension ("mid");
+                                  file.deleteFile();
+
+                                  juce::FileOutputStream stream (file);
+                                  if (stream.openedOk())
+                                      processor.createMidiClip (bars, part).writeTo (stream);
+                              });
 }
 
 void SoulfulGrooveKeysEditor::loadPreset (int index)
@@ -365,6 +449,7 @@ void SoulfulGrooveKeysEditor::timerCallback()
     }
 
     patternView.setState (s.pattern, processor.uiStep.load(), s.fillEveryBars);
+    previewButton.setToggleState (processor.previewOn.load(), juce::dontSendNotification);
 }
 
 void SoulfulGrooveKeysEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& title)
@@ -414,16 +499,14 @@ void SoulfulGrooveKeysEditor::paint (juce::Graphics& g)
     drawPanel (g, progressionPanel, "PROGRESSION");
     drawPanel (g, harmonyPanel, "HARMONY & SCALES");
     drawPanel (g, groovePanel, "GROOVE");
-    drawPanel (g, soundPanel, "SOUND & MIDI");
+    drawPanel (g, soundPanel, "GUIDE SOUND & MIDI OUT");
     drawPanel (g, gridPanel, "RHYTHM GRID");
+    drawPanel (g, clipPanel, "MIDI CLIP");
 
-    // Hints
-    auto hint = soundPanel.reduced (16, 12).removeFromBottom (54);
+    auto hint = clipPanel.reduced (14, 8).removeFromBottom (16);
     g.setColour (Palette::dim);
-    g.setFont (font (11.5f));
-    g.drawFittedText ("MIDI OUT: route this track's MIDI to any synth or piano in your DAW.\n"
-                      "Hold mode: press a key to play the groove in that key.",
-                      hint, juce::Justification::bottomLeft, 4);
+    g.setFont (font (11.0f));
+    g.drawText ("Drop it on any instrument track (your own piano / Rhodes)", hint, juce::Justification::centredLeft);
 }
 
 void SoulfulGrooveKeysEditor::resized()
@@ -456,7 +539,7 @@ void SoulfulGrooveKeysEditor::resized()
     r.removeFromTop (10);
 
     // Three panels
-    auto mid = r.removeFromTop (244);
+    auto mid = r.removeFromTop (252);
     harmonyPanel = mid.removeFromLeft (300);
     mid.removeFromLeft (10);
     soundPanel = mid.removeFromRight (250);
@@ -492,15 +575,35 @@ void SoulfulGrooveKeysEditor::resized()
 
     {
         auto inner = soundPanel.reduced (14, 8);
-        inner.removeFromTop (24);
-        soundToggle.setBounds (row (inner, 26));
-        auto knobs = inner.removeFromTop (100);
-        const int w = knobs.getWidth() / 3;
+        inner.removeFromTop (22);
+        auto toggleRow = row (inner, 28);
+        previewButton.setBounds (toggleRow.removeFromRight (96));
+        soundToggle.setBounds (toggleRow);
+        bassChannel.setBounds (row (inner, 44));
+        const int w = inner.getWidth() / 3;
         for (auto* k : { &tone, &reverb, &volume })
-            k->setBounds (knobs.removeFromLeft (w));
+            k->setBounds (inner.removeFromLeft (w));
     }
 
     r.removeFromTop (10);
+    clipPanel = r.removeFromRight (300);
+    r.removeFromRight (10);
     gridPanel = r;
     patternView.setBounds (gridPanel.reduced (14, 8).withTrimmedTop (22));
+
+    {
+        auto inner = clipPanel.reduced (14, 8);
+        inner.removeFromTop (22);
+        inner.removeFromBottom (18);
+        auto labels = inner.removeFromTop (16);
+        clipLengthLabel.setBounds (labels.removeFromLeft (labels.getWidth() / 2));
+        clipPartLabel.setBounds (labels.withTrimmedLeft (8));
+        auto boxes = inner.removeFromTop (28);
+        clipLength.setBounds (boxes.removeFromLeft (boxes.getWidth() / 2 - 4));
+        clipPart.setBounds (boxes.withTrimmedLeft (8));
+        inner.removeFromTop (10);
+        auto buttons = inner.removeFromTop (juce::jmin (44, inner.getHeight()));
+        saveButton.setBounds (buttons.removeFromRight (96));
+        dragTile.setBounds (buttons.withTrimmedRight (8));
+    }
 }
