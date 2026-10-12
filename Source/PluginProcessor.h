@@ -33,6 +33,10 @@ namespace ParamIDs
     inline constexpr const char* section     = "section";
     inline constexpr const char* tempoSync   = "tempoSync";
     inline constexpr const char* tempo       = "tempo";
+    inline constexpr const char* soundType   = "soundType";
+    inline constexpr const char* fillStyle   = "fillStyle";
+    inline constexpr const char* strum       = "strum";
+    inline constexpr const char* octaveTop   = "octaveTop";
     inline constexpr const char* riffSeed    = "riffSeed";
     inline constexpr const char* riffDensity = "riffDensity";
     inline constexpr const char* sound       = "sound";

@@ -156,6 +156,32 @@ const std::vector<GroovePattern>& groovePatterns()
         { "Disco Jack Chops",
           compact ("..xx .x.. ..xx .x.x ..xx .x.. ..x. xx.x"),
           compact ("x.x. ..x. x.x. ..xx x.x. ..x. x.x. .x.x") },
+
+        // ---- v1.2: more soulful, deep, jackin' and funky ----
+        { "Soulful Sunday",
+          compact ("X==. .x.. x==. .x>= =..x ..X= =.x. x.>="),
+          compact ("x... ..x. x... ..>= =..x ..x. x... ..>=") },
+        { "Gospel Chops",
+          compact ("X.x. xX.x .x.X x.>= =.x. xX.x .x.X x.>="),
+          compact ("x..x ..x. x..x ..>= =..x ..x. x..x ..>=") },
+        { "Neo Soul Comping",
+          compact (".x=. ..x= .X.. x=.. .x=. ..x= .x.. >==="),
+          compact ("x... .x.. ..x. .... x... .x.. ..x. ....") },
+        { "Deep Sway",
+          compact ("X=== ..x= ==.. x=== X=== ..x= ==.. .x=="),
+          compact ("x=== .... ..x. .... x=== .... ..x. ....") },
+        { "Deep Dub Stabs",
+          compact ("..X= ==.. .... ..x. ..X= ==.. .... x..."),
+          compact ("x=== .... .... .... x=== .... ..x. ....") },
+        { "Jackin' Shuffle",
+          compact (".x.x ..x. .x.x .xx. .x.x ..x. .x.x x.x."),
+          compact ("x..x x... x..x x.x. x..x x... x..x .xx.") },
+        { "Jack Organ Pump",
+          compact ("..x. ..x. ..x. ..xx ..x. ..x. ..x. .xx."),
+          compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.xx x.x.") },
+        { "Funky Upstrokes",
+          compact (".x.x .x.x .x.X ..x. .x.x .x.x .X.. x.x."),
+          compact ("x..x ..x. x... .x.. x..x ..x. x.x. ....") },
     };
 
     return patterns;
@@ -193,9 +219,18 @@ const std::vector<ProgressionPreset>& progressionPresets()
         { "Dorian Circle  i - iv - VII - III", 1, { 0, 3, 6, 2 } },
         { "Jackin' Minor  i - iv",             2, { 0, 3 } },
         { "Jackin' Groove  i - VII - VI - v",  2, { 0, 6, 5, 4 } },
+        { "Soulful Gospel  I - iii - IV - V",  0, { 0, 2, 3, 4 } },
+        { "Deep Dorian  i - ii - IV - i",      1, { 0, 1, 3, 0 } },
+        { "Funky Mixo  I - IV - VII - IV",     3, { 0, 3, 6, 3 } },
     };
 
     return presets;
+}
+
+const char* fillStyleName (int style) noexcept
+{
+    static const char* const names[numFillStyles] { "Pentatonic run up", "Pentatonic run down", "Chord roll (next chord)" };
+    return names[mod (style, numFillStyles)];
 }
 
 const char* bassModeName (int m) noexcept
@@ -409,21 +444,39 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     // ---- right hand (chords) ----
     if (inFill)
     {
-        const auto& rh = voiced[(size_t) slotForStep (step, s)].rightHand;
-        const int top = rh.size > 0 ? rh.highest() : s.centre + 7;
-        const auto run = pentatonicNotes (s.keyRoot, s.scale, s.centre - 5, s.centre + 19);
+        const int k = stepInBar - 12;
+        const double len = (k == 3 ? 2.0 : std::clamp (s.gate, 0.3f, 1.0f)) * stepLength;
+        const int vel = hitVelocity ('x', k == 3 ? 1.0 : 0.85, 32);
 
-        if (run.size > 0)
+        if (s.fillStyle == FillStyle::chordRoll)
         {
-            int iTop = 0;
-            for (int i = 0; i < run.size; ++i)
-                if (run[i] <= top)
-                    iTop = i;
+            // Arpeggiate the NEXT chord upwards, landing on its top note.
+            const long long nextBar = (floorDiv (step, 16) + 1) * 16;
+            const auto& next = voiced[(size_t) slotForStep (nextBar, s)].rightHand;
+            if (next.size > 0)
+            {
+                const int idx = next.size - 4 + k;   // last four notes of the (wrapped) chord
+                const int octaveShift = idx < 0 ? -12 * ((-idx + next.size - 1) / next.size) : 0;
+                const int note = next[(idx % next.size + next.size) % next.size] + octaveShift;
+                pending.push_back ({ hitTime (31), note, vel, len });
+            }
+        }
+        else
+        {
+            const auto& rh = voiced[(size_t) slotForStep (step, s)].rightHand;
+            const int top = rh.size > 0 ? rh.highest() : s.centre + 7;
+            const auto run = pentatonicNotes (s.keyRoot, s.scale, s.centre - 5, s.centre + 19);
 
-            const int k = stepInBar - 12;
-            const int idx = std::clamp (iTop - 2 + k, 0, run.size - 1);
-            const double len = (k == 3 ? 2.0 : std::clamp (s.gate, 0.3f, 1.0f)) * stepLength;
-            pending.push_back ({ hitTime (31), run[idx], hitVelocity ('x', k == 3 ? 1.0 : 0.85, 32), len });
+            if (run.size > 0)
+            {
+                int iTop = 0;
+                for (int i = 0; i < run.size; ++i)
+                    if (run[i] <= top)
+                        iTop = i;
+
+                const int idx = s.fillStyle == FillStyle::pentatonicDown ? iTop + 2 - k : iTop - 2 + k;
+                pending.push_back ({ hitTime (31), run[std::clamp (idx, 0, run.size - 1)], vel, len });
+            }
         }
     }
     else
@@ -436,9 +489,16 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             const double t = hitTime (1);
             const bool tie = isTiedFromPush (pattern.rightHand, pos);
 
+            // Strum: roll the chord upwards, up to ~1/32 note between the notes.
+            const double roll = std::clamp (s.strum, 0.0f, 1.0f) * 0.06;
+
             for (int i = 0; i < v.rightHand.size; ++i)
-                pending.push_back ({ t + 0.004 * human * noise (step, 50 + i), v.rightHand[i],
+                pending.push_back ({ t + 0.004 * human * noise (step, 50 + i) + i * roll, v.rightHand[i],
                                      hitVelocity (symbol, 1.0 - 0.03 * (v.rightHand.size - 1 - i), 60 + i), len, tie });
+
+            if (s.octaveTop && v.rightHand.size > 0 && v.rightHand.highest() + 12 <= 108)
+                pending.push_back ({ t + v.rightHand.size * roll, v.rightHand.highest() + 12,
+                                     hitVelocity (symbol, 0.8, 70), len, tie });
 
             for (int i = 0; i < v.leftHand.size; ++i)
                 pending.push_back ({ t, v.leftHand[i], hitVelocity (symbol, 0.85, 80 + i), len, tie });

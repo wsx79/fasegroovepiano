@@ -33,11 +33,12 @@ Rhodes or synth.
   Harmonic and Melodic Minor). Diatonic chords with 3–6 voices; clashing tensions are handled
   automatically.
 - 🎛️ **Voicings:** Close, Drop 2, Rootless, Wide (two hands), Quartal, with automatic voice leading.
-- 🔁 **Progressions:** 1–8 chords, 19 presets (including circle-of-fifths progressions) and
+- 🔁 **Progressions:** 1–8 chords, 22 presets (including circle-of-fifths progressions) and
   **DICE** for random but musical progressions.
 - ⭕ Interactive **circle of fifths** showing the path of your progression.
-- 🥁 **26 two-hand grooves** (offbeat stabs, pushes, clav chops, ghost notes, gospel, garage,
-  disco, **jackin' house**…) plus **NEW RIFF**, a random funky riff generator.
+- 🥁 **34 two-hand grooves** (soulful, gospel, deep, **jackin' house**, funky, garage, disco…)
+  plus **NEW RIFF**, a random funky riff generator, and optional fills (3 styles).
+- 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and
   lock (LOCK), plus a quick **BASS ON/OFF**.
 - 🔍 **Resizable UI** and a mini window while you drag a clip.
@@ -46,7 +47,8 @@ Rhodes or synth.
 - ⏱️ **Tempo:** synced to the DAW or set by hand.
 - 📤 **MIDI:** drag the clip into your DAW (full, chords only, bass only), save it as `.mid`, or
   use live MIDI out (bass on its own channel if you like).
-- 🔊 **Guide sound** (electric piano) and **PREVIEW** to hear the riff with the DAW stopped.
+- 🔊 **Guide sounds:** Rhodes, Soulful Grand, House Piano (M1 style) and House Organ, plus
+  **PREVIEW** to hear the riff with the DAW stopped.
 
 Everything is explained in the **[user guide](docs/GUIDE.md)**.
 
@@ -164,7 +166,7 @@ To fix the text of an existing release without rebuilding:
 Source/engine/Theory.*        scales, diatonic chords, chord names, voicings and voice leading (pure C++)
 Source/engine/GrooveEngine.*  rhythm patterns, progressions, swing/humanize, fills -> note events
 Source/engine/Generators.*    random riffs, random progressions, song sections, arrangement, A/B/C/D parts
-Source/EPianoVoice.h          guide sound (FM electric piano)
+Source/GuideVoice.h           guide sounds: Rhodes, Soulful Grand, House Piano, House Organ
 Source/PluginProcessor.*      parameters, tempo sync, MIDI in/out, clip export, user pattern
 Source/PluginEditor.*         user interface and credits page
 Source/CircleOfFifths.*       interactive circle of fifths

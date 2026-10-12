@@ -31,11 +31,12 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 🎹 **Armonia:** 12 tonalità × 8 scale/modi (Maggiore, Dorian, Minore, Mixolydian, Lydian,
   Phrygian, Minore armonica e melodica). Accordi diatonici a 3–6 voci con tensioni gestite in automatico.
 - 🎛️ **Voicing:** Close, Drop 2, Rootless, Wide (due mani), Quartal, con voice leading automatico.
-- 🔁 **Progressioni:** 1–8 accordi, 19 preset (tra cui le progressioni sul circolo delle quinte)
+- 🔁 **Progressioni:** 1–8 accordi, 22 preset (tra cui le progressioni sul circolo delle quinte)
   e **DICE** per progressioni casuali ma musicali.
 - ⭕ **Circolo delle quinte** interattivo, con il percorso della progressione.
-- 🥁 **26 groove** a due mani (offbeat stabs, push, clav chops, ghost notes, gospel, garage,
-  disco, **jackin' house**…) più **NEW RIFF**, che genera riff funky casuali sul momento.
+- 🥁 **34 groove** a due mani (soulful, gospel, deep, **jackin' house**, funky, garage, disco…)
+  più **NEW RIFF**, che genera riff funky casuali sul momento, e fill opzionali (3 stili).
+- 🎚️ **Strum** (accordi arpeggiati come un pianista vero) e **Top +8va** (nota alta raddoppiata all'ottava).
 - ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,
   randomizzare (RND) e bloccare (LOCK), e **BASS ON/OFF** al volo.
 - 🔍 **Interfaccia ridimensionabile** e finestra mini durante il trascinamento della clip.
@@ -44,7 +45,8 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - ⏱️ **Tempo:** agganciato alla DAW o impostato a mano.
 - 📤 **MIDI:** trascina la clip nella DAW (completa, solo accordi, solo basso), salvala in
   `.mid` oppure usa il MIDI in tempo reale (basso su un canale separato, se vuoi).
-- 🔊 **Suono guida** (piano elettrico) e **PREVIEW**, per ascoltare il riff anche a DAW ferma.
+- 🔊 **Suoni guida:** Rhodes, Soulful Grand, House Piano (stile M1) e House Organ, più
+  **PREVIEW** per ascoltare il riff anche a DAW ferma.
 
 Tutti i dettagli sono nella **[guida di utilizzo](docs/GUIDA.md)**.
 
@@ -164,7 +166,7 @@ Per correggere il testo di una release già pubblicata senza ricompilare:
 Source/engine/Theory.*        scale, accordi diatonici, nomi accordi, voicing e voice leading (C++ puro)
 Source/engine/GrooveEngine.*  pattern ritmici, progressioni, swing/humanize, fill → eventi nota
 Source/engine/Generators.*    riff casuali, progressioni casuali, sezioni del brano, arrangiamento
-Source/EPianoVoice.h          suono guida (piano elettrico FM)
+Source/GuideVoice.h           suoni guida: Rhodes, Soulful Grand, House Piano, House Organ
 Source/PluginProcessor.*      parametri, tempo/sincronizzazione, MIDI in/out, esportazione clip
 Source/PluginEditor.*         interfaccia grafica e pagina crediti
 Source/CircleOfFifths.*       circolo delle quinte interattivo

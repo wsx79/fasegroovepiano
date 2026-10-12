@@ -6,11 +6,29 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
-## [Non ancora rilasciato]
+## [1.2.0] - 2026-10-12
 
 ### Aggiunto
+- **Nuovi suoni guida** (menu *Sound*): *Soulful Grand* (pianoforte acustico), *House Piano
+  (stile M1)* e *House Organ*, accanto al *Rhodes (FM)*. Tutti sintetizzati, senza campioni, con
+  volumi allineati.
+- **Fill style**: *scaletta pentatonica in salita*, *in discesa* o *Chord roll* (arpeggio
+  dell'accordo successivo).
+- **Strum**: arpeggia leggermente gli accordi come un pianista vero.
+- **Top +8va**: raddoppia all'ottava la nota più alta di ogni accordo (piano house brillante).
+- **8 nuovi groove**: *Soulful Sunday*, *Gospel Chops*, *Neo Soul Comping*, *Deep Sway*,
+  *Deep Dub Stabs*, *Jackin' Shuffle*, *Jack Organ Pump*, *Funky Upstrokes*.
+- **3 nuove progressioni**: *Soulful Gospel I – iii – IV – V*, *Deep Dorian i – ii – IV – i*,
+  *Funky Mixo I – IV – VII – IV*.
+- Nuove ricette nella guida (soulful grand, piano house anni '90, organo jackin') e una domanda
+  frequente sui fill.
 - Sezione "Ascolta la mia musica" nella guida e nel README: Fabio 'Pitch' Serra su Spotify e sui
   maggiori distributori digitali di musica.
+
+### Modificato
+- **I fill ora sono spenti di default** (prima suonavano ogni 4 battute). Si accendono da *Fills*.
+  I progetti salvati con le versioni precedenti mantengono la loro impostazione.
+- *Play mode* è stato spostato nel riquadro Groove; la finestra è un po' più alta.
 
 ## [1.1.0] - 2026-10-12
 
@@ -61,5 +79,6 @@ Prima versione pubblica.
 - Pagina **CREDITS**, logo dell'app, donazioni (Ko-fi, PayPal), licenza AGPLv3, guida d'uso e
   privacy policy.
 
+[1.2.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.2.0
 [1.1.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.1.0
 [1.0.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.0.0

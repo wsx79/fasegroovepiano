@@ -403,9 +403,61 @@ static void testSegmentsAndUserPattern()
     CHECK (GrooveEngine::resolvePattern (s).rightHand.substr (24, 8) == "X.....x.");
 }
 
+static void testFillStylesStrumOctave()
+{
+    for (int style = 0; style < numFillStyles; ++style)
+    {
+        GrooveSettings s;
+        s.fillEveryBars = 2;
+        s.fillStyle = (FillStyle) style;
+        s.humanize = 0.0f;
+        s.swing = 0.0f;
+        s.bass = BassMode::off;
+        s.pattern = 9;   // Long Chords: nothing else plays on the last beat of bar 2
+
+        const auto clip = GrooveEngine::renderClip (s, 8.0);
+        std::vector<int> fill;
+        for (const auto& e : clip)
+            if (e.isNoteOn() && e.ppq >= 7.0 && e.ppq < 8.0)
+                fill.push_back (e.note);
+
+        CHECK (fill.size() == 4);
+        if (fill.size() == 4)
+        {
+            if (style == (int) FillStyle::pentatonicUp)   CHECK (fill[0] < fill[3]);
+            if (style == (int) FillStyle::pentatonicDown) CHECK (fill[0] > fill[3]);
+        }
+    }
+
+    // Strum spreads the chord notes in time; octaveTop adds one note above.
+    GrooveSettings s;
+    s.humanize = 0.0f;
+    s.swing = 0.0f;
+    s.bass = BassMode::off;
+    s.pattern = 9;
+    s.strum = 1.0f;
+    s.octaveTop = true;
+
+    const auto clip = GrooveEngine::renderClip (s, 4.0);
+    std::vector<NoteEvent> firstChord;
+    for (const auto& e : clip)
+        if (e.isNoteOn() && e.ppq < 0.5)
+            firstChord.push_back (e);
+
+    std::array<Chord, maxProgressionLength> chords;
+    std::array<VoicedChord, maxProgressionLength> voiced;
+    GrooveEngine::voiceProgression (s, chords, voiced);
+
+    CHECK ((int) firstChord.size() == voiced[0].rightHand.size + 1);
+    CHECK (firstChord.back().ppq > firstChord.front().ppq);
+    int top = 0;
+    for (const auto& e : firstChord) top = std::max (top, e.note);
+    CHECK (top == voiced[0].rightHand.highest() + 12);
+}
+
 static void testPatternsWellFormed()
 {
-    CHECK (groovePatterns().size() == 26);
+    CHECK (groovePatterns().size() == 34);
 
     for (const auto& p : groovePatterns())
     {
@@ -435,6 +487,7 @@ int main()
     testRandomProgressions();
     testSections();
     testSegmentsAndUserPattern();
+    testFillStylesStrumOctave();
     testPatternsWellFormed();
 
     if (failures == 0)

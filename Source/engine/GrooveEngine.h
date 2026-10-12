@@ -55,6 +55,11 @@ const std::vector<ProgressionPreset>& progressionPresets();
 
 //==============================================================================
 enum class BassMode { off = 0, root, octaves, rootFifth };
+
+/** What the last beat of a fill bar plays. */
+enum class FillStyle { pentatonicUp = 0, pentatonicDown, chordRoll };
+constexpr int numFillStyles = 3;
+const char* fillStyleName (int style) noexcept;
 constexpr int numBassModes = 4;
 const char* bassModeName (int mode) noexcept;
 
@@ -77,6 +82,9 @@ struct GrooveSettings
     int velocity = 96;
     float humanize = 0.25f;
     int fillEveryBars = 0;                 // 0 = no fills
+    FillStyle fillStyle = FillStyle::pentatonicUp;
+    float strum = 0.0f;                    // 0..1: roll the chord notes like a pianist
+    bool octaveTop = false;                // double the top note an octave higher
 
     Section section = Section::main;
     std::uint32_t riffSeed = 1;            // used when pattern == randomPatternIndex()

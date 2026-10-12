@@ -482,9 +482,11 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       voicing (p.apvts, ParamIDs::voicing, "Voicing"),
       bass (p.apvts, ParamIDs::bass, "Left-hand bass"),
       registerKnob (p.apvts, ParamIDs::registerPos, "Register"),
+      strumKnob (p.apvts, ParamIDs::strum, "Strum"),
       pattern (p.apvts, ParamIDs::pattern, "Groove"),
       section (p.apvts, ParamIDs::section, "Song section"),
-      fills (p.apvts, ParamIDs::fills, "Pentatonic fills"),
+      fills (p.apvts, ParamIDs::fills, "Fills"),
+      fillStyle (p.apvts, ParamIDs::fillStyle, "Fill style"),
       playMode (p.apvts, ParamIDs::playMode, "Play mode"),
       swing (p.apvts, ParamIDs::swing, "Swing"),
       gate (p.apvts, ParamIDs::gate, "Gate"),
@@ -492,6 +494,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       humanize (p.apvts, ParamIDs::humanize, "Humanize"),
       riffDensity (p.apvts, ParamIDs::riffDensity, "Density"),
       bassChannel (p.apvts, ParamIDs::bassChannel, "MIDI out"),
+      soundType (p.apvts, ParamIDs::soundType, "Sound"),
       soundAttachment (p.apvts, ParamIDs::sound, soundToggle),
       tone (p.apvts, ParamIDs::tone, "Tone"),
       reverb (p.apvts, ParamIDs::reverb, "Reverb"),
@@ -515,12 +518,16 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
 
     for (juce::Component* c : std::initializer_list<juce::Component*> {
-             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &registerKnob, &circle,
-             &diceProgression, &pattern, &section, &newRiffButton, &fills, &playMode,
+             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &registerKnob, &strumKnob,
+             &octaveToggle, &circle,
+             &diceProgression, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
              &swing, &gate, &velocity, &humanize, &riffDensity,
              &soundToggle, &previewButton, &bassChannel, &tone, &reverb, &volume, &patternView,
              &clipLengthLabel, &clipPartLabel, &clipLength, &clipPart, &dragTile, &saveButton })
         addAndMakeVisible (c);
+
+    octaveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, ParamIDs::octaveTop, octaveToggle);
+    octaveToggle.setTooltip ("Double the top note of every chord an octave higher (bright house piano)");
 
     auto styleButton = [] (juce::TextButton& b, juce::Colour colour)
     {
@@ -1000,7 +1007,7 @@ void FaseGroovePianoEditor::layoutFull()
     r.removeFromTop (10);
 
     // Middle panels
-    auto mid = r.removeFromTop (300);
+    auto mid = r.removeFromTop (340);
     harmonyPanel = mid.removeFromLeft (300);
     mid.removeFromLeft (10);
     circlePanel = mid.removeFromLeft (240);
@@ -1022,8 +1029,15 @@ void FaseGroovePianoEditor::layoutFull()
         split (row (inner, 44), key, scale, 80);
         split (row (inner, 44), extension, voicing, 125);
         auto last = inner;
-        bass.setBounds (last.removeFromLeft (150).removeFromTop (44));
-        registerKnob.setBounds (last.withTrimmedLeft (10).withSizeKeepingCentre (110, juce::jmin (120, last.getHeight())));
+        auto leftCol = last.removeFromLeft (124);
+        bass.setBounds (leftCol.removeFromTop (44));
+        leftCol.removeFromTop (8);
+        octaveToggle.setBounds (leftCol.removeFromTop (24));
+        last.removeFromLeft (6);
+        const int kw = last.getWidth() / 2;
+        const int kh = juce::jmin (kw + 34, last.getHeight());
+        registerKnob.setBounds (last.removeFromLeft (kw).withSizeKeepingCentre (kw, kh));
+        strumKnob.setBounds (last.withSizeKeepingCentre (kw, kh));
     }
 
     circle.setBounds (circlePanel.reduced (10, 8).withTrimmedTop (22));
@@ -1035,6 +1049,7 @@ void FaseGroovePianoEditor::layoutFull()
         newRiffButton.setBounds (grooveRow.removeFromRight (84).withTrimmedTop (16));
         pattern.setBounds (grooveRow.withTrimmedRight (8));
         split (row (inner, 44), section, fills, inner.getWidth() / 2 - 5);
+        split (row (inner, 44), fillStyle, playMode, inner.getWidth() / 2 - 5);
         const int w = inner.getWidth() / 5;
         auto knobs = inner.withSizeKeepingCentre (inner.getWidth(), juce::jmin (inner.getHeight(), w + 40));
         for (auto* k : { &swing, &gate, &velocity, &humanize, &riffDensity })
@@ -1047,8 +1062,8 @@ void FaseGroovePianoEditor::layoutFull()
         auto toggleRow = row (inner, 28);
         previewButton.setBounds (toggleRow.removeFromRight (96));
         soundToggle.setBounds (toggleRow);
+        soundType.setBounds (row (inner, 44));
         bassChannel.setBounds (row (inner, 44));
-        playMode.setBounds (row (inner, 44));
         const int w = inner.getWidth() / 3;
         for (auto* k : { &tone, &reverb, &volume })
             k->setBounds (inner.removeFromLeft (w));

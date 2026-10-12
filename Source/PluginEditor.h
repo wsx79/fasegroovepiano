@@ -174,18 +174,20 @@ private:
 
     // Harmony
     Choice key, scale, extension, voicing, bass;
-    Knob registerKnob;
+    Knob registerKnob, strumKnob;
+    juce::ToggleButton octaveToggle { "Top +8va" };
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> octaveAttachment;
     CircleOfFifths circle;
 
     // Groove
-    Choice pattern, section, fills, playMode;
+    Choice pattern, section, fills, fillStyle, playMode;
     juce::TextButton newRiffButton { "NEW RIFF" };
     Knob swing, gate, velocity, humanize, riffDensity;
 
     // Sound & MIDI
     juce::ToggleButton soundToggle { "Guide sound" };
     juce::TextButton previewButton { "PREVIEW" };
-    Choice bassChannel;
+    Choice bassChannel, soundType;
     juce::AudioProcessorValueTreeState::ButtonAttachment soundAttachment;
     Knob tone, reverb, volume;
 
@@ -196,7 +198,7 @@ private:
     juce::OwnedArray<juce::TextButton> segmentDice, segmentLocks;
 
     // Scaling (the whole UI is laid out at base size, then scaled) and mini mode.
-    static constexpr int baseWidth = 1180, baseHeight = 740;
+    static constexpr int baseWidth = 1180, baseHeight = 780;
     static constexpr int miniWidth = 320, miniHeight = 96;
     float uiScale = 1.0f;
     bool miniMode = false;

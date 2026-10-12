@@ -81,7 +81,7 @@ Con *Play mode → Hold a key* mostra anche "HOLD" e la tonalità scelta col tas
 
 | Controllo | Cosa fa |
 |---|---|
-| **Load a progression…** | 19 progressioni pronte (anche jackin' house). Caricarne una imposta anche la scala consigliata. |
+| **Load a progression…** | 22 progressioni pronte (soulful, deep, jackin', funky, circolo delle quinte). Caricarne una imposta anche la scala consigliata. |
 | **DICE** | Progressione casuale ma musicale, coi movimenti tipici della soulful house (ii–V, IV–iii–ii, quinte discendenti). Mantiene la lunghezza attuale. |
 | **Length** | Quanti accordi (1–8). Quelli oltre la lunghezza appaiono spenti. |
 | **Each chord** | Durata di ogni accordo: ½, 1, 2 o 4 battute. |
@@ -98,6 +98,8 @@ I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si
 | **Extensions** | Triadi, 7ª, 9ª, 11ª/13ª. Le tensioni che stonano vengono gestite in automatico (es. la b9 sugli accordi non di dominante viene tolta, la 11ª sugli accordi maggiori diventa 13ª). |
 | **Voicing** | *Close* (posizione stretta), *Drop 2* (più aperto, da tastierista jazz), *Rootless* (senza fondamentale, ideale con un basso separato), *Wide* (due mani: fondamentale + 7ª a sinistra), *Quartal* (accordi per quarte, sound deep/moderno). |
 | **Left-hand bass** | La mano sinistra: Off, Root (fondamentale), Octaves (ottave), Root + 5th. |
+| **Top +8va** | Raddoppia all'ottava superiore la nota più alta di ogni accordo: il classico suono di piano house brillante. |
+| **Strum** | Arpeggia leggermente l'accordo dal basso verso l'alto, come un pianista vero, invece di suonare tutte le note insieme (0% = insieme, 100% = arpeggio evidente). Tra 15% e 35% suona naturale. |
 | **Register** | Sposta in alto o in basso la mano destra. Gli accordi scelgono in automatico il rivolto più vicino al precedente (voice leading), così il giro scorre senza salti. |
 
 ### Circle of fifths
@@ -115,10 +117,11 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 
 | Controllo | Cosa fa |
 |---|---|
-| **Groove** | 26 ritmi a due mani su 2 battute (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
+| **Groove** | 34 ritmi a due mani su 2 battute (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
 | **NEW RIFF** | Genera un riff funky nuovo (accordi + basso). Se hai bloccato qualche parte con **LOCK** (vedi *Rhythm grid*), quelle parti restano e cambia solo il resto. Riff e modifiche vengono salvati nel progetto. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). |
-| **Pentatonic fills** | Ogni 2/4/8 battute l'ultimo quarto diventa una scaletta pentatonica che porta all'accordo successivo. |
+| **Fills** | **Spenti (Off)** di default. Ogni 2/4/8 battute l'ultimo quarto diventa un breve fill che porta all'accordo successivo. |
+| **Fill style** | *Pentatonic run up* (scaletta in salita), *Pentatonic run down* (in discesa) o *Chord roll* (arpeggio dell'accordo successivo). |
 | **Swing** | 0% = dritto, 100% = shuffle terzinato. 15–35% è il classico feel house. |
 | **Gate** | Quanto durano i colpi brevi: basso = staccato, alto = legato. |
 | **Velocity** | Dinamica generale. |
@@ -130,7 +133,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 *Funk Clav Chops*, *Ghost Note Funk*, *Nile Chops*, *Anticipation Funk*, *Gospel Shout 16ths*,
 *Neo Soul Lazy*, *Boogie Stabs*, *Offbeat Doubles*, *Broken Beat*, *Slap Bass Funk* e i **jackin' house**:
 *Jackin' Stabs*, *Jack Bounce*, *Jackin' Push*, *Chicago Organ Jack*, *Ghetto Jack*, *Disco Jack Chops*
-(suonano al meglio con Swing 30–45%).
+(suonano al meglio con Swing 30–45%), e i nuovi della v1.2: *Soulful Sunday*, *Gospel Chops*, *Neo Soul Comping*, *Deep Sway*, *Deep Dub Stabs*, *Jackin' Shuffle*, *Jack Organ Pump*, *Funky Upstrokes*.
 
 ### Rhythm grid
 
@@ -169,11 +172,12 @@ sparisce dalla griglia.
 
 | Controllo | Cosa fa |
 |---|---|
-| **Guide sound** | Piano elettrico semplice per sentire il riff. Spegnilo se usi solo il MIDI. |
+| **Guide sound** | Accende/spegne il suono interno. Spegnilo se usi solo il MIDI. |
+| **Sound** | *Rhodes (FM)* (piano elettrico), *Soulful Grand* (pianoforte acustico), *House Piano (M1 style)* (il piano brillante della house anni '90) o *House Organ* (organo per gli stab jackin'). |
 | **PREVIEW** | Fa suonare il groove anche a DAW ferma. |
 | **MIDI out** | *All on channel 1* oppure *Bass on channel 2* (per mandare il basso a uno strumento diverso). |
-| **Play mode** | *Host transport*: suona col Play della DAW. *Hold a key*: suona mentre tieni premuto un tasto MIDI, e **il tasto sceglie la tonalità** (ottimo per jam dal vivo e nello Standalone). |
-| **Tone / Reverb / Volume** | Brillantezza, riverbero e volume del suono guida (non influiscono sul MIDI). |
+| **Play mode** (nel riquadro Groove) | *Host transport*: suona col Play della DAW. *Hold a key*: suona mentre tieni premuto un tasto MIDI, e **il tasto sceglie la tonalità** (ottimo per jam dal vivo e nello Standalone). |
+| **Tone / Reverb / Volume** | Brillantezza (per l'organo: i tiranti), riverbero e volume del suono guida (non influiscono sul MIDI). |
 
 ### MIDI clip
 
@@ -267,12 +271,19 @@ Due modi di usarla:
 | **Funky disco house** | C Mixolydian · *Mixo Groove* · 7ths · Close · *Nile Chops* o *Funk Clav Chops* · Bass: Octaves |
 | **Jazzy late night** | D Major · *Circle of 5ths vi – ii – V – I* · 11ths · Rootless · *Neo Soul Lazy* · Humanize 40% |
 | **Moderno / quartale** | G Dorian · *Deep Minor i – v* · 9ths · Quartal · *Broken Beat* · Swing 15% |
+| **Soulful grand** | Eb Major · *Soulful Gospel I – iii – IV – V* · 9ths · Drop 2 · Sound: *Soulful Grand* · *Soulful Sunday* · Strum 25% · Reverb 40% |
+| **Piano house anni '90** | C Minor (Aeolian) · *Jackin' Minor i – iv* · 7ths · Close · Top +8va · Sound: *House Piano (M1 style)* · *Classic Offbeat Stabs* |
+| **Organo jackin'** | G Dorian · *Deep Dorian i – ii – IV – i* · 7ths · Close · Sound: *House Organ* · *Jack Organ Pump* · Swing 40% |
 | **Jackin' house** | A Minor (Aeolian) · *Jackin' Minor i – iv* · 7ths · Close · *Jackin' Stabs* o *Jack Bounce* · Swing 40% · Gate 35% · Bass: Octaves |
 | **Ispirazione casuale** | DICE + NEW RIFF più volte, Density 30–60%, poi esporta quello che ti piace |
 
 ---
 
 ## 8. Domande frequenti e problemi
+
+**Alla fine di ogni giro c'è una piccola scaletta. Si può togliere?**
+Sono i **fill**. Imposta **Fills** su **Off** (è il valore di partenza dalla v1.2) oppure scegli
+un altro **Fill style**.
 
 **Non sento nulla.**
 Controlla che *Guide sound* sia acceso e premi **PREVIEW**, oppure premi Play nella DAW

@@ -81,7 +81,7 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 
 | Control | What it does |
 |---|---|
-| **Load a progression…** | 19 ready-made progressions (including jackin' house). Loading one also sets the recommended scale. |
+| **Load a progression…** | 22 ready-made progressions (soulful, deep, jackin', funky, circle of fifths). Loading one also sets the recommended scale. |
 | **DICE** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
 | **Length** | How many chords (1–8). Slots beyond the length are greyed out. |
 | **Each chord** | How long each chord lasts: ½, 1, 2 or 4 bars. |
@@ -98,6 +98,8 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Extensions** | Triads, 7ths, 9ths, 11ths/13ths. Clashing tensions are handled automatically (e.g. a b9 on a non-dominant chord is dropped, an 11th on a major chord becomes a 13th). |
 | **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound). |
 | **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th. |
+| **Top +8va** | Doubles the top note of every chord an octave higher: the bright, ringing classic house piano sound. |
+| **Strum** | Rolls the chord notes upwards like a real pianist instead of hitting them all at once (0% = together, 100% = clear roll). 15–35% sounds natural. |
 | **Register** | Moves the right hand up or down. Chords automatically pick the inversion closest to the previous one (voice leading), so the progression flows without jumps. |
 
 ### Circle of fifths
@@ -115,10 +117,11 @@ Outer ring = major keys, inner ring = relative minors.
 
 | Control | What it does |
 |---|---|
-| **Groove** | 26 two-hand, two-bar rhythms (see below), **Random riff** and **User pattern** (your hand-edited grid). |
+| **Groove** | 34 two-hand, two-bar rhythms (see below), **Random riff** and **User pattern** (your hand-edited grid). |
 | **NEW RIFF** | Generates a new funky riff (chords + bass). If you locked some parts with **LOCK** (see *Rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
-| **Pentatonic fills** | Every 2/4/8 bars the last beat becomes a pentatonic run leading into the next chord. |
+| **Fills** | **Off** by default. Every 2/4/8 bars the last beat becomes a short fill leading into the next chord. |
+| **Fill style** | *Pentatonic run up*, *Pentatonic run down* or *Chord roll* (an arpeggio of the next chord). |
 | **Swing** | 0% = straight, 100% = triplet shuffle. 15–35% is the classic house feel. |
 | **Gate** | How long short hits last: low = staccato, high = legato. |
 | **Velocity** | Overall dynamics. |
@@ -130,7 +133,8 @@ Outer ring = major keys, inner ring = relative minors.
 *Long Chords*, *Funk Clav Chops*, *Ghost Note Funk*, *Nile Chops*, *Anticipation Funk*,
 *Gospel Shout 16ths*, *Neo Soul Lazy*, *Boogie Stabs*, *Offbeat Doubles*, *Broken Beat*,
 *Slap Bass Funk* and the **jackin' house** ones: *Jackin' Stabs*, *Jack Bounce*, *Jackin' Push*,
-*Chicago Organ Jack*, *Ghetto Jack*, *Disco Jack Chops* (best with Swing at 30–45%).
+*Chicago Organ Jack*, *Ghetto Jack*, *Disco Jack Chops* (best with Swing at 30–45%), and the
+v1.2 additions: *Soulful Sunday*, *Gospel Chops*, *Neo Soul Comping*, *Deep Sway*, *Deep Dub Stabs*, *Jackin' Shuffle*, *Jack Organ Pump*, *Funky Upstrokes*.
 
 ### Rhythm grid
 
@@ -169,11 +173,12 @@ disappears from the grid.
 
 | Control | What it does |
 |---|---|
-| **Guide sound** | A simple electric piano to hear the riff. Turn it off if you only use the MIDI. |
+| **Guide sound** | Turns the built-in sound on/off. Turn it off if you only use the MIDI. |
+| **Sound** | *Rhodes (FM)* electric piano, *Soulful Grand* acoustic piano, *House Piano (M1 style)* – the bright '90s house piano – or *House Organ* for jackin' organ stabs. |
 | **PREVIEW** | Plays the groove even with the DAW stopped. |
 | **MIDI out** | *All on channel 1* or *Bass on channel 2* (to send the bass to a different instrument). |
-| **Play mode** | *Host transport*: plays with the DAW's Play. *Hold a key*: plays while you hold a MIDI key, and **that key sets the key** (great for live jamming and in the Standalone app). |
-| **Tone / Reverb / Volume** | Brightness, reverb and volume of the guide sound (they don't affect the MIDI). |
+| **Play mode** (in the Groove panel) | *Host transport*: plays with the DAW's Play. *Hold a key*: plays while you hold a MIDI key, and **that key sets the key** (great for live jamming and in the Standalone app). |
+| **Tone / Reverb / Volume** | Brightness (or drawbars for the organ), reverb and volume of the guide sound (they don't affect the MIDI). |
 
 ### MIDI clip
 
@@ -266,12 +271,19 @@ Two ways to use it:
 | **Funky disco house** | C Mixolydian · *Mixo Groove* · 7ths · Close · *Nile Chops* or *Funk Clav Chops* · Bass: Octaves |
 | **Jazzy late night** | D Major · *Circle of 5ths vi – ii – V – I* · 11ths · Rootless · *Neo Soul Lazy* · Humanize 40% |
 | **Modern / quartal** | G Dorian · *Deep Minor i – v* · 9ths · Quartal · *Broken Beat* · Swing 15% |
+| **Soulful grand** | Eb Major · *Soulful Gospel I – iii – IV – V* · 9ths · Drop 2 · Sound: *Soulful Grand* · *Soulful Sunday* · Strum 25% · Reverb 40% |
+| **'90s house piano** | C Minor (Aeolian) · *Jackin' Minor i – iv* · 7ths · Close · Top +8va · Sound: *House Piano (M1 style)* · *Classic Offbeat Stabs* |
+| **Jackin' organ** | G Dorian · *Deep Dorian i – ii – IV – i* · 7ths · Close · Sound: *House Organ* · *Jack Organ Pump* · Swing 40% |
 | **Jackin' house** | A Minor (Aeolian) · *Jackin' Minor i – iv* · 7ths · Close · *Jackin' Stabs* or *Jack Bounce* · Swing 40% · Gate 35% · Bass: Octaves |
 | **Random inspiration** | DICE + NEW RIFF a few times, Density 30–60%, then export what you like |
 
 ---
 
 ## 8. FAQ and troubleshooting
+
+**There's a little scale at the end of every few bars. Can I remove it?**
+Those are the **fills**. Set **Fills** to **Off** (the default since v1.2), or pick a different
+**Fill style**.
 
 **I can't hear anything.**
 Check that *Guide sound* is on and press **PREVIEW**, or press Play in your DAW

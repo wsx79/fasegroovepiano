@@ -6,11 +6,26 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.2.0] - 2026-10-12
 
 ### Added
+- **New guide sounds** (menu *Sound*): *Soulful Grand* (acoustic piano), *House Piano (M1 style)*
+  and *House Organ*, next to the *Rhodes (FM)*. All synthesized, no samples, levels matched.
+- **Fill style**: *Pentatonic run up*, *Pentatonic run down* or *Chord roll* (arpeggio of the next chord).
+- **Strum**: rolls the chord notes like a real pianist.
+- **Top +8va**: doubles the top note of every chord an octave higher (bright house piano).
+- **8 new grooves**: *Soulful Sunday*, *Gospel Chops*, *Neo Soul Comping*, *Deep Sway*,
+  *Deep Dub Stabs*, *Jackin' Shuffle*, *Jack Organ Pump*, *Funky Upstrokes*.
+- **3 new progressions**: *Soulful Gospel I – iii – IV – V*, *Deep Dorian i – ii – IV – i*,
+  *Funky Mixo I – IV – VII – IV*.
+- New recipes in the guide (soulful grand, '90s house piano, jackin' organ) and an FAQ about fills.
 - "Listen to my music" section in the guide and README: Fabio 'Pitch' Serra on Spotify and on the
   major digital music stores.
+
+### Changed
+- **Fills are now off by default** (they used to play every 4 bars). Turn them on in *Fills*.
+  Projects saved with older versions keep their setting.
+- *Play mode* moved to the Groove panel; the window is a little taller.
 
 ## [1.1.0] - 2026-10-12
 
@@ -62,5 +77,6 @@ First public release.
 - **CREDITS** page, app logo, donations (Ko-fi, PayPal), AGPLv3 license, user guide and privacy
   policy.
 
+[1.2.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.2.0
 [1.1.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.1.0
 [1.0.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.0.0

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "PluginProcessor.h"
-#include "EPianoVoice.h"
+#include "GuideVoice.h"
 #include "PluginEditor.h"
 
 namespace
@@ -85,7 +85,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     unitFloat (ParamIDs::gate, "Gate", 0.1f, 0.55f);
     layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::velocity, 1 }, "Velocity", 1, 127, 96));
     unitFloat (ParamIDs::humanize, "Humanize", 0.0f, 0.3f);
-    choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars" }, 2);
+    choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars" }, 0);
+    choice (ParamIDs::fillStyle, "Fill Style", namesFrom (sgk::numFillStyles, sgk::fillStyleName), 0);
+    unitFloat (ParamIDs::strum, "Strum", 0.0f, 0.0f);
+    layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::octaveTop, 1 }, "Top Note +8va", false));
     choice (ParamIDs::playMode, "Play Mode", { "Host transport", "Hold a key" }, 0);
 
     // Tempo: follows the DAW by default, or runs at its own BPM.
@@ -100,6 +103,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
 
     // Sound
     layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::sound, 1 }, "Guide Sound", true));
+    choice (ParamIDs::soundType, "Guide Sound Type", namesFrom (numGuideSounds, guideSoundName), 0);
     unitFloat (ParamIDs::tone, "Tone", 0.0f, 0.5f);
     unitFloat (ParamIDs::reverb, "Reverb", 0.0f, 0.3f);
     layout.add (std::make_unique<AudioParameterFloat> (ParameterID { ParamIDs::volume, 1 }, "Volume",
@@ -117,11 +121,12 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
       apvts (*this, nullptr, "FaseGroovePiano", createLayout())
 {
     auto& toneParam = *apvts.getRawParameterValue (ParamIDs::tone);
+    auto& soundParam = *apvts.getRawParameterValue (ParamIDs::soundType);
 
     for (int i = 0; i < 24; ++i)
-        synth.addVoice (new EPianoVoice (toneParam));
+        synth.addVoice (new GuideVoice (toneParam, soundParam));
 
-    synth.addSound (new EPianoSound());
+    synth.addSound (new GuideSoundTag());
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         slotParams[(size_t) i] = apvts.getRawParameterValue (ParamIDs::slot (i));
@@ -168,6 +173,9 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.velocity = asInt (ParamIDs::velocity);
     s.humanize = raw (ParamIDs::humanize);
     s.fillEveryBars = fillChoices[juce::jlimit (0, 3, asInt (ParamIDs::fills))];
+    s.fillStyle = (sgk::FillStyle) juce::jlimit (0, sgk::numFillStyles - 1, asInt (ParamIDs::fillStyle));
+    s.strum = raw (ParamIDs::strum);
+    s.octaveTop = raw (ParamIDs::octaveTop) > 0.5f;
     s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
     s.riffDensity = raw (ParamIDs::riffDensity);
