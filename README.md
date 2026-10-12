@@ -59,7 +59,8 @@ page. Development builds are under **[Actions](https://github.com/wsx79/fasegroo
 
 | System | Package | Contents |
 |---|---|---|
-| Windows 10/11 (64-bit) | `FaseGroovePiano-Windows.zip` | VST3 + Standalone |
+| **Windows 10/11 (64-bit)** | **`FaseGroovePiano-Windows-Setup.exe`** | **Installer: choose VST3, Standalone or both** |
+| Windows 10/11 (64-bit) | `FaseGroovePiano-Windows.zip` | VST3 + Standalone (manual install) |
 | macOS 10.13+ (Intel & Apple Silicon) | `FaseGroovePiano-macOS.zip` | VST3 + AU + Standalone |
 | Linux | `FaseGroovePiano-Linux.zip` | VST3 + Standalone |
 
@@ -172,6 +173,7 @@ Source/PluginEditor.*         user interface and credits page
 Source/CircleOfFifths.*       interactive circle of fifths
 Source/Branding.*             logo, name, links
 Resources/                    app logo (SVG), icon, FS PITCH logo
+installer/windows/            Windows installer (Inno Setup script, icon, wizard images, texts)
 tests/EngineTests.cpp         engine tests (no JUCE dependency)
 ```
 

@@ -1,0 +1,23 @@
+﻿Fase Groove Piano è installato!
+
+PLUGIN VST3
+- Apri la tua DAW e rifai la scansione dei plugin se non lo trova da sola.
+- Carica "Fase Groove Piano" come STRUMENTO su una traccia MIDI/strumento.
+- Installato in: C:\Program Files\Common Files\VST3\Fase Groove Piano.vst3
+
+APP STANDALONE
+- Avviala dal menu Start. Non c'è una DAW: premi PREVIEW oppure usa
+  Play mode -> Hold a key per sentire i groove.
+
+PRIMI PASSI
+1. Carica una progressione (es. "Dorian Vamp i - IV") e un groove (es. "Soulful Push").
+2. Premi PREVIEW.
+3. Trascina "DRAG MIDI TO DAW" sulla traccia del tuo piano preferito.
+
+Guida di utilizzo: https://github.com/wsx79/fasegroovepiano/blob/main/docs/GUIDA.md
+
+Fase Groove Piano è gratuito e open source. Se ti piace puoi supportarlo:
+Ko-fi: https://ko-fi.com/fabios1979  -  PayPal: https://paypal.me/fabios79
+Ascolta la mia musica: https://open.spotify.com/artist/29iQGuXML8LEw3xRp1dNRP
+
+Grazie! - Fabio 'Pitch' Serra

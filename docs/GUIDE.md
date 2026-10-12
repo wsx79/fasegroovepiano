@@ -24,6 +24,24 @@ your DAW** and play it with your favourite piano, Rhodes or synth.
 
 ## 1. Installation
 
+### Windows: the installer (easiest)
+
+1. Download **`FaseGroovePiano-Windows-Setup.exe`** from the
+   [latest release](https://github.com/wsx79/fasegroovepiano/releases/latest).
+2. Run it. If Windows shows *"Windows protected your PC"*, click **More info → Run anyway**
+   (the installer is free and open source but not signed with a paid certificate).
+3. Choose what to install:
+   - **VST3 plug-in + Standalone app** (recommended)
+   - **VST3 plug-in only** (for your DAW)
+   - **Standalone app only** (no DAW needed)
+   - or a custom selection.
+4. Done: the VST3 goes into `C:\Program Files\Common Files\VST3`, the app gets a Start-menu
+   shortcut (and a desktop one if you tick it). Rescan plug-ins in your DAW.
+
+To uninstall: **Settings → Apps → Fase Groove Piano → Uninstall**.
+
+### Manual installation (zip, all systems)
+
 Download the zip for your system (see the [README](../README.md#download)) and unzip it.
 
 | System | File | Copy it to |

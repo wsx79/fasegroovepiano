@@ -6,6 +6,14 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-10-12
+
+### Added
+- **Windows installer** (`FaseGroovePiano-Windows-Setup.exe`): choose *VST3 + Standalone*,
+  *VST3 only*, *Standalone only* or a custom selection. It installs the VST3 in the standard
+  folder, adds Start-menu (and optional desktop) shortcuts, shows the license and a short
+  getting-started page, speaks English and Italian, and uninstalls from *Settings → Apps*.
+
 ## [1.2.0] - 2026-10-12
 
 ### Added
@@ -77,6 +85,7 @@ First public release.
 - **CREDITS** page, app logo, donations (Ko-fi, PayPal), AGPLv3 license, user guide and privacy
   policy.
 
+[1.3.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.3.0
 [1.2.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.2.0
 [1.1.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.1.0
 [1.0.0]: https://github.com/wsx79/fasegroovepiano/releases/tag/v1.0.0

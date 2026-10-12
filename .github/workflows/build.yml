@@ -89,10 +89,23 @@ jobs:
             (cd dist && zip -qry "../${{ matrix.package }}.zip" .)
           fi
 
+      - name: Windows installer (Inno Setup)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path CMakeLists.txt -Pattern 'project\(FaseGroovePiano VERSION ([0-9.]+)').Matches[0].Groups[1].Value
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          & $iscc "/DAppVersion=$version" "/DBuildDir=$env:GITHUB_WORKSPACE\build\FaseGroovePiano_artefacts\Release" "/DRepoDir=$env:GITHUB_WORKSPACE" installer\windows\FaseGroovePiano.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item installer-output\FaseGroovePiano-Windows-Setup.exe .
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.package }}
-          path: ${{ matrix.package }}.zip
+          path: |
+            ${{ matrix.package }}.zip
+            FaseGroovePiano-Windows-Setup.exe
 
   release:
     name: Publish release
@@ -115,5 +128,7 @@ jobs:
           tag_name: ${{ inputs.release_tag || github.ref_name }}
           target_commitish: ${{ github.sha }}
           name: Fase Groove Piano ${{ inputs.release_tag || github.ref_name }}
-          files: packages/*.zip
+          files: |
+            packages/*.zip
+            packages/*.exe
           body_path: release-notes.md

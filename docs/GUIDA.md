@@ -24,6 +24,25 @@ suonarla col tuo piano, Rhodes o synth preferito.
 
 ## 1. Installazione
 
+### Windows: l'installer (il modo più semplice)
+
+1. Scarica **`FaseGroovePiano-Windows-Setup.exe`** dall'
+   [ultima release](https://github.com/wsx79/fasegroovepiano/releases/latest).
+2. Avvialo. Se Windows mostra *"PC protetto da Windows"*, clicca **Ulteriori informazioni →
+   Esegui comunque** (l'installer è gratuito e open source ma non è firmato con un certificato a
+   pagamento).
+3. Scegli cosa installare:
+   - **Plugin VST3 + app Standalone** (consigliato)
+   - **Solo plugin VST3** (per la tua DAW)
+   - **Solo app Standalone** (senza DAW)
+   - oppure una selezione personalizzata.
+4. Fatto: il VST3 va in `C:\Program Files\Common Files\VST3`, l'app compare nel menu Start (e sul
+   desktop, se spunti l'opzione). Rifai la scansione dei plugin nella DAW.
+
+Per disinstallare: **Impostazioni → App → Fase Groove Piano → Disinstalla**.
+
+### Installazione manuale (zip, tutti i sistemi)
+
 Scarica lo zip del tuo sistema (vedi il [README](../README.it.md#download)) ed estrailo.
 
 | Sistema | File | Dove copiarlo |
