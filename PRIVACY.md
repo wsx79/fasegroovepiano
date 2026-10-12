@@ -1,34 +1,34 @@
 # Privacy – Fase Groove Piano
 
-*Ultimo aggiornamento: 12 ottobre 2026*
+*Last updated: 12 October 2026 · 🇮🇹 [Versione italiana](PRIVACY.it.md)*
 
-Fase Groove Piano rispetta la tua privacy nel modo più semplice: **non raccoglie nulla**.
+Fase Groove Piano respects your privacy in the simplest possible way: **it collects nothing**.
 
-## In breve
+## In short
 
-- **Nessun dato personale** raccolto, salvato o inviato.
-- **Nessuna connessione a internet**: il plugin non contiene codice di rete, analytics,
-  telemetria, pubblicità, controllo licenze o aggiornamenti automatici.
-- **Nessun account** e nessuna registrazione.
+- **No personal data** is collected, stored or sent.
+- **No internet connection**: the plug-in contains no networking code, analytics, telemetry,
+  ads, license checks or automatic updates.
+- **No account** and no registration.
 
-## Cosa resta sul tuo computer
+## What stays on your computer
 
-| Cosa | Dove | Perché |
+| What | Where | Why |
 |---|---|---|
-| Impostazioni del plugin | Dentro il progetto della tua DAW | Per ritrovare le tue impostazioni quando riapri il progetto (le salva la DAW, non il plugin). |
-| Clip MIDI trascinate | `Documenti/Fase Groove Piano/` | Il trascinamento verso la DAW ha bisogno di un file reale. Puoi cancellarli quando vuoi. |
-| File `.mid` salvati con *Save .mid…* | Dove scegli tu | Su tua richiesta. |
-| Impostazioni audio/MIDI della versione Standalone | Cartella impostazioni utente del sistema | Le gestisce il framework JUCE per ricordare la scheda audio scelta. |
+| Plug-in settings | Inside your DAW project | So you get your settings back when you reopen the project (saved by the DAW, not by the plug-in). |
+| Dragged MIDI clips | `Documents/Fase Groove Piano/` | Dragging to the DAW needs a real file. You can delete them at any time. |
+| `.mid` files saved with *Save .mid…* | Wherever you choose | At your request. |
+| Audio/MIDI settings of the Standalone app | Your system's user settings folder | Handled by the JUCE framework to remember your audio interface. |
 
-Nessuno di questi file lascia il tuo computer.
+None of these files ever leaves your computer.
 
-## Link esterni
+## External links
 
-Nella pagina **CREDITS** ci sono i pulsanti *SOURCE CODE* (GitHub), *DONATE: Ko-fi* e
-*DONATE: PayPal*. Si aprono **solo se li clicchi**, nel tuo browser: da quel momento valgono le
-privacy policy di quei siti. Le donazioni sono gestite interamente da Ko-fi o PayPal; l'autore
-non riceve i tuoi dati di pagamento.
+The **CREDITS** page has *SOURCE CODE* (GitHub), *DONATE: Ko-fi* and *DONATE: PayPal* buttons.
+They open **only if you click them**, in your browser; from then on those sites' privacy
+policies apply. Donations are handled entirely by Ko-fi or PayPal; the author never receives your
+payment details.
 
-## Contatti
+## Contact
 
-Per domande apri una *issue* su [github.com/wsx79/fasegroovepiano](https://github.com/wsx79/fasegroovepiano/issues).
+For questions, open an *issue* at [github.com/wsx79/fasegroovepiano](https://github.com/wsx79/fasegroovepiano/issues).

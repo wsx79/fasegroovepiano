@@ -17,7 +17,7 @@ fi
 cat <<NOTES
 **Fase Groove Piano** – funky piano grooves for soulful, deep & jackin' house, by Fabio 'Pitch' Serra.
 
-## Novità / What's new
+## What's new
 $changes
 
 ## Download
@@ -28,9 +28,9 @@ $changes
 | macOS 10.13+ (Intel & Apple Silicon) | \`FaseGroovePiano-macOS.zip\` – VST3 + AU + Standalone |
 | Linux | \`FaseGroovePiano-Linux.zip\` – VST3 + Standalone |
 
-Installation and user guide (Italian): \`GUIDA.md\` inside the zip, or the README.
+User guide inside the zip: \`GUIDE.md\` (English) · \`GUIDA.md\` (Italiano).
 macOS: the plug-in is not notarized – if it is blocked, run \`xattr -cr\` on it (see the guide).
-Full history: [CHANGELOG.md](https://github.com/wsx79/fasegroovepiano/blob/main/CHANGELOG.md)
+Full history: [CHANGELOG](https://github.com/wsx79/fasegroovepiano/blob/main/CHANGELOG.md) · [Novità in italiano](https://github.com/wsx79/fasegroovepiano/blob/main/CHANGELOG.it.md)
 
 Free & open source (GNU AGPL v3). Support the project: [Ko-fi](https://ko-fi.com/fabios1979) · [PayPal](https://paypal.me/fabios79)
 NOTES

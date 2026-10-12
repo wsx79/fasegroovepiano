@@ -80,8 +80,9 @@ jobs:
             [ -d "$dir" ] && cp -R "$dir" "$GITHUB_WORKSPACE/dist/"
           done
           cd "$GITHUB_WORKSPACE"
-          cp README.md CHANGELOG.md LICENSE PRIVACY.md THIRD_PARTY_NOTICES.md dist/
-          cp docs/GUIDA.md dist/GUIDA.md
+          cp README.md README.it.md CHANGELOG.md CHANGELOG.it.md LICENSE \
+             PRIVACY.md PRIVACY.it.md THIRD_PARTY_NOTICES.md THIRD_PARTY_NOTICES.it.md dist/
+          cp docs/GUIDE.md docs/GUIDA.md dist/
           if [ "$RUNNER_OS" = "Windows" ]; then
             7z a "${{ matrix.package }}.zip" ./dist/*
           else

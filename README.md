@@ -1,173 +1,176 @@
 <p align="center"><img src="docs/logo.png" alt="Fase Groove Piano" width="720"></p>
 
 <p align="center">
-  <b>Giri di piano funky per soulful &amp; deep house, pronti da trascinare nella tua DAW.</b><br>
-  by <b>Fabio 'Pitch' Serra</b> · VST3 / AU · Windows &amp; macOS · gratuito e open source
+  <b>Funky piano grooves for soulful, deep &amp; jackin' house, ready to drag into your DAW.</b><br>
+  by <b>Fabio 'Pitch' Serra</b> · VST3 / AU · Windows &amp; macOS · free and open source
 </p>
 
+<p align="center"><b>🇬🇧 English</b> · <a href="README.it.md">🇮🇹 Italiano</a></p>
+
 <p align="center">
-  <a href="docs/GUIDA.md"><b>📖 Guida di utilizzo</b></a> ·
-  <a href="CHANGELOG.md">🆕 Novità</a> ·
+  <a href="docs/GUIDE.md"><b>📖 User guide</b></a> ·
+  <a href="CHANGELOG.md">🆕 What's new</a> ·
   <a href="#download">⬇️ Download</a> ·
-  <a href="#supporta-il-progetto">☕ Supporta il progetto</a> ·
-  <a href="#crediti">Crediti</a> ·
+  <a href="#support-the-project">☕ Support the project</a> ·
+  <a href="#credits">Credits</a> ·
   <a href="PRIVACY.md">Privacy</a> ·
-  <a href="#licenza">Licenza</a>
+  <a href="#license">License</a>
 </p>
 
 ---
 
-**Fase Groove Piano** è uno strumento VST3/AU che **crea MIDI** di giri di piano: scegli
-tonalità, scala e progressione e ottieni accordi estesi (9ª, 11ª, 13ª), voicing da tastierista,
-groove sincopati con swing, basso alla mano sinistra e fill pentatonici. Lo ascolti col suono
-guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rhodes o synth.
+**Fase Groove Piano** is a VST3/AU instrument that **writes MIDI** piano parts: pick a key, a
+scale and a progression and you get extended chords (9ths, 11ths, 13ths), keyboard-player
+voicings, syncopated grooves with swing, a left-hand bass and pentatonic fills. Listen with the
+guide sound, then **drag it into your DAW as a MIDI clip** and play it with your own piano,
+Rhodes or synth.
 
-![Interfaccia](docs/screenshot.png)
+![Interface](docs/screenshot.png)
 
-## Funzioni
+## Features
 
-- 🎹 **Armonia:** 12 tonalità × 8 scale/modi (Maggiore, Dorian, Minore, Mixolydian, Lydian,
-  Phrygian, Minore armonica e melodica). Accordi diatonici a 3–6 voci con tensioni gestite in automatico.
-- 🎛️ **Voicing:** Close, Drop 2, Rootless, Wide (due mani), Quartal, con voice leading automatico.
-- 🔁 **Progressioni:** 1–8 accordi, 19 preset (tra cui le progressioni sul circolo delle quinte)
-  e **DICE** per progressioni casuali ma musicali.
-- ⭕ **Circolo delle quinte** interattivo, con il percorso della progressione.
-- 🥁 **26 groove** a due mani (offbeat stabs, push, clav chops, ghost notes, gospel, garage,
-  disco, **jackin' house**…) più **NEW RIFF**, che genera riff funky casuali sul momento.
-- ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,
-  randomizzare (RND) e bloccare (LOCK), e **BASS ON/OFF** al volo.
-- 🔍 **Interfaccia ridimensionabile** e finestra mini durante il trascinamento della clip.
-- 🎬 **Sezioni del brano:** Intro, Main, Break, Build-up, Drop, Outro, automatizzabili, ed
-  esportazione di un **arrangiamento completo di 60 battute** con i marker.
-- ⏱️ **Tempo:** agganciato alla DAW o impostato a mano.
-- 📤 **MIDI:** trascina la clip nella DAW (completa, solo accordi, solo basso), salvala in
-  `.mid` oppure usa il MIDI in tempo reale (basso su un canale separato, se vuoi).
-- 🔊 **Suono guida** (piano elettrico) e **PREVIEW**, per ascoltare il riff anche a DAW ferma.
+- 🎹 **Harmony:** 12 keys × 8 scales/modes (Major, Dorian, Minor, Mixolydian, Lydian, Phrygian,
+  Harmonic and Melodic Minor). Diatonic chords with 3–6 voices; clashing tensions are handled
+  automatically.
+- 🎛️ **Voicings:** Close, Drop 2, Rootless, Wide (two hands), Quartal, with automatic voice leading.
+- 🔁 **Progressions:** 1–8 chords, 19 presets (including circle-of-fifths progressions) and
+  **DICE** for random but musical progressions.
+- ⭕ Interactive **circle of fifths** showing the path of your progression.
+- 🥁 **26 two-hand grooves** (offbeat stabs, pushes, clav chops, ghost notes, gospel, garage,
+  disco, **jackin' house**…) plus **NEW RIFF**, a random funky riff generator.
+- ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and
+  lock (LOCK), plus a quick **BASS ON/OFF**.
+- 🔍 **Resizable UI** and a mini window while you drag a clip.
+- 🎬 **Song sections:** Intro, Main, Break, Build-up, Drop, Outro (automatable), plus a **full
+  60-bar arrangement** export with markers.
+- ⏱️ **Tempo:** synced to the DAW or set by hand.
+- 📤 **MIDI:** drag the clip into your DAW (full, chords only, bass only), save it as `.mid`, or
+  use live MIDI out (bass on its own channel if you like).
+- 🔊 **Guide sound** (electric piano) and **PREVIEW** to hear the riff with the DAW stopped.
 
-Tutti i dettagli sono nella **[guida di utilizzo](docs/GUIDA.md)**.
+Everything is explained in the **[user guide](docs/GUIDE.md)**.
 
 ## Download
 
-Le versioni compilate si trovano nella pagina
-**[Releases](https://github.com/wsx79/fasegroovepiano/releases)** del repository. Le build di
-sviluppo si trovano in **[Actions](https://github.com/wsx79/fasegroovepiano/actions) → Build → Artifacts**.
+Ready-to-use builds are on the **[Releases](https://github.com/wsx79/fasegroovepiano/releases/latest)**
+page. Development builds are under **[Actions](https://github.com/wsx79/fasegroovepiano/actions) → Build → Artifacts**.
 
-| Sistema | Pacchetto | Contenuto |
+| System | Package | Contents |
 |---|---|---|
-| Windows 10/11 (64 bit) | `FaseGroovePiano-Windows.zip` | VST3 + Standalone |
-| macOS 10.13+ (Intel e Apple Silicon) | `FaseGroovePiano-macOS.zip` | VST3 + AU + Standalone |
+| Windows 10/11 (64-bit) | `FaseGroovePiano-Windows.zip` | VST3 + Standalone |
+| macOS 10.13+ (Intel & Apple Silicon) | `FaseGroovePiano-macOS.zip` | VST3 + AU + Standalone |
 | Linux | `FaseGroovePiano-Linux.zip` | VST3 + Standalone |
 
-Per l'installazione segui la [guida](docs/GUIDA.md#1-installazione).
+To install, follow the [guide](docs/GUIDE.md#1-installation).
 
-## Supporta il progetto
+## Support the project
 
-Fase Groove Piano è **gratuito**. Se ti è utile e vuoi sostenerne lo sviluppo puoi fare una
-donazione libera:
+Fase Groove Piano is **free**. If you find it useful and want to support its development, you can
+make a donation of any amount:
 
 <p align="center">
   <a href="https://ko-fi.com/fabios1979"><b>☕ Ko-fi – ko-fi.com/fabios1979</b></a> ·
   <a href="https://paypal.me/fabios79"><b>💙 PayPal – paypal.me/fabios79</b></a>
 </p>
 
-Le stesse donazioni si raggiungono dal plugin: **CREDITS → DONATE: Ko-fi / DONATE: PayPal**.
+The same links are in the plug-in: **CREDITS → DONATE: Ko-fi / DONATE: PayPal**.
 
-Grazie! Anche una stella ⭐ al repository o una condivisione aiutano tantissimo.
+Thank you! A star ⭐ on the repository or a share helps a lot too.
 
-## Crediti
+## Credits
 
-<p align="center"><img src="docs/credits.png" alt="Crediti" width="440"></p>
+<p align="center"><img src="docs/credits.png" alt="Credits" width="440"></p>
 
 | | |
 |---|---|
-| **Idea, direzione musicale e sound** | **Fabio 'Pitch' Serra** – DJ & Producer |
-| **Codice** | **Claude** (Anthropic) – assistente di programmazione AI |
+| **Idea, music direction and sound** | **Fabio 'Pitch' Serra** – DJ & Producer |
+| **Code** | **Claude** (Anthropic) – AI coding assistant |
 | **Framework** | [JUCE](https://juce.com) |
 
-Nel plugin i crediti si aprono col pulsante **CREDITS** in alto a sinistra.
+In the plug-in, open the credits with the **CREDITS** button at the top left.
 
 ## Privacy
 
-Il plugin **non raccoglie dati e non si collega a internet**. Tutto resta sul tuo computer.
-Vedi la [privacy policy](PRIVACY.md).
+The plug-in **collects no data and never connects to the internet**. Everything stays on your
+computer. See the [privacy policy](PRIVACY.md).
 
-## Licenza
+## License
 
-Fase Groove Piano è **software libero**: puoi usarlo, studiarlo, modificarlo e ridistribuirlo
-secondo i termini della **GNU Affero General Public License v3.0 o successiva**
-([LICENSE](LICENSE)).
+Fase Groove Piano is **free software**: you can use, study, modify and redistribute it under the
+terms of the **GNU Affero General Public License v3.0 or later** ([LICENSE](LICENSE)).
 
-In pratica:
+In short:
 
-- puoi usarlo **gratis**, anche per musica commerciale: la licenza riguarda il codice, non i
-  brani che crei. Il MIDI e la musica che produci sono **tuoi**;
-- se distribuisci una versione modificata, devi pubblicarne il codice sorgente con la stessa licenza;
-- il software è fornito **"così com'è", senza garanzie**.
+- you can use it **for free**, including for commercial music: the license covers the code, not
+  the songs you make. The MIDI and the music you create are **yours**;
+- if you distribute a modified version, you must publish its source code under the same license;
+- the software is provided **"as is", without warranty**.
 
-Il nome **Fase Groove Piano**, il logo dell'app e il logo **FS PITCH** appartengono a
-Fabio 'Pitch' Serra e non sono coperti dalla licenza del codice. Se pubblichi una versione
-modificata, usa un nome e un logo diversi.
+The name **Fase Groove Piano**, the app logo and the **FS PITCH** logo belong to
+Fabio 'Pitch' Serra and are not covered by the code license. If you publish a modified version,
+please use a different name and logo.
 
-Componenti di terze parti (JUCE, VST 3 SDK) e marchi: vedi
+Third-party components (JUCE, VST 3 SDK) and trademarks: see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-*VST è un marchio registrato di Steinberg Media Technologies GmbH.*
+*VST is a registered trademark of Steinberg Media Technologies GmbH.*
 
 ---
 
-## Per sviluppatori
+## For developers
 
-### Compilare da sorgente
+### Building from source
 
-Servono CMake ≥ 3.22 e un compilatore C++17 (Visual Studio 2022 su Windows, Xcode su macOS).
-JUCE 8 viene scaricato automaticamente.
+You need CMake ≥ 3.22 and a C++17 compiler (Visual Studio 2022 on Windows, Xcode on macOS).
+JUCE 8 is downloaded automatically.
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release --parallel
-ctest --test-dir build -C Release        # test del motore musicale
+ctest --test-dir build -C Release        # music engine tests
 ```
 
-I plugin compilati si trovano in `build/FaseGroovePiano_artefacts/Release/`.
-Per usare una copia locale di JUCE: `-DJUCE_DIR=/percorso/JUCE`.
+The built plug-ins are in `build/FaseGroovePiano_artefacts/Release/`.
+To use a local copy of JUCE: `-DJUCE_DIR=/path/to/JUCE`.
 
-Su Linux servono anche: `libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev
+On Linux you also need: `libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev
 libxext-dev libfreetype-dev libfontconfig1-dev libxcomposite-dev`.
 
-### Pubblicare una release
+### Publishing a release
 
-1. Aggiungi in cima a [CHANGELOG.md](CHANGELOG.md) la sezione della nuova versione
-   (es. `## [1.2.0] - data`) e aggiorna `VERSION` in `CMakeLists.txt`, guida e README.
-2. Su GitHub apri **Actions → Build → Run workflow**, scrivi la versione in *release_tag*
-   (es. `v1.2.0`) e avvia. GitHub compila per Windows, macOS e Linux e pubblica una Release con
-   i tre zip. Il testo della release viene preso in automatico dalla sezione del changelog.
+1. Add the new version at the top of [CHANGELOG.md](CHANGELOG.md) (English, used for the release
+   text) and [CHANGELOG.it.md](CHANGELOG.it.md) (e.g. `## [1.2.0] - date`), and update `VERSION`
+   in `CMakeLists.txt`, the guides (EN/IT) and the READMEs (EN/IT).
+2. On GitHub open **Actions → Build → Run workflow**, enter the version in *release_tag*
+   (e.g. `v1.2.0`) and run it. GitHub builds Windows, macOS and Linux and publishes a Release with
+   the three zips; the release text is taken from the English changelog section.
 
-In alternativa al punto 2 puoi pubblicare un tag:
+Instead of step 2 you can also push a tag:
 
 ```bash
-git tag v1.1.0 && git push origin v1.1.0
+git tag v1.2.0 && git push origin v1.2.0
 ```
 
-Per correggere il testo di una release già pubblicata senza ricompilare:
-**Actions → Update release notes → Run workflow** con il tag (es. `v1.1.0`).
+To fix the text of an existing release without rebuilding:
+**Actions → Update release notes → Run workflow** with the tag (e.g. `v1.1.0`).
 
-### Struttura del codice
+### Code layout
 
 ```
-Source/engine/Theory.*        scale, accordi diatonici, nomi accordi, voicing e voice leading (C++ puro)
-Source/engine/GrooveEngine.*  pattern ritmici, progressioni, swing/humanize, fill → eventi nota
-Source/engine/Generators.*    riff casuali, progressioni casuali, sezioni del brano, arrangiamento
-Source/EPianoVoice.h          suono guida (piano elettrico FM)
-Source/PluginProcessor.*      parametri, tempo/sincronizzazione, MIDI in/out, esportazione clip
-Source/PluginEditor.*         interfaccia grafica e pagina crediti
-Source/CircleOfFifths.*       circolo delle quinte interattivo
-Source/Branding.*             logo, nome, link
-Resources/                    logo dell'app (SVG), icona, logo FS PITCH
-tests/EngineTests.cpp         test del motore (nessuna dipendenza da JUCE)
+Source/engine/Theory.*        scales, diatonic chords, chord names, voicings and voice leading (pure C++)
+Source/engine/GrooveEngine.*  rhythm patterns, progressions, swing/humanize, fills -> note events
+Source/engine/Generators.*    random riffs, random progressions, song sections, arrangement, A/B/C/D parts
+Source/EPianoVoice.h          guide sound (FM electric piano)
+Source/PluginProcessor.*      parameters, tempo sync, MIDI in/out, clip export, user pattern
+Source/PluginEditor.*         user interface and credits page
+Source/CircleOfFifths.*       interactive circle of fifths
+Source/Branding.*             logo, name, links
+Resources/                    app logo (SVG), icon, FS PITCH logo
+tests/EngineTests.cpp         engine tests (no JUCE dependency)
 ```
 
-Per aggiungere un groove, aggiungi una riga in `groovePatterns()` (`GrooveEngine.cpp`):
-ogni carattere è un sedicesimo: `X` accento, `x` colpo, `g` ghost note, `>` anticipo (suona
-l'accordo successivo), `=` tieni, `.` pausa.
+To add a groove, add a line to `groovePatterns()` in `GrooveEngine.cpp`: each character is a
+16th note: `X` accent, `x` hit, `g` ghost note, `>` push (plays the next chord early),
+`=` hold, `.` rest.
 
-I link di donazione e del codice sorgente sono in `Source/Branding.h` (`kofiUrl`, `paypalUrl`,
-`sourceUrl`). Se un link è vuoto, il pulsante corrispondente viene nascosto.
+Donation and source-code links live in `Source/Branding.h` (`kofiUrl`, `paypalUrl`, `sourceUrl`);
+an empty link hides its button.

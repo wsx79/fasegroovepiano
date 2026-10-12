@@ -1,5 +1,7 @@
 # Guida di utilizzo – Fase Groove Piano
 
+*🇬🇧 [English version](GUIDE.md)*
+
 <p align="center"><img src="logo.png" alt="Fase Groove Piano" width="560"></p>
 
 Fase Groove Piano **crea MIDI** di giri di piano funky per soulful e deep house: scegli tonalità,
@@ -21,7 +23,7 @@ suonarla col tuo piano, Rhodes o synth preferito.
 
 ## 1. Installazione
 
-Scarica lo zip del tuo sistema (vedi il [README](../README.md#download)) ed estrailo.
+Scarica lo zip del tuo sistema (vedi il [README](../README.it.md#download)) ed estrailo.
 
 | Sistema | File | Dove copiarlo |
 |---|---|---|
@@ -293,8 +295,8 @@ lancia anche il comando `xattr` indicato sopra.
 Sì, tutti i parametri (compreso il riff casuale) vengono salvati con il progetto della DAW.
 
 **Cosa c'è di nuovo nell'ultima versione?**
-Trovi tutte le novità, versione per versione, nel [changelog](../CHANGELOG.md) e nella pagina
+Trovi tutte le novità, versione per versione, nel [changelog](../CHANGELOG.it.md) e nella pagina
 [Releases](https://github.com/wsx79/fasegroovepiano/releases).
 
 **Il plugin si collega a internet o raccoglie dati?**
-No. Vedi la [privacy policy](../PRIVACY.md).
+No. Vedi la [privacy policy](../PRIVACY.it.md).

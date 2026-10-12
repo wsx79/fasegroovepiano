@@ -1,19 +1,21 @@
-# Licenze e marchi di terze parti
+# Third-party licenses and trademarks
 
-Fase Groove Piano è distribuito con licenza **GNU Affero General Public License v3.0 o
-successiva** (vedi [LICENSE](LICENSE)). Usa i seguenti componenti di terze parti.
+*🇮🇹 [Versione italiana](THIRD_PARTY_NOTICES.it.md)*
+
+Fase Groove Piano is distributed under the **GNU Affero General Public License v3.0 or later**
+(see [LICENSE](LICENSE)). It uses the following third-party components.
 
 ## JUCE
 
-- Sito: https://juce.com – Codice: https://github.com/juce-framework/JUCE
+- Website: https://juce.com – Source: https://github.com/juce-framework/JUCE
 - Copyright © Raw Material Software Limited.
-- Usato secondo i termini della **GNU AGPLv3**, compatibile con la licenza di questo progetto.
-  JUCE viene scaricato in fase di compilazione e non è incluso in questo repository.
+- Used under the terms of the **GNU AGPLv3**, which is compatible with this project's license.
+  JUCE is downloaded at build time and is not included in this repository.
 
-## VST 3 SDK (incluso in JUCE)
+## VST 3 SDK (included in JUCE)
 
 - Copyright © 2025, Steinberg Media Technologies GmbH.
-- Licenza **MIT**:
+- **MIT** license:
 
 > Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 > and associated documentation files (the "Software"), to deal in the Software without
@@ -30,16 +32,16 @@ successiva** (vedi [LICENSE](LICENSE)). Usa i seguenti componenti di terze parti
 > DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-## Marchi
+## Trademarks
 
-- **VST** è un marchio registrato di Steinberg Media Technologies GmbH.
-- **Audio Units**, **AU**, **Logic Pro**, **GarageBand** e **macOS** sono marchi di Apple Inc.
-- **Windows** è un marchio di Microsoft Corporation.
-- Ableton Live, FL Studio, Reaper, Bitwig Studio, Cubase e Studio One sono marchi dei rispettivi
-  proprietari e sono citati solo per spiegare la compatibilità.
+- **VST** is a registered trademark of Steinberg Media Technologies GmbH.
+- **Audio Units**, **AU**, **Logic Pro**, **GarageBand** and **macOS** are trademarks of Apple Inc.
+- **Windows** is a trademark of Microsoft Corporation.
+- Ableton Live, FL Studio, Reaper, Bitwig Studio, Cubase and Studio One are trademarks of their
+  respective owners and are mentioned only to explain compatibility.
 
-## Logo dell'artista
+## Artist logo
 
-Il logo **FS PITCH / Fabio 'Pitch' Serra** (`Resources/fs_pitch_logo.png`) è proprietà di
-Fabio 'Pitch' Serra. È incluso per i crediti dell'app e **non** è coperto dalla licenza AGPL del
-codice: non può essere riutilizzato in altri progetti senza autorizzazione.
+The **FS PITCH / Fabio 'Pitch' Serra** logo (`Resources/fs_pitch_logo.png`) belongs to
+Fabio 'Pitch' Serra. It is included for the app credits and is **not** covered by the code's AGPL
+license: it may not be reused in other projects without permission.
