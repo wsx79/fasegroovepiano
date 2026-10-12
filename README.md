@@ -44,8 +44,9 @@ Tutti i dettagli sono nella **[guida di utilizzo](docs/GUIDA.md)**.
 
 ## Download
 
-Le versioni compilate si trovano nella pagina **Releases** del repository. Le build di sviluppo
-si trovano in **Actions → Build → Artifacts**.
+Le versioni compilate si trovano nella pagina
+**[Releases](https://github.com/wsx79/fasegroovepiano/releases)** del repository. Le build di
+sviluppo si trovano in **[Actions](https://github.com/wsx79/fasegroovepiano/actions) → Build → Artifacts**.
 
 | Sistema | Pacchetto | Contenuto |
 |---|---|---|

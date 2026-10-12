@@ -31,4 +31,4 @@ non riceve i tuoi dati di pagamento.
 
 ## Contatti
 
-Per domande apri una *issue* sul repository GitHub del progetto.
+Per domande apri una *issue* su [github.com/wsx79/fasegroovepiano](https://github.com/wsx79/fasegroovepiano/issues).

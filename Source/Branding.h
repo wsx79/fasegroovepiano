@@ -14,7 +14,7 @@ namespace Branding
     inline constexpr const char* tagline   = "funky piano grooves for soulful & deep house";
     inline constexpr const char* artist    = "Fabio 'Pitch' Serra";
     inline constexpr const char* licence   = "Free & open source - GNU AGPL v3";
-    inline constexpr const char* sourceUrl = "https://github.com/wsx79/Pianovst";
+    inline constexpr const char* sourceUrl = "https://github.com/wsx79/fasegroovepiano";
 
     /** Donation pages (an empty URL hides its button). */
     inline constexpr const char* kofiUrl   = "https://ko-fi.com/fabios1979";
