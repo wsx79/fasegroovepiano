@@ -18,15 +18,18 @@ Fase Groove Piano respects your privacy in the simplest possible way: **it colle
 | Plug-in settings | Inside your DAW project | So you get your settings back when you reopen the project (saved by the DAW, not by the plug-in). |
 | Dragged MIDI clips | `Documents/Fase Groove Piano/` | Dragging to the DAW needs a real file. You can delete them at any time. |
 | `.mid` files saved with *Save .mid…* | Wherever you choose | At your request. |
+| Interface language | `Fase Groove Piano.settings` in your system's user settings folder | So the plug-in speaks your language in every project. |
 | Audio/MIDI settings of the Standalone app | Your system's user settings folder | Handled by the JUCE framework to remember your audio interface. |
 
 None of these files ever leaves your computer.
 
 ## External links
 
-The **CREDITS** page has *SOURCE CODE* (GitHub), *DONATE: Ko-fi* and *DONATE: PayPal* buttons.
+The **OPTIONS → ABOUT** page has *SOURCE CODE* (GitHub), *DONATE: Ko-fi*, *DONATE: PayPal* and
+*SPOTIFY* buttons.
 They open **only if you click them**, in your browser; from then on those sites' privacy
-policies apply. Donations are handled entirely by Ko-fi or PayPal; the author never receives your
+policies apply. The language detection on first start only reads your computer's language setting, locally.
+Donations are handled entirely by Ko-fi or PayPal; the author never receives your
 payment details.
 
 ## Contact

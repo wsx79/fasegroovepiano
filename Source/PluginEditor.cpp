@@ -12,11 +12,25 @@ namespace
 
     void styleCaption (juce::Label& label, const juce::String& text)
     {
-        label.setText (text.toUpperCase(), juce::dontSendNotification);
+        label.setText (Localisation::upper (text), juce::dontSendNotification);
         label.setFont (font (11.0f, true));
         label.setColour (juce::Label::textColourId, Palette::dim);
         label.setJustificationType (juce::Justification::centredLeft);
         label.setInterceptsMouseClicks (false, false);
+    }
+
+    /** Translates a menu item; "4 bars" style items also work as number + word. */
+    juce::String translateItem (const juce::String& item)
+    {
+        const auto translated = tr (item);
+        if (translated != item || ! item.containsChar (' '))
+            return translated;
+
+        const auto number = item.upToFirstOccurrenceOf (" ", false, false);
+        if (! number.containsOnly ("0123456789/"))
+            return translated;
+
+        return number + " " + tr (item.fromFirstOccurrenceOf (" ", false, false));
     }
 
     void fillChoiceItems (juce::ComboBox& box, juce::RangedAudioParameter* param)
@@ -102,8 +116,8 @@ void GrooveLookAndFeel::drawToggleButton (juce::Graphics& g, juce::ToggleButton&
 }
 
 //==============================================================================
-Knob::Knob (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& caption)
-    : attachment (state, paramId, slider)
+Knob::Knob (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& captionText)
+    : caption (captionText), attachment (state, paramId, slider)
 {
     slider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 70, 16);
@@ -111,9 +125,14 @@ Knob::Knob (juce::AudioProcessorValueTreeState& state, const juce::String& param
     slider.setColour (juce::Slider::textBoxTextColourId, Palette::text);
     addAndMakeVisible (slider);
 
-    styleCaption (label, caption);
+    styleCaption (label, tr (caption));
     label.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (label);
+}
+
+void Knob::refreshText()
+{
+    label.setText (Localisation::upper (tr (caption)), juce::dontSendNotification);
 }
 
 void Knob::resized()
@@ -123,14 +142,30 @@ void Knob::resized()
     slider.setBounds (r);
 }
 
-Choice::Choice (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& caption)
+Choice::Choice (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& captionText)
+    : caption (captionText)
 {
     fillChoiceItems (box, state.getParameter (paramId));
+    for (int i = 0; i < box.getNumItems(); ++i)
+        englishItems.add (box.getItemText (i));
     attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (state, paramId, box);
     addAndMakeVisible (box);
 
     styleCaption (label, caption);
     addAndMakeVisible (label);
+    refreshText();
+}
+
+void Choice::refreshText()
+{
+    label.setText (Localisation::upper (tr (caption)), juce::dontSendNotification);
+
+    // getSelectedId() returns 0 once the shown text differs from the item, so read it first.
+    const int selected = box.getSelectedId();
+    for (int i = 0; i < englishItems.size(); ++i)
+        box.changeItemText (box.getItemId (i), translateItem (englishItems[i]));
+
+    box.setSelectedId (selected, juce::dontSendNotification);
 }
 
 void Choice::resized()
@@ -283,12 +318,12 @@ void PatternView::paint (juce::Graphics& g)
     auto drawRow = [&] (const std::string& line, float y, const juce::String& caption, juce::Colour colour, bool isBass)
     {
         g.setColour (Palette::dim);
-        g.drawText (caption, juce::Rectangle<float> (0.0f, y, labelW, rowH), juce::Justification::centredLeft);
+        g.drawFittedText (caption, juce::Rectangle<float> (0.0f, y, labelW - 2.0f, rowH).toNearestInt(), juce::Justification::centredLeft, 1, 0.6f);
 
         if (isBass && ! bassEnabled)
         {
             g.setColour (Palette::dim.withAlpha (0.6f));
-            g.drawText ("Bass off  -  click BASS to turn it back on",
+            g.drawText (tr ("Bass off  -  click BASS to turn it back on"),
                         juce::Rectangle<float> (labelW, y, area.getWidth() - labelW, rowH), juce::Justification::centred);
             return;
         }
@@ -325,44 +360,163 @@ void PatternView::paint (juce::Graphics& g)
         }
     };
 
-    drawRow (p.rightHand, headerHeight, "CHORDS", Palette::accent, false);
-    drawRow (p.leftHand, headerHeight + rowH, "BASS", Palette::accent2.brighter (0.2f), true);
+    drawRow (p.rightHand, headerHeight, tr ("CHORDS"), Palette::accent, false);
+    drawRow (p.leftHand, headerHeight + rowH, tr ("BASS"), Palette::accent2.brighter (0.2f), true);
 }
 
 //==============================================================================
-AboutOverlay::AboutOverlay() : artist (Branding::artistLogo())
+OptionsOverlay::OptionsOverlay() : artist (Branding::artistLogo())
 {
     setInterceptsMouseClicks (true, true);
 
-    sourceButton.setColour (juce::TextButton::buttonColourId, Palette::background);
-    sourceButton.setColour (juce::TextButton::textColourOffId, Palette::text);
-    sourceButton.onClick = [] { juce::URL (Branding::sourceUrl).launchInDefaultBrowser(); };
-    addAndMakeVisible (sourceButton);
+    auto styleTab = [this] (juce::TextButton& b)
+    {
+        b.setClickingTogglesState (false);
+        b.setColour (juce::TextButton::buttonColourId, Palette::background);
+        b.setColour (juce::TextButton::buttonOnColourId, Palette::accent);
+        b.setColour (juce::TextButton::textColourOffId, Palette::text);
+        b.setColour (juce::TextButton::textColourOnId, Palette::background);
+        addAndMakeVisible (b);
+    };
+    styleTab (settingsTab);
+    styleTab (aboutTab);
+    styleTab (closeButton);
+    settingsTab.onClick = [this] { selectTab (false); };
+    aboutTab.onClick    = [this] { selectTab (true); };
+    closeButton.onClick = [this] { setVisible (false); };
 
-    auto setUpDonate = [this] (juce::TextButton& b, const char* url, juce::Colour colour)
+    auto setUpLink = [this] (juce::TextButton& b, const char* url, juce::Colour colour, juce::Colour text)
     {
         b.setColour (juce::TextButton::buttonColourId, colour);
-        b.setColour (juce::TextButton::textColourOffId, Palette::background);
+        b.setColour (juce::TextButton::textColourOffId, text);
         b.onClick = [url] { juce::URL (url).launchInDefaultBrowser(); };
         addChildComponent (b);
-        b.setVisible (juce::String (url).isNotEmpty());
     };
+    setUpLink (sourceButton, Branding::sourceUrl, Palette::background, Palette::text);
+    setUpLink (kofiButton, Branding::kofiUrl, Palette::accent, Palette::background);
+    setUpLink (paypalButton, Branding::paypalUrl, Palette::accent2, Palette::background);
+    setUpLink (spotifyButton, Branding::spotifyUrl, juce::Colour (0xff1db954), Palette::background);
 
-    setUpDonate (kofiButton, Branding::kofiUrl, Palette::accent);
-    setUpDonate (paypalButton, Branding::paypalUrl, Palette::accent2);
+    // Settings tab
+    for (auto* l : { &languageLabel, &sizeLabel })
+    {
+        l->setFont (font (11.0f, true));
+        l->setColour (juce::Label::textColourId, Palette::dim);
+        addChildComponent (l);
+    }
+
+    for (int i = 0; i < Localisation::numLanguages; ++i)
+        languageBox.addItem (juce::String::fromUTF8 (Localisation::languageName (i)), i + 1);
+    languageBox.onChange = [this]
+    {
+        Localisation::setCurrent ((Localisation::Language) (languageBox.getSelectedItemIndex()));
+        if (onLanguageChanged != nullptr)
+            onLanguageChanged();
+    };
+    addChildComponent (languageBox);
+
+    for (int percent : { 60, 75, 90, 100, 110, 125, 150, 175, 200 })
+        sizeBox.addItem (juce::String (percent) + " %", percent);
+    sizeBox.onChange = [this]
+    {
+        if (onScaleChosen != nullptr && sizeBox.getSelectedId() > 0)
+            onScaleChosen (sizeBox.getSelectedId() / 100.0f);
+    };
+    addChildComponent (sizeBox);
+
+    shrinkToggle.onClick = [this] { if (onShrinkChanged != nullptr) onShrinkChanged (shrinkToggle.getToggleState()); };
+    addChildComponent (shrinkToggle);
+
+    refreshText();
+    selectTab (false);
 }
 
-void AboutOverlay::resized()
+void OptionsOverlay::show (bool about, float currentScale, bool shrinkWhileDragging)
 {
-    auto row = card().toNearestInt().reduced (36, 28).removeFromBottom (58).removeFromTop (30);
+    languageBox.setSelectedItemIndex ((int) Localisation::current(), juce::dontSendNotification);
 
-    juce::Array<juce::Component*> buttons { &sourceButton };
-    for (auto* b : { &kofiButton, &paypalButton })
+    int closest = 100;
+    for (int i = 0; i < sizeBox.getNumItems(); ++i)
+        if (std::abs (sizeBox.getItemId (i) - currentScale * 100.0f) < std::abs (closest - currentScale * 100.0f))
+            closest = sizeBox.getItemId (i);
+    sizeBox.setSelectedId (closest, juce::dontSendNotification);
+
+    shrinkToggle.setToggleState (shrinkWhileDragging, juce::dontSendNotification);
+    selectTab (about);
+    setVisible (true);
+    toFront (false);
+}
+
+void OptionsOverlay::refreshText()
+{
+    settingsTab.setButtonText (tr ("SETTINGS"));
+    aboutTab.setButtonText (tr ("ABOUT"));
+    closeButton.setButtonText (tr ("CLOSE"));
+    sourceButton.setButtonText (tr ("SOURCE CODE"));
+    kofiButton.setButtonText (tr ("DONATE: Ko-fi"));
+    paypalButton.setButtonText (tr ("DONATE: PayPal"));
+    spotifyButton.setButtonText (tr ("SPOTIFY"));
+    spotifyButton.setTooltip (tr ("Listen to my productions on Spotify"));
+    languageLabel.setText (Localisation::upper (tr ("Language")), juce::dontSendNotification);
+    sizeLabel.setText (Localisation::upper (tr ("Interface size")), juce::dontSendNotification);
+    shrinkToggle.setButtonText (tr ("Mini window while dragging"));
+    repaint();
+}
+
+void OptionsOverlay::selectTab (bool about)
+{
+    showingAbout = about;
+    settingsTab.setToggleState (! about, juce::dontSendNotification);
+    aboutTab.setToggleState (about, juce::dontSendNotification);
+
+    for (auto* c : std::initializer_list<juce::Component*> { &languageLabel, &languageBox, &sizeLabel, &sizeBox, &shrinkToggle })
+        c->setVisible (! about);
+
+    auto showLink = [about] (juce::Component& b, const char* url) { b.setVisible (about && juce::String (url).isNotEmpty()); };
+    showLink (sourceButton, Branding::sourceUrl);
+    showLink (kofiButton, Branding::kofiUrl);
+    showLink (paypalButton, Branding::paypalUrl);
+    showLink (spotifyButton, Branding::spotifyUrl);
+
+    resized();
+    repaint();
+}
+
+void OptionsOverlay::mouseUp (const juce::MouseEvent& e)
+{
+    if (! card().contains (e.position))
+        setVisible (false);
+}
+
+void OptionsOverlay::resized()
+{
+    auto inner = card().toNearestInt().reduced (24, 18);
+
+    auto tabs = inner.removeFromTop (30);
+    closeButton.setBounds (tabs.removeFromRight (100));
+    settingsTab.setBounds (tabs.removeFromLeft (150));
+    tabs.removeFromLeft (8);
+    aboutTab.setBounds (tabs.removeFromLeft (150));
+
+    // Settings tab
+    auto settings = inner.withTrimmedTop (40).reduced (40, 0);
+    languageLabel.setBounds (settings.removeFromTop (18));
+    languageBox.setBounds (settings.removeFromTop (30).withWidth (260));
+    settings.removeFromTop (22);
+    sizeLabel.setBounds (settings.removeFromTop (18));
+    sizeBox.setBounds (settings.removeFromTop (30).withWidth (260));
+    settings.removeFromTop (22);
+    shrinkToggle.setBounds (settings.removeFromTop (26).withWidth (360));
+
+    // About tab: link buttons above the footer
+    auto row = inner.withTrimmedBottom (26).removeFromBottom (30);
+    juce::Array<juce::Component*> buttons;
+    for (auto* b : { &sourceButton, &kofiButton, &paypalButton, &spotifyButton })
         if (b->isVisible())
             buttons.add (b);
 
-    const int w = 150, gap = 12;
-    row = row.withSizeKeepingCentre (buttons.size() * w + (buttons.size() - 1) * gap, row.getHeight());
+    const int w = 126, gap = 10;
+    row = row.withSizeKeepingCentre (juce::jmax (1, buttons.size() * w + (buttons.size() - 1) * gap), row.getHeight());
     for (auto* b : buttons)
     {
         b->setBounds (row.removeFromLeft (w));
@@ -370,7 +524,7 @@ void AboutOverlay::resized()
     }
 }
 
-void AboutOverlay::paint (juce::Graphics& g)
+void OptionsOverlay::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colours::black.withAlpha (0.78f));
 
@@ -380,19 +534,33 @@ void AboutOverlay::paint (juce::Graphics& g)
     g.setColour (Palette::accent.withAlpha (0.6f));
     g.drawRoundedRectangle (card, 16.0f, 1.5f);
 
-    auto r = card.reduced (36.0f, 28.0f);
-    Branding::drawFullLogo (g, r.removeFromTop (84.0f).withSizeKeepingCentre (400.0f, 84.0f));
+    auto r = card.reduced (36.0f, 18.0f);
+    r.removeFromTop (46.0f);   // tabs
+    const auto dot = juce::String::fromUTF8 ("  \xc2\xb7  ");
+
+    if (! showingAbout)
+    {
+        g.setColour (Palette::dim);
+        g.setFont (font (12.0f));
+        g.drawText (tr ("Settings are saved for all your projects."),
+                    juce::Rectangle<float> (r.getX() + 28.0f, r.getY() + 206.0f, r.getWidth() - 28.0f, 18.0f), juce::Justification::centredLeft);
+        g.setFont (font (11.0f));
+        g.drawText ("Fase Groove Piano " + juce::String (JucePlugin_VersionString) + dot + tr ("Built with JUCE"),
+                    r.removeFromBottom (16.0f), juce::Justification::centred);
+        return;
+    }
+
+    Branding::drawFullLogo (g, r.removeFromTop (70.0f).withSizeKeepingCentre (340.0f, 70.0f));
 
     g.setColour (Palette::dim);
     g.setFont (font (13.0f));
-    const auto dot = juce::String::fromUTF8 ("  \xc2\xb7  ");
-    g.drawText ("Version " + juce::String (JucePlugin_VersionString) + dot + Branding::tagline,
-                r.removeFromTop (30.0f), juce::Justification::centred);
+    g.drawText (tr ("Version") + " " + juce::String (JucePlugin_VersionString) + dot + tr (Branding::tagline),
+                r.removeFromTop (26.0f), juce::Justification::centred);
 
-    r.removeFromTop (14.0f);
+    r.removeFromTop (8.0f);
     g.setColour (Palette::panelEdge);
     g.fillRect (r.removeFromTop (1.0f));
-    r.removeFromTop (18.0f);
+    r.removeFromTop (12.0f);
 
     auto caption = [&g] (const juce::String& text, juce::Rectangle<float> area)
     {
@@ -401,40 +569,42 @@ void AboutOverlay::paint (juce::Graphics& g)
         g.drawText (text, area, juce::Justification::centred);
     };
 
-    caption ("CREATED BY", r.removeFromTop (16.0f));
-    r.removeFromTop (10.0f);
+    caption (tr ("CREATED BY"), r.removeFromTop (16.0f));
+    r.removeFromTop (6.0f);
     if (artist.isValid())
-        g.drawImageWithin (artist, (int) r.getX(), (int) r.getY(), (int) r.getWidth(), 130,
+        g.drawImageWithin (artist, (int) r.getX(), (int) r.getY(), (int) r.getWidth(), 110,
                            juce::RectanglePlacement::centred);
-    r.removeFromTop (136.0f);
+    r.removeFromTop (114.0f);
 
     g.setColour (Palette::text);
     g.setFont (font (14.0f));
-    g.drawText ("DJ & Producer", r.removeFromTop (22.0f), juce::Justification::centred);
+    g.drawText (tr ("DJ & Producer"), r.removeFromTop (20.0f), juce::Justification::centred);
+    g.setColour (juce::Colour (0xff1db954));
+    g.setFont (font (12.0f, true));
+    g.drawText (tr ("Listen to my productions on Spotify"), r.removeFromTop (18.0f), juce::Justification::centred);
 
-    r.removeFromTop (18.0f);
-    caption ("CODE", r.removeFromTop (16.0f));
-    r.removeFromTop (6.0f);
+    r.removeFromTop (12.0f);
+    caption (tr ("CODE"), r.removeFromTop (16.0f));
+    r.removeFromTop (4.0f);
     g.setColour (Palette::text);
     g.setFont (font (16.0f, true));
-    g.drawText ("Claude  (Anthropic)", r.removeFromTop (24.0f), juce::Justification::centred);
+    g.drawText ("Claude  (Anthropic)", r.removeFromTop (22.0f), juce::Justification::centred);
     g.setColour (Palette::dim);
     g.setFont (font (12.0f));
-    g.drawText ("AI coding assistant", r.removeFromTop (18.0f), juce::Justification::centred);
+    g.drawText (tr ("AI coding assistant"), r.removeFromTop (16.0f), juce::Justification::centred);
 
     g.setFont (font (11.0f));
-    g.drawText ("Built with JUCE" + dot + "VST is a registered trademark of Steinberg Media Technologies GmbH"
-                    + dot + "click to close",
+    g.drawText (tr ("Built with JUCE") + dot + "VST is a registered trademark of Steinberg Media Technologies GmbH",
                 r.removeFromBottom (16.0f), juce::Justification::centred);
 
-    r.removeFromBottom (44.0f);   // buttons
+    r.removeFromBottom (48.0f);   // link buttons
     g.setColour (Palette::dim);
     g.setFont (font (12.0f));
     g.drawText (juce::String (Branding::sourceUrl).fromFirstOccurrenceOf ("://", false, false),
                 r.removeFromBottom (18.0f), juce::Justification::centred);
     g.setColour (Palette::text);
     g.setFont (font (12.0f, true));
-    g.drawText (Branding::licence, r.removeFromBottom (18.0f), juce::Justification::centred);
+    g.drawText (tr (Branding::licence), r.removeFromBottom (18.0f), juce::Justification::centred);
 }
 
 //==============================================================================
@@ -447,7 +617,7 @@ void MidiDragTile::paint (juce::Graphics& g)
 
     g.setColour (Palette::background);
     g.setFont (juce::Font (juce::FontOptions (15.0f).withStyle ("Bold")));
-    g.drawText ("DRAG MIDI TO DAW", r, juce::Justification::centred);
+    g.drawFittedText (tr ("DRAG MIDI TO DAW"), r.reduced (6.0f, 2.0f).toNearestInt(), juce::Justification::centred, 2, 0.8f);
 }
 
 void MidiDragTile::mouseDrag (const juce::MouseEvent& e)
@@ -503,6 +673,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       tempoAttachment (p.apvts, ParamIDs::tempo, tempoSlider)
 {
     setLookAndFeel (&lookAndFeel);
+    Localisation::loadSaved();
 
     styleCaption (presetLabel, "Progression presets");
     addAndMakeVisible (presetLabel);
@@ -573,13 +744,24 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     dawTempo.setJustificationType (juce::Justification::centred);
     dawTempo.setFont (font (15.0f, true));
 
-    for (auto* c : std::initializer_list<juce::Component*> { &syncButton, &tempoSlider, &dawTempo, &creditsButton })
+    for (auto* c : std::initializer_list<juce::Component*> { &syncButton, &tempoSlider, &dawTempo, &optionsButton })
         addAndMakeVisible (c);
 
-    creditsButton.setColour (juce::TextButton::buttonColourId, Palette::background);
-    creditsButton.setColour (juce::TextButton::textColourOffId, Palette::dim);
-    creditsButton.onClick = [this] { about.setVisible (true); about.toFront (false); };
-    addChildComponent (about);
+    optionsButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    optionsButton.setColour (juce::TextButton::textColourOffId, Palette::dim);
+    optionsButton.onClick = [this] { options.show (false, uiScale, processor.shrinkWhileDragging); };
+
+    options.onLanguageChanged = [this] { applyLanguage(); };
+    options.onScaleChosen = [this] (float newScale)
+    {
+        setSize (juce::roundToInt (baseWidth * newScale), juce::roundToInt (baseHeight * newScale));
+    };
+    options.onShrinkChanged = [this] (bool shrink)
+    {
+        processor.shrinkWhileDragging = shrink;
+        shrinkToggle.setToggleState (shrink, juce::dontSendNotification);
+    };
+    addChildComponent (options);
 
     previewButton.setClickingTogglesState (true);
     previewButton.setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -664,6 +846,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     saveButton.setColour (juce::TextButton::textColourOffId, Palette::text);
     saveButton.onClick = [this] { saveClip(); };
 
+    applyLanguage();
+
     // Read the saved size first: setting the limits resizes (and re-saves) the window.
     const float savedScale = juce::jlimit (0.6f, 2.0f, processor.editorScale);
     setResizable (true, true);
@@ -678,6 +862,78 @@ FaseGroovePianoEditor::~FaseGroovePianoEditor()
 {
     stopTimer();
     setLookAndFeel (nullptr);
+}
+
+void FaseGroovePianoEditor::applyLanguage()
+{
+    for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume })
+        k->refreshText();
+
+    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &pattern, &section,
+                     &fills, &fillStyle, &playMode, &bassChannel, &soundType })
+        c->refreshText();
+
+    presetLabel.setText (Localisation::upper (tr ("Progression presets")), juce::dontSendNotification);
+    presetBox.setTextWhenNothingSelected (tr ("Load a progression..."));
+    clipLengthLabel.setText (Localisation::upper (tr ("Clip length")), juce::dontSendNotification);
+    clipPartLabel.setText (Localisation::upper (tr ("Notes")), juce::dontSendNotification);
+
+    static const char* const lengths[] { "Full loop", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars", "32 bars",
+                                         "Song: intro > drop > outro" };
+    const int selectedLength = clipLength.getSelectedId();
+    for (int i = 0; i < clipLength.getNumItems(); ++i)
+        clipLength.changeItemText (i + 1, tr (lengths[i]));
+    clipLength.setSelectedId (selectedLength, juce::dontSendNotification);
+
+    static const char* const parts[] { "Chords + bass", "Chords only", "Bass only" };
+    const int selectedPart = clipPart.getSelectedId();
+    for (int i = 0; i < clipPart.getNumItems(); ++i)
+        clipPart.changeItemText (i + 1, tr (parts[i]));
+    clipPart.setSelectedId (selectedPart, juce::dontSendNotification);
+
+    diceProgression.setButtonText (tr ("DICE"));
+    newRiffButton.setButtonText (tr ("NEW RIFF"));
+    previewButton.setButtonText (tr ("PREVIEW"));
+    syncButton.setButtonText (tr ("SYNC DAW"));
+    optionsButton.setButtonText (tr ("OPTIONS"));
+    soundToggle.setButtonText (tr ("Guide sound"));
+    octaveToggle.setButtonText (tr ("Top +8va"));
+    saveButton.setButtonText (tr ("Save .mid..."));
+    shrinkToggle.setButtonText (tr ("Mini window while dragging"));
+
+    octaveToggle.setTooltip (tr ("Double the top note of every chord an octave higher (bright house piano)"));
+    newRiffButton.setTooltip (tr ("New random funky riff (locked parts are kept)"));
+    diceProgression.setTooltip (tr ("Random soulful-house progression"));
+    syncButton.setTooltip (tr ("On: follow the DAW tempo. Off: set your own BPM."));
+    tempoSlider.setTooltip (tr ("Drag, or double-click to type the BPM"));
+    previewButton.setTooltip (tr ("Play the groove with the guide sound without starting the DAW"));
+    shrinkToggle.setTooltip (tr ("Shrink the plug-in window while you drag a clip, so you can see your DAW"));
+    patternView.setTooltip (tr ("Click a step: hit > accent > ghost > rest.  Right-click: more options"));
+    bassButton.setTooltip (tr ("Left-hand bass on / off"));
+
+    for (int i = 0; i < sgk::numSegments; ++i)
+    {
+        segmentBoxes[i]->setTooltip (tr ("Which part (A-D) plays here: combine parts like A A B C"));
+        segmentDice[i]->setButtonText (tr ("RND"));
+        segmentDice[i]->setTooltip (tr ("New random rhythm for this part"));
+        segmentLocks[i]->setButtonText (tr ("LOCK"));
+        segmentLocks[i]->setTooltip (tr ("Keep this part when you press NEW RIFF"));
+    }
+
+    options.refreshText();
+    currentKey = {};   // re-translates the key / scale line on the next timer tick
+    timerCallback();
+    repaint();
+    for (auto* c : getChildren())
+        c->repaint();
+}
+
+void FaseGroovePianoEditor::mouseUp (const juce::MouseEvent& e)
+{
+    // Clicking the logo opens the credits.
+    const auto pos = e.getEventRelativeTo (this).position / uiScale;
+    if (! miniMode && headerArea.toFloat().withWidth (330.0f).withHeight (56.0f).contains (pos))
+        options.show (true, uiScale, processor.shrinkWhileDragging);
 }
 
 int FaseGroovePianoEditor::selectedClipBars() const
@@ -724,13 +980,13 @@ void FaseGroovePianoEditor::cellClicked (bool bassRow, int step, const juce::Mou
     if (e.mods.isPopupMenu())
     {
         juce::PopupMenu menu;
-        menu.addSectionHeader (juce::String (bassRow ? "Bass" : "Chords") + " - step " + juce::String (step + 1));
-        menu.addItem (1, "Hit", true, current == 'x');
-        menu.addItem (2, "Accent", true, current == 'X');
-        menu.addItem (3, "Ghost note", true, current == 'g');
-        menu.addItem (4, "Push (anticipate the next chord)", true, current == '>');
-        menu.addItem (5, "Hold (tie from the previous note)", true, current == '=');
-        menu.addItem (6, "Rest", true, current == '.');
+        menu.addSectionHeader (tr (bassRow ? "Bass" : "Chords") + " - " + tr ("step") + " " + juce::String (step + 1));
+        menu.addItem (1, tr ("Hit"), true, current == 'x');
+        menu.addItem (2, tr ("Accent"), true, current == 'X');
+        menu.addItem (3, tr ("Ghost note"), true, current == 'g');
+        menu.addItem (4, tr ("Push (anticipate the next chord)"), true, current == '>');
+        menu.addItem (5, tr ("Hold (tie from the previous note)"), true, current == '=');
+        menu.addItem (6, tr ("Rest"), true, current == '.');
 
         juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
         menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&patternView),
@@ -838,7 +1094,7 @@ void FaseGroovePianoEditor::timerCallback()
     const int shown = playingSlot >= 0 ? playingSlot : 0;
     const juce::String chordText = sgk::chordName (chords[(size_t) shown]);
     const juce::String romanText = juce::String::fromUTF8 (sgk::romanNumeral (s.progression[(size_t) shown], chords[(size_t) shown]).c_str());
-    const juce::String keyText = juce::String (sgk::noteName (s.keyRoot)) + " " + sgk::scaleName (s.scale);
+    const juce::String keyText = juce::String (sgk::noteName (s.keyRoot)) + " " + tr (sgk::scaleName (s.scale));
 
     if (chordText != currentChord || romanText != currentRoman || keyText != currentKey || showingHold != (heldRoot >= 0))
     {
@@ -852,7 +1108,7 @@ void FaseGroovePianoEditor::timerCallback()
     const bool bassOn = processor.isBassOn();
     patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load(), bassOn);
 
-    bassButton.setButtonText (bassOn ? "BASS: ON" : "BASS: OFF");
+    bassButton.setButtonText (tr (bassOn ? "BASS: ON" : "BASS: OFF"));
     bassButton.setColour (juce::TextButton::buttonColourId, bassOn ? Palette::accent2 : Palette::background);
     bassButton.setColour (juce::TextButton::textColourOffId, bassOn ? Palette::background : Palette::dim);
 
@@ -869,7 +1125,7 @@ void FaseGroovePianoEditor::timerCallback()
     const bool synced = syncButton.getToggleState();
     tempoSlider.setVisible (! synced);
     dawTempo.setVisible (synced);
-    dawTempo.setText (juce::String (processor.hostBpm.load(), 1) + " BPM  (DAW)", juce::dontSendNotification);
+    dawTempo.setText (juce::String (processor.hostBpm.load(), 1) + " BPM  " + tr ("(DAW)"), juce::dontSendNotification);
 }
 
 void FaseGroovePianoEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& title)
@@ -896,7 +1152,7 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
     {
         g.setColour (Palette::dim);
         g.setFont (font (11.0f));
-        g.drawText ("Drop the clip on a track in your DAW", juce::Rectangle<int> (0, miniHeight - 22, miniWidth, 18),
+        g.drawText (tr ("Drop the clip on a track in your DAW"), juce::Rectangle<int> (0, miniHeight - 22, miniWidth, 18),
                     juce::Justification::centred);
         return;
     }
@@ -906,7 +1162,7 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
     Branding::drawFullLogo (g, header.removeFromTop (56.0f).withWidth (330.0f));
     g.setColour (Palette::dim);
     g.setFont (font (11.5f));
-    g.drawText (juce::String ("by ") + Branding::artist, header.withTrimmedLeft (66.0f), juce::Justification::centredLeft);
+    g.drawText (tr ("by") + " " + Branding::artist, header.withTrimmedLeft (66.0f), juce::Justification::centredLeft);
 
     // Current chord
     drawPanel (g, chordDisplayArea, {});
@@ -921,21 +1177,21 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
     g.drawText (currentRoman, cd.removeFromTop (cd.getHeight() / 2), juce::Justification::bottomRight);
     g.setColour (showingHold ? Palette::accent2 : Palette::dim);
     g.setFont (font (13.0f));
-    g.drawText ((showingHold ? juce::String ("HOLD: ") : juce::String()) + currentKey, cd, juce::Justification::centredRight);
+    g.drawText ((showingHold ? tr ("HOLD: ") : juce::String()) + currentKey, cd, juce::Justification::centredRight);
 
-    drawPanel (g, tempoArea, "TEMPO");
-    drawPanel (g, progressionPanel, "PROGRESSION");
-    drawPanel (g, harmonyPanel, "HARMONY & SCALES");
-    drawPanel (g, circlePanel, "CIRCLE OF FIFTHS");
-    drawPanel (g, groovePanel, "GROOVE");
-    drawPanel (g, soundPanel, "GUIDE SOUND & MIDI OUT");
-    drawPanel (g, gridPanel, "RHYTHM GRID");
-    drawPanel (g, clipPanel, "MIDI CLIP");
+    drawPanel (g, tempoArea, tr ("TEMPO"));
+    drawPanel (g, progressionPanel, tr ("PROGRESSION"));
+    drawPanel (g, harmonyPanel, tr ("HARMONY & SCALES"));
+    drawPanel (g, circlePanel, tr ("CIRCLE OF FIFTHS"));
+    drawPanel (g, groovePanel, tr ("GROOVE"));
+    drawPanel (g, soundPanel, tr ("GUIDE SOUND & MIDI OUT"));
+    drawPanel (g, gridPanel, tr ("RHYTHM GRID"));
+    drawPanel (g, clipPanel, tr ("MIDI CLIP"));
 
     auto hint = clipPanel.reduced (14, 8).removeFromBottom (16);
     g.setColour (Palette::dim);
     g.setFont (font (11.0f));
-    g.drawText ("Drop it on any instrument track (your own piano / Rhodes)", hint, juce::Justification::centredLeft);
+    g.drawText (tr ("Drop it on any instrument track (your own piano / Rhodes)"), hint, juce::Justification::centredLeft);
 }
 
 void FaseGroovePianoEditor::resized()
@@ -973,8 +1229,8 @@ void FaseGroovePianoEditor::layoutFull()
     top.removeFromRight (10);
     tempoArea = top.removeFromRight (330).reduced (0, 4);
     headerArea = top;
-    creditsButton.setBounds (headerArea.getRight() - 74, headerArea.getBottom() - 22, 70, 20);
-    about.setBounds (0, 0, baseWidth, baseHeight);
+    optionsButton.setBounds (headerArea.getRight() - 78, headerArea.getBottom() - 22, 74, 20);
+    options.setBounds (0, 0, baseWidth, baseHeight);
     {
         auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
         auto controls = inner.withSizeKeepingCentre (inner.getWidth(), 32);
@@ -993,7 +1249,7 @@ void FaseGroovePianoEditor::layoutFull()
         auto leftCol = inner.removeFromLeft (240);
         presetLabel.setBounds (leftCol.removeFromTop (16));
         auto presetRow = leftCol.removeFromTop (28);
-        diceProgression.setBounds (presetRow.removeFromRight (52));
+        diceProgression.setBounds (presetRow.removeFromRight (64));
         presetBox.setBounds (presetRow.withTrimmedRight (6));
         leftCol.removeFromTop (4);
         progLength.setBounds (leftCol.removeFromLeft (114));

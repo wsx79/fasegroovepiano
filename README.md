@@ -42,6 +42,8 @@ Rhodes or synth.
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and
   lock (LOCK), plus a quick **BASS ON/OFF**.
 - 🔍 **Resizable UI** and a mini window while you drag a clip.
+- 🌍 **Interface in 6 languages:** English, Italiano, Español, Français, Deutsch, Português
+  (**OPTIONS → SETTINGS**).
 - 🎬 **Song sections:** Intro, Main, Break, Build-up, Drop, Outro (automatable), plus a **full
   60-bar arrangement** export with markers.
 - ⏱️ **Tempo:** synced to the DAW or set by hand.
@@ -76,7 +78,7 @@ make a donation of any amount:
   <a href="https://paypal.me/fabios79"><b>💙 PayPal – paypal.me/fabios79</b></a>
 </p>
 
-The same links are in the plug-in: **CREDITS → DONATE: Ko-fi / DONATE: PayPal**.
+The same links are in the plug-in: **OPTIONS → ABOUT → DONATE: Ko-fi / DONATE: PayPal**.
 
 Thank you! A star ⭐ on the repository or a share helps a lot too.
 
@@ -95,7 +97,8 @@ Thank you! A star ⭐ on the repository or a share helps a lot too.
 | **Code** | **Claude** (Anthropic) – AI coding assistant |
 | **Framework** | [JUCE](https://juce.com) |
 
-In the plug-in, open the credits with the **CREDITS** button at the top left.
+In the plug-in, open the credits with **OPTIONS → ABOUT** (or click the logo at the top left).
+The **SPOTIFY** button there takes you to my artist page.
 
 ## Privacy
 

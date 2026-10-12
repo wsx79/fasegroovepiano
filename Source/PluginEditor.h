@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Branding.h"
+#include "Localisation.h"
 #include "CircleOfFifths.h"
 #include "PluginProcessor.h"
 
@@ -38,8 +39,10 @@ class Knob : public juce::Component
 public:
     Knob (juce::AudioProcessorValueTreeState&, const juce::String& paramId, const juce::String& caption);
     void resized() override;
+    void refreshText();
 
 private:
+    juce::String caption;
     juce::Slider slider;
     juce::Label label;
     juce::AudioProcessorValueTreeState::SliderAttachment attachment;
@@ -52,9 +55,14 @@ public:
     Choice (juce::AudioProcessorValueTreeState&, const juce::String& paramId, const juce::String& caption);
     void resized() override;
 
+    /** Re-applies the caption and the menu items in the current language. */
+    void refreshText();
+
     juce::ComboBox box;
 
 private:
+    juce::String caption;
+    juce::StringArray englishItems;
     juce::Label label;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
 };
@@ -120,20 +128,35 @@ private:
     bool hover = false, dragStarted = false;
 };
 
-/** Credits page: app logo, version, artist and code credits. Click to close. */
-class AboutOverlay : public juce::Component
+/** OPTIONS page with two tabs: SETTINGS (language, interface size, mini window)
+    and ABOUT (logo, version, credits, links). Click outside the card to close. */
+class OptionsOverlay : public juce::Component
 {
 public:
-    AboutOverlay();
+    OptionsOverlay();
+
+    std::function<void()> onLanguageChanged;
+    std::function<void (float)> onScaleChosen;
+    std::function<void (bool)> onShrinkChanged;
+
+    void show (bool aboutTab, float currentScale, bool shrinkWhileDragging);
+    void refreshText();
+
     void paint (juce::Graphics&) override;
     void resized() override;
-    void mouseUp (const juce::MouseEvent&) override { setVisible (false); }
+    void mouseUp (const juce::MouseEvent&) override;
 
 private:
-    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (620.0f, 580.0f); }
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (620.0f, 620.0f); }
+    void selectTab (bool about);
 
+    bool showingAbout = false;
     juce::Image artist;
-    juce::TextButton sourceButton { "SOURCE CODE" }, kofiButton { "DONATE: Ko-fi" }, paypalButton { "DONATE: PayPal" };
+    juce::TextButton settingsTab, aboutTab, closeButton;
+    juce::TextButton sourceButton, kofiButton, paypalButton, spotifyButton;
+    juce::Label languageLabel, sizeLabel;
+    juce::ComboBox languageBox, sizeBox;
+    juce::ToggleButton shrinkToggle;
 };
 
 //==============================================================================
@@ -162,8 +185,11 @@ private:
     GrooveLookAndFeel lookAndFeel;
     juce::TooltipWindow tooltips { this, 600 };
 
-    juce::TextButton creditsButton { "CREDITS" };
-    AboutOverlay about;
+    juce::TextButton optionsButton { "OPTIONS" };
+    OptionsOverlay options;
+
+    void applyLanguage();
+    void mouseUp (const juce::MouseEvent&) override;
 
     // Progression
     juce::Label presetLabel;

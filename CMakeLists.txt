@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(FaseGroovePiano VERSION 1.3.0 LANGUAGES C CXX)
+project(FaseGroovePiano VERSION 1.4.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -77,7 +77,8 @@ if(SGK_BUILD_PLUGIN)
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
         Source/CircleOfFifths.cpp
-        Source/Branding.cpp)
+        Source/Branding.cpp
+        Source/Localisation.cpp)
 
     target_compile_definitions(FaseGroovePiano PUBLIC
         JUCE_WEB_BROWSER=0

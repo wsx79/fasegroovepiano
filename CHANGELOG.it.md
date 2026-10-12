@@ -6,6 +6,20 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.4.0] - 2026-10-12
+
+### Aggiunto
+- **Lingua dell'interfaccia:** English, Italiano, Español, Français, Deutsch e Português.
+  Si sceglie in **OPZIONI → IMPOSTAZIONI**; il cambio è immediato e vale per tutti i progetti
+  (la prima volta il plugin segue la lingua del computer).
+- **Pagina OPZIONI** con due schede: **IMPOSTAZIONI** (lingua, dimensione interfaccia, finestra
+  mini durante il drag) e **INFO** (crediti, licenza, link).
+- **Spotify** nei crediti: pulsante **SPOTIFY** e "Ascolta le mie produzioni su Spotify" accanto a
+  Fabio 'Pitch' Serra.
+
+### Modificato
+- Il pulsante **CREDITS** ora è **OPZIONI**; cliccando il logo si apre direttamente la scheda INFO.
+
 ## [1.3.0] - 2026-10-12
 
 ### Aggiunto

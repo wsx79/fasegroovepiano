@@ -207,11 +207,26 @@ Vedi il prossimo capitolo.
 Trascina l'angolo in basso a destra per **ingrandire o rimpicciolire** l'interfaccia (dal 60% al
 200%). La dimensione viene ricordata nel progetto.
 
-### CREDITS
+### OPZIONI: impostazioni, lingua e crediti
 
-Il pulsante in alto a sinistra apre i crediti, la licenza, il link al codice sorgente e i
-pulsanti per una donazione libera (**Ko-fi** o **PayPal**): il plugin è gratuito, se ti piace
-puoi supportarne lo sviluppo.
+Il pulsante **OPTIONS / OPZIONI** in alto a sinistra apre una pagina con due schede (clicca fuori
+o su **CHIUDI** per tornare indietro):
+
+- **IMPOSTAZIONI**
+  - **Lingua:** l'interfaccia è in **English, Italiano, Español, Français, Deutsch e
+    Português**. Il cambio è immediato e vale per tutti i tuoi progetti. La prima volta il plugin
+    usa la lingua del computer.
+  - **Dimensione interfaccia:** dal 60% al 200%, come trascinando l'angolo.
+  - **Finestra mini durante il drag:** lo stesso interruttore del pannello MIDI clip.
+- **INFO** (si apre anche cliccando il logo): versione, crediti, licenza, codice sorgente, il
+  pulsante **SPOTIFY** con le mie produzioni e i pulsanti per una donazione libera (**Ko-fi** o
+  **PayPal**): il plugin è gratuito, se ti piace puoi supportarne lo sviluppo.
+
+<p align="center"><img src="options.png" alt="OPZIONI - IMPOSTAZIONI" width="460"></p>
+
+> In questa guida i comandi sono indicati col nome inglese (con l'interfaccia in italiano trovi
+> l'etichetta tradotta nello stesso punto, ad es. *NEW RIFF* = *NUOVO RIFF*, *PREVIEW* =
+> *ASCOLTA*, *DICE* = *DADO*). Nomi degli accordi, modi e groove restano invariati.
 
 ---
 

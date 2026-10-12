@@ -40,6 +40,8 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,
   randomizzare (RND) e bloccare (LOCK), e **BASS ON/OFF** al volo.
 - 🔍 **Interfaccia ridimensionabile** e finestra mini durante il trascinamento della clip.
+- 🌍 **Interfaccia in 6 lingue:** English, Italiano, Español, Français, Deutsch, Português
+  (**OPZIONI → IMPOSTAZIONI**).
 - 🎬 **Sezioni del brano:** Intro, Main, Break, Build-up, Drop, Outro, automatizzabili, ed
   esportazione di un **arrangiamento completo di 60 battute** con i marker.
 - ⏱️ **Tempo:** agganciato alla DAW o impostato a mano.
@@ -75,7 +77,7 @@ donazione libera:
   <a href="https://paypal.me/fabios79"><b>💙 PayPal – paypal.me/fabios79</b></a>
 </p>
 
-Le stesse donazioni si raggiungono dal plugin: **CREDITS → DONATE: Ko-fi / DONATE: PayPal**.
+Le stesse donazioni si raggiungono dal plugin: **OPZIONI → INFO → DONA: Ko-fi / DONA: PayPal**.
 
 Grazie! Anche una stella ⭐ al repository o una condivisione aiutano tantissimo.
 
@@ -94,7 +96,8 @@ Grazie! Anche una stella ⭐ al repository o una condivisione aiutano tantissimo
 | **Codice** | **Claude** (Anthropic) – assistente di programmazione AI |
 | **Framework** | [JUCE](https://juce.com) |
 
-Nel plugin i crediti si aprono col pulsante **CREDITS** in alto a sinistra.
+Nel plugin i crediti si aprono da **OPZIONI → INFO** (oppure cliccando il logo in alto a sinistra).
+Il pulsante **SPOTIFY** porta alla mia pagina artista.
 
 ## Privacy
 

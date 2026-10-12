@@ -20,6 +20,9 @@ namespace Branding
     inline constexpr const char* kofiUrl   = "https://ko-fi.com/fabios1979";
     inline constexpr const char* paypalUrl = "https://paypal.me/fabios79";
 
+    /** Fabio 'Pitch' Serra's artist page on Spotify (empty hides the button). */
+    inline constexpr const char* spotifyUrl = "https://open.spotify.com/artist/29iQGuXML8LEw3xRp1dNRP";
+
     /** The square app icon (slanted groove keys). */
     std::unique_ptr<juce::Drawable> createIcon();
 

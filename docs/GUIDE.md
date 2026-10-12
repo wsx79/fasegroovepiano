@@ -207,11 +207,25 @@ See the next chapter.
 Drag the bottom-right corner to **enlarge or shrink** the interface (60% to 200%). The size is
 remembered with your project.
 
-### CREDITS
+### OPTIONS: settings, language and credits
 
-The button at the top left opens the credits, the license, the source-code link and the
-buttons for an optional donation (**Ko-fi** or **PayPal**): the plug-in is free, and if you like it
-you can support its development.
+The **OPTIONS** button at the top left opens a page with two tabs (click outside it or **CLOSE**
+to go back):
+
+- **SETTINGS**
+  - **Language:** the interface speaks **English, Italiano, Español, Français, Deutsch and
+    Português**. The change is immediate and is remembered for all your projects. The first time,
+    the plug-in picks your computer's language.
+  - **Interface size:** 60% to 200%, the same as dragging the corner.
+  - **Mini window while dragging:** the same switch you find in the MIDI clip panel.
+- **ABOUT** (also opens when you click the logo): version, credits, license, source code, the
+  **SPOTIFY** button for my productions and the buttons for an optional donation (**Ko-fi** or
+  **PayPal**): the plug-in is free, and if you like it you can support its development.
+
+<p align="center"><img src="options.png" alt="OPTIONS - SETTINGS" width="460"></p>
+
+> In this guide the controls keep their English names. In another language look for the
+> translated label in the same place; chord names, scale modes and groove names stay the same.
 
 ---
 

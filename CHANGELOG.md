@@ -6,6 +6,20 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-10-12
+
+### Added
+- **Interface languages:** English, Italiano, Español, Français, Deutsch and Português.
+  Choose in **OPTIONS → SETTINGS**; the change is immediate and remembered for all projects
+  (the first time, the plug-in follows your computer's language).
+- **OPTIONS page** with two tabs: **SETTINGS** (language, interface size, mini window while
+  dragging) and **ABOUT** (credits, license, links).
+- **Spotify** in the credits: a **SPOTIFY** button and "Listen to my productions on Spotify" next
+  to Fabio 'Pitch' Serra.
+
+### Changed
+- The **CREDITS** button is now **OPTIONS**; clicking the logo opens the ABOUT tab directly.
+
 ## [1.3.0] - 2026-10-12
 
 ### Added
