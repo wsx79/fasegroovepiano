@@ -69,7 +69,14 @@ public:
     struct PopupBox : public juce::ComboBox
     {
         std::function<void()> onPopup;
-        void showPopup() override { if (onPopup != nullptr) onPopup(); else juce::ComboBox::showPopup(); }
+        void showPopup() override
+        {
+            if (onPopup == nullptr)
+                return juce::ComboBox::showPopup();
+
+            hidePopup();   // no JUCE menu was opened: mark it closed, or the next click is ignored
+            onPopup();
+        }
     };
     PopupBox box;
 
