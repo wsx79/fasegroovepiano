@@ -32,7 +32,7 @@ namespace
         std::uint32_t state;
     };
 
-    bool isHit (char c) noexcept { return c == 'X' || c == 'x' || c == 'g' || c == '>'; }
+    bool isHit (char c) noexcept { return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D'; }
 
 
 }
@@ -139,10 +139,12 @@ GroovePattern applySection (const GroovePattern& source, Section section)
             for (int i = 0; i < len; ++i)
             {
                 char& c = p.rightHand[(size_t) i];
-                if (c == 'g' || (c == 'x' && i % 4 != 0))
+                if (c == 'g' || ((c == 'x' || c == 'u' || c == 'd') && i % 4 != 0))
                     c = '.';
                 else if (c == 'X')
                     c = 'x';
+                else if (c == 'U' || c == 'D')
+                    c = (char) (c - 'A' + 'a');
             }
 
             repairHolds (p.rightHand);
@@ -261,8 +263,25 @@ GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
         answer = std::string (answer.rbegin(), answer.rend());
     answer = decorate (answer);
 
+    // The answer moves: some hits play the chord an inversion up or down, so the top note
+    // sings a little melody against the motif (call and response).
+    auto addMovement = [&] (std::string half)
+    {
+        bool first = true;
+        for (auto& c : half)
+        {
+            if (! isHit (c) || c == 'g' || c == '>')
+                continue;
+            if (! first && rng.chance (0.55))
+                c = rng.chance (0.6) ? (c == 'X' ? 'U' : 'u') : (c == 'X' ? 'D' : 'd');
+            first = false;
+        }
+        return half;
+    };
+    answer = addMovement (answer);
+
     // B': the answer with a new last beat.
-    const std::string ending = answer.substr (0, 4) + decorate (pickCell());
+    const std::string ending = answer.substr (0, 4) + addMovement (decorate (pickCell()));
 
     std::string right = motif + answer + motif + ending;
 

@@ -42,7 +42,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - ⭕ **Circolo delle quinte** interattivo: gli accordi della scala coi numeri romani, la progressione con punti numerati e frecce, trascina i punti per cambiare gli accordi (anche fuori scala).
 - 🌈 **Colori dell'armonia:** accordi e passaggi colorati in base a quanto suonano bene insieme (verde = benissimo, grigio = stride).
 - 🎚️ **STILE:** impostazioni pronte per genere con un clic (deep, soulful, gospel, jackin', piano anni '90, garage, afro, neo soul…) e **RESET** per ripartire da zero.
-- 🥁 **96 groove** a due mani in 10 generi (soulful, deep, gospel, **jackin' house**, garage, afro, funky e disco, piano house anni '90, neo soul, chill)
+- 🥁 **112 groove** a due mani in 11 generi (soulful, deep, gospel, **jackin' house**, **piano jackin'**, garage, afro, funky e disco, piano house anni '90, neo soul, chill), con accordi che si muovono di rivolto dentro la battuta come un vero riff di piano
   più **NEW RIFF**, che genera riff funky casuali sul momento, e fill opzionali (11 stili, dalle scale gospel ai glissati di piano).
 - 🎚️ **Strum** (accordi arpeggiati come un pianista vero) e **Top +8va** (nota alta raddoppiata all'ottava).
 - ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,

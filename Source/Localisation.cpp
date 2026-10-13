@@ -171,6 +171,11 @@ namespace
         { "* Random riff *", "* Riff casuale *", "* Riff aleatorio *", "* Riff aléatoire *", "* Zufallsriff *", "* Riff aleatório *" },
         { "* User pattern *", "* Pattern utente *", "* Patrón de usuario *", "* Motif utilisateur *", "* Eigenes Pattern *", "* Padrão do usuário *" },
 
+        // ---- v1.10 ----
+        { "Jackin' Piano", "Piano jackin'", "Piano jackin'", "Piano jackin'", "Jackin' Piano", "Piano jackin'" },
+        { "Hit, voicing up", "Colpo, rivolto su", "Golpe, inversión arriba", "Coup, renversement vers le haut", "Anschlag, Umkehrung hoch", "Toque, inversão acima" },
+        { "Hit, voicing down", "Colpo, rivolto giù", "Golpe, inversión abajo", "Coup, renversement vers le bas", "Anschlag, Umkehrung runter", "Toque, inversão abaixo" },
+
         // ---- v1.9 ----
         { "Top line", "Linea in alto", "Línea superior", "Ligne du haut", "Oberstimme", "Linha superior" },
         { "Smooth (auto)", "Morbida (auto)", "Suave (auto)", "Douce (auto)", "Weich (auto)", "Suave (auto)" },

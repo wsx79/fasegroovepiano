@@ -442,10 +442,24 @@ void PatternView::paint (juce::Graphics& g)
             g.setColour (Palette::panelEdge.withAlpha (s % 4 == 0 ? 0.9f : 0.45f));
             g.fillRoundedRectangle (cell, 3.0f);
 
-            if (c == 'X' || c == 'x' || c == 'g' || c == '>')
+            const bool up = c == 'u' || c == 'U', down = c == 'd' || c == 'D';
+            if (c == 'X' || c == 'x' || c == 'g' || c == '>' || up || down)
             {
-                g.setColour (c == '>' ? Palette::accent2 : colour.withAlpha (c == 'X' ? 1.0f : c == 'g' ? 0.35f : 0.75f));
+                const bool accent = c == 'X' || c == 'U' || c == 'D';
+                g.setColour (c == '>' ? Palette::accent2 : colour.withAlpha (accent ? 1.0f : c == 'g' ? 0.35f : 0.75f));
                 g.fillRoundedRectangle (cell, 3.0f);
+
+                // Voicing moves: a small arrow (the chord one inversion up or down).
+                if (up || down)
+                {
+                    const auto mid = cell.getCentre();
+                    const float w = juce::jmin (cell.getWidth() * 0.6f, 9.0f), h = w * 0.6f;
+                    juce::Path arrow;
+                    if (up) arrow.addTriangle (mid.x - w / 2, mid.y + h / 2, mid.x + w / 2, mid.y + h / 2, mid.x, mid.y - h / 2);
+                    else    arrow.addTriangle (mid.x - w / 2, mid.y - h / 2, mid.x + w / 2, mid.y - h / 2, mid.x, mid.y + h / 2);
+                    g.setColour (Palette::background.withAlpha (0.85f));
+                    g.fillPath (arrow);
+                }
             }
             else if (c == '=')
             {
@@ -897,8 +911,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
                 if (patterns[(size_t) i].category == genres[g])
                     group.items.push_back (i);
 
-            // Columns: soulful, deep, gospel | jackin', garage, afro | funky, '90s | neo soul, chill, generate
-            group.columnBreakAfter = g == 2 || g == 5 || g == 7;
+            // Columns: soulful, deep, gospel | jackin', jackin' piano | garage, afro, funky | '90s, neo soul, chill, generate
+            group.columnBreakAfter = g == 2 || g == 4 || g == 7;
             groups.push_back (group);
         }
         groups.push_back ({ "Generate", { sgk::randomPatternIndex(), sgk::userPatternIndex() }, false });
@@ -1436,13 +1450,19 @@ void FaseGroovePianoEditor::cellClicked (bool bassRow, int step, const juce::Mou
         menu.addItem (4, tr ("Push (anticipate the next chord)"), true, current == '>');
         menu.addItem (5, tr ("Hold (tie from the previous note)"), true, current == '=');
         menu.addItem (6, tr ("Rest"), true, current == '.');
+        if (! bassRow)
+        {
+            menu.addSeparator();
+            menu.addItem (7, tr ("Hit, voicing up"), true, current == 'u' || current == 'U');
+            menu.addItem (8, tr ("Hit, voicing down"), true, current == 'd' || current == 'D');
+        }
 
         juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
         menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&patternView),
                             [safe, bassRow, step] (int result)
                             {
-                                static constexpr char symbols[] { 0, 'x', 'X', 'g', '>', '=', '.' };
-                                if (safe != nullptr && result > 0 && result < 7)
+                                static constexpr char symbols[] { 0, 'x', 'X', 'g', '>', '=', '.', 'u', 'd' };
+                                if (safe != nullptr && result > 0 && result < 9)
                                     safe->processor.editStep (bassRow, step, symbols[result]);
                             });
         return;

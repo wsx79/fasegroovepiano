@@ -211,6 +211,7 @@ namespace
         { "UK Garage",            "Minor Flow  i - VI - III - VII",    "UK Garage 2-Step",     2, 2, 1, 0, 0, 64, 0.50f, 0.45f, 0.25f, 0.10f, false },
         { "Afro House",           "Deep Minor  i - v",                 "Afro House Keys",      2, 4, 1, 0, 0, 62, 0.15f, 0.50f, 0.30f, 0.00f, false },
         { "Neo Soul",             "Neo Soul  ii - iii - IV - V",       "Neo Soul Ghosts",      3, 6, 1, 2, 0, 62, 0.45f, 0.60f, 0.40f, 0.30f, false, 3, 7 },
+        { "Jackin' Piano",        "Jack Swing  i - v - VII - IV",      "Chicago Piano Bounce", 1, 0, 1, 0, 2, 66, 0.55f, 0.30f, 0.20f, 0.00f, true, 2, 5 },
         { "Chill Lounge",         "Lydian Float  I - II",              "Lounge Keys",          2, 3, 1, 0, 0, 64, 0.20f, 0.80f, 0.30f, 0.35f, false },
     };
 
@@ -1003,7 +1004,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     const auto left  = state.getProperty ("userLeft").toString();
     auto valid = [] (const juce::String& line)
     {
-        return line.length() == sgk::userPatternLength && line.containsOnly ("Xxg>=.");
+        return line.length() == sgk::userPatternLength && line.containsOnly ("XxgUuDd>=.");
     };
 
     if (valid (right) && valid (left))

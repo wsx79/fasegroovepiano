@@ -47,14 +47,14 @@ namespace
         return count;
     }
 
-    bool isHit (char c) noexcept { return c == 'X' || c == 'x' || c == 'g' || c == '>'; }
+    bool isHit (char c) noexcept { return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D'; }
 
     /** A push ('>') held with '=' right up to a hit: that hit is tied, not re-struck. */
     bool pushTiesIntoNextHit (const std::string& line, int pos) noexcept
     {
         const int len = (int) line.size();
         const char next = line[(size_t) ((pos + 1 + holdLength (line, pos)) % len)];
-        return line[(size_t) pos] == '>' && (next == 'X' || next == 'x' || next == 'g');
+        return line[(size_t) pos] == '>' && isHit (next) && next != '>';
     }
 
     bool isTiedFromPush (const std::string& line, int pos) noexcept
@@ -76,10 +76,10 @@ const std::vector<GroovePattern>& groovePatterns()
     //                         |1 e & a 2 e & a 3 e & a 4 e & a |1 ...                 bar 2
     static const std::vector<GroovePattern> patterns {
         { "Classic Offbeat Stabs",
-          compact ("..X. ..x. ..X. ..x. ..X. ..x. ..X. ..x."),
+          compact ("..X. ..u. ..X. ..d. ..X. ..u. ..X. ..x."),
           compact ("x==. .... x==. .... x==. .... x==. ...."), "'90s Piano House" },
         { "Soulful Push",
-          compact ("X..x ..x. .x.. ..>= =..x ..x. .x.. ..>="),
+          compact ("X..u ..x. .d.. ..>= =..u ..x. .d.. ..>="),
           compact ("x=.. ...x ..x. .... ...x ...x ..x. ..>."), "Soulful" },
         { "Deep Chords",
           compact ("X=== ===. ..x= ===. X=== ==.x ..x. x==."),
@@ -88,10 +88,10 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("x.x. .x.x .xx. x.x. x.x. .x.x .x.x ..x."),
           compact ("x... ..x. x... .... x... ..x. x..x ...."), "Funky & Disco" },
         { "Gospel Bounce",
-          compact ("X..x ..X. .x.. X..x ..X. .x.. X.x. .x.."),
+          compact ("X..u ..X. .d.. X..u ..X. .d.. X.u. .x.."),
           compact ("x..x .... x... ..x. x..x .... x.x. ...."), "Gospel" },
         { "Chicago Jack",
-          compact ("..x. ..xx ..x. .x.x ..x. ..xx ..x. .xx."),
+          compact ("..x. ..ud ..x. .u.x ..x. ..ud ..x. .xU."),
           compact ("x... x... x... x... x... x... x... x..."), "Jackin'" },
         { "Garage Skip",
           compact ("x... ..x. ...x ..x. x... ..x. ...x .x.."),
@@ -129,7 +129,7 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("x.x. ..x. .x.x ..x. x.x. ..x. .x.x .x.."),
           compact ("x... x.x. x... x.x. x... x.x. x... x..x"), "Funky & Disco" },
         { "Offbeat Doubles",
-          compact ("..xx ..x. ..xx .x.. ..xx ..x. ..xx .x.x"),
+          compact ("..xu ..x. ..xd .x.. ..xu ..x. ..xd .x.x"),
           compact ("x... ...x x... .... x... ...x x..x ...."), "'90s Piano House" },
         { "Broken Beat",
           compact ("X... ..x. ...x .x.. ..x. x... .x.. x.x."),
@@ -139,16 +139,16 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("x..x ..x. x... .x.. x..x ..x. x.x. .x.."), "Funky & Disco" },
         // ---- Jackin' house (Chicago bounce: offbeat stabs, pumping bass, swing it!) ----
         { "Jackin' Stabs",
-          compact ("..X. .x.x ..X. .x.x ..X. .x.x ..X. x.x."),
+          compact ("..X. .u.x ..X. .d.x ..X. .u.x ..X. u.x."),
           compact ("x..x ..x. x... ..x. x..x ..x. x... .x.."), "Jackin'" },
         { "Jack Bounce",
-          compact (".x.x .x.x .x.x .X.x .x.x .x.x .x.x .X.."),
+          compact (".x.u .x.d .x.u .X.x .x.u .x.d .x.u .U.."),
           compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.x. x..x"), "Jackin'" },
         { "Jackin' Push",
-          compact ("X..x ..X. .x.. x.>= =..x ..X. .x.x ..>="),
+          compact ("X..u ..X. .d.. x.>= =..u ..X. .d.x ..>="),
           compact ("x..x .x.. x..x ..>= =..x .x.. x..x ..>="), "Jackin'" },
         { "Chicago Organ Jack",
-          compact ("x.xx ..x. x.xx ..x. x.xx ..x. x.x. xx.x"),
+          compact ("x.xu ..x. x.xd ..x. x.xu ..x. x.x. xU.x"),
           compact ("x... ..x. x... ..x. x... ..x. x..x ..x."), "Jackin'" },
         { "Ghetto Jack",
           compact ("X.gx ..X. .x.X ...x X.gx ..X. .xX. ..X."),
@@ -159,7 +159,7 @@ const std::vector<GroovePattern>& groovePatterns()
 
         // ---- v1.2: more soulful, deep, jackin' and funky ----
         { "Soulful Sunday",
-          compact ("X==. .x.. x==. .x>= =..x ..X= =.x. x.>="),
+          compact ("X==. .u.. x==. .d>= =..u ..X= =.x. x.>="),
           compact ("x... ..x. x... ..>= =..x ..x. x... ..>="), "Soulful" },
         { "Gospel Chops",
           compact ("X.x. xX.x .x.X x.>= =.x. xX.x .x.X x.>="),
@@ -174,13 +174,13 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("..X= ==.. .... ..x. ..X= ==.. .... x..."),
           compact ("x=== .... .... .... x=== .... ..x. ...."), "Deep" },
         { "Jackin' Shuffle",
-          compact (".x.x ..x. .x.x .xx. .x.x ..x. .x.x x.x."),
+          compact (".x.u ..x. .x.d .xx. .x.u ..x. .x.d x.x."),
           compact ("x..x ..x. x... ..x. x..x ..x. x..x ..x."), "Jackin'" },
         { "Jack Organ Pump",
           compact ("..x. ..x. ..x. ..xx ..x. ..x. ..x. .xx."),
           compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.xx x.x."), "Jackin'" },
         { "Funky Upstrokes",
-          compact (".x.x .x.x .x.X ..x. .x.x .x.x .X.. x.x."),
+          compact (".x.u .x.d .x.U ..x. .x.u .x.d .U.. x.x."),
           compact ("x..x ..x. x... .x.. x..x ..x. x.x. ...."), "Funky & Disco" },
         // ---- v1.7: many more grooves, by genre ----
         { "Soulful Lift",
@@ -369,6 +369,55 @@ const std::vector<GroovePattern>& groovePatterns()
         { "Sunset Chords",
           compact ("X==. .... x==. .... X==. .... x==. ..>="),
           compact ("x=== .... .... .... x=== .... .... ..>="), "Chill & Pads" },
+        // ---- v1.10: jackin' piano riffs (the chord moves by inversions inside the bar) ----
+        { "Chicago Piano Bounce",
+          compact ("..x. .u.. ..x. .d.x ..x. .u.. ..x. u.>="),
+          compact ("x... ..x. x... .... x... ..x. x... ..>="), "Jackin' Piano" },
+        { "Jack Stab Melody",
+          compact ("x..u ..x. .u.. x... x..u ..x. .u.U ..>="),
+          compact ("x... .... x..x .... x... .... x..x ..>="), "Jackin' Piano" },
+        { "Piano Call & Answer",
+          compact (".x.x .x.. .... .... .u.u .U.. ..d. x.>="),
+          compact ("x... ..x. .... .... x... ..x. ..x. ..>="), "Jackin' Piano" },
+        { "Swing Piano Chops",
+          compact ("x.xu .x.d x.xu .xU. x.xu .x.d x.x. U.>="),
+          compact ("x... ..x. x... ..x. x... ..x. x... ..>="), "Jackin' Piano" },
+        { "Gospel Jack Keys",
+          compact ("X..u ..X. .d.x ..u. X..u ..X. .d.x .U>="),
+          compact ("x..x ..x. x... .... x..x ..x. x... ..>="), "Jackin' Piano" },
+        { "Offbeat Inversion Stabs",
+          compact ("..x. ..u. ..x. ..d. ..x. ..u. ..x. .U>="),
+          compact ("x... .... x... .... x... .... x... ..>="), "Jackin' Piano" },
+        { "Three Three Two",
+          compact ("X..u ..x. X..u ..x. X..u ..x. x.u. U.>="),
+          compact ("x..x ..x. .... .... x..x ..x. .... ..>="), "Jackin' Piano" },
+        { "Late Night Jack Piano",
+          compact (".x=. .u=. ..x= .d.. .x=. .u=. ..x. U=>="),
+          compact ("x... .... x... .... x... .... x... ..>="), "Jackin' Piano" },
+        { "Piano Riff Runner",
+          compact ("x.u. x.d. x.u. xU.. x.u. x.d. x.u. .U>="),
+          compact ("x... ..x. x... ..x. x... ..x. x... ..>="), "Jackin' Piano" },
+        { "Warehouse Piano",
+          compact ("..X. .u.x ..X. .d.. ..X. .u.x ..X. .U>="),
+          compact ("x..x ..x. x..x .... x..x ..x. x..x ..>="), "Jackin' Piano" },
+        { "Jackin' Gospel Answer",
+          compact ("X... ..x. .u.. u.x. X... ..x. .U.d .x>="),
+          compact ("x... ...x ..x. .... x... ...x ..x. ..>="), "Jackin' Piano" },
+        { "Shuffle Piano Stabs",
+          compact (".x.u ..x. .x.d ..x. .x.u ..x. .x.U .x>="),
+          compact ("x... ..x. x... ..x. x... ..x. x... ..x."), "Jackin' Piano" },
+        { "Disco Jack Piano",
+          compact ("..xu ..x. ..xd ..x. ..xu ..x. ..xU .x>="),
+          compact ("x.x. x.x. x.x. x.x. x.x. x.x. x.x. x.>="), "Jackin' Piano" },
+        { "Deep Jack Piano",
+          compact ("X=.. .u.. x=.. .d.. X=.. .u.. x=.u ..>="),
+          compact ("x=.. .... x... .... x=.. .... x... ..>="), "Jackin' Piano" },
+        { "Piano Hook",
+          compact (".x.. u... .x.. U.x. .x.. u... .x.. d.>="),
+          compact ("x... ..x. x... .... x... ..x. x... ..>="), "Jackin' Piano" },
+        { "Organ Piano Jack",
+          compact ("..x= ..u= ..x= ..d= ..x= ..u= ..x= .U>="),
+          compact ("x... ..x. x... ..x. x... ..x. x... ..>="), "Jackin' Piano" },
     };
 
     return patterns;
@@ -376,8 +425,9 @@ const std::vector<GroovePattern>& groovePatterns()
 
 const std::vector<const char*>& grooveCategories()
 {
-    static const std::vector<const char*> categories { "Soulful", "Deep", "Gospel", "Jackin'", "Garage & UK", "Afro & Latin",
-                                                       "Funky & Disco", "'90s Piano House", "Neo Soul & Broken", "Chill & Pads" };
+    static const std::vector<const char*> categories { "Soulful", "Deep", "Gospel", "Jackin'", "Jackin' Piano", "Garage & UK",
+                                                       "Afro & Latin", "Funky & Disco", "'90s Piano House", "Neo Soul & Broken",
+                                                       "Chill & Pads" };
     return categories;
 }
 
@@ -789,7 +839,8 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
 
     auto hitVelocity = [&] (char symbol, double scale, int salt)
     {
-        double v = s.velocity * scale * sectionVelocityScale (s.section) * (symbol == 'X' ? 1.0 : symbol == '>' ? 0.95 : symbol == 'g' ? 0.45 : 0.8);
+        double v = s.velocity * scale * sectionVelocityScale (s.section)
+                   * (symbol == 'X' || symbol == 'U' || symbol == 'D' ? 1.0 : symbol == '>' ? 0.95 : symbol == 'g' ? 0.45 : 0.8);
         if (s.section == Section::buildup)   // crescendo through the build-up
             v *= 0.72 + 0.4 * (double) pos / (double) std::max (1, pattern.length() - 1);
         v += human * 18.0 * (noise (step, salt + 7) - 0.5) * 2.0;
@@ -966,7 +1017,11 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         const char symbol = pattern.rightHand[(size_t) pos];
         if (isHit (symbol))
         {
-            const auto& v = voiced[(size_t) slotFor (symbol)];
+            // 'u' / 'd' (and accented 'U' / 'D'): the same chord one inversion up or down,
+            // so the top note moves inside the bar like a real piano riff.
+            auto v = voiced[(size_t) slotFor (symbol)];
+            if (symbol == 'u' || symbol == 'U') invert (v.rightHand, 1);
+            if (symbol == 'd' || symbol == 'D') invert (v.rightHand, -1);
             const double len = durationFor (pattern.rightHand);
             const double t = hitTime (1);
             const bool tie = isTiedFromPush (pattern.rightHand, pos);

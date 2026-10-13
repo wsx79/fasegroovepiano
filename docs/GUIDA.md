@@ -174,7 +174,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 
 | Controllo | Cosa fa |
 |---|---|
-| **Groove** | 96 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
+| **Groove** | 112 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
 | **NEW RIFF** | Genera un riff nuovo (accordi + basso), costruito come lo costruisce un tastierista: un motivo di mezza battuta fatto di figure di comping house, con risposta e ripetizione (A B A B'), spesso con un anticipo verso la battuta successiva, sopra una figura di basso semplice che lo segue. Se hai bloccato qualche parte con **LOCK** (vedi *Rhythm grid*), quelle parti restano e cambia solo il resto. Riff e modifiche vengono salvati nel progetto. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). |
 | **Fills** | **Spenti (Off)** di default. Ogni battuta, oppure ogni 2/4/8 battute, la fine della battuta diventa un breve fill che porta all'accordo successivo. |
@@ -187,7 +187,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 | **Humanize** | Piccole variazioni di tempo e dinamica, per un feel suonato a mano. |
 | **Density** | Solo per i Random riff: da stab radi a chop di sedicesimi fitti. |
 
-**I groove: 96, divisi per genere.** Il menu *Groove* si apre a colonne con un titolo per ogni
+**I groove: 112, divisi per genere.** Il menu *Groove* si apre a colonne con un titolo per ogni
 genere; *Random riff* e *User pattern* stanno sotto **Genera**. I groove jackin' suonano al meglio
 con Swing 30–45%, quelli UK garage con 45–55%.
 
@@ -197,6 +197,7 @@ con Swing 30–45%, quelli UK garage con 45–55%.
 | **Deep** (11) | *Deep Chords*, *Late Night Rhodes*, *Deep Sway*, *Deep Dub Stabs*, *Deep Late Pad*, *Deep Offbeat Chords*, *Larry's Chords*, *Deep Dorian Swing*, *Midnight Stabs*, *Deep Keys Rolls*, *Minimal Deep Pulse* |
 | **Gospel** (9) | *Gospel Bounce*, *Gospel Shout 16ths*, *Gospel Chops*, *Gospel Shout*, *Church Organ Swell*, *Gospel Walk*, *Praise Break*, *Sanctified Stabs*, *Gospel Ballad Swing* |
 | **Jackin'** (16) | *Chicago Jack*, *Jackin' Stabs*, *Jack Bounce*, *Jackin' Push*, *Chicago Organ Jack*, *Ghetto Jack*, *Disco Jack Chops*, *Jackin' Shuffle*, *Jack Organ Pump*, *Jack Stab Skips*, *Chicago Bounce*, *Warehouse Jack*, *Jack Your Body*, *Jackin' Organ Stabs*, *Swing Jack*, *Ghetto House Chops* |
+| **Piano jackin'** (16) | *Chicago Piano Bounce*, *Jack Stab Melody*, *Piano Call & Answer*, *Swing Piano Chops*, *Gospel Jack Keys*, *Offbeat Inversion Stabs*, *Three Three Two*, *Late Night Jack Piano*, *Piano Riff Runner*, *Warehouse Piano*, *Jackin' Gospel Answer*, *Shuffle Piano Stabs*, *Disco Jack Piano*, *Deep Jack Piano*, *Piano Hook*, *Organ Piano Jack* |
 | **Garage e UK** (7) | *Garage Skip*, *UK Garage 2-Step*, *Speed Garage Organ*, *Shuffled 2-Step*, *Garage Chord Skips*, *Bassline House*, *UK Funky Keys* |
 | **Afro e latin** (6) | *Afro House Keys*, *Tresillo Chords*, *Latin Montuno*, *Clave Stabs*, *Afro Deep Groove*, *Samba House* |
 | **Funky e disco** (15) | *Funky 16ths*, *Disco Octaves*, *Funk Clav Chops*, *Ghost Note Funk*, *Nile Chops*, *Anticipation Funk*, *Boogie Stabs*, *Slap Bass Funk*, *Funky Upstrokes*, *Disco Strut*, *Nu Disco Keys*, *Funky Clavinet 16ths*, *Philly Stabs*, *Boogie Wonderland*, *French Touch Filter* |
@@ -230,6 +231,7 @@ sparisce dalla griglia.
 
 | Cella | Significato |
 |---|---|
+| Con un piccolo ▲ / ▼ | lo stesso accordo **rivoltato su / giù**: la nota in alto si muove, come in un vero riff di piano (scegli *Colpo, rivolto su / giù* col clic destro) |
 | Piena chiara | colpo accentato |
 | Piena media | colpo normale |
 | Piena tenue | ghost note (colpo leggerissimo) |
@@ -271,7 +273,7 @@ Trascina l'angolo in basso a destra per **ingrandire o rimpicciolire** l'interfa
 
 - **STILE** apre un menu di impostazioni pronte per genere: *Classic Deep House*, *Soulful House*,
   *Gospel House*, *Jackin' House*, *'90s Piano House*, *Organ Jack*, *Nu Disco*, *Funky Disco*,
-  *UK Garage*, *Afro House*, *Neo Soul*, *Chill Lounge*. Ognuno imposta progressione (e la sua
+  *UK Garage*, *Afro House*, *Neo Soul*, *Jackin' Piano*, *Chill Lounge*. Ognuno imposta progressione (e la sua
   scala), estensioni, voicing, groove, swing, gate, humanize, strum, Top +8va, basso, accordo di
   passaggio, registro e suono guida. **La tonalità resta quella che hai scelto.** Poi modifica
   quello che vuoi.

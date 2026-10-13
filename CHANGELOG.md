@@ -6,6 +6,26 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.10.0] - 2026-10-13
+
+### Added
+- **Chords that move inside the bar:** a hit can now play the same chord one inversion **up**
+  or **down** (▲ / ▼ in the grid, *Hit, voicing up / down* in the right-click menu), so the top
+  note draws a little melody, the way a piano player builds a riff.
+- **16 new "Jackin' Piano" grooves** (112 in total) built on that movement: Chicago Piano Bounce,
+  Jack Stab Melody, Piano Call & Answer, Swing Piano Chops, Gospel Jack Keys, Offbeat Inversion
+  Stabs, Three Three Two, Late Night Jack Piano, Piano Riff Runner, Warehouse Piano, Jackin'
+  Gospel Answer, Shuffle Piano Stabs, Disco Jack Piano, Deep Jack Piano, Piano Hook, Organ Piano Jack.
+- **STYLE → Jackin' Piano:** house piano, short swung stabs, top octave, push-stab fills.
+
+### Changed
+- Twelve existing grooves now move by inversions too (Classic Offbeat Stabs, Soulful Push,
+  Gospel Bounce, Chicago Jack, Jackin' Stabs, Jack Bounce, Jackin' Push, Chicago Organ Jack,
+  Jackin' Shuffle, Soulful Sunday, Offbeat Doubles, Funky Upstrokes) instead of repeating the
+  identical chord on every hit.
+- **Random riffs:** the answer phrase now moves by inversions against the motif (call and
+  response with a melody on top).
+
 ## [1.9.0] - 2026-10-13
 
 ### Added

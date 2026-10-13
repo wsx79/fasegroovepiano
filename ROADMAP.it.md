@@ -15,3 +15,4 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 - v1.7.0: STILI pronti, RESET, 96 groove in 10 generi, voicing da pianista e riff casuali musicali.
 - v1.8.0: 11 stili di fill, fill a ogni battuta, tocco da pianista e groove più leggeri.
 - v1.9.0: linea in alto, rivolti, variazioni, groove da 1/4 battute, basso walking, IMPARA, preset, annulla/ripeti, salva tutte le parti, 3 nuovi suoni, chorus e pompa, sito web, build pronta per la notarizzazione.
+- v1.10.0: accordi che si muovono di rivolto dentro la battuta, 16 groove piano jackin', stile Jackin' Piano.

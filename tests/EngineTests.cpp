@@ -248,7 +248,7 @@ static bool wellFormed (const GroovePattern& p)
     if (p.length() != 32 && p.length() != 16) return false;
     if (p.leftHand.size() != p.rightHand.size()) return false;
     for (char c : p.rightHand + p.leftHand)
-        if (! (c == 'X' || c == 'x' || c == 'g' || c == '>' || c == '=' || c == '.'))
+        if (! (c == 'X' || c == 'x' || c == 'g' || c == '>' || c == '=' || c == '.' || c == 'u' || c == 'U' || c == 'd' || c == 'D'))
             return false;
     return true;
 }
@@ -257,7 +257,7 @@ static int countHits (const std::string& line)
 {
     int n = 0;
     for (char c : line)
-        if (c == 'X' || c == 'x' || c == 'g' || c == '>') ++n;
+        if (c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D') ++n;
     return n;
 }
 
@@ -693,9 +693,28 @@ static void testV19Features()
     CHECK (last > first);
 }
 
+static void testVoicingMovement()
+{
+    // 'u' plays the same chord one inversion up: same notes, higher on average.
+    GrooveSettings s;
+    s.humanize = 0.0f; s.swing = 0.0f; s.bass = BassMode::off; s.progressionLength = 1;
+    s.pattern = userPatternIndex();
+    s.userRight.fill ('.'); s.userLeft.fill ('.');
+    s.userRight[0] = 'x'; s.userRight[8] = 'u'; s.userRight[16] = 'd';
+    std::vector<int> a, b, c;
+    for (const auto& e : GrooveEngine::renderClip (s, 8.0))
+        if (e.isNoteOn())
+            (e.ppq < 1.0 ? a : e.ppq < 3.0 ? b : c).push_back (e.note);
+
+    auto mean = [] (const std::vector<int>& v) { double m = 0; for (int n : v) m += n; return v.empty() ? 0.0 : m / (double) v.size(); };
+    CHECK (a.size() == b.size() && a.size() == c.size());
+    CHECK (mean (b) > mean (a));
+    CHECK (mean (c) < mean (a));
+}
+
 static void testPatternsWellFormed()
 {
-    CHECK (groovePatterns().size() == 96);
+    CHECK (groovePatterns().size() == 112);
     for (const auto& p : groovePatterns())
         CHECK (std::find_if (grooveCategories().begin(), grooveCategories().end(), [&p] (const char* c) { return p.category == c; }) != grooveCategories().end());
 
@@ -704,7 +723,7 @@ static void testPatternsWellFormed()
         CHECK (p.length() == 16 || p.length() == 32);
         CHECK (p.leftHand.size() == p.rightHand.size());
         for (char c : p.rightHand + p.leftHand)
-            CHECK (c == 'X' || c == 'x' || c == 'g' || c == '>' || c == '=' || c == '.');
+            CHECK (c == 'X' || c == 'x' || c == 'g' || c == '>' || c == '=' || c == '.' || c == 'u' || c == 'U' || c == 'd' || c == 'D');
     }
 
     for (const auto& p : progressionPresets())
@@ -734,6 +753,7 @@ int main()
     testFreeChords();
     testHarmonyScores();
     testV19Features();
+    testVoicingMovement();
     testPatternsWellFormed();
 
     if (failures == 0)

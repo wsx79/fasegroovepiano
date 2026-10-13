@@ -6,6 +6,27 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.10.0] - 2026-10-13
+
+### Aggiunto
+- **Accordi che si muovono dentro la battuta:** un colpo ora può suonare lo stesso accordo
+  rivoltato **su** o **giù** (▲ / ▼ nella griglia, *Colpo, rivolto su / giù* nel menu del clic
+  destro), così la nota in alto disegna una piccola melodia, come costruisce un riff un pianista.
+- **16 nuovi groove "Piano jackin'"** (112 in totale) costruiti su questo movimento: Chicago
+  Piano Bounce, Jack Stab Melody, Piano Call & Answer, Swing Piano Chops, Gospel Jack Keys,
+  Offbeat Inversion Stabs, Three Three Two, Late Night Jack Piano, Piano Riff Runner, Warehouse
+  Piano, Jackin' Gospel Answer, Shuffle Piano Stabs, Disco Jack Piano, Deep Jack Piano, Piano
+  Hook, Organ Piano Jack.
+- **STILE → Jackin' Piano:** house piano, stab corti con swing, ottava in alto, fill a stab.
+
+### Modificato
+- Dodici groove esistenti ora si muovono anch'essi di rivolto (Classic Offbeat Stabs, Soulful
+  Push, Gospel Bounce, Chicago Jack, Jackin' Stabs, Jack Bounce, Jackin' Push, Chicago Organ Jack,
+  Jackin' Shuffle, Soulful Sunday, Offbeat Doubles, Funky Upstrokes) invece di ripetere lo stesso
+  identico accordo a ogni colpo.
+- **Riff casuali:** la frase di risposta ora si muove di rivolto contro il motivo (botta e
+  risposta con una melodia in alto).
+
 ## [1.9.0] - 2026-10-13
 
 ### Aggiunto

@@ -15,3 +15,4 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 - v1.7.0: STYLE presets, RESET, 96 grooves in 10 genres, pianist voicings and musical random riffs.
 - v1.8.0: 11 fill styles, fills every bar, a pianist's touch and lighter grooves.
 - v1.9.0: top line, inversions, variations, 1/4-bar grooves, walking bass, LEARN, presets, undo/redo, save all parts, 3 new sounds, chorus and pump, website, notarization-ready build.
+- v1.10.0: chords moving by inversions inside the bar, 16 jackin' piano grooves, Jackin' Piano style.
