@@ -775,7 +775,7 @@ static void testStrum()
 
 static void testPatternsWellFormed()
 {
-    CHECK (groovePatterns().size() == 128);
+    CHECK (groovePatterns().size() == 136);
     for (const auto& p : groovePatterns())
         CHECK (std::find_if (grooveCategories().begin(), grooveCategories().end(), [&p] (const char* c) { return p.category == c; }) != grooveCategories().end());
 
@@ -794,6 +794,50 @@ static void testPatternsWellFormed()
         const auto& cats = progressionCategories();
         CHECK (std::find_if (cats.begin(), cats.end(), [&p] (const char* c) { return std::string (c) == p.category; }) != cats.end());
     }
+}
+
+static void testDancePack()
+{
+    // Dominant free chords: Bb7 in C is a bVII7.
+    GrooveSettings s;
+    s.keyRoot = 0;
+    s.scale = 0;
+    s.extension = Extension::seventh;
+    s.progressionLength = 2;
+    s.freeChords[1] = freeDominantCode (10);
+    CHECK (chordName (GrooveEngine::chordForSlot (s, 1)) == "Bb7");
+    CHECK (GrooveEngine::numeralForSlot (s, 1) == "bVII");
+
+    // Every preset maps to valid slots; diatonic chords stay degrees, borrowed ones become free chords.
+    for (const auto& p : progressionPresets())
+    {
+        const auto slots = presetSlots (p);
+        CHECK (! slots.empty() && (int) slots.size() <= maxProgressionLength);
+        for (const auto& slot : slots)
+            CHECK (slot.degree >= 0 && slot.degree < 7 && slot.freeCode < numFreeChordCodes);
+    }
+    for (const auto& p : progressionPresets())
+        if (std::string (p.name).rfind ("Backdoor", 0) == 0)
+        {
+            const auto slots = presetSlots (p);
+            CHECK (slots[0].degree == 1 && slots[0].freeCode == noFreeChord);   // ii is diatonic
+            CHECK (slots[1].freeCode == freeDominantCode (10));                 // bVII7 is borrowed
+            CHECK (slots[2].degree == 0 && slots[2].freeCode == noFreeChord);
+        }
+
+    // Octave triads: R 3 5 doubled an octave up.
+    const auto c = buildChord (0, 0, 0, Extension::ninth);
+    const auto v = voiceChord (c, Voicing::octaveTriads, 64, nullptr);
+    CHECK (v.rightHand.size == 6);
+    for (int i = 0; i < 3; ++i)
+        CHECK (v.rightHand[i + 3] - v.rightHand[i] == 12);
+    for (int i = 0; i < v.rightHand.size; ++i)
+        CHECK (v.rightHand[i] % 12 == 0 || v.rightHand[i] % 12 == 4 || v.rightHand[i] % 12 == 7);
+
+    int stabs = 0;
+    for (const auto& p : groovePatterns())
+        stabs += p.category == "Dance Stabs" ? 1 : 0;
+    CHECK (stabs == 8);
 }
 
 int main()
@@ -818,6 +862,7 @@ int main()
     testAutoMovement();
     testStrum();
     testPatternsWellFormed();
+    testDancePack();
 
     if (failures == 0)
         std::printf ("All engine tests passed.\n");

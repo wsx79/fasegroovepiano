@@ -35,15 +35,15 @@ Rhodes or synth.
   Locrian, Harmonic and Melodic Minor, Harmonic Major, Lydian Dominant, Mixolydian b6, Phrygian
   Dominant). Triads, 7ths, 9ths, 11ths/13ths, **6/9**, **add9**, **9sus4** and the gospel
   **altered V 13(b9)**; clashing tensions are handled automatically.
-- 🎛️ **Voicings:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (two hands), Quartal, with
+- 🎛️ **Voicings:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (two hands), Quartal, Octave triads (disco), with
   automatic voice leading.
 - ↗️ **Approach chords:** the gospel half-step slide into every chord change (from above or below).
-- 🔁 **Progressions:** 1–8 chords, 38 presets in a menu grouped by style (including circle-of-fifths progressions) and
+- 🔁 **Progressions:** 1–8 chords, 54 presets in a menu grouped by style (including circle-of-fifths and chromatic, borrowed-chord progressions) and
   **DICE** for random but musical progressions.
 - ⭕ Interactive **circle of fifths**: the chords of the scale with their numerals, your progression as numbered dots and arrows, drag the dots to change chords (even outside the scale).
 - 🌈 **Harmony colours:** chords and chord changes coloured by how well they sound together (green = great, grey = clashes).
 - 🎚️ **STYLE:** one-click setups by genre (deep, soulful, gospel, jackin', '90s piano, garage, afro, neo soul…) and **RESET** to start over.
-- 🥁 **128 two-hand grooves** in 12 genres (**piano house** loops, soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill), with chords that move by inversions inside the bar like a real piano riff
+- 🥁 **136 two-hand grooves** in 13 genres (**piano house** loops, soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill, dance stabs), with chords that move by inversions inside the bar like a real piano riff
   plus **NEW RIFF**, a random funky riff generator, and optional fills (11 styles, from gospel runs to piano glissandos).
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and

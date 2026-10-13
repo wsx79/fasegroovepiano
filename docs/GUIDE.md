@@ -102,7 +102,7 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 
 | Control | What it does |
 |---|---|
-| **Load a progression…** | 38 ready-made progressions in a three-column menu, grouped by style: *Soulful & Gospel*, *Circle of 5ths*, *Deep house*, *Modal & exotic*, *Jackin' & funky*. Loading one also sets the recommended scale. (Long menus like *Groove* also open in columns.) |
+| **Load a progression…** | 54 ready-made progressions in a four-column menu, grouped by style: *Soulful & Gospel*, *Circle of 5ths*, *Deep house*, *Modal & exotic*, *Jackin' & funky*, *Chromatic & borrowed*. Loading one also sets the recommended scale. The **Chromatic & borrowed** ones use chords from outside the scale, the way dance producers do (maj9 chords sliding by a tone, the borrowed minor iv, bIII / bVI / bVII, dominant chords like III7 or bVII7): they load as free chords on the circle, so you can see and move them. (Long menus like *Groove* also open in columns.) |
 | **DICE** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
 | **LEARN** | Play chords on your **MIDI keyboard**: each chord you play (and release) fills the next slot, starting from slot 1, and the progression grows with it. Chords of the scale become degrees, the others free chords. Press LEARN again to stop. |
 | **Length** | How many chords (1–8). Slots beyond the length are greyed out. |
@@ -118,7 +118,7 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Key** | Key (C … B). |
 | **Scale / mode** | Major (Ionian), **Dorian** (the deep house classic), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, plus (v1.5) **Locrian**, **Harmonic Major** (gospel minor iv), **Lydian Dominant** (funky I7#11), **Mixolydian b6** (soulful borrowed iv) and **Phrygian Dominant** (dark, exotic deep house). |
 | **Extensions** | Triads, 7ths, 9ths, 11ths/13ths, plus (v1.5): **6/9** (the warm soulful tonic chord, no 7th), **Add 9** (pop/house triad with a 9th), **Sus (9sus4)** (the open, floating deep house chord) and **9ths + altered V** (every chord a 9th, and degree V becomes a gospel **13(b9)**, or **7(b9,b13)** in minor keys). Clashing tensions are handled automatically: a b9 on a non-dominant chord is dropped, an 11th on a major chord becomes a 13th, a 6th that would be a b6 becomes a 7th, and sus4 is used only where the 4th is perfect. |
-| **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound), *Shell (3-7-top)* (just 3rd, 7th and the top colour note: light and jazzy, leaves room for the bass and vocals), *Drop 2+4* (open, spread pianist voicing, great for pads and breaks). Fast repeated hits use a lighter voicing (the top three notes) and ghost notes only the top two, like a pianist's touch; steady 8th-note bass lines bounce between root and octave. Every voicing follows the rules a pianist uses: no semitone rubs between neighbouring notes, no muddy small intervals in the low register, the 9th above the 3rd, and the voice that moves the least (the top note sings a smooth line). |
+| **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound), *Shell (3-7-top)* (just 3rd, 7th and the top colour note: light and jazzy, leaves room for the bass and vocals), *Drop 2+4* (open, spread pianist voicing, great for pads and breaks), *Octave triads (disco)* (a plain triad doubled an octave up, R 3 5 R 3 5: the bright disco and nu disco piano; best with *Triads*). Fast repeated hits use a lighter voicing (the top three notes) and ghost notes only the top two, like a pianist's touch; steady 8th-note bass lines bounce between root and octave. Every voicing follows the rules a pianist uses: no semitone rubs between neighbouring notes, no muddy small intervals in the low register, the 9th above the 3rd, and the voice that moves the least (the top note sings a smooth line). |
 | **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th, **Walking** (root, 5th, octave on the beats and a chromatic step into the next chord) or **Syncopated octaves** (the offbeats jump up an octave: the pumping house bass). |
 | **Top line** | The melody drawn by the top notes of the chords: *Smooth (auto)* moves as little as possible, *Steady* keeps the top note in place, *Rising*, *Falling* or *Arch* shape it across the progression. |
 | **Movement** | **Voicing movement** for every groove: *Off* repeats the same chord on every hit, *Subtle* (default) moves the answer half-bars an inversion up, *Lively* makes every half-bar dance (chord, up, chord, down, mirrored in the answer). Grooves that already move keep their own figure; the break stays still. |
@@ -170,7 +170,7 @@ Outer ring = major keys, inner ring = relative minors.
 
 | Control | What it does |
 |---|---|
-| **Groove** | 128 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). |
+| **Groove** | 136 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). |
 | **NEW RIFF** | Generates a new riff (chords + bass), built like a keyboard player builds one: a half-bar motif made of house comping figures, answered and repeated (A B A B'), often with a push into the next bar, over a simple bass figure that locks to it. If you locked some parts with **LOCK** (see *Rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
 | **Fills** | **Off** by default. Every bar, or every 2/4/8 bars, the end of the bar becomes a short fill leading into the next chord. |
@@ -183,7 +183,7 @@ Outer ring = major keys, inner ring = relative minors.
 | **Humanize** | Small timing and velocity variations for a hand-played feel. |
 | **Density** | Random riffs only: from sparse stabs to busy 16th-note chops. |
 
-**The grooves: 128, by genre.** New users: start from **Piano House**, the classic house piano loops (rootless chords on syncopated offbeats over an octave bass). The *Groove* menu opens in columns with one heading per genre;
+**The grooves: 136, by genre.** New users: start from **Piano House**, the classic house piano loops (rootless chords on syncopated offbeats over an octave bass). The *Groove* menu opens in columns with one heading per genre;
 *Random riff* and *User pattern* are under **Generate**. Jackin' grooves sound best with Swing at
 30–45%, UK garage ones with 45–55%.
 
@@ -201,6 +201,7 @@ Outer ring = major keys, inner ring = relative minors.
 | **'90s Piano House** (9) | *Classic Offbeat Stabs*, *Offbeat Doubles*, *M1 Organ Stabs*, *Italo Piano Anthem*, *Hands Up Piano*, *Piano Anthem Offbeats*, *Show Me Stabs*, *Rave Piano Chords*, *Balearic Piano* |
 | **Neo Soul & Broken** (8) | *Neo Soul Lazy*, *Broken Beat*, *Neo Soul Comping*, *Lazy Swing Keys*, *Broken Beat Chords*, *Neo Soul Ghosts*, *Jazzy House Comp*, *Rhodes Broken Swing* |
 | **Chill & Pads** (6) | *Long Chords*, *Whole Bar Pads*, *Half Bar Pads*, *Chill Swells*, *Lounge Keys*, *Sunset Chords* |
+| **Dance Stabs** (8) | *Future Stab 3-3-2*, *Tresillo Stabs*, *Rolling 3-3-3*, *Offbeat Push Stabs*, *Bounce Stabs*, *Call Stab Answer*, *Club Hook Stabs*, *Disco Octave Pump*: short chords on 3-3-3-3-2-2 figures with the bass doubling every hit |
 
 ### Rhythm grid
 
@@ -270,7 +271,7 @@ remembered with your project.
 
 - **STYLE** opens a menu of ready-made setups by genre: *House Piano Loop*, *Classic Deep House*, *Soulful House*,
   *Gospel House*, *Jackin' House*, *'90s Piano House*, *Organ Jack*, *Nu Disco*, *Funky Disco*,
-  *UK Garage*, *Afro House*, *Neo Soul*, *Jackin' Piano*, *Chill Lounge*. Each one sets the progression (and its
+  *UK Garage*, *Afro House*, *Neo Soul*, *Jackin' Piano*, *Chill Lounge*, *Future House*, *Disco Piano*. Each one sets the progression (and its
   scale), extensions, voicing, groove, swing, gate, humanize, strum, Top +8va, bass, approach chord,
   register and guide sound. **The key stays the one you chose.** Then tweak anything you like.
 - **RESET** puts **every setting back to its default** (after asking you to confirm): harmony,

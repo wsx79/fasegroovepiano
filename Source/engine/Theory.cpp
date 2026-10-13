@@ -158,7 +158,7 @@ const char* extensionName (int ext) noexcept
 const char* voicingName (int voicing) noexcept
 {
     static const char* const names[numVoicings] { "Close", "Drop 2", "Rootless", "Wide (2 hands)", "Quartal (4ths)",
-                                                     "Shell (3-7-top)", "Drop 2+4" };
+                                                     "Shell (3-7-top)", "Drop 2+4", "Octave triads (disco)" };
     return names[mod (voicing, numVoicings)];
 }
 
@@ -523,6 +523,45 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
             shape.add (bottom + chord.quartal[i]);
 
         v.rightHand = placeNear (shape, centre);
+        return v;
+    }
+
+    if (voicing == Voicing::octaveTriads)
+    {
+        // Disco piano: a plain triad doubled an octave up (R 3 5 R 3 5), both hands locked.
+        const int pcs[3] { chord.rootPc, absolutePc (chord.third), absolutePc (chord.fifth) };
+        double bestCost = std::numeric_limits<double>::max();
+        NoteSet best;
+        for (int first = 0; first < 3; ++first)
+        {
+            NoteSet triad;
+            int note = (centre - 9) + mod (pcs[first] - (centre - 9), 12);
+            triad.add (note);
+            for (int k = 1; k < 3; ++k)
+            {
+                const int pc = pcs[(first + k) % 3];
+                note += mod (pc - note, 12) == 0 ? 12 : mod (pc - note, 12);
+                triad.add (note);
+            }
+            for (int shift : { -12, 0 })
+            {
+                NoteSet c;
+                for (int i = 0; i < 3; ++i) c.add (triad[i] + shift);
+                for (int i = 0; i < 3; ++i) c.add (triad[i] + shift + 12);
+                c.sort();
+                double cost = 0.6 * std::abs (c.mean() - centre);
+                if (previousRightHand != nullptr && previousRightHand->size > 0)
+                    cost += movement (c, *previousRightHand) + 0.35 * std::abs (c.highest() - previousRightHand->highest());
+                if (topTarget >= 0)
+                    cost += 3.0 * std::abs (c.highest() - topTarget);
+                if (cost < bestCost - 1.0e-9)
+                {
+                    bestCost = cost;
+                    best = c;
+                }
+            }
+        }
+        v.rightHand = best;
         return v;
     }
 

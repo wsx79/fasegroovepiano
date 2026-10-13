@@ -918,7 +918,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
                 if (patterns[(size_t) i].category == genres[g])
                     group.items.push_back (i);
 
-            // Columns: piano house, soulful, deep | gospel, jackin', jackin' piano | garage, afro, funky | '90s, neo soul, chill, generate
+            // Columns: piano house, soulful, deep | gospel, jackin', jackin' piano | garage, afro, funky | '90s, neo soul, chill, dance stabs, generate
             group.columnBreakAfter = g == 2 || g == 5 || g == 8;
             groups.push_back (group);
         }
@@ -1381,8 +1381,8 @@ void FaseGroovePianoEditor::buildPresetMenu()
     const auto& categories = sgk::progressionCategories();
     for (size_t c = 0; c < categories.size(); ++c)
     {
-        // Columns: soulful + circle | deep + modal | jackin'
-        if (c == 2 || c == 4)
+        // Columns: soulful + circle | deep + modal | jackin' | chromatic & borrowed
+        if (c == 2 || c == 4 || c == 5)
             presetBox.getRootMenu()->addColumnBreak();
 
         presetBox.addSectionHeading (tr (categories[c]));
@@ -1641,17 +1641,7 @@ void FaseGroovePianoEditor::exitMiniMode()
 
 void FaseGroovePianoEditor::loadPreset (int index)
 {
-    const auto& presets = sgk::progressionPresets();
-    if (index < 0 || index >= (int) presets.size())
-        return;
-
-    const auto& preset = presets[(size_t) index];
-    processor.clearFreeChords();
-    processor.setParameterFromUI (ParamIDs::scale, (float) preset.scale);
-    processor.setParameterFromUI (ParamIDs::progLength, (float) preset.degrees.size());
-
-    for (int i = 0; i < (int) preset.degrees.size(); ++i)
-        processor.setParameterFromUI (ParamIDs::slot (i), (float) preset.degrees[(size_t) i]);
+    processor.applyProgressionPreset (index);
 }
 
 //==============================================================================

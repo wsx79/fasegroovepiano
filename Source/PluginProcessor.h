@@ -133,6 +133,8 @@ public:
         (the key is kept). */
     static juce::StringArray styleNames();
     void applyStyle (int index);
+    /** Loads progressionPresets()[index]: scale, length, degrees and any borrowed chords. */
+    void applyProgressionPreset (int index);
     /** Index in progressionPresets() that a style loads, or -1. */
     static int stylePreset (int index);
 

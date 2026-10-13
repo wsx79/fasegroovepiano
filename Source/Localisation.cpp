@@ -374,6 +374,12 @@ namespace
         { "Deep house", "Deep house", "Deep house", "Deep house", "Deep House", "Deep house" },
         { "Modal & exotic", "Modali ed esotiche", "Modales y exóticas", "Modales et exotiques", "Modal & exotisch", "Modais e exóticas" },
         { "Jackin' & funky", "Jackin' e funky", "Jackin' y funky", "Jackin' et funky", "Jackin' & Funky", "Jackin' e funky" },
+        // ---- v1.14 dance pack ----
+        { "Chromatic & borrowed", "Cromatiche e prestiti", "Cromáticas y prestadas", "Chromatiques et empruntées", "Chromatisch & entlehnt", "Cromáticas e emprestadas" },
+        { "Octave triads (disco)", "Triadi in ottava (disco)", "Tríadas en octava (disco)", "Triades à l'octave (disco)", "Oktav-Dreiklänge (Disco)", "Tríades em oitava (disco)" },
+        { "Dance Stabs", "Stab dance", "Stabs dance", "Stabs dance", "Dance-Stabs", "Stabs dance" },
+        { "Future House", "Future house", "Future house", "Future house", "Future House", "Future house" },
+        { "Disco Piano", "Piano disco", "Piano disco", "Piano disco", "Disco-Piano", "Piano disco" },
         { "Free", "Libero", "Libre", "Libre", "Frei", "Livre" },
         { "Free chords", "Accordi liberi", "Acordes libres", "Accords libres", "Freie Akkorde", "Acordes livres" },
         { "Free chords: drag the dots anywhere on the circle, even outside the scale",

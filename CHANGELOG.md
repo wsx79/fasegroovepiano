@@ -6,6 +6,24 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.14.0] - 2026-10-13
+
+### Added
+- **"Chromatic & borrowed" progressions:** 16 new presets (54 in total) with the chords dance
+  producers borrow from outside the scale: maj9 chords sliding by a tone, the minor iv, bIII / bVI /
+  bVII, the Neapolitan bII, dominant chords like III7, VI7 or bVII7. They load as free chords on the
+  circle of fifths; the in-scale chords stay normal degrees.
+- **Free dominant chords:** a free chord can now also be a dominant 7th (V7 of a minor key, backdoor
+  bVII7, secondary dominants).
+- **New voicing "Octave triads (disco)":** a plain triad doubled an octave up (R 3 5 R 3 5), the
+  bright disco and nu disco piano.
+- **New genre "Dance Stabs"** (8 grooves, 136 in total): short chords on 3-3-3-3-2-2 figures, with
+  the bass doubling every stab.
+- **Two new styles:** *Future House* and *Disco Piano*.
+
+### Changed
+- The progression menu now opens in four columns.
+
 ## [1.13.0] - 2026-10-13
 
 ### Added

@@ -198,7 +198,7 @@ namespace
     };
 
     // extension: 0 triads 1 7ths 2 9ths 3 11ths 4 6/9 5 add9 6 sus 7 9ths+altered V
-    // voicing: 0 close 1 drop2 2 rootless 3 wide 4 quartal 5 shell 6 drop2+4
+    // voicing: 0 close 1 drop2 2 rootless 3 wide 4 quartal 5 shell 6 drop2+4 7 octave triads
     // bass: 0 off 1 root 2 octaves 3 root+5th   approach: 0 off 1 above 2 below
     // sound: 0 Rhodes 1 Soulful Grand 2 House Piano 3 House Organ
     const Style styles[] {
@@ -216,6 +216,8 @@ namespace
         { "Neo Soul",             "Neo Soul  ii - iii - IV - V",       "Neo Soul Ghosts",      3, 6, 1, 2, 0, 62, 0.45f, 0.60f, 0.40f, 0.30f, false, 3, 7 },
         { "Jackin' Piano",        "Jack Swing  i - v - VII - IV",      "Chicago Piano Bounce", 1, 0, 1, 0, 2, 66, 0.55f, 0.30f, 0.20f, 0.00f, true, 2, 5 },
         { "Chill Lounge",         "Lydian Float  I - II",              "Lounge Keys",          2, 3, 1, 0, 0, 64, 0.20f, 0.80f, 0.30f, 0.35f, false },
+        { "Future House",         "Maj9 Drift  I - bIII - bVI - bVII", "Future Stab 3-3-2",    2, 3, 2, 0, 2, 62, 0.05f, 0.30f, 0.10f, 0.00f, false, 2, 6 },
+        { "Disco Piano",          "Minor Glide  i - bVII - bVI - V7",  "Disco Octave Pump",    0, 7, 2, 0, 1, 64, 0.10f, 0.40f, 0.15f, 0.00f, false, 3, 8 },
     };
 
     int indexOfGroove (const char* name)
@@ -384,6 +386,24 @@ int FaseGroovePianoProcessor::stylePreset (int index)
     return juce::isPositiveAndBelow (index, (int) std::size (styles)) ? indexOfPreset (styles[index].progression) : -1;
 }
 
+void FaseGroovePianoProcessor::applyProgressionPreset (int index)
+{
+    const auto& presets = sgk::progressionPresets();
+    if (! juce::isPositiveAndBelow (index, (int) presets.size()))
+        return;
+
+    const auto& p = presets[(size_t) index];
+    const auto slots = sgk::presetSlots (p);
+    clearFreeChords();
+    setParameterFromUI (ParamIDs::scale, (float) p.scale);
+    setParameterFromUI (ParamIDs::progLength, (float) slots.size());
+    for (int i = 0; i < (int) slots.size() && i < sgk::maxProgressionLength; ++i)
+    {
+        setParameterFromUI (ParamIDs::slot (i), (float) slots[(size_t) i].degree);
+        setFreeChord (i, slots[(size_t) i].freeCode);
+    }
+}
+
 void FaseGroovePianoProcessor::applyStyle (int index)
 {
     if (! juce::isPositiveAndBelow (index, (int) std::size (styles)))
@@ -392,14 +412,7 @@ void FaseGroovePianoProcessor::applyStyle (int index)
     const auto& st = styles[index];
     clearFreeChords();
 
-    if (const int preset = indexOfPreset (st.progression); preset >= 0)
-    {
-        const auto& p = sgk::progressionPresets()[(size_t) preset];
-        setParameterFromUI (ParamIDs::scale, (float) p.scale);
-        setParameterFromUI (ParamIDs::progLength, (float) p.degrees.size());
-        for (int i = 0; i < (int) p.degrees.size(); ++i)
-            setParameterFromUI (ParamIDs::slot (i), (float) p.degrees[(size_t) i]);
-    }
+    applyProgressionPreset (indexOfPreset (st.progression));
 
     setParameterFromUI (ParamIDs::pattern, (float) indexOfGroove (st.groove));
     setParameterFromUI (ParamIDs::extension, (float) st.extension);
@@ -603,7 +616,7 @@ void FaseGroovePianoProcessor::toggleBass()
 void FaseGroovePianoProcessor::setFreeChord (int slot, int code)
 {
     if (slot >= 0 && slot < sgk::maxProgressionLength)
-        freeChords[(size_t) slot] = (code >= 0 && code < 24) ? code : sgk::noFreeChord;
+        freeChords[(size_t) slot] = (code >= 0 && code < sgk::numFreeChordCodes) ? code : sgk::noFreeChord;
 }
 
 void FaseGroovePianoProcessor::clearFreeChords()

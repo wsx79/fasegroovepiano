@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v1.14.0: progressioni cromatiche e con accordi in prestito, voicing a triadi in ottava, groove Stab dance.
 - v1.6.0: colori dell'armonia (gli accordi suonano bene insieme?) e nuovo circolo delle quinte.
 - v1.7.0: STILI pronti, RESET, 96 groove in 10 generi, voicing da pianista e riff casuali musicali.
 - v1.8.0: 11 stili di fill, fill a ogni battuta, tocco da pianista e groove più leggeri.

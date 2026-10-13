@@ -34,15 +34,15 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
   Phrygian, Locrian, Minore armonica e melodica, Maggiore armonica, Lidia dominante, Misolidia b6,
   Frigia dominante). Triadi, 7ª, 9ª, 11ª/13ª, **6/9**, **add9**, **9sus4** e il **V alterato
   13(b9)** gospel; tensioni gestite in automatico.
-- 🎛️ **Voicing:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (due mani), Quartal, con voice
+- 🎛️ **Voicing:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (due mani), Quartal, Triadi in ottava (disco), con voice
   leading automatico.
 - ↗️ **Accordi di passaggio:** lo slide gospel di mezzo tono verso ogni cambio d'accordo (da sopra o da sotto).
-- 🔁 **Progressioni:** 1–8 accordi, 38 preset in un menu diviso per stile (tra cui le progressioni sul circolo delle quinte)
+- 🔁 **Progressioni:** 1–8 accordi, 54 preset in un menu diviso per stile (tra cui le progressioni sul circolo delle quinte e quelle cromatiche con accordi presi in prestito)
   e **DICE** per progressioni casuali ma musicali.
 - ⭕ **Circolo delle quinte** interattivo: gli accordi della scala coi numeri romani, la progressione con punti numerati e frecce, trascina i punti per cambiare gli accordi (anche fuori scala).
 - 🌈 **Colori dell'armonia:** accordi e passaggi colorati in base a quanto suonano bene insieme (verde = benissimo, grigio = stride).
 - 🎚️ **STILE:** impostazioni pronte per genere con un clic (deep, soulful, gospel, jackin', piano anni '90, garage, afro, neo soul…) e **RESET** per ripartire da zero.
-- 🥁 **128 groove** a due mani in 12 generi (loop di **piano house**, soulful, deep, gospel, **jackin' house**, **piano jackin'**, garage, afro, funky e disco, piano house anni '90, neo soul, chill), con accordi che si muovono di rivolto dentro la battuta come un vero riff di piano
+- 🥁 **136 groove** a due mani in 13 generi (loop di **piano house**, soulful, deep, gospel, **jackin' house**, **piano jackin'**, garage, afro, funky e disco, piano house anni '90, neo soul, chill, stab dance), con accordi che si muovono di rivolto dentro la battuta come un vero riff di piano
   più **NEW RIFF**, che genera riff funky casuali sul momento, e fill opzionali (11 stili, dalle scale gospel ai glissati di piano).
 - 🎚️ **Strum** (accordi arpeggiati come un pianista vero) e **Top +8va** (nota alta raddoppiata all'ottava).
 - ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,

@@ -32,11 +32,11 @@ struct NoteSet
 //==============================================================================
 // New entries are always appended so saved projects keep their settings.
 enum class Extension { triad = 0, seventh, ninth, eleventh, sixNine, add9, sus, alteredDominant };
-enum class Voicing   { close = 0, drop2, rootless, wide, quartal, shell, drop24 };
+enum class Voicing   { close = 0, drop2, rootless, wide, quartal, shell, drop24, octaveTriads };
 
 constexpr int numScales     = 13;
 constexpr int numExtensions = 8;
-constexpr int numVoicings   = 7;
+constexpr int numVoicings   = 8;
 
 const char* scaleName (int scale) noexcept;
 const std::array<int, 7>& scaleIntervals (int scale) noexcept;

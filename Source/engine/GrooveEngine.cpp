@@ -467,6 +467,31 @@ const std::vector<GroovePattern>& groovePatterns()
         { "Skippy Piano Stabs",
           compact (".X.. x.x. x..x ..x. ..X. .x.. x..x .x.."),
           compact ("x... ..x. .... x... x... ..x. .... ..x."), "Piano House" },
+        // ---- v1.14: dance stabs (short chords, 3-3-3-3-2-2 figures, bass doubling every hit) ----
+        { "Future Stab 3-3-2",
+          compact ("X..x ..x. .x.. x.x. X..x ..x. .x.. x.x."),
+          compact ("x..x ..x. .x.. x.x. x..x ..x. .x.. x.x."), "Dance Stabs" },
+        { "Tresillo Stabs",
+          compact ("X... ..x. .x.. x.x. X... ..x. .x.. x.x."),
+          compact ("x... ..x. .x.. x.x. x... ..x. .x.. x.x."), "Dance Stabs" },
+        { "Rolling 3-3-3",
+          compact ("X..x ..x. .x.. x.x. X..x ..x. .x.. x..."),
+          compact ("x..x ..x. .x.. x.x. x..x ..x. .x.. x..."), "Dance Stabs" },
+        { "Offbeat Push Stabs",
+          compact ("X.x. x.x. .x.. x.x. X.x. x.x. .x.. x..x"),
+          compact ("x.x. x.x. .x.. x.x. x.x. x.x. .x.. x..x"), "Dance Stabs" },
+        { "Bounce Stabs",
+          compact ("X... x..x .x.. x.x. X... x..x .x.. x.x."),
+          compact ("x... x..x .x.. x.x. x... x..x .x.. x.x."), "Dance Stabs" },
+        { "Call Stab Answer",
+          compact ("X..x ..x. .... .... ..x. .x.. x..x .x.."),
+          compact ("x..x ..x. .... .... ..x. .x.. x..x .x.."), "Dance Stabs" },
+        { "Club Hook Stabs",
+          compact ("X..x ..x. .x.. x... .x.. x..x ..x. x.x."),
+          compact ("x..x ..x. .x.. x... .x.. x..x ..x. x.x."), "Dance Stabs" },
+        { "Disco Octave Pump",
+          compact ("..x. ..x. ..x. ..x. ..x. ..x. ..x. .xx."),
+          compact ("x... x... x... x... x... x... x... x..."), "Dance Stabs" },
     };
 
     return patterns;
@@ -476,7 +501,7 @@ const std::vector<const char*>& grooveCategories()
 {
     static const std::vector<const char*> categories { "Piano House", "Soulful", "Deep", "Gospel", "Jackin'", "Jackin' Piano", "Garage & UK",
                                                        "Afro & Latin", "Funky & Disco", "'90s Piano House", "Neo Soul & Broken",
-                                                       "Chill & Pads" };
+                                                       "Chill & Pads", "Dance Stabs" };
     return categories;
 }
 
@@ -493,7 +518,7 @@ int userPatternIndex() noexcept
 const std::vector<const char*>& progressionCategories()
 {
     static const std::vector<const char*> categories { "Soulful & Gospel", "Circle of 5ths", "Deep house",
-                                                       "Modal & exotic", "Jackin' & funky" };
+                                                       "Modal & exotic", "Jackin' & funky", "Chromatic & borrowed" };
     return categories;
 }
 
@@ -539,10 +564,55 @@ const std::vector<ProgressionPreset>& progressionPresets()
         { "Ghetto Funk  i - iv - v - iv",      2, { 0, 3, 4, 3 }, "Jackin' & funky" },
         { "Phrygian Jack  i - bII",            5, { 0, 1 },       "Jackin' & funky" },
         { "Lydian Jack  I7 - bVII",           10, { 0, 6, 0, 6 }, "Jackin' & funky" },
-        { "Chicago Bounce  i - VII - i - IV",  1, { 0, 6, 0, 3 }, "Jackin' & funky" },
+        { "Chicago Bounce  i - VII - i - IV",  1, { 0, 6, 0, 3 }, "Jackin' & funky" },        // v1.14: chromatic (borrowed chords, dominants)
+        { "Maj9 Drift  I - bIII - bVI - bVII", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 0, 3, 8, 10 } },
+        { "Deep Planing  I - bVII - bVI - bVII", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 0, 10, 8, 10 } },
+        { "Borrowed iv  I - IV - iv - I", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 0, 5, 17, 0 } },
+        { "Minor Plagal  vi - IV - iv - I", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 21, 5, 17, 0 } },
+        { "Backdoor  ii - bVII7 - I", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 14, 34, 0, 0 } },
+        { "Dorian Lift  i - bIII - IV - i", 1, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 12, 3, 5, 12 } },
+        { "Neapolitan Deep  i - bII - i - v", 2, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 12, 1, 12, 19 } },
+        { "Minor Dominant  vi - III7 - vi - IV", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 21, 28, 21, 5 } },
+        { "Floating Maj7  IV - V - iii - bIII", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 5, 7, 16, 3 } },
+        { "Mediant Shift  I - iii - bIII - IV", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 0, 16, 3, 5 } },
+        { "Lydian Turn  I - II - iv - I", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 0, 2, 17, 0 } },
+        { "Picardy House  i - iv - V7 - I", 2, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 12, 17, 31, 0 } },
+        { "Deep Maj9 Walk  I - bVI - IV - bVII", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 0, 8, 5, 10 } },
+        { "Gospel Flat VII  IV - bVII7 - I - vi", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 5, 34, 0, 21 } },
+        { "Minor Glide  i - bVII - bVI - V7", 2, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 12, 10, 8, 31 } },
+        { "Secondary Soul  I - VI7 - ii - V7", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 0, 33, 14, 31 } },
     };
 
     return presets;
+}
+
+std::vector<PresetSlot> presetSlots (const ProgressionPreset& preset, int extension)
+{
+    std::vector<PresetSlot> out;
+    if (preset.chords.empty())
+    {
+        for (int d : preset.degrees)
+            out.push_back ({ d, noFreeChord });
+        return out;
+    }
+
+    for (int code : preset.chords)
+    {
+        const int semis = code % 12;
+        const int kind = code / 12;   // 0 major, 1 minor, 2 dominant
+        int degree = -1;
+        for (int d = 0; d < 7 && degree < 0; ++d)
+        {
+            const auto c = buildChord (0, preset.scale, d, (Extension) extension);
+            const bool sameKind = kind == 1 ? c.third == 3 && c.fifth == 7
+                                : kind == 2 ? c.third == 4 && c.seventh == 10
+                                            : c.third == 4 && c.fifth == 7;   // a major chord takes the scale's own 7th
+            if (c.rootPc == semis && sameKind)
+                degree = d;
+        }
+        out.push_back ({ std::max (0, degree), degree >= 0 ? noFreeChord : code });
+    }
+    return out;
 }
 
 const char* fillStyleName (int style) noexcept
@@ -776,8 +846,12 @@ Chord GrooveEngine::chordForSlot (const GrooveSettings& s, int slot) noexcept
 {
     const int i = std::clamp (slot, 0, maxProgressionLength - 1);
     const int free = s.freeChords[(size_t) i];
-    if (free >= 0 && free < 24)
-        return buildChord ((s.keyRoot + free % 12) % 12, free >= 12 ? 1 : 0, 0, s.extension);   // minor = Dorian i, major = Ionian I
+    if (free >= 0 && free < numFreeChordCodes)
+    {
+        // minor = Dorian i, major = Ionian I, dominant = Mixolydian I
+        const int scale = free >= 24 ? 3 : free >= 12 ? 1 : 0;
+        return buildChord ((s.keyRoot + free % 12) % 12, scale, 0, s.extension);
+    }
 
     return buildChord (s.keyRoot, s.scale, s.progression[(size_t) i], s.extension);
 }

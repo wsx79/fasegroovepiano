@@ -6,6 +6,24 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.14.0] - 2026-10-13
+
+### Aggiunto
+- **Progressioni "Cromatiche e prestiti":** 16 preset nuovi (54 in totale) con gli accordi che i
+  produttori dance prendono da fuori scala: accordi maj9 che scivolano di un tono, la iv minore,
+  bIII / bVI / bVII, la napoletana bII, dominanti come III7, VI7 o bVII7. Si caricano come accordi
+  liberi sul circolo delle quinte; gli accordi in scala restano gradi normali.
+- **Accordi liberi di dominante:** un accordo libero ora può essere anche una settima di dominante
+  (V7 di una tonalità minore, bVII7 "backdoor", dominanti secondarie).
+- **Nuovo voicing "Triadi in ottava (disco)":** una triade semplice raddoppiata all'ottava sopra
+  (R 3 5 R 3 5), il piano brillante della disco e della nu disco.
+- **Nuovo genere "Stab dance"** (8 groove, 136 in totale): accordi corti su figure 3-3-3-3-2-2,
+  col basso che raddoppia ogni colpo.
+- **Due stili nuovi:** *Future House* e *Disco Piano*.
+
+### Modificato
+- Il menu delle progressioni ora si apre in quattro colonne.
+
 ## [1.13.0] - 2026-10-13
 
 ### Aggiunto

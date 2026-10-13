@@ -54,7 +54,16 @@ struct ProgressionPreset
     int scale;
     std::vector<int> degrees;
     const char* category = "";   // shown as a heading in the preset menu
+
+    /** Chromatic presets: one free chord code per slot (freeChordCode / freeDominantCode);
+        chords that belong to the scale are loaded as degrees, the others as free chords. */
+    std::vector<int> chords {};
 };
+
+/** Turns a preset into slot values: for each chord, the scale degree (>= 0) when the chord
+    belongs to the preset's scale in that key, otherwise noFreeChord and its free code. */
+struct PresetSlot { int degree; int freeCode; };
+std::vector<PresetSlot> presetSlots (const ProgressionPreset&, int extensionForMatching = 2);
 
 /** Preset menu headings, in display order. */
 const std::vector<const char*>& progressionCategories();
@@ -66,6 +75,13 @@ constexpr int freeChordCode (int semitonesAboveKey, bool minor) noexcept
 {
     return ((semitonesAboveKey % 12) + 12) % 12 + (minor ? 12 : 0);
 }
+
+/** A free dominant chord (7 / 9 / 13), e.g. the V7 of a minor key or a bVII7 backdoor. */
+constexpr int freeDominantCode (int semitonesAboveKey) noexcept
+{
+    return ((semitonesAboveKey % 12) + 12) % 12 + 24;
+}
+constexpr int numFreeChordCodes = 36;
 
 const std::vector<ProgressionPreset>& progressionPresets();
 
