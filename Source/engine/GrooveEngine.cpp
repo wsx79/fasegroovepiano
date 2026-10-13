@@ -492,6 +492,25 @@ const std::vector<GroovePattern>& groovePatterns()
         { "Disco Octave Pump",
           compact ("..x. ..x. ..x. ..x. ..x. ..x. ..x. .xx."),
           compact ("x... x... x... x... x... x... x... x..."), "Dance Stabs" },
+        // ---- v1.16: full piano house stabs (best with the "Piano stabs" bass) ----
+        { "Stab Train 3-3-3-3-2-2",
+          compact ("X..x ..x. .x.. x.x. X..x ..x. .x.. x.x."),
+          compact ("x... ..x. .... .... x... ..x. .... ...."), "Piano House" },
+        { "Four Stabs Push",
+          compact ("X... x..x ..x. .x.. X... x..x ..x. .x.."),
+          compact ("x... .... .... .... x... .... .... ...."), "Piano House" },
+        { "Stab Run 4-3-3-2-2",
+          compact ("X... x..x ..x. x.x. X... x..x ..x. x.x."),
+          compact ("x... .... ..x. .... x... .... ..x. ...."), "Piano House" },
+        { "Late Stab Groove",
+          compact ("..X. x..x ..x. x.x. ..X. x..x ..x. x.x."),
+          compact ("x... .... x... .... x... .... x... ...."), "Piano House" },
+        { "Double Chop Stabs",
+          compact ("X.x. xx.x x.xx .xx. X.x. xx.x x.xx .xx."),
+          compact ("x... .... .... .... x... .... .... ...."), "Piano House" },
+        { "Offbeat Roll Stabs",
+          compact ("X... x.x. x..x ..x. X... x.x. x..x ..x."),
+          compact ("x... .... x... .... x... .... x... ...."), "Piano House" },
     };
 
     return patterns;
@@ -682,7 +701,8 @@ const char* topLineName (int line) noexcept
 
 const char* bassModeName (int m) noexcept
 {
-    static const char* const names[numBassModes] { "Off", "Root", "Octaves", "Root + 5th", "Walking", "Syncopated octaves" };
+    static const char* const names[numBassModes] { "Off", "Root", "Octaves", "Root + 5th", "Walking", "Syncopated octaves",
+                                                   "Piano stabs (bass in every chord)" };
     return names[mod (m, numBassModes)];
 }
 
@@ -965,7 +985,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     auto hitVelocity = [&] (char symbol, double scale, int salt)
     {
         double v = s.velocity * scale * sectionVelocityScale (s.section)
-                   * (symbol == 'X' || symbol == 'U' || symbol == 'D' ? 1.0 : symbol == '>' ? 0.95 : symbol == 'g' ? 0.45 : 0.8);
+                   * (symbol == 'X' || symbol == 'U' || symbol == 'D' ? 1.0 : symbol == '>' ? 0.97 : symbol == 'g' ? 0.55 : 0.9);
         if (s.section == Section::buildup)   // crescendo through the build-up
             v *= 0.72 + 0.4 * (double) pos / (double) std::max (1, pattern.length() - 1);
         v += human * 18.0 * (noise (step, salt + 7) - 0.5) * 2.0;
@@ -978,8 +998,18 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         if (pushTiesIntoNextHit (line, pos))
             return (holdLength (line, pos) + 1) * stepLength + 0.06;
 
-        const double steps = holdLength (line, pos) + std::clamp (s.gate, 0.05f, 1.0f);
-        return std::max (0.04, steps * stepLength);
+        const double gate = std::clamp (s.gate, 0.05f, 1.0f);
+        if (const int hold = holdLength (line, pos); hold > 0 || line[(size_t) pos] == 'g')
+            return std::max (0.04, (hold + (hold > 0 ? gate : 0.6 * gate)) * stepLength);
+
+        // Like a pianist, a hit rings into the space before the next one: Gate is the share of
+        // that space it fills (a stab three 16ths before the next rings about two 16ths).
+        const int n = (int) line.size();
+        int gap = 1;
+        while (gap < n && ! isHit (line[(size_t) ((pos + gap) % n)]))
+            ++gap;
+        const double steps = std::min ({ gate * gap, 4.0, gap - 0.08 });
+        return std::max (0.04, std::max (steps, std::min (gate, 0.9)) * stepLength);
     };
 
     // Which chord a hit uses: the current one, or the next one for a push.
@@ -1214,6 +1244,31 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     {
         const int target = 36 + chords[(size_t) slotNext].rootPc;
         pending.push_back ({ hitTime (90), target + approachShift, hitVelocity ('x', 0.8, 91), approachLength, false, Part::bass });
+    }
+    else if (bassMode == BassMode::withChords)
+    {
+        // House piano stabs: the left hand plays the root with every chord (one big stab, bass
+        // included), plus its own hits in between.
+        const char lhSymbol = pattern.leftHand[(size_t) pos], rhSymbol = pattern.rightHand[(size_t) pos];
+        const bool rhStab = isHit (rhSymbol) && rhSymbol != 'g' && rhSymbol != 'u' && rhSymbol != 'd';
+        if (isHit (lhSymbol) || rhStab)
+        {
+            // Both hands' hits on one line, so a note never rings over the next stab.
+            auto& line = stabLine;
+            line = pattern.leftHand;
+            for (size_t i = 0; i < line.size() && i < pattern.rightHand.size(); ++i)
+            {
+                const char r = pattern.rightHand[i];
+                if (! isHit (line[i]) && isHit (r) && r != 'g' && r != 'u' && r != 'd')
+                    line[i] = r == '>' ? 'x' : r;
+                else if (line[i] == '=' && isHit (r))
+                    line[i] = 'x';
+            }
+            const char symbol = isHit (lhSymbol) ? lhSymbol : rhSymbol;
+            const int root = 36 + chords[(size_t) slotFor (symbol)].rootPc;
+            pending.push_back ({ hitTime (90), root, hitVelocity (symbol, 0.92, 91), durationFor (line),
+                                 isTiedFromPush (line, pos), Part::bass });
+        }
     }
     else if (bassMode != BassMode::off)
     {

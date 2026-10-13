@@ -111,6 +111,8 @@ public:
 
     /** New random content for one segment (A..D) of the groove. */
     void randomizeSegment (int segment);
+    /** New random rhythm for one hand only (piano or bass); the other hand and locked parts stay. */
+    void rerollHand (bool bass);
     bool isSegmentLocked (int segment) const          { return segmentLocked[(size_t) juce::jlimit (0, 3, segment)]; }
     void setSegmentLocked (int segment, bool locked)  { segmentLocked[(size_t) juce::jlimit (0, 3, segment)] = locked; }
 

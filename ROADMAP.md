@@ -11,6 +11,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Done
 
+- v1.16.0: livelier piano (note lengths, velocity), piano-stab bass, RND PIANO / RND BASS.
 - v1.15.0: automatic updates from GitHub (with changelog and confirmation, can be switched off).
 - v1.14.0: chromatic and borrowed-chord progressions, octave-triad voicing, Dance Stabs grooves.
 - v1.6.0: harmony colours (do these chords sound good together?) and the new circle of fifths.

@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v1.16.0: piano più vivo (durate, velocity), basso a stab, RND PIANO / RND BASSO.
 - v1.15.0: aggiornamenti automatici da GitHub (con changelog e conferma, disattivabili).
 - v1.14.0: progressioni cromatiche e con accordi in prestito, voicing a triadi in ottava, groove Stab dance.
 - v1.6.0: colori dell'armonia (gli accordi suonano bene insieme?) e nuovo circolo delle quinte.

@@ -119,7 +119,7 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Scale / mode** | Major (Ionian), **Dorian** (the deep house classic), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, plus (v1.5) **Locrian**, **Harmonic Major** (gospel minor iv), **Lydian Dominant** (funky I7#11), **Mixolydian b6** (soulful borrowed iv) and **Phrygian Dominant** (dark, exotic deep house). |
 | **Extensions** | Triads, 7ths, 9ths, 11ths/13ths, plus (v1.5): **6/9** (the warm soulful tonic chord, no 7th), **Add 9** (pop/house triad with a 9th), **Sus (9sus4)** (the open, floating deep house chord) and **9ths + altered V** (every chord a 9th, and degree V becomes a gospel **13(b9)**, or **7(b9,b13)** in minor keys). Clashing tensions are handled automatically: a b9 on a non-dominant chord is dropped, an 11th on a major chord becomes a 13th, a 6th that would be a b6 becomes a 7th, and sus4 is used only where the 4th is perfect. |
 | **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound), *Shell (3-7-top)* (just 3rd, 7th and the top colour note: light and jazzy, leaves room for the bass and vocals), *Drop 2+4* (open, spread pianist voicing, great for pads and breaks), *Octave triads (disco)* (a plain triad doubled an octave up, R 3 5 R 3 5: the bright disco and nu disco piano; best with *Triads*). Fast repeated hits use a lighter voicing (the top three notes) and ghost notes only the top two, like a pianist's touch; steady 8th-note bass lines bounce between root and octave. Every voicing follows the rules a pianist uses: no semitone rubs between neighbouring notes, no muddy small intervals in the low register, the 9th above the 3rd, and the voice that moves the least (the top note sings a smooth line). |
-| **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th, **Walking** (root, 5th, octave on the beats and a chromatic step into the next chord) or **Syncopated octaves** (the offbeats jump up an octave: the pumping house bass). |
+| **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th, **Walking** (root, 5th, octave on the beats and a chromatic step into the next chord) **Syncopated octaves** (the offbeats jump up an octave: the pumping house bass) or **Piano stabs (bass in every chord)**: the root plays with every chord hit, low and full, plus the bass's own hits in between. It is how house piano loops are played: one big stab, bass included. |
 | **Top line** | The melody drawn by the top notes of the chords: *Smooth (auto)* moves as little as possible, *Steady* keeps the top note in place, *Rising*, *Falling* or *Arch* shape it across the progression. |
 | **Movement** | **Voicing movement** for every groove: *Off* repeats the same chord on every hit, *Subtle* (default) moves the answer half-bars an inversion up, *Lively* makes every half-bar dance (chord, up, chord, down, mirrored in the answer). Grooves that already move keep their own figure; the break stays still. |
 | **Approach chord** | The gospel **slide**: on the last 16th before each chord change the next chord (and its bass note) is played a half step **from above** or **from below**, then resolves. Only where the hand is already playing, so a muted bass stays muted. |
@@ -170,7 +170,7 @@ Outer ring = major keys, inner ring = relative minors.
 
 | Control | What it does |
 |---|---|
-| **Groove** | 136 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). |
+| **Groove** | 142 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). |
 | **NEW RIFF** | Generates a new riff (chords + bass), built like a keyboard player builds one: a half-bar motif made of house comping figures, answered and repeated (A B A B'), often with a push into the next bar, over a simple bass figure that locks to it. If you locked some parts with **LOCK** (see *Rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
 | **Fills** | **Off** by default. Every bar, or every 2/4/8 bars, the end of the bar becomes a short fill leading into the next chord. |
@@ -178,18 +178,18 @@ Outer ring = major keys, inner ring = relative minors.
 | **Variation** | Every 4 or 8 bars the last bar plays a **variation** of the groove (a hit moved, a ghost note, a push into the next bar, a bass pick-up), so a long loop never sounds static. |
 | **Groove length** | *2 bars* (normal), *1 bar* (the first bar looped: tighter, more hypnotic) or *4 bars* (the groove followed by a variation of it). |
 | **Swing** | 0% = straight, 100% = triplet shuffle. 15–35% is the classic house feel. |
-| **Gate** | How long short hits last: low = staccato, high = legato. |
-| **Velocity** | Overall dynamics. |
+| **Gate** | How much of the space before the next hit each note fills, like a pianist's hand: low = short stabs, high = almost legato. At the default 65% a stab three 16ths before the next one rings about two 16ths. Notes held with *=* in the grid keep their length. |
+| **Velocity** | Overall dynamics (default 118: a piano played softly sounds dull). Accents play at this value, normal hits just below, ghost notes about half. |
 | **Humanize** | Small timing and velocity variations for a hand-played feel. |
 | **Density** | Random riffs only: from sparse stabs to busy 16th-note chops. |
 
-**The grooves: 136, by genre.** New users: start from **Piano House**, the classic house piano loops (rootless chords on syncopated offbeats over an octave bass). The *Groove* menu opens in columns with one heading per genre;
+**The grooves: 142, by genre.** New users: start from **Piano House**, the classic house piano loops (rootless chords on syncopated offbeats over an octave bass). The *Groove* menu opens in columns with one heading per genre;
 *Random riff* and *User pattern* are under **Generate**. Jackin' grooves sound best with Swing at
 30–45%, UK garage ones with 45–55%.
 
 | Genre | Grooves |
 |---|---|
-| **Piano House** (16) | *Dotted House Stabs*, *Loop Piano Classic*, *Rolling House Keys*, *Three-Three-Two Piano*, *Offbeat Piano Loop*, *Upfront Piano Stabs*, *Early Change Piano*, *Peak Time Piano*, *Sunset Piano Loop*, *Two Chord Bounce*, *Piano Pump*, *Classic Loop Answer*, *Deep Piano Loop*, *Anthem Piano Loop*, *Night Drive Piano*, *Skippy Piano Stabs* |
+| **Piano House** (22) | *Dotted House Stabs*, *Loop Piano Classic*, *Rolling House Keys*, *Three-Three-Two Piano*, *Offbeat Piano Loop*, *Upfront Piano Stabs*, *Early Change Piano*, *Peak Time Piano*, *Sunset Piano Loop*, *Two Chord Bounce*, *Piano Pump*, *Classic Loop Answer*, *Deep Piano Loop*, *Anthem Piano Loop*, *Night Drive Piano*, *Skippy Piano Stabs*, *Stab Train 3-3-3-3-2-2*, *Four Stabs Push*, *Stab Run 4-3-3-2-2*, *Late Stab Groove*, *Double Chop Stabs*, *Offbeat Roll Stabs* |
 | **Soulful** (9) | *Soulful Push*, *Soulful Sunday*, *Soulful Lift*, *Sunday Morning Keys*, *Soulful Offbeat 8ths*, *Soul Train Comp*, *Vocal House Stabs*, *Soulful Pianist*, *Warm Rhodes Swing* |
 | **Deep** (11) | *Deep Chords*, *Late Night Rhodes*, *Deep Sway*, *Deep Dub Stabs*, *Deep Late Pad*, *Deep Offbeat Chords*, *Larry's Chords*, *Deep Dorian Swing*, *Midnight Stabs*, *Deep Keys Rolls*, *Minimal Deep Pulse* |
 | **Gospel** (9) | *Gospel Bounce*, *Gospel Shout 16ths*, *Gospel Chops*, *Gospel Shout*, *Church Organ Swell*, *Gospel Walk*, *Praise Break*, *Sanctified Stabs*, *Gospel Ballad Swing* |
@@ -226,6 +226,10 @@ grid). Above each part you'll find:
 **BASS: ON / OFF** (top right of the grid) turns the left hand on and off instantly, without
 opening any menu, and remembers the bass mode you had chosen. When it's off, the bass row
 disappears from the grid.
+
+**RND PIANO** and **RND BASS** (next to it) give a new random rhythm to **one hand only**: the
+piano (chords row) or the bass, while the other row stays as it is. Locked parts (**LOCK**) are
+kept. Press them a few times until the two hands lock together.
 
 | Cell | Meaning |
 |---|---|

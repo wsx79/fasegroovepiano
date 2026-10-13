@@ -6,6 +6,21 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.16.0] - 2026-10-13
+
+### Changed
+- **Livelier piano:** notes now ring into the space before the next hit like a pianist's hand
+  (Gate is the share of that space), instead of all being cut short; normal hits play just below
+  the accents and the default velocity is 118, so the piano sounds bright instead of dull.
+- **House piano styles** (*House Piano Loop*, *'90s Piano House*, *Future House*) now use the
+  new piano-stab bass.
+
+### Added
+- **New bass mode "Piano stabs (bass in every chord)":** the root plays with every chord hit,
+  plus the bass's own hits: one big, full stab, the house piano way.
+- **RND PIANO and RND BASS** above the rhythm grid: a new random rhythm for one hand only.
+- **6 new Piano House grooves** (142 in total), made for the piano-stab bass.
+
 ## [1.15.0] - 2026-10-13
 
 ### Added

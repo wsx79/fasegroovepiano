@@ -1032,8 +1032,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
                 if (patterns[(size_t) i].category == genres[g])
                     group.items.push_back (i);
 
-            // Columns: piano house, soulful, deep | gospel, jackin', jackin' piano | garage, afro, funky | '90s, neo soul, chill, dance stabs, generate
-            group.columnBreakAfter = g == 2 || g == 5 || g == 8;
+            // Columns: piano house | soulful, deep, gospel | jackin', jackin' piano | garage, afro, funky | '90s, neo soul, chill, dance stabs, generate
+            group.columnBreakAfter = g == 0 || g == 3 || g == 5 || g == 8;
             groups.push_back (group);
         }
         groups.push_back ({ "Generate", { sgk::randomPatternIndex(), sgk::userPatternIndex() }, false });
@@ -1144,6 +1144,14 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     bassButton.setTooltip ("Left-hand bass on / off");
     bassButton.onClick = [this] { processor.toggleBass(); };
     addAndMakeVisible (bassButton);
+    for (auto* b : { &rndPianoButton, &rndBassButton })
+    {
+        b->setColour (juce::TextButton::buttonColourId, Palette::background);
+        b->setColour (juce::TextButton::textColourOffId, Palette::accent);
+        addAndMakeVisible (b);
+    }
+    rndPianoButton.onClick = [this] { processor.rerollHand (false); };
+    rndBassButton.onClick = [this] { processor.rerollHand (true); };
 
     for (int i = 0; i < sgk::numSegments; ++i)
     {
@@ -1601,6 +1609,10 @@ void FaseGroovePianoEditor::applyLanguage()
     shrinkToggle.setTooltip (tr ("Shrink the plug-in window while you drag a clip, so you can see your DAW"));
     patternView.setTooltip (tr ("Click a step: hit > accent > ghost > rest.  Right-click: more options"));
     bassButton.setTooltip (tr ("Left-hand bass on / off"));
+    rndPianoButton.setButtonText (tr ("RND PIANO"));
+    rndBassButton.setButtonText (tr ("RND BASS"));
+    rndPianoButton.setTooltip (tr ("New random rhythm for the piano (chords) only: the bass stays"));
+    rndBassButton.setTooltip (tr ("New random rhythm for the bass only: the piano stays"));
 
     for (int i = 0; i < sgk::numSegments; ++i)
     {
@@ -2139,7 +2151,14 @@ void FaseGroovePianoEditor::layoutFull()
     gridPanel = r;
     {
         auto inner = gridPanel.reduced (14, 8);
-        bassButton.setBounds (inner.removeFromTop (22).removeFromRight (92).withTrimmedBottom (2));
+        {
+            auto header = inner.removeFromTop (22).withTrimmedBottom (2);
+            bassButton.setBounds (header.removeFromRight (92));
+            header.removeFromRight (8);
+            rndBassButton.setBounds (header.removeFromRight (92));
+            header.removeFromRight (6);
+            rndPianoButton.setBounds (header.removeFromRight (92));
+        }
 
         auto strip = inner.removeFromTop (24);
         strip.removeFromLeft ((int) PatternView::labelWidth);

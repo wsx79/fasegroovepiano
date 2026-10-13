@@ -121,7 +121,7 @@ I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si
 | **Scale / mode** | Maggiore (Ionian), **Dorian** (il classico della deep house), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, più (v1.5) **Locrian**, **Harmonic Major** (il iv minore gospel), **Lydian Dominant** (I7#11 funky), **Mixolydian b6** (iv "preso in prestito", soulful) e **Phrygian Dominant** (deep house scura ed esotica). |
 | **Extensions** | Triadi, 7ª, 9ª, 11ª/13ª, più (v1.5): **6/9** (il caldo accordo di tonica soulful, senza 7ª), **Add 9** (triade con la 9ª, pop/house), **Sus (9sus4)** (l'accordo aperto e sospeso della deep house) e **9ths + altered V** (tutti accordi di 9ª e il V grado diventa una dominante gospel **13(b9)**, o **7(b9,b13)** nelle tonalità minori). Le tensioni che stonano vengono gestite in automatico: la b9 sugli accordi non di dominante viene tolta, la 11ª sugli accordi maggiori diventa 13ª, una 6ª che sarebbe b6 diventa 7ª, e il sus4 si usa solo dove la 4ª è giusta. |
 | **Voicing** | *Close* (posizione stretta), *Drop 2* (più aperto, da tastierista jazz), *Rootless* (senza fondamentale, ideale con un basso separato), *Wide* (due mani: fondamentale + 7ª a sinistra), *Quartal* (accordi per quarte, sound deep/moderno), *Shell (3-7-top)* (solo 3ª, 7ª e la nota di colore in alto: leggero e jazzy, lascia spazio a basso e voce), *Drop 2+4* (voicing aperto e largo da pianista, ottimo per pad e break), *Triadi in ottava (disco)* (una triade semplice raddoppiata all'ottava sopra, R 3 5 R 3 5: il piano brillante della disco e della nu disco; meglio con *Triads*). I colpi veloci ripetuti usano un voicing più leggero (le tre note alte) e le ghost note solo le due note alte, come il tocco di un pianista; le linee di basso a ottavi rimbalzano tra fondamentale e ottava. Ogni voicing segue le regole di un pianista: niente semitoni stridenti tra note vicine, niente intervalli stretti e impastati nel registro basso, la 9ª sopra la 3ª, e le voci che si muovono il meno possibile (la nota in alto canta una linea morbida). |
-| **Left-hand bass** | La mano sinistra: Off, Root (fondamentale), Octaves (ottave), Root + 5th, **Walking** (fondamentale, quinta e ottava sui tempi e un passo cromatico verso l'accordo successivo) o **Syncopated octaves** (i controtempi saltano all'ottava: il basso house che pompa). |
+| **Left-hand bass** | La mano sinistra: Off, Root (fondamentale), Octaves (ottave), Root + 5th, **Walking** (fondamentale, quinta e ottava sui tempi e un passo cromatico verso l'accordo successivo) **Syncopated octaves** (i controtempi saltano all'ottava: il basso house che pompa) o **Stab di piano (basso in ogni accordo)**: la fondamentale suona con ogni colpo di accordo, bassa e piena, più i colpi propri del basso nel mezzo. È così che si suonano i loop di piano house: un unico stab grosso, basso compreso. |
 | **Top line** (Linea in alto) | La melodia disegnata dalle note alte degli accordi: *Smooth (auto)* si muove il meno possibile, *Steady* tiene ferma la nota in alto, *Rising*, *Falling* o *Arch* la fanno salire, scendere o andare ad arco lungo la progressione. |
 | **Movement** (Movimento) | **Movimento dei rivolti** per tutti i groove: *Spento* ripete lo stesso accordo a ogni colpo, *Leggero* (di default) sposta di un rivolto in su le mezze battute di risposta, *Vivace* fa ballare ogni mezza battuta (accordo, su, accordo, giù, al contrario nella risposta). I groove che si muovono già tengono la loro figura; il break resta fermo. |
 | **Approach chord** (Accordo di passaggio) | Lo **slide** gospel: sull'ultimo sedicesimo prima di ogni cambio d'accordo suona l'accordo successivo (e la sua nota di basso) mezzo tono **sopra** (*From above*) o **sotto** (*From below*), che poi risolve. Solo dove quella mano sta già suonando: un basso spento resta spento. |
@@ -175,7 +175,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 
 | Controllo | Cosa fa |
 |---|---|
-| **Groove** | 136 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
+| **Groove** | 142 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
 | **NEW RIFF** | Genera un riff nuovo (accordi + basso), costruito come lo costruisce un tastierista: un motivo di mezza battuta fatto di figure di comping house, con risposta e ripetizione (A B A B'), spesso con un anticipo verso la battuta successiva, sopra una figura di basso semplice che lo segue. Se hai bloccato qualche parte con **LOCK** (vedi *Rhythm grid*), quelle parti restano e cambia solo il resto. Riff e modifiche vengono salvati nel progetto. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). |
 | **Fills** | **Spenti (Off)** di default. Ogni battuta, oppure ogni 2/4/8 battute, la fine della battuta diventa un breve fill che porta all'accordo successivo. |
@@ -183,18 +183,18 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 | **Variation** (Variazione) | Ogni 4 o 8 battute l'ultima battuta suona una **variazione** del groove (un colpo spostato, una ghost note, un anticipo, una nota di basso in levare), così un loop lungo non è mai statico. |
 | **Groove length** (Lunghezza groove) | *2 battute* (normale), *1 battuta* (la prima battuta in loop: più stretto e ipnotico) o *4 battute* (il groove seguito da una sua variazione). |
 | **Swing** | 0% = dritto, 100% = shuffle terzinato. 15–35% è il classico feel house. |
-| **Gate** | Quanto durano i colpi brevi: basso = staccato, alto = legato. |
-| **Velocity** | Dinamica generale. |
+| **Gate** | Quanta parte dello spazio prima del colpo successivo riempie ogni nota, come la mano di un pianista: basso = stab corti, alto = quasi legato. Col valore di default (65%) uno stab che sta tre sedicesimi prima del successivo suona per circa due sedicesimi. Le note tenute con *=* nella griglia mantengono la loro durata. |
+| **Velocity** | Dinamica generale (default 118: un piano suonato piano suona spento). Gli accenti suonano a questo valore, i colpi normali poco sotto, le ghost note circa a metà. |
 | **Humanize** | Piccole variazioni di tempo e dinamica, per un feel suonato a mano. |
 | **Density** | Solo per i Random riff: da stab radi a chop di sedicesimi fitti. |
 
-**I groove: 136, divisi per genere.** Se inizi ora parti da **Piano house**: i classici loop di piano house (accordi senza fondamentale sui controtempi sincopati, sopra un basso in ottava). Il menu *Groove* si apre a colonne con un titolo per ogni
+**I groove: 142, divisi per genere.** Se inizi ora parti da **Piano house**: i classici loop di piano house (accordi senza fondamentale sui controtempi sincopati, sopra un basso in ottava). Il menu *Groove* si apre a colonne con un titolo per ogni
 genere; *Random riff* e *User pattern* stanno sotto **Genera**. I groove jackin' suonano al meglio
 con Swing 30–45%, quelli UK garage con 45–55%.
 
 | Genere | Groove |
 |---|---|
-| **Piano house** (16) | *Dotted House Stabs*, *Loop Piano Classic*, *Rolling House Keys*, *Three-Three-Two Piano*, *Offbeat Piano Loop*, *Upfront Piano Stabs*, *Early Change Piano*, *Peak Time Piano*, *Sunset Piano Loop*, *Two Chord Bounce*, *Piano Pump*, *Classic Loop Answer*, *Deep Piano Loop*, *Anthem Piano Loop*, *Night Drive Piano*, *Skippy Piano Stabs* |
+| **Piano house** (22) | *Dotted House Stabs*, *Loop Piano Classic*, *Rolling House Keys*, *Three-Three-Two Piano*, *Offbeat Piano Loop*, *Upfront Piano Stabs*, *Early Change Piano*, *Peak Time Piano*, *Sunset Piano Loop*, *Two Chord Bounce*, *Piano Pump*, *Classic Loop Answer*, *Deep Piano Loop*, *Anthem Piano Loop*, *Night Drive Piano*, *Skippy Piano Stabs*, *Stab Train 3-3-3-3-2-2*, *Four Stabs Push*, *Stab Run 4-3-3-2-2*, *Late Stab Groove*, *Double Chop Stabs*, *Offbeat Roll Stabs* |
 | **Soulful** (9) | *Soulful Push*, *Soulful Sunday*, *Soulful Lift*, *Sunday Morning Keys*, *Soulful Offbeat 8ths*, *Soul Train Comp*, *Vocal House Stabs*, *Soulful Pianist*, *Warm Rhodes Swing* |
 | **Deep** (11) | *Deep Chords*, *Late Night Rhodes*, *Deep Sway*, *Deep Dub Stabs*, *Deep Late Pad*, *Deep Offbeat Chords*, *Larry's Chords*, *Deep Dorian Swing*, *Midnight Stabs*, *Deep Keys Rolls*, *Minimal Deep Pulse* |
 | **Gospel** (9) | *Gospel Bounce*, *Gospel Shout 16ths*, *Gospel Chops*, *Gospel Shout*, *Church Organ Swell*, *Gospel Walk*, *Praise Break*, *Sanctified Stabs*, *Gospel Ballad Swing* |
@@ -231,6 +231,10 @@ sulla griglia). Sopra ogni parte trovi:
 **BASS: ON / OFF** (in alto a destra della griglia) accende e spegne al volo la mano sinistra,
 senza aprire i menu, e ricorda il tipo di basso che avevi scelto. Da spento, la riga del basso
 sparisce dalla griglia.
+
+**RND PIANO** e **RND BASSO** (lì accanto) danno un nuovo ritmo casuale **a una sola mano**: il
+piano (riga accordi) o il basso, mentre l'altra riga resta com'è. Le parti bloccate (**LOCK**)
+restano. Premili qualche volta finché le due mani non si incastrano.
 
 | Cella | Significato |
 |---|---|

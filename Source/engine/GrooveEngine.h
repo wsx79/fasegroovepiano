@@ -86,7 +86,7 @@ constexpr int numFreeChordCodes = 36;
 const std::vector<ProgressionPreset>& progressionPresets();
 
 //==============================================================================
-enum class BassMode { off = 0, root, octaves, rootFifth, walking, syncopated };
+enum class BassMode { off = 0, root, octaves, rootFifth, walking, syncopated, withChords };
 
 /** What the last beat of a fill bar plays. */
 enum class FillStyle { pentatonicUp = 0, pentatonicDown, chordRoll,
@@ -96,7 +96,7 @@ constexpr int numFillStyles = 11;
 /** First 16th (in the bar) a fill style takes over: most use the last beat, the gospel run two. */
 int fillStartStep (FillStyle style) noexcept;
 const char* fillStyleName (int style) noexcept;
-constexpr int numBassModes = 6;
+constexpr int numBassModes = 7;
 
 /** Shape of the top note of the chords across the progression (the melody you hear). */
 enum class TopLine { automatic = 0, steady, rising, falling, arch };
@@ -239,6 +239,7 @@ private:
     std::array<Part, 128> partOf {};
     std::vector<PendingOn> pending;
     std::vector<int> scratch;
+    std::string stabLine;   // reused: no allocation on the audio thread once it has grown
 
     // Cache of the voiced progression, rebuilt only when the harmony changes.
     struct HarmonyKey

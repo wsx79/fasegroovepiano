@@ -107,13 +107,14 @@ static void testVoicings()
 
 static void testEngineNoStuckNotes()
 {
+    for (int combo = 0; combo < 3; ++combo)
     for (int pattern = 0; pattern < (int) groovePatterns().size(); ++pattern)
     {
         GrooveSettings s;
         s.pattern = pattern;
         s.fillEveryBars = 2;
-        s.bass = BassMode::octaves;
-        s.voicing = Voicing::wide;
+        s.bass = combo == 0 ? BassMode::octaves : BassMode::withChords;   // bass in every stab, too
+        s.voicing = combo == 2 ? Voicing::octaveTriads : Voicing::wide;
         s.progressionLength = 4;
         s.progression = { 3, 2, 1, 0, 0, 0, 0, 0 };
 
@@ -775,7 +776,7 @@ static void testStrum()
 
 static void testPatternsWellFormed()
 {
-    CHECK (groovePatterns().size() == 136);
+    CHECK (groovePatterns().size() == 142);
     for (const auto& p : groovePatterns())
         CHECK (std::find_if (grooveCategories().begin(), grooveCategories().end(), [&p] (const char* c) { return p.category == c; }) != grooveCategories().end());
 

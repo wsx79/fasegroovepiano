@@ -6,6 +6,23 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.16.0] - 2026-10-13
+
+### Modificato
+- **Piano più vivo:** le note ora suonano nello spazio prima del colpo successivo come la mano
+  di un pianista (il Gate è la parte di quello spazio che riempiono), invece di essere tutte
+  tagliate corte; i colpi normali suonano poco sotto gli accenti e la velocity di default è 118,
+  così il piano suona brillante e non spento.
+- **Stili di piano house** (*House Piano Loop*, *'90s Piano House*, *Future House*) usano il
+  nuovo basso a stab.
+
+### Aggiunto
+- **Nuovo tipo di basso "Stab di piano (basso in ogni accordo)":** la fondamentale suona con
+  ogni colpo di accordo, più i colpi propri del basso: un unico stab grosso e pieno, alla maniera
+  del piano house.
+- **RND PIANO e RND BASSO** sopra la griglia ritmica: un nuovo ritmo casuale per una sola mano.
+- **6 nuovi groove Piano house** (142 in totale), pensati per il basso a stab.
+
 ## [1.15.0] - 2026-10-13
 
 ### Aggiunto

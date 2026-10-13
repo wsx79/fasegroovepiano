@@ -301,6 +301,7 @@ private:
 
     PatternView patternView;
     juce::TextButton bassButton { "BASS" };
+    juce::TextButton rndPianoButton { "RND PIANO" }, rndBassButton { "RND BASS" };
     juce::OwnedArray<juce::ComboBox> segmentBoxes;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ComboBoxAttachment> segmentAttachments;
     juce::OwnedArray<juce::TextButton> segmentDice, segmentLocks;
