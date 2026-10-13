@@ -65,7 +65,13 @@ public:
     struct Group { juce::String heading; std::vector<int> items; bool columnBreakAfter = false; };
     void setGroups (std::vector<Group>);
 
-    juce::ComboBox box;
+    /** A ComboBox whose list can be replaced by a custom browser (the groove menu). */
+    struct PopupBox : public juce::ComboBox
+    {
+        std::function<void()> onPopup;
+        void showPopup() override { if (onPopup != nullptr) onPopup(); else juce::ComboBox::showPopup(); }
+    };
+    PopupBox box;
 
 private:
     void rebuildGroups();
@@ -196,6 +202,62 @@ private:
     juce::ToggleButton shrinkToggle, tipsToggle, updatesToggle;
 };
 
+/** The browser for grooves and progressions: genres on the left, the items of that genre on the
+    right (with a picture of the rhythm, or the chords in your key), a search box, and your saved
+    grooves. Clicking an item plays it at once. */
+class GrooveBrowser : public juce::Component, private juce::ListBoxModel
+{
+public:
+    explicit GrooveBrowser (FaseGroovePianoProcessor&);
+
+    enum class Mode { grooves, progressions };
+    void show (Mode = Mode::grooves, int currentPreset = -1);
+    std::function<void (int)> onProgressionChosen;
+    void refreshText();
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
+    bool keyPressed (const juce::KeyPress&) override;
+
+    /** Grooves in menu order (genre by genre), for the previous / next arrows. */
+    static std::vector<int> menuOrder();
+
+private:
+    struct Entry
+    {
+        juce::String name, detail;
+        int pattern = -1;          // groove index, or -1 for a saved groove file
+        juce::File file;
+        std::string right, left;   // for the rhythm picture
+        int preset = -1;           // progression preset index
+        juce::String chords;       // the progression in the current key
+    };
+    int numGenres() const;
+
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (920.0f, 640.0f); }
+    void selectGenre (int);
+    void rebuildList();
+    void choose (int row);
+    int genreOfCurrent() const;
+
+    int getNumRows() override;
+    void paintListBoxItem (int row, juce::Graphics&, int width, int height, bool selected) override;
+    void selectedRowsChanged (int lastRowSelected) override;
+    void listBoxItemDoubleClicked (int row, const juce::MouseEvent&) override;
+    void returnKeyPressed (int lastRowSelected) override;
+
+    FaseGroovePianoProcessor& processor;
+    juce::OwnedArray<juce::TextButton> genreButtons;
+    juce::TextEditor search;
+    juce::TextButton closeButton;
+    juce::ListBox list;
+    std::vector<Entry> entries;
+    int genre = 0, currentPreset = -1;
+    Mode mode = Mode::grooves;
+    bool quiet = false;   // selecting without playing (when the browser opens)
+};
+
 /** "A new version is ready": what's new (the changelog) and the user confirms the install. */
 class UpdateOverlay : public juce::Component
 {
@@ -266,6 +328,9 @@ private:
     void confirmReset();
     void afterReset();
     OptionsOverlay options;
+    GrooveBrowser grooveBrowser { processor };
+    juce::ArrowButton groovePrev { "previous groove", 0.5f, Palette::accent }, grooveNext { "next groove", 0.0f, Palette::accent };
+    void stepGroove (int direction);
     UpdateOverlay updateOverlay;
     Updater::Checker updateChecker;
 
@@ -275,7 +340,7 @@ private:
 
     // Progression
     juce::Label presetLabel;
-    juce::ComboBox presetBox;
+    Choice::PopupBox presetBox;
     juce::TextButton diceProgression { "DICE" };
     Choice progLength, chordLength;
     juce::OwnedArray<ChordSlot> slots;
@@ -302,7 +367,7 @@ private:
     Knob tone, reverb, volume, chorus, pump;
 
     PatternView patternView;
-    juce::TextButton bassButton { "BASS" };
+    juce::TextButton bassButton { "SOLO PIANO" }, soloBassButton { "SOLO BASS" };
     juce::TextButton rndPianoButton { "RND PIANO" }, rndBassButton { "RND BASS" }, myGroovesButton { "MY GROOVES" };
     juce::OwnedArray<juce::ComboBox> segmentBoxes;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ComboBoxAttachment> segmentAttachments;

@@ -143,6 +143,8 @@ public:
     //==============================================================================
     // LEARN: play chords on a MIDI keyboard and they fill the progression, slot by slot.
     std::atomic<bool> learnMode { false };
+    /** SOLO BASS: the chords stay silent (MIDI out and guide sound); the exported clips are not affected. */
+    std::atomic<bool> chordsMuted { false };
     std::atomic<int> learnedCount { 0 };       // bumps every time a chord is heard
     std::atomic<int> learnedMask { 0 };        // pitch classes of the last chord (bit per pc)
     std::atomic<int> learnedBass { 0 };        // its lowest note's pitch class

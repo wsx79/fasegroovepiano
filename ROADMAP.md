@@ -11,6 +11,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Done
 
+- v1.18.0: groove and progression browsers, SOLO PIANO / SOLO BASS, smarter updates (setup or portable).
 - v1.17.0: MY GROOVES, Documents/Fase Groove Piano folder, grouped automation parameters.
 - v1.16.0: livelier piano (note lengths, velocity), piano-stab bass, RND PIANO / RND BASS.
 - v1.15.0: automatic updates from GitHub (with changelog and confirmation, can be switched off).

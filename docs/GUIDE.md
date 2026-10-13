@@ -102,7 +102,7 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 
 | Control | What it does |
 |---|---|
-| **Load a progression…** | 54 ready-made progressions in a four-column menu, grouped by style: *Soulful & Gospel*, *Circle of 5ths*, *Deep house*, *Modal & exotic*, *Jackin' & funky*, *Chromatic & borrowed*. Loading one also sets the recommended scale. The **Chromatic & borrowed** ones use chords from outside the scale, the way dance producers do (maj9 chords sliding by a tone, the borrowed minor iv, bIII / bVI / bVII, dominant chords like III7 or bVII7): they load as free chords on the circle, so you can see and move them. (Long menus like *Groove* also open in columns.) |
+| **Load a progression…** | 54 ready-made progressions in a **browser**: styles on the left, the progressions of that style on the right with their **chords in your key**, and a search box. Click one to hear it at once, double-click (or Enter) to close. Styles: *Soulful & Gospel*, *Circle of 5ths*, *Deep house*, *Modal & exotic*, *Jackin' & funky*, *Chromatic & borrowed*. Loading one also sets the recommended scale. The **Chromatic & borrowed** ones use chords from outside the scale, the way dance producers do (maj9 chords sliding by a tone, the borrowed minor iv, bIII / bVI / bVII, dominant chords like III7 or bVII7): they load as free chords on the circle, so you can see and move them. |
 | **DICE** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
 | **LEARN** | Play chords on your **MIDI keyboard**: each chord you play (and release) fills the next slot, starting from slot 1, and the progression grows with it. Chords of the scale become degrees, the others free chords. Press LEARN again to stop. |
 | **Length** | How many chords (1–8). Slots beyond the length are greyed out. |
@@ -170,7 +170,7 @@ Outer ring = major keys, inner ring = relative minors.
 
 | Control | What it does |
 |---|---|
-| **Groove** | 142 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). |
+| **Groove** | 142 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). Clicking it opens the **groove browser**: genres on the left, the grooves of that genre on the right with a **picture of their rhythm** (chords on top, bass below), a search box, and **MY GROOVES** (your saved ones). Click a groove to hear it while the loop plays, double-click (or Enter) to close. The **◀ ▶** arrows next to the menu step to the previous / next groove. |
 | **NEW RIFF** | Generates a new riff (chords + bass), built like a keyboard player builds one: a half-bar motif made of house comping figures, answered and repeated (A B A B'), often with a push into the next bar, over a simple bass figure that locks to it. If you locked some parts with **LOCK** (see *Rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
 | **Fills** | **Off** by default. Every bar, or every 2/4/8 bars, the end of the bar becomes a short fill leading into the next chord. |
@@ -223,9 +223,11 @@ grid). Above each part you'll find:
 | **RND** | A new random rhythm for that part only. |
 | **LOCK** | Locks the part: **NEW RIFF** changes everything except the locked parts. |
 
-**BASS: ON / OFF** (top right of the grid) turns the left hand on and off instantly, without
-opening any menu, and remembers the bass mode you had chosen. When it's off, the bass row
-disappears from the grid.
+**SOLO PIANO** and **SOLO BASS** (top right of the grid): **SOLO PIANO** switches the bass off
+(it remembers the bass mode you had chosen, and the bass row disappears from the grid);
+**SOLO BASS** keeps the chords silent so you hear only the bass. Click the lit one again to hear
+both. SOLO BASS only affects what plays: dragged and saved clips still contain everything (use
+*Notes* in the MIDI clip panel to export one part).
 
 **RND PIANO** and **RND BASS** (next to it) give a new random rhythm to **one hand only**: the
 piano (chords row) or the bass, while the other row stays as it is. Locked parts (**LOCK**) are
@@ -315,8 +317,16 @@ to go back):
     asks GitHub, once per session, whether there is a newer version. If there is, it downloads it
     into *Downloads/Fase Groove Piano updates* and shows you **what's new** (the changelog, in
     Italian when the plug-in speaks Italian). Nothing is installed until you confirm:
-    **INSTALL NOW** starts the installer on Windows (close your DAW when it asks), opens the zip
-    on macOS and shows it on Linux (copy the plug-ins as the first time); **LATER** asks again
+    **INSTALL NOW** updates the copy you have, the way it was installed:
+    - installed with the **Windows setup**: it downloads the setup and runs it **without the
+      wizard**, keeping your folders and parts (confirm the Windows prompt; close the DAW if it
+      asks);
+    - **portable** copy (files copied by hand, on Windows, macOS or Linux): it downloads the zip
+      and **replaces the files where they are** (the running one and the other copies in the usual
+      plug-in folders); then restart the DAW;
+    - if the files can't be written (e.g. a system folder), it shows the download to copy by hand.
+
+    **LATER** asks again
     next time; **SKIP THIS VERSION** stops asking for that version. **CHECK NOW** checks
     straight away. Switch it off and the plug-in never connects to the internet.
   - In the **Standalone** app, the window's *Options* menu (Audio/MIDI settings, save/load

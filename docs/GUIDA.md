@@ -104,7 +104,7 @@ Con *Play mode → Hold a key* mostra anche "HOLD" e la tonalità scelta col tas
 
 | Controllo | Cosa fa |
 |---|---|
-| **Load a progression…** | 54 progressioni pronte in un menu a quattro colonne, divise per stile: *Soulful e gospel*, *Circolo delle quinte*, *Deep house*, *Modali ed esotiche*, *Jackin' e funky*, *Cromatiche e prestiti*. Caricarne una imposta anche la scala consigliata. Le **Cromatiche e prestiti** usano accordi fuori scala come fanno i produttori dance (accordi maj9 che scivolano di un tono, la iv minore presa in prestito, bIII / bVI / bVII, dominanti come III7 o bVII7): si caricano come accordi liberi sul circolo, così li vedi e li puoi spostare. (Anche i menu lunghi come *Groove* si aprono a colonne.) |
+| **Load a progression…** | 54 progressioni pronte in un **browser**: stili a sinistra, a destra le progressioni di quello stile con i loro **accordi nella tua tonalità**, e una casella di ricerca. Clicca una progressione per sentirla subito, doppio clic (o Invio) per chiudere. Stili: *Soulful e gospel*, *Circolo delle quinte*, *Deep house*, *Modali ed esotiche*, *Jackin' e funky*, *Cromatiche e prestiti*. Caricarne una imposta anche la scala consigliata. Le **Cromatiche e prestiti** usano accordi fuori scala come fanno i produttori dance (accordi maj9 che scivolano di un tono, la iv minore presa in prestito, bIII / bVI / bVII, dominanti come III7 o bVII7): si caricano come accordi liberi sul circolo, così li vedi e li puoi spostare. |
 | **DICE** | Progressione casuale ma musicale, coi movimenti tipici della soulful house (ii–V, IV–iii–ii, quinte discendenti). Mantiene la lunghezza attuale. |
 | **LEARN** (IMPARA) | Suona gli accordi sulla **tastiera MIDI**: ogni accordo che suoni (e rilasci) riempie lo slot successivo, partendo dallo slot 1, e la progressione cresce con lui. Gli accordi della scala diventano gradi, gli altri accordi liberi. Premi di nuovo per fermare. |
 | **Length** | Quanti accordi (1–8). Quelli oltre la lunghezza appaiono spenti. |
@@ -175,7 +175,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 
 | Controllo | Cosa fa |
 |---|---|
-| **Groove** | 142 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
+| **Groove** | 142 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). Cliccandolo si apre il **browser dei groove**: generi a sinistra, a destra i groove di quel genere con il **disegno del ritmo** (accordi sopra, basso sotto), una casella di ricerca e **I MIEI GROOVE** (quelli salvati da te). Clicca un groove per sentirlo mentre il loop suona, doppio clic (o Invio) per chiudere. Le frecce **◀ ▶** accanto al menu passano al groove precedente / successivo. |
 | **NEW RIFF** | Genera un riff nuovo (accordi + basso), costruito come lo costruisce un tastierista: un motivo di mezza battuta fatto di figure di comping house, con risposta e ripetizione (A B A B'), spesso con un anticipo verso la battuta successiva, sopra una figura di basso semplice che lo segue. Se hai bloccato qualche parte con **LOCK** (vedi *Rhythm grid*), quelle parti restano e cambia solo il resto. Riff e modifiche vengono salvati nel progetto. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). |
 | **Fills** | **Spenti (Off)** di default. Ogni battuta, oppure ogni 2/4/8 battute, la fine della battuta diventa un breve fill che porta all'accordo successivo. |
@@ -228,9 +228,11 @@ sulla griglia). Sopra ogni parte trovi:
 | **RND** | Nuovo ritmo casuale solo per quella parte. |
 | **LOCK** | Blocca la parte: **NEW RIFF** cambia tutto tranne le parti bloccate. |
 
-**BASS: ON / OFF** (in alto a destra della griglia) accende e spegne al volo la mano sinistra,
-senza aprire i menu, e ricorda il tipo di basso che avevi scelto. Da spento, la riga del basso
-sparisce dalla griglia.
+**SOLO PIANO** e **SOLO BASSO** (in alto a destra della griglia): **SOLO PIANO** spegne il basso
+(ricorda il tipo di basso che avevi scelto, e la riga del basso sparisce dalla griglia);
+**SOLO BASSO** fa tacere gli accordi così senti solo il basso. Riclicca quello acceso per sentire
+entrambi. SOLO BASSO cambia solo quello che suona: le clip trascinate e salvate contengono
+sempre tutto (per esportare una parte sola usa *Note* nel pannello MIDI clip).
 
 **RND PIANO** e **RND BASSO** (lì accanto) danno un nuovo ritmo casuale **a una sola mano**: il
 piano (riga accordi) o il basso, mentre l'altra riga resta com'è. Le parti bloccate (**LOCK**)
@@ -321,8 +323,17 @@ o su **CHIUDI** per tornare indietro):
     plugin chiede a GitHub, una volta per sessione, se c'è una versione più nuova. Se c'è, la
     scarica in *Download/Fase Groove Piano updates* e ti mostra **cosa c'è di nuovo** (il
     changelog, in italiano se il plugin è in italiano). Non installa niente finché non confermi:
-    **INSTALLA ORA** avvia l'installer su Windows (chiudi la DAW quando te lo chiede), apre lo zip
-    su macOS e lo mostra su Linux (copia i plug-in come la prima volta); **PIÙ TARDI** te lo
+    **INSTALLA ORA** aggiorna la copia che hai, nel modo in cui l'hai installata:
+    - installata col **setup di Windows**: scarica il setup e lo esegue **senza procedura
+      guidata**, con le stesse cartelle e componenti (conferma la richiesta di Windows; chiudi la
+      DAW se te lo chiede);
+    - copia **portable** (file copiati a mano, su Windows, macOS o Linux): scarica lo zip e
+      **sostituisce i file dove si trovano** (quella in uso e le altre copie nelle cartelle dei
+      plug-in di solito usate); poi riavvia la DAW;
+    - se i file non si possono scrivere (per esempio in una cartella di sistema), ti mostra il
+      download da copiare a mano.
+
+    **PIÙ TARDI** te lo
     richiede la prossima volta; **SALTA QUESTA VERSIONE** non te la propone più. **CONTROLLA ORA**
     controlla subito. Se lo spegni il plugin non si collega mai a internet.
   - Nella versione **Standalone**, il menu *Opzioni* della finestra (impostazioni audio/MIDI,

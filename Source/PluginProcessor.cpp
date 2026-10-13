@@ -201,6 +201,7 @@ void FaseGroovePianoProcessor::resetToDefaults()
     resetUserPattern();
     segmentLocked.fill (false);
     lastBassMode = 1;
+    chordsMuted = false;
     freeCircle = false;
     previewOn = false;
     editorScale = 1.0f;
@@ -935,8 +936,12 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     const bool bassOnChannel2 = juce::roundToInt (raw (ParamIDs::bassChannel)) == 1;
 
+    const bool muteChords = chordsMuted.load();
     for (const auto& e : events)
     {
+        if (muteChords && e.isNoteOn() && e.part == sgk::Part::chords)
+            continue;   // SOLO BASS (note-offs still pass, so nothing hangs)
+
         const int pos = juce::jlimit (0, numSamples - 1, (int) std::floor ((e.ppq - startPpq) * samplesPerBeat));
         const int channel = (bassOnChannel2 && e.part == sgk::Part::bass) ? 2 : 1;
         outMidi.addEvent (e.isNoteOn() ? juce::MidiMessage::noteOn (channel, e.note, (juce::uint8) e.velocity)
@@ -1129,6 +1134,7 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("userLeft", left, nullptr);
     state.setProperty ("segmentLocks", locks, nullptr);
     state.setProperty ("lastBassMode", lastBassMode, nullptr);
+    state.setProperty ("soloBass", chordsMuted.load(), nullptr);
     state.setProperty ("editorScale", editorScale, nullptr);
     state.setProperty ("shrinkWhileDragging", shrinkWhileDragging, nullptr);
 
@@ -1172,6 +1178,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
         segmentLocked[(size_t) i] = locks[i] == '1';
 
     lastBassMode = juce::jlimit (1, sgk::numBassModes - 1, (int) state.getProperty ("lastBassMode", 1));
+    chordsMuted = (bool) state.getProperty ("soloBass", false);
     editorScale = juce::jlimit (0.6f, 2.0f, (float) state.getProperty ("editorScale", 1.0f));
     shrinkWhileDragging = (bool) state.getProperty ("shrinkWhileDragging", true);
 

@@ -5,14 +5,22 @@
 
 // Automatic updates from the GitHub releases page.
 // A background thread asks GitHub for the latest release; if it is newer than this build it
-// downloads the installer (Windows) or the zip (macOS / Linux) into the Downloads folder and
-// reports back on the message thread, with the release notes, so the user can confirm.
+// downloads the right package into the Downloads folder (the Windows setup when the plug-in was
+// installed with it, otherwise the zip, already unpacked) and reports back on the message thread
+// with the release notes. Nothing is installed until the user confirms.
 // It can be turned off in OPTIONS -> SETTINGS; nothing else is ever sent or received.
 
 #include <juce_events/juce_events.h>
 
 namespace Updater
 {
+    /** How this copy was installed, which decides how it is updated:
+        installer = Windows setup (runs again silently, keeping your choices),
+        portable  = files copied by hand (they are replaced in place),
+        manual    = no write access (the download is shown, you copy it). */
+    enum class InstallKind { installer, portable, manual };
+    InstallKind installKind();
+
     struct Result
     {
         enum class Status { upToDate, failed, ready };
@@ -20,6 +28,15 @@ namespace Updater
         juce::String version;   // e.g. "1.15.0"
         juce::String notes;     // what's new, in the UI language when available
         juce::File file;        // the downloaded installer or zip
+        juce::File staged;      // portable: the zip unpacked, ready to swap in
+        InstallKind kind = InstallKind::manual;
+    };
+
+    struct InstallReport
+    {
+        bool done = false;           // false: nothing replaced, the download was shown instead
+        bool installerStarted = false;
+        juce::StringArray updated;   // portable: what was replaced
     };
 
     /** Automatic check when the plug-in opens (on by default). */
@@ -35,8 +52,12 @@ namespace Updater
     /** The "## [x.y.z]" section of a changelog, as plain text. */
     juce::String changelogSection (const juce::String& changelog, const juce::String& version);
 
-    /** Opens the downloaded file: runs the Windows installer, opens the zip on macOS, shows it on Linux. */
-    void install (const juce::File&);
+    /** Installs a downloaded update: the silent installer, the in-place swap of a portable copy,
+        or (when neither is possible) shows the download. */
+    InstallReport install (const Result&);
+
+    /** Removes the files a portable update left behind (Windows can't delete a loaded DLL). */
+    void cleanupAfterUpdate();
 
     class Checker : private juce::Thread
     {

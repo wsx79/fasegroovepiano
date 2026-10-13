@@ -6,6 +6,22 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.18.0] - 2026-10-13
+
+### Added
+- **Groove browser:** the *Groove* menu is now a window with genres on the left and the grooves
+  on the right, each with a picture of its rhythm, a search box and your saved grooves. Click to
+  hear, double-click to close. **◀ ▶** arrows step through the grooves.
+- **Progression browser:** the same window for *Load a progression…*, with the chords of each
+  progression in your key.
+- **SOLO PIANO / SOLO BASS** above the rhythm grid (SOLO PIANO replaces BASS: ON / OFF).
+
+### Changed
+- **Smarter updates:** a copy installed with the Windows setup is updated by the setup without
+  the wizard (same folders and parts); a portable copy gets the zip and its files are replaced
+  where they are (Windows, macOS, Linux). Only when the files can't be written is the download
+  shown to copy by hand.
+
 ## [1.17.0] - 2026-10-13
 
 ### Added

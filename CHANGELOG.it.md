@@ -6,6 +6,22 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.18.0] - 2026-10-13
+
+### Aggiunto
+- **Browser dei groove:** il menu *Groove* ora è una finestra con i generi a sinistra e i groove a
+  destra, ognuno col disegno del suo ritmo, una casella di ricerca e i tuoi groove salvati.
+  Clic per sentire, doppio clic per chiudere. Le frecce **◀ ▶** scorrono i groove.
+- **Browser delle progressioni:** la stessa finestra per *Carica una progressione…*, con gli
+  accordi di ogni progressione nella tua tonalità.
+- **SOLO PIANO / SOLO BASSO** sopra la griglia ritmica (SOLO PIANO sostituisce BASSO: ON / OFF).
+
+### Modificato
+- **Aggiornamenti più furbi:** una copia installata col setup di Windows si aggiorna col setup
+  senza procedura guidata (stesse cartelle e componenti); una copia portable riceve lo zip e i
+  suoi file vengono sostituiti dove si trovano (Windows, macOS, Linux). Solo se i file non si
+  possono scrivere ti mostra il download da copiare a mano.
+
 ## [1.17.0] - 2026-10-13
 
 ### Aggiunto
