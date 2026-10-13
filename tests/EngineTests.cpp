@@ -713,9 +713,13 @@ static void testVoicingMovement()
             (e.ppq < 1.0 ? a : e.ppq < 3.0 ? b : c).push_back (e.note);
 
     auto mean = [] (const std::vector<int>& v) { double m = 0; for (int n : v) m += n; return v.empty() ? 0.0 : m / (double) v.size(); };
-    CHECK (a.size() == b.size() && a.size() == c.size());
-    CHECK (mean (b) > mean (a));
-    CHECK (mean (c) < mean (a));
+    // Moved hits are the top three notes, re-voiced: up has a higher top, down a lower one.
+    std::sort (a.begin(), a.end());
+    const std::vector<int> top3 (a.end() - 3, a.end());
+    CHECK (b.size() == 3 && c.size() == 3);
+    CHECK (*std::max_element (b.begin(), b.end()) > top3.back());
+    CHECK (*std::max_element (c.begin(), c.end()) < top3.back());
+    CHECK (mean (b) > mean (top3) && mean (c) < mean (top3));
 }
 
 static void testAutoMovement()

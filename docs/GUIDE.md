@@ -227,7 +227,7 @@ disappears from the grid.
 
 | Cell | Meaning |
 |---|---|
-| With a small ▲ / ▼ | the same chord **one inversion up / down**: the top note moves, like a real piano riff (choose *Hit, voicing up / down* with a right-click) |
+| With a small ▲ / ▼ | the top three notes of the chord **one inversion up / down** (a lighter right-hand stab): the top note moves, like a real piano riff (choose *Hit, voicing up / down* with a right-click) |
 | Solid bright | accented hit |
 | Solid medium | normal hit |
 | Solid faint | ghost note (very soft hit) |
@@ -287,6 +287,11 @@ to go back):
     the plug-in picks your computer's language.
   - **Interface size:** 60% to 200%, the same as dragging the corner.
   - **Mini window while dragging:** the same switch you find in the MIDI clip panel.
+  - **Show tips when the mouse rests on a control:** on by default. Rest the mouse on any knob,
+    menu or button for a moment and a tip explains what it does. Switch it off once you know
+    the plug-in.
+  - In the **Standalone** app, the window's *Options* menu (Audio/MIDI settings, save/load
+    state, reset) and the audio settings also follow the chosen language.
 - **ABOUT** (also opens when you click the logo): version, credits, license, source code, the
   **SPOTIFY** button for my productions and the buttons for an optional donation (**Ko-fi** or
   **PayPal**): the plug-in is free, and if you like it you can support its development.

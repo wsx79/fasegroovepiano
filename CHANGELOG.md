@@ -6,6 +6,20 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.11.0] - 2026-10-13
+
+### Added
+- **Tips everywhere:** rest the mouse on any knob, menu or button and a tip explains what it
+  does. They can be switched off in **OPTIONS → SETTINGS** ("Show tips when the mouse rests on a
+  control"); the choice is remembered for all projects.
+- **Standalone app in your language:** the window's Options menu (Audio/MIDI settings, save and
+  load state, reset) and the audio/MIDI settings dialog now follow the interface language.
+
+### Changed
+- **Cleaner chord movement:** hits that move up or down now play the **top three notes** of the
+  chord as a clean close-position inversion, like a pianist's right hand, instead of turning the
+  whole 4–5 note chord over (which caused jumps and rubs at the top).
+
 ## [1.10.0] - 2026-10-13
 
 ### Added

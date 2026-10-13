@@ -40,6 +40,7 @@ public:
     Knob (juce::AudioProcessorValueTreeState&, const juce::String& paramId, const juce::String& caption);
     void resized() override;
     void refreshText();
+    void setTip (const juce::String& tip)  { slider.setTooltip (tip); }
 
 private:
     juce::String caption;
@@ -89,6 +90,7 @@ public:
     /** Called with +1 / -1 when an inversion arrow is clicked. */
     std::function<void (int)> onInvert;
     void setInversion (int);
+    void setDegreeTip (const juce::String& tip)  { degree.setTooltip (tip); }
 
     /** isFree: the slot plays a free chord (from the circle), shown instead of a degree. */
     void setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing,
@@ -142,7 +144,7 @@ private:
 };
 
 /** Drag this tile into the DAW to drop the current groove as a MIDI clip. */
-class MidiDragTile : public juce::Component
+class MidiDragTile : public juce::Component, public juce::SettableTooltipClient
 {
 public:
     std::function<juce::File()> createFile;
@@ -168,6 +170,7 @@ public:
     std::function<void()> onLanguageChanged;
     std::function<void (float)> onScaleChosen;
     std::function<void (bool)> onShrinkChanged;
+    std::function<void (bool)> onTipsChanged;
 
     void show (bool aboutTab, float currentScale, bool shrinkWhileDragging);
     void refreshText();
@@ -186,7 +189,7 @@ private:
     juce::TextButton sourceButton, kofiButton, paypalButton, spotifyButton;
     juce::Label languageLabel, sizeLabel;
     juce::ComboBox languageBox, sizeBox;
-    juce::ToggleButton shrinkToggle;
+    juce::ToggleButton shrinkToggle, tipsToggle;
 };
 
 //==============================================================================
@@ -213,7 +216,10 @@ private:
 
     FaseGroovePianoProcessor& processor;
     GrooveLookAndFeel lookAndFeel;
-    juce::TooltipWindow tooltips { this, 600 };
+    std::unique_ptr<juce::TooltipWindow> tooltips;
+    void applyTips();
+    void translateHostWindow();
+    void parentHierarchyChanged() override;
 
     juce::TextButton optionsButton { "OPTIONS" };
     juce::TextButton styleMenuButton { "STYLE" }, resetButton { "RESET" };

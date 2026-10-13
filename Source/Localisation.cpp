@@ -171,6 +171,78 @@ namespace
         { "* Random riff *", "* Riff casuale *", "* Riff aleatorio *", "* Riff aléatoire *", "* Zufallsriff *", "* Riff aleatório *" },
         { "* User pattern *", "* Pattern utente *", "* Patrón de usuario *", "* Motif utilisateur *", "* Eigenes Pattern *", "* Padrão do usuário *" },
 
+        // ---- v1.11: standalone window (JUCE texts) and tips ----
+        { "Audio/MIDI Settings...", "Impostazioni audio/MIDI...", "Ajustes de audio/MIDI...", "Réglages audio/MIDI...", "Audio/MIDI-Einstellungen...", "Configurações de áudio/MIDI..." },
+        { "Audio/MIDI Settings", "Impostazioni audio/MIDI", "Ajustes de audio/MIDI", "Réglages audio/MIDI", "Audio/MIDI-Einstellungen", "Configurações de áudio/MIDI" },
+        { "Save current state...", "Salva lo stato attuale...", "Guardar el estado actual...", "Enregistrer l'état actuel...", "Aktuellen Zustand speichern...", "Salvar o estado atual..." },
+        { "Load a saved state...", "Carica uno stato salvato...", "Cargar un estado guardado...", "Charger un état enregistré...", "Gespeicherten Zustand laden...", "Carregar um estado salvo..." },
+        { "Reset to default state", "Ripristina lo stato iniziale", "Restablecer el estado inicial", "Rétablir l'état par défaut", "Auf Standard zurücksetzen", "Restaurar o estado padrão" },
+        { "Save current state", "Salva lo stato attuale", "Guardar el estado actual", "Enregistrer l'état actuel", "Aktuellen Zustand speichern", "Salvar o estado atual" },
+        { "Load a saved state", "Carica uno stato salvato", "Cargar un estado guardado", "Charger un état enregistré", "Gespeicherten Zustand laden", "Carregar um estado salvo" },
+        { "Error whilst saving", "Errore durante il salvataggio", "Error al guardar", "Erreur lors de l'enregistrement", "Fehler beim Speichern", "Erro ao salvar" },
+        { "Error whilst loading", "Errore durante il caricamento", "Error al cargar", "Erreur lors du chargement", "Fehler beim Laden", "Erro ao carregar" },
+        { "Couldn't write to the specified file!", "Impossibile scrivere il file indicato!", "¡No se pudo escribir el archivo!", "Impossible d'écrire le fichier !", "Datei konnte nicht geschrieben werden!", "Não foi possível gravar o arquivo!" },
+        { "Couldn't read from the specified file!", "Impossibile leggere il file indicato!", "¡No se pudo leer el archivo!", "Impossible de lire le fichier !", "Datei konnte nicht gelesen werden!", "Não foi possível ler o arquivo!" },
+        { "Audio device type:", "Tipo di dispositivo audio:", "Tipo de dispositivo de audio:", "Type de périphérique audio :", "Audiogerät-Typ:", "Tipo de dispositivo de áudio:" },
+        { "Device:", "Dispositivo:", "Dispositivo:", "Périphérique :", "Gerät:", "Dispositivo:" },
+        { "Output:", "Uscita:", "Salida:", "Sortie :", "Ausgang:", "Saída:" },
+        { "Input:", "Ingresso:", "Entrada:", "Entrée :", "Eingang:", "Entrada:" },
+        { "Sample rate:", "Frequenza di campionamento:", "Frecuencia de muestreo:", "Fréquence d'échantillonnage :", "Abtastrate:", "Taxa de amostragem:" },
+        { "Audio buffer size:", "Dimensione del buffer audio:", "Tamaño del búfer de audio:", "Taille du tampon audio :", "Audio-Puffergröße:", "Tamanho do buffer de áudio:" },
+        { "Active MIDI inputs:", "Ingressi MIDI attivi:", "Entradas MIDI activas:", "Entrées MIDI actives :", "Aktive MIDI-Eingänge:", "Entradas MIDI ativas:" },
+        { "MIDI Output:", "Uscita MIDI:", "Salida MIDI:", "Sortie MIDI :", "MIDI-Ausgang:", "Saída MIDI:" },
+        { "Active output channels:", "Canali di uscita attivi:", "Canales de salida activos:", "Canaux de sortie actifs :", "Aktive Ausgangskanäle:", "Canais de saída ativos:" },
+        { "Active input channels:", "Canali di ingresso attivi:", "Canales de entrada activos:", "Canaux d'entrée actifs :", "Aktive Eingangskanäle:", "Canais de entrada ativos:" },
+        { "Test", "Prova", "Probar", "Tester", "Test", "Testar" },
+        { "Plays a test tone", "Suona un tono di prova", "Reproduce un tono de prueba", "Joue un son de test", "Spielt einen Testton", "Toca um tom de teste" },
+        { "Control Panel", "Pannello di controllo", "Panel de control", "Panneau de configuration", "Systemsteuerung", "Painel de controle" },
+        { "Reset Device", "Reimposta dispositivo", "Reiniciar dispositivo", "Réinitialiser le périphérique", "Gerät zurücksetzen", "Reiniciar dispositivo" },
+        { "Show advanced settings...", "Mostra impostazioni avanzate...", "Mostrar ajustes avanzados...", "Afficher les réglages avancés...", "Erweiterte Einstellungen...", "Mostrar configurações avançadas..." },
+        { "No MIDI inputs available", "Nessun ingresso MIDI disponibile", "No hay entradas MIDI", "Aucune entrée MIDI disponible", "Keine MIDI-Eingänge verfügbar", "Nenhuma entrada MIDI disponível" },
+        { "none", "nessuno", "ninguno", "aucun", "keiner", "nenhum" },
+        { "OK", "OK", "Aceptar", "OK", "OK", "OK" },
+        { "Options", "Opzioni", "Opciones", "Options", "Optionen", "Opções" },
+        { "Mute audio input", "Silenzia l'ingresso audio", "Silenciar la entrada de audio", "Couper l'entrée audio", "Audioeingang stummschalten", "Silenciar a entrada de áudio" },
+        { "Feedback Loop:", "Rischio di feedback:", "Bucle de realimentación:", "Boucle de larsen :", "Rückkopplung:", "Realimentação:" },
+        { "Audio input is muted to avoid feedback loop", "L'ingresso audio è silenziato per evitare il feedback", "La entrada de audio está silenciada para evitar realimentación", "L'entrée audio est coupée pour éviter le larsen", "Der Audioeingang ist stummgeschaltet, um Rückkopplung zu vermeiden", "A entrada de áudio está silenciada para evitar realimentação" },
+        { "Show tips when the mouse rests on a control", "Mostra i suggerimenti quando il mouse resta fermo su un comando", "Mostrar consejos al dejar el ratón sobre un control", "Afficher des astuces quand la souris reste sur une commande", "Tipps zeigen, wenn die Maus auf einem Element ruht", "Mostrar dicas quando o mouse para sobre um controle" },
+
+        // ---- v1.11: tips ----
+        { "How many chords the progression has (1 to 8)", "Quanti accordi ha la progressione (da 1 a 8)", "Cuántos acordes tiene la progresión (de 1 a 8)", "Nombre d'accords de la progression (1 à 8)", "Wie viele Akkorde die Folge hat (1 bis 8)", "Quantos acordes tem a progressão (de 1 a 8)" },
+        { "How long each chord lasts, from half a bar to 4 bars", "Quanto dura ogni accordo, da mezza battuta a 4 battute", "Cuánto dura cada acorde, de medio compás a 4 compases", "Durée de chaque accord, d'une demi-mesure à 4 mesures", "Wie lange jeder Akkord dauert, von einem halben bis 4 Takten", "Quanto dura cada acorde, de meio compasso a 4 compassos" },
+        { "The key of the song", "La tonalità del brano", "La tonalidad del tema", "La tonalité du morceau", "Die Tonart des Songs", "O tom da música" },
+        { "Scale or mode: Dorian is the deep house classic", "Scala o modo: il Dorian è il classico della deep house", "Escala o modo: el dórico es el clásico del deep house", "Gamme ou mode : le dorien est le classique de la deep house", "Skala oder Modus: Dorisch ist der Deep-House-Klassiker", "Escala ou modo: o dórico é o clássico do deep house" },
+        { "How rich the chords are: triads, 7ths, 9ths, 11ths/13ths, 6/9, sus...", "Quanto sono ricchi gli accordi: triadi, settime, none, undicesime/tredicesime, 6/9, sus...", "Riqueza de los acordes: tríadas, séptimas, novenas, oncenas/trecenas, 6/9, sus...", "Richesse des accords : triades, septièmes, neuvièmes, onzièmes/treizièmes, 6/9, sus...", "Wie reich die Akkorde sind: Dreiklänge, Septimen, Nonen, Undezimen/Tredezimen, 6/9, sus...", "Riqueza dos acordes: tríades, sétimas, nonas, décimas primeiras/terceiras, 6/9, sus..." },
+        { "How the chord notes are spread on the keyboard", "Come sono distribuite le note dell'accordo sulla tastiera", "Cómo se reparten las notas del acorde en el teclado", "Comment les notes de l'accord sont réparties sur le clavier", "Wie die Akkordtöne auf der Tastatur verteilt sind", "Como as notas do acorde se distribuem no teclado" },
+        { "What the left hand plays", "Cosa suona la mano sinistra", "Qué toca la mano izquierda", "Ce que joue la main gauche", "Was die linke Hand spielt", "O que a mão esquerda toca" },
+        { "Moves the right hand up or down the keyboard", "Sposta la mano destra in alto o in basso sulla tastiera", "Mueve la mano derecha arriba o abajo en el teclado", "Déplace la main droite vers le haut ou le bas du clavier", "Bewegt die rechte Hand auf der Tastatur nach oben oder unten", "Move a mão direita para cima ou para baixo no teclado" },
+        { "Rolls the chord notes like a pianist instead of hitting them all together", "Arpeggia le note dell'accordo come un pianista invece di suonarle tutte insieme", "Arpegia las notas del acorde como un pianista en vez de tocarlas a la vez", "Arpège les notes de l'accord comme un pianiste au lieu de les jouer ensemble", "Bricht den Akkord wie ein Pianist, statt alle Töne zugleich anzuschlagen", "Arpeja as notas do acorde como um pianista em vez de tocá-las juntas" },
+        { "The rhythm of both hands, grouped by genre", "Il ritmo delle due mani, diviso per genere", "El ritmo de las dos manos, agrupado por género", "Le rythme des deux mains, classé par genre", "Der Rhythmus beider Hände, nach Genre geordnet", "O ritmo das duas mãos, agrupado por gênero" },
+        { "Reshapes the groove for intro, main, break, build-up, drop and outro", "Adatta il groove a intro, main, break, build-up, drop e outro", "Adapta el groove a intro, main, break, build-up, drop y outro", "Adapte le groove à l'intro, main, break, montée, drop et outro", "Passt den Groove an Intro, Main, Break, Build-up, Drop und Outro an", "Adapta o groove a intro, main, break, build-up, drop e outro" },
+        { "How often a fill leads into the next chord", "Ogni quanto un fill porta all'accordo successivo", "Cada cuánto un relleno lleva al siguiente acorde", "À quelle fréquence un fill mène à l'accord suivant", "Wie oft ein Fill zum nächsten Akkord führt", "Com que frequência uma virada leva ao próximo acorde" },
+        { "What the fill plays", "Cosa suona il fill", "Qué toca el relleno", "Ce que joue le fill", "Was das Fill spielt", "O que a virada toca" },
+        { "Play with the DAW, or while you hold a key (the key you hold sets the key)", "Suona con la DAW, o mentre tieni premuto un tasto (il tasto sceglie la tonalità)", "Toca con la DAW, o mientras mantienes una tecla (la tecla elige la tonalidad)", "Joue avec la DAW, ou tant que tu tiens une touche (la touche choisit la tonalité)", "Spielt mit der DAW oder solange du eine Taste hältst (die Taste bestimmt die Tonart)", "Toca com a DAW, ou enquanto você segura uma tecla (a tecla escolhe o tom)" },
+        { "Delays the off-beat 16ths for a shuffled, human feel", "Ritarda i sedicesimi in levare per un feel swingato e umano", "Retrasa las semicorcheas a contratiempo para un feel con swing", "Retarde les doubles croches à contretemps pour un feel swing", "Verzögert die Off-Beat-16tel für ein geshuffeltes, menschliches Gefühl", "Atrasa as semicolcheias no contratempo para um feel com swing" },
+        { "How long the chords ring: from short stabs to long chords", "Quanto suonano gli accordi: da stab corti ad accordi lunghi", "Cuánto suenan los acordes: de stabs cortos a acordes largos", "Durée des accords : de stabs courts à accords longs", "Wie lange die Akkorde klingen: von kurzen Stabs bis zu langen Akkorden", "Quanto os acordes soam: de stabs curtos a acordes longos" },
+        { "How hard the notes are played", "Con quanta forza sono suonate le note", "Con qué fuerza se tocan las notas", "Avec quelle force les notes sont jouées", "Wie stark die Töne angeschlagen werden", "Com que força as notas são tocadas" },
+        { "Small timing and dynamics variations, like a real player", "Piccole variazioni di tempo e dinamica, come un musicista vero", "Pequeñas variaciones de tiempo y dinámica, como un músico real", "Petites variations de timing et de dynamique, comme un vrai musicien", "Kleine Timing- und Dynamikschwankungen wie bei einem echten Spieler", "Pequenas variações de tempo e dinâmica, como um músico real" },
+        { "Random riffs only: from sparse stabs to busy chops", "Solo per i riff casuali: da stab radi a chop fitti", "Solo para riffs aleatorios: de stabs escasos a chops densos", "Riffs aléatoires seulement : de stabs espacés à des chops denses", "Nur für Zufallsriffs: von spärlichen Stabs bis zu dichten Chops", "Só para riffs aleatórios: de stabs esparsos a chops densos" },
+        { "The guide sound you hear (the MIDI stays the same)", "Il suono guida che senti (il MIDI resta uguale)", "El sonido guía que oyes (el MIDI no cambia)", "Le son guide que tu entends (le MIDI ne change pas)", "Der Guide-Sound, den du hörst (das MIDI bleibt gleich)", "O som guia que você ouve (o MIDI continua igual)" },
+        { "Bass on the same MIDI channel, or on channel 2 to play it with another instrument", "Basso sullo stesso canale MIDI, o sul canale 2 per suonarlo con un altro strumento", "Bajo en el mismo canal MIDI, o en el canal 2 para tocarlo con otro instrumento", "Basse sur le même canal MIDI, ou sur le canal 2 pour la jouer avec un autre instrument", "Bass auf demselben MIDI-Kanal oder auf Kanal 2 für ein anderes Instrument", "Baixo no mesmo canal MIDI, ou no canal 2 para tocá-lo com outro instrumento" },
+        { "Brightness of the guide sound", "Brillantezza del suono guida", "Brillo del sonido guía", "Brillance du son guide", "Helligkeit des Guide-Sounds", "Brilho do som guia" },
+        { "Reverb on the guide sound", "Riverbero sul suono guida", "Reverb en el sonido guía", "Réverbération sur le son guide", "Hall auf dem Guide-Sound", "Reverb no som guia" },
+        { "Volume of the guide sound", "Volume del suono guida", "Volumen del sonido guía", "Volume du son guide", "Lautstärke des Guide-Sounds", "Volume do som guia" },
+        { "Widens the guide sound", "Allarga il suono guida", "Ensancha el sonido guía", "Élargit le son guide", "Verbreitert den Guide-Sound", "Alarga o som guia" },
+        { "Ducks the guide sound on every beat, like a kick sidechain", "Abbassa il suono guida a ogni battito, come un sidechain sulla cassa", "Baja el sonido guía en cada pulso, como un sidechain con el bombo", "Baisse le son guide à chaque temps, comme un sidechain sur le kick", "Duckt den Guide-Sound auf jedem Schlag wie ein Kick-Sidechain", "Abaixa o som guia a cada batida, como um sidechain no bumbo" },
+        { "Turns the built-in guide sound on or off (the MIDI keeps playing)", "Accende o spegne il suono guida interno (il MIDI continua a suonare)", "Activa o desactiva el sonido guía (el MIDI sigue sonando)", "Active ou coupe le son guide intégré (le MIDI continue)", "Schaltet den eingebauten Guide-Sound ein oder aus (das MIDI läuft weiter)", "Liga ou desliga o som guia interno (o MIDI continua tocando)" },
+        { "Ready-made progressions, grouped by style (they also set the scale)", "Progressioni pronte, divise per stile (impostano anche la scala)", "Progresiones listas, agrupadas por estilo (también ajustan la escala)", "Progressions prêtes, classées par style (elles règlent aussi la gamme)", "Fertige Akkordfolgen nach Stil (sie setzen auch die Skala)", "Progressões prontas, agrupadas por estilo (também definem a escala)" },
+        { "How long the exported MIDI clip is", "Quanto è lunga la clip MIDI esportata", "Duración del clip MIDI exportado", "Durée du clip MIDI exporté", "Wie lang der exportierte MIDI-Clip ist", "Duração do clipe MIDI exportado" },
+        { "Which notes go into the clip: chords and bass, chords only or bass only", "Quali note vanno nella clip: accordi e basso, solo accordi o solo basso", "Qué notas van en el clip: acordes y bajo, solo acordes o solo bajo", "Quelles notes vont dans le clip : accords et basse, accords seuls ou basse seule", "Welche Töne in den Clip kommen: Akkorde und Bass, nur Akkorde oder nur Bass", "Quais notas vão no clipe: acordes e baixo, só acordes ou só baixo" },
+        { "Drag this onto a track in your DAW to drop the groove as a MIDI clip", "Trascinalo su una traccia della DAW per inserire il groove come clip MIDI", "Arrástralo a una pista de tu DAW para soltar el groove como clip MIDI", "Fais-le glisser sur une piste de ta DAW pour déposer le groove en clip MIDI", "Auf eine Spur in deiner DAW ziehen, um den Groove als MIDI-Clip abzulegen", "Arraste para uma faixa da DAW para soltar o groove como clipe MIDI" },
+        { "Save the clip, or every part at once, as .mid files", "Salva la clip, o tutte le parti insieme, come file .mid", "Guarda el clip, o todas las partes a la vez, como archivos .mid", "Enregistre le clip, ou toutes les parties d'un coup, en fichiers .mid", "Speichert den Clip oder alle Teile auf einmal als .mid-Dateien", "Salva o clipe, ou todas as partes de uma vez, como arquivos .mid" },
+        { "Language, interface size, tips and credits", "Lingua, dimensione dell'interfaccia, suggerimenti e crediti", "Idioma, tamaño de la interfaz, consejos y créditos", "Langue, taille de l'interface, astuces et crédits", "Sprache, Fenstergröße, Tipps und Credits", "Idioma, tamanho da interface, dicas e créditos" },
+        { "Scale degree of this chord; the small arrows change its inversion", "Grado della scala di questo accordo; le frecce piccole ne cambiano il rivolto", "Grado de la escala de este acorde; las flechas cambian su inversión", "Degré de la gamme de cet accord ; les petites flèches changent son renversement", "Stufe dieses Akkords; die kleinen Pfeile ändern seine Umkehrung", "Grau da escala deste acorde; as setinhas mudam sua inversão" },
+
         // ---- v1.10 ----
         { "Jackin' Piano", "Piano jackin'", "Piano jackin'", "Piano jackin'", "Jackin' Piano", "Piano jackin'" },
         { "Hit, voicing up", "Colpo, rivolto su", "Golpe, inversión arriba", "Coup, renversement vers le haut", "Anschlag, Umkehrung hoch", "Toque, inversão acima" },
@@ -361,9 +433,56 @@ Language current() noexcept
     return (Language) currentLanguage.load();
 }
 
+namespace
+{
+    /** JUCE's own texts (the Standalone window's Options menu and audio settings use TRANS). */
+    void applyToJuce()
+    {
+        static const char* const juceTexts[] {
+            "Audio/MIDI Settings...", "Audio/MIDI Settings", "Save current state...", "Load a saved state...",
+            "Reset to default state", "Save current state", "Load a saved state", "Error whilst saving",
+            "Error whilst loading", "Couldn't write to the specified file!", "Couldn't read from the specified file!",
+            "Audio device type:", "Device:", "Output:", "Input:", "Sample rate:", "Audio buffer size:",
+            "Active MIDI inputs:", "MIDI Output:", "Active output channels:", "Active input channels:", "Test",
+            "Plays a test tone", "Control Panel", "Reset Device", "Show advanced settings...",
+            "No MIDI inputs available", "none", "OK"
+        };
+
+        if (currentLanguage.load() == 0)
+        {
+            juce::LocalisedStrings::setCurrentMappings (nullptr);
+            return;
+        }
+
+        juce::String text ("language: Fase Groove Piano\n");
+        for (auto* key : juceTexts)
+            text << "\"" << juce::String (key).replace ("\"", "\\\"") << "\" = \""
+                 << tr (key).replace ("\"", "\\\"") << "\"\n";
+
+        juce::LocalisedStrings::setCurrentMappings (new juce::LocalisedStrings (text, false));
+    }
+}
+
+bool tipsEnabled()
+{
+    if (auto settings = openSettings())
+        return settings->getBoolValue ("tips", true);
+    return true;
+}
+
+void setTipsEnabled (bool enabled)
+{
+    if (auto settings = openSettings())
+    {
+        settings->setValue ("tips", enabled);
+        settings->saveIfNeeded();
+    }
+}
+
 void setCurrent (Language language)
 {
     currentLanguage = juce::jlimit (0, numLanguages - 1, (int) language);
+    applyToJuce();
 
     if (auto settings = openSettings())
     {
@@ -377,6 +496,7 @@ void loadSaved()
     if (auto settings = openSettings(); settings != nullptr && settings->containsKey ("language"))
     {
         currentLanguage = juce::jlimit (0, numLanguages - 1, settings->getIntValue ("language"));
+        applyToJuce();
         return;
     }
 
@@ -386,6 +506,7 @@ void loadSaved()
     for (int i = 0; i < numLanguages; ++i)
         if (system.startsWith (codes[i]))
             currentLanguage = i;
+    applyToJuce();
 }
 
 juce::String upper (const juce::String& text)

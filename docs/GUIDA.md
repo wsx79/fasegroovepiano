@@ -232,7 +232,7 @@ sparisce dalla griglia.
 
 | Cella | Significato |
 |---|---|
-| Con un piccolo ▲ / ▼ | lo stesso accordo **rivoltato su / giù**: la nota in alto si muove, come in un vero riff di piano (scegli *Colpo, rivolto su / giù* col clic destro) |
+| Con un piccolo ▲ / ▼ | le tre note alte dell'accordo **rivoltate su / giù** (uno stab più leggero, come la mano destra): la nota in alto si muove, come in un vero riff di piano (scegli *Colpo, rivolto su / giù* col clic destro) |
 | Piena chiara | colpo accentato |
 | Piena media | colpo normale |
 | Piena tenue | ghost note (colpo leggerissimo) |
@@ -293,6 +293,11 @@ o su **CHIUDI** per tornare indietro):
     usa la lingua del computer.
   - **Dimensione interfaccia:** dal 60% al 200%, come trascinando l'angolo.
   - **Finestra mini durante il drag:** lo stesso interruttore del pannello MIDI clip.
+  - **Mostra i suggerimenti quando il mouse resta fermo su un comando:** attivo di default.
+    Tieni il mouse fermo un attimo su una manopola, un menu o un pulsante e un suggerimento ti
+    spiega a cosa serve. Spegnilo quando conosci il plugin.
+  - Nella versione **Standalone**, il menu *Opzioni* della finestra (impostazioni audio/MIDI,
+    salva/carica stato, ripristina) e le impostazioni audio seguono anche loro la lingua scelta.
 - **INFO** (si apre anche cliccando il logo): versione, crediti, licenza, codice sorgente, il
   pulsante **SPOTIFY** con le mie produzioni e i pulsanti per una donazione libera (**Ko-fi** o
   **PayPal**): il plugin è gratuito, se ti piace puoi supportarne lo sviluppo.

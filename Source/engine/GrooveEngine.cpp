@@ -1022,8 +1022,18 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             // 'u' / 'd' (and accented 'U' / 'D'): the same chord one inversion up or down,
             // so the top note moves inside the bar like a real piano riff.
             auto v = voiced[(size_t) slotFor (symbol)];
-            if (symbol == 'u' || symbol == 'U') invert (v.rightHand, 1);
-            if (symbol == 'd' || symbol == 'D') invert (v.rightHand, -1);
+            const bool moveUp = symbol == 'u' || symbol == 'U', moveDown = symbol == 'd' || symbol == 'D';
+            if (moveUp || moveDown)
+            {
+                // Like a pianist's right hand: only the top three notes move, as a clean
+                // close-position inversion (the top note steps to the next chord tone).
+                NoteSet upper;
+                for (int i = std::max (0, v.rightHand.size - 3); i < v.rightHand.size; ++i)
+                    upper.add (v.rightHand[i]);
+                invert (upper, moveUp ? 1 : -1);
+                v.rightHand = upper;
+                v.leftHand = {};
+            }
             const double len = durationFor (pattern.rightHand);
             const double t = hitTime (1);
             const bool tie = isTiedFromPush (pattern.rightHand, pos);

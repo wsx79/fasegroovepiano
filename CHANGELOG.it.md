@@ -6,6 +6,22 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.11.0] - 2026-10-13
+
+### Aggiunto
+- **Suggerimenti ovunque:** tieni il mouse fermo su una manopola, un menu o un pulsante e un
+  suggerimento spiega a cosa serve. Si possono spegnere in **OPZIONI → IMPOSTAZIONI** ("Mostra i
+  suggerimenti quando il mouse resta fermo su un comando"); la scelta vale per tutti i progetti.
+- **App Standalone nella tua lingua:** il menu Opzioni della finestra (impostazioni audio/MIDI,
+  salva e carica stato, ripristina) e la finestra delle impostazioni audio/MIDI ora seguono la
+  lingua dell'interfaccia.
+
+### Modificato
+- **Movimento degli accordi più pulito:** i colpi che salgono o scendono ora suonano le **tre note
+  alte** dell'accordo con un rivolto pulito in posizione stretta, come la mano destra di un
+  pianista, invece di rivoltare tutto l'accordo da 4–5 note (che creava salti e note che
+  stridevano in alto).
+
 ## [1.10.0] - 2026-10-13
 
 ### Aggiunto

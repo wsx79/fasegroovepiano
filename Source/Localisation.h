@@ -29,6 +29,10 @@ namespace Localisation
     /** Upper case that also handles accented letters (the C library may not). */
     juce::String upper (const juce::String&);
 
+    /** Tooltips ("tips") on or off: a user preference shared by every project. */
+    bool tipsEnabled();
+    void setTipsEnabled (bool);
+
     /** Translates an English UI text into the current language. */
     juce::String tr (const juce::String& english);
 }

@@ -546,6 +546,8 @@ OptionsOverlay::OptionsOverlay() : artist (Branding::artistLogo())
 
     shrinkToggle.onClick = [this] { if (onShrinkChanged != nullptr) onShrinkChanged (shrinkToggle.getToggleState()); };
     addChildComponent (shrinkToggle);
+    tipsToggle.onClick = [this] { if (onTipsChanged != nullptr) onTipsChanged (tipsToggle.getToggleState()); };
+    addChildComponent (tipsToggle);
 
     refreshText();
     selectTab (false);
@@ -562,6 +564,7 @@ void OptionsOverlay::show (bool about, float currentScale, bool shrinkWhileDragg
     sizeBox.setSelectedId (closest, juce::dontSendNotification);
 
     shrinkToggle.setToggleState (shrinkWhileDragging, juce::dontSendNotification);
+    tipsToggle.setToggleState (Localisation::tipsEnabled(), juce::dontSendNotification);
     selectTab (about);
     setVisible (true);
     toFront (false);
@@ -580,6 +583,7 @@ void OptionsOverlay::refreshText()
     languageLabel.setText (Localisation::upper (tr ("Language")), juce::dontSendNotification);
     sizeLabel.setText (Localisation::upper (tr ("Interface size")), juce::dontSendNotification);
     shrinkToggle.setButtonText (tr ("Mini window while dragging"));
+    tipsToggle.setButtonText (tr ("Show tips when the mouse rests on a control"));
     repaint();
 }
 
@@ -589,7 +593,7 @@ void OptionsOverlay::selectTab (bool about)
     settingsTab.setToggleState (! about, juce::dontSendNotification);
     aboutTab.setToggleState (about, juce::dontSendNotification);
 
-    for (auto* c : std::initializer_list<juce::Component*> { &languageLabel, &languageBox, &sizeLabel, &sizeBox, &shrinkToggle })
+    for (auto* c : std::initializer_list<juce::Component*> { &languageLabel, &languageBox, &sizeLabel, &sizeBox, &shrinkToggle, &tipsToggle })
         c->setVisible (! about);
 
     auto showLink = [about] (juce::Component& b, const char* url) { b.setVisible (about && juce::String (url).isNotEmpty()); };
@@ -627,6 +631,8 @@ void OptionsOverlay::resized()
     sizeBox.setBounds (settings.removeFromTop (30).withWidth (260));
     settings.removeFromTop (22);
     shrinkToggle.setBounds (settings.removeFromTop (26).withWidth (360));
+    settings.removeFromTop (10);
+    tipsToggle.setBounds (settings.removeFromTop (26).withWidth (460));
 
     // About tab: link buttons above the footer
     auto row = inner.withTrimmedBottom (26).removeFromBottom (30);
@@ -663,7 +669,7 @@ void OptionsOverlay::paint (juce::Graphics& g)
         g.setColour (Palette::dim);
         g.setFont (font (12.0f));
         g.drawText (tr ("Settings are saved for all your projects."),
-                    juce::Rectangle<float> (r.getX() + 28.0f, r.getY() + 206.0f, r.getWidth() - 28.0f, 18.0f), juce::Justification::centredLeft);
+                    juce::Rectangle<float> (r.getX() + 28.0f, r.getY() + 250.0f, r.getWidth() - 28.0f, 18.0f), juce::Justification::centredLeft);
         g.setFont (font (11.0f));
         g.drawText ("Fase Groove Piano " + juce::String (JucePlugin_VersionString) + dot + tr ("Built with JUCE"),
                     r.removeFromBottom (16.0f), juce::Justification::centred);
@@ -941,7 +947,13 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         processor.shrinkWhileDragging = shrink;
         shrinkToggle.setToggleState (shrink, juce::dontSendNotification);
     };
+    options.onTipsChanged = [this] (bool on)
+    {
+        Localisation::setTipsEnabled (on);
+        applyTips();
+    };
     addChildComponent (options);
+    applyTips();
 
     previewButton.setClickingTogglesState (true);
     previewButton.setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -1116,6 +1128,67 @@ void FaseGroovePianoEditor::confirmReset()
                                           safe->afterReset();
                                       }
                                   });
+}
+
+void FaseGroovePianoEditor::applyTips()
+{
+    // Tips appear when the mouse rests on a control; they can be switched off in OPTIONS.
+    if (Localisation::tipsEnabled())
+    {
+        if (tooltips == nullptr)
+            tooltips = std::make_unique<juce::TooltipWindow> (this, 700);
+    }
+    else
+    {
+        tooltips.reset();
+    }
+}
+
+void FaseGroovePianoEditor::parentHierarchyChanged()
+{
+    translateHostWindow();
+}
+
+void FaseGroovePianoEditor::translateHostWindow()
+{
+    // The Standalone app's window (Options button, feedback warning) has a few fixed English
+    // texts; its menus and the audio settings follow the language through JUCE's TRANS().
+    if (processor.wrapperType != juce::AudioProcessor::wrapperType_Standalone)
+        return;
+
+    auto* top = getTopLevelComponent();
+    if (top == nullptr || top == this)
+        return;
+
+    static const char* const fixedTexts[] { "Options", "Mute audio input", "Feedback Loop:", "Audio input is muted to avoid feedback loop" };
+
+    std::function<void (juce::Component&)> visit = [&] (juce::Component& c)
+    {
+        if (&c == this)
+            return;
+
+        auto& props = c.getProperties();
+        auto translate = [&] (const juce::String& current, auto&& apply)
+        {
+            if (! props.contains ("fgpEnglish"))
+                for (auto* t : fixedTexts)
+                    if (current == t)
+                        props.set ("fgpEnglish", t);
+
+            if (props.contains ("fgpEnglish"))
+                apply (tr (props["fgpEnglish"].toString()));
+        };
+
+        if (auto* b = dynamic_cast<juce::Button*> (&c))
+            translate (b->getButtonText(), [b] (const juce::String& t) { b->setButtonText (t); });
+        else if (auto* l = dynamic_cast<juce::Label*> (&c))
+            translate (l->getText(), [l] (const juce::String& t) { l->setText (t, juce::dontSendNotification); });
+
+        for (auto* child : c.getChildren())
+            visit (*child);
+    };
+
+    visit (*top);
 }
 
 void FaseGroovePianoEditor::afterRestore()
@@ -1386,6 +1459,44 @@ void FaseGroovePianoEditor::applyLanguage()
     }
 
     options.refreshText();
+    translateHostWindow();
+
+    // Tips for every control (shown when the mouse rests on it).
+    progLength.box.setTooltip (tr ("How many chords the progression has (1 to 8)"));
+    chordLength.box.setTooltip (tr ("How long each chord lasts, from half a bar to 4 bars"));
+    key.box.setTooltip (tr ("The key of the song"));
+    scale.box.setTooltip (tr ("Scale or mode: Dorian is the deep house classic"));
+    extension.box.setTooltip (tr ("How rich the chords are: triads, 7ths, 9ths, 11ths/13ths, 6/9, sus..."));
+    voicing.box.setTooltip (tr ("How the chord notes are spread on the keyboard"));
+    bass.box.setTooltip (tr ("What the left hand plays"));
+    registerKnob.setTip (tr ("Moves the right hand up or down the keyboard"));
+    strumKnob.setTip (tr ("Rolls the chord notes like a pianist instead of hitting them all together"));
+    pattern.box.setTooltip (tr ("The rhythm of both hands, grouped by genre"));
+    section.box.setTooltip (tr ("Reshapes the groove for intro, main, break, build-up, drop and outro"));
+    fills.box.setTooltip (tr ("How often a fill leads into the next chord"));
+    fillStyle.box.setTooltip (tr ("What the fill plays"));
+    playMode.box.setTooltip (tr ("Play with the DAW, or while you hold a key (the key you hold sets the key)"));
+    swing.setTip (tr ("Delays the off-beat 16ths for a shuffled, human feel"));
+    gate.setTip (tr ("How long the chords ring: from short stabs to long chords"));
+    velocity.setTip (tr ("How hard the notes are played"));
+    humanize.setTip (tr ("Small timing and dynamics variations, like a real player"));
+    riffDensity.setTip (tr ("Random riffs only: from sparse stabs to busy chops"));
+    soundType.box.setTooltip (tr ("The guide sound you hear (the MIDI stays the same)"));
+    bassChannel.box.setTooltip (tr ("Bass on the same MIDI channel, or on channel 2 to play it with another instrument"));
+    tone.setTip (tr ("Brightness of the guide sound"));
+    reverb.setTip (tr ("Reverb on the guide sound"));
+    volume.setTip (tr ("Volume of the guide sound"));
+    chorus.setTip (tr ("Widens the guide sound"));
+    pump.setTip (tr ("Ducks the guide sound on every beat, like a kick sidechain"));
+    soundToggle.setTooltip (tr ("Turns the built-in guide sound on or off (the MIDI keeps playing)"));
+    presetBox.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
+    clipLength.setTooltip (tr ("How long the exported MIDI clip is"));
+    clipPart.setTooltip (tr ("Which notes go into the clip: chords and bass, chords only or bass only"));
+    dragTile.setTooltip (tr ("Drag this onto a track in your DAW to drop the groove as a MIDI clip"));
+    saveButton.setTooltip (tr ("Save the clip, or every part at once, as .mid files"));
+    optionsButton.setTooltip (tr ("Language, interface size, tips and credits"));
+    for (auto* slot : slots)
+        slot->setDegreeTip (tr ("Scale degree of this chord; the small arrows change its inversion"));
     currentKey = {};   // re-translates the key / scale line on the next timer tick
     timerCallback();
     repaint();
