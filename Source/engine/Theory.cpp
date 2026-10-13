@@ -395,7 +395,10 @@ namespace
             const int low = v[i - 1];
 
             if (d == 0)                 p += 50.0;
-            if (d == 1)                 p += 9.0;
+            // A semitone between two inner voices in the middle register is the house piano
+            // sound (the 9th against the minor 3rd in "b7 9 b3 5"); anywhere else it rubs.
+            const bool innerPair = i >= 2 && i <= v.size - 2;
+            if (d == 1)                 p += (innerPair && low >= 55) ? 1.0 : 9.0;
             if (d == 2 && low < 52)     p += 3.0;
             if (d <= 4 && low < 48)     p += 4.0;
             if (d < 3 && low < 45)      p += 6.0;

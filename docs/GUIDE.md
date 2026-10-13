@@ -170,7 +170,7 @@ Outer ring = major keys, inner ring = relative minors.
 
 | Control | What it does |
 |---|---|
-| **Groove** | 112 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). |
+| **Groove** | 128 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). |
 | **NEW RIFF** | Generates a new riff (chords + bass), built like a keyboard player builds one: a half-bar motif made of house comping figures, answered and repeated (A B A B'), often with a push into the next bar, over a simple bass figure that locks to it. If you locked some parts with **LOCK** (see *Rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
 | **Fills** | **Off** by default. Every bar, or every 2/4/8 bars, the end of the bar becomes a short fill leading into the next chord. |
@@ -183,12 +183,13 @@ Outer ring = major keys, inner ring = relative minors.
 | **Humanize** | Small timing and velocity variations for a hand-played feel. |
 | **Density** | Random riffs only: from sparse stabs to busy 16th-note chops. |
 
-**The grooves: 112, by genre.** The *Groove* menu opens in columns with one heading per genre;
+**The grooves: 128, by genre.** New users: start from **Piano House**, the classic house piano loops (rootless chords on syncopated offbeats over an octave bass). The *Groove* menu opens in columns with one heading per genre;
 *Random riff* and *User pattern* are under **Generate**. Jackin' grooves sound best with Swing at
 30–45%, UK garage ones with 45–55%.
 
 | Genre | Grooves |
 |---|---|
+| **Piano House** (16) | *Dotted House Stabs*, *Loop Piano Classic*, *Rolling House Keys*, *Three-Three-Two Piano*, *Offbeat Piano Loop*, *Upfront Piano Stabs*, *Early Change Piano*, *Peak Time Piano*, *Sunset Piano Loop*, *Two Chord Bounce*, *Piano Pump*, *Classic Loop Answer*, *Deep Piano Loop*, *Anthem Piano Loop*, *Night Drive Piano*, *Skippy Piano Stabs* |
 | **Soulful** (9) | *Soulful Push*, *Soulful Sunday*, *Soulful Lift*, *Sunday Morning Keys*, *Soulful Offbeat 8ths*, *Soul Train Comp*, *Vocal House Stabs*, *Soulful Pianist*, *Warm Rhodes Swing* |
 | **Deep** (11) | *Deep Chords*, *Late Night Rhodes*, *Deep Sway*, *Deep Dub Stabs*, *Deep Late Pad*, *Deep Offbeat Chords*, *Larry's Chords*, *Deep Dorian Swing*, *Midnight Stabs*, *Deep Keys Rolls*, *Minimal Deep Pulse* |
 | **Gospel** (9) | *Gospel Bounce*, *Gospel Shout 16ths*, *Gospel Chops*, *Gospel Shout*, *Church Organ Swell*, *Gospel Walk*, *Praise Break*, *Sanctified Stabs*, *Gospel Ballad Swing* |
@@ -267,7 +268,7 @@ remembered with your project.
 
 ### STYLE and RESET
 
-- **STYLE** opens a menu of ready-made setups by genre: *Classic Deep House*, *Soulful House*,
+- **STYLE** opens a menu of ready-made setups by genre: *House Piano Loop*, *Classic Deep House*, *Soulful House*,
   *Gospel House*, *Jackin' House*, *'90s Piano House*, *Organ Jack*, *Nu Disco*, *Funky Disco*,
   *UK Garage*, *Afro House*, *Neo Soul*, *Jackin' Piano*, *Chill Lounge*. Each one sets the progression (and its
   scale), extensions, voicing, groove, swing, gate, humanize, strum, Top +8va, bass, approach chord,

@@ -43,7 +43,7 @@ Rhodes or synth.
 - ⭕ Interactive **circle of fifths**: the chords of the scale with their numerals, your progression as numbered dots and arrows, drag the dots to change chords (even outside the scale).
 - 🌈 **Harmony colours:** chords and chord changes coloured by how well they sound together (green = great, grey = clashes).
 - 🎚️ **STYLE:** one-click setups by genre (deep, soulful, gospel, jackin', '90s piano, garage, afro, neo soul…) and **RESET** to start over.
-- 🥁 **112 two-hand grooves** in 11 genres (soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill), with chords that move by inversions inside the bar like a real piano riff
+- 🥁 **128 two-hand grooves** in 12 genres (**piano house** loops, soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill), with chords that move by inversions inside the bar like a real piano riff
   plus **NEW RIFF**, a random funky riff generator, and optional fills (11 styles, from gospel runs to piano glissandos).
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and

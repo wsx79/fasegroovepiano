@@ -6,6 +6,23 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.13.0] - 2026-10-13
+
+### Aggiunto
+- **16 groove "Piano house"** (128 in totale), primi nel menu: il linguaggio classico dei loop di
+  piano house, accordi senza fondamentale sui controtempi sincopati (spesso ogni tre sedicesimi)
+  sopra un basso in ottava sull'1 e sul "e" del 2.
+- **STILE → House Piano Loop**, ora il primo stile.
+
+### Modificato
+- **Voicing da piano house:** il motore ora accetta il semitono tra la 9ª e la terza minore dentro
+  l'accordo, così suona le classiche forme senza fondamentale (Am9 = Sol Si Do Mi, b7-9-b3-5;
+  Gmaj9 = La Si Re Fa#, 9-3-5-7) invece di evitarle.
+- **Nuovi valori iniziali** (nuove istanze e RESET): voicing Rootless, registro Do#4, gate 70%,
+  velocity 108, Movimento spento (un voicing per accordo, come si fa nella house).
+- **Riff casuali:** metà partono dalle figure classiche dei loop di piano house (con basso in
+  ottava), e i riff non aggiungono più da soli il movimento dei rivolti.
+
 ## [1.12.0] - 2026-10-13
 
 ### Modificato

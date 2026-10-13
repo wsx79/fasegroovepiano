@@ -175,7 +175,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 
 | Controllo | Cosa fa |
 |---|---|
-| **Groove** | 112 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
+| **Groove** | 128 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). |
 | **NEW RIFF** | Genera un riff nuovo (accordi + basso), costruito come lo costruisce un tastierista: un motivo di mezza battuta fatto di figure di comping house, con risposta e ripetizione (A B A B'), spesso con un anticipo verso la battuta successiva, sopra una figura di basso semplice che lo segue. Se hai bloccato qualche parte con **LOCK** (vedi *Rhythm grid*), quelle parti restano e cambia solo il resto. Riff e modifiche vengono salvati nel progetto. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). |
 | **Fills** | **Spenti (Off)** di default. Ogni battuta, oppure ogni 2/4/8 battute, la fine della battuta diventa un breve fill che porta all'accordo successivo. |
@@ -188,12 +188,13 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 | **Humanize** | Piccole variazioni di tempo e dinamica, per un feel suonato a mano. |
 | **Density** | Solo per i Random riff: da stab radi a chop di sedicesimi fitti. |
 
-**I groove: 112, divisi per genere.** Il menu *Groove* si apre a colonne con un titolo per ogni
+**I groove: 128, divisi per genere.** Se inizi ora parti da **Piano house**: i classici loop di piano house (accordi senza fondamentale sui controtempi sincopati, sopra un basso in ottava). Il menu *Groove* si apre a colonne con un titolo per ogni
 genere; *Random riff* e *User pattern* stanno sotto **Genera**. I groove jackin' suonano al meglio
 con Swing 30–45%, quelli UK garage con 45–55%.
 
 | Genere | Groove |
 |---|---|
+| **Piano house** (16) | *Dotted House Stabs*, *Loop Piano Classic*, *Rolling House Keys*, *Three-Three-Two Piano*, *Offbeat Piano Loop*, *Upfront Piano Stabs*, *Early Change Piano*, *Peak Time Piano*, *Sunset Piano Loop*, *Two Chord Bounce*, *Piano Pump*, *Classic Loop Answer*, *Deep Piano Loop*, *Anthem Piano Loop*, *Night Drive Piano*, *Skippy Piano Stabs* |
 | **Soulful** (9) | *Soulful Push*, *Soulful Sunday*, *Soulful Lift*, *Sunday Morning Keys*, *Soulful Offbeat 8ths*, *Soul Train Comp*, *Vocal House Stabs*, *Soulful Pianist*, *Warm Rhodes Swing* |
 | **Deep** (11) | *Deep Chords*, *Late Night Rhodes*, *Deep Sway*, *Deep Dub Stabs*, *Deep Late Pad*, *Deep Offbeat Chords*, *Larry's Chords*, *Deep Dorian Swing*, *Midnight Stabs*, *Deep Keys Rolls*, *Minimal Deep Pulse* |
 | **Gospel** (9) | *Gospel Bounce*, *Gospel Shout 16ths*, *Gospel Chops*, *Gospel Shout*, *Church Organ Swell*, *Gospel Walk*, *Praise Break*, *Sanctified Stabs*, *Gospel Ballad Swing* |
@@ -272,7 +273,7 @@ Trascina l'angolo in basso a destra per **ingrandire o rimpicciolire** l'interfa
 
 ### STILE e RESET
 
-- **STILE** apre un menu di impostazioni pronte per genere: *Classic Deep House*, *Soulful House*,
+- **STILE** apre un menu di impostazioni pronte per genere: *House Piano Loop*, *Classic Deep House*, *Soulful House*,
   *Gospel House*, *Jackin' House*, *'90s Piano House*, *Organ Jack*, *Nu Disco*, *Funky Disco*,
   *UK Garage*, *Afro House*, *Neo Soul*, *Jackin' Piano*, *Chill Lounge*. Ognuno imposta progressione (e la sua
   scala), estensioni, voicing, groove, swing, gate, humanize, strum, Top +8va, basso, accordo di

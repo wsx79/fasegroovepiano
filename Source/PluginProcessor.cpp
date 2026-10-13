@@ -51,8 +51,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::key, "Key", noteNames(), 9);
     choice (ParamIDs::scale, "Scale", namesFrom (sgk::numScales, sgk::scaleName), 1);
     choice (ParamIDs::extension, "Extensions", namesFrom (sgk::numExtensions, sgk::extensionName), 2);
-    choice (ParamIDs::voicing, "Voicing", namesFrom (sgk::numVoicings, sgk::voicingName), 0);
-    layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::registerPos, 1 }, "Register", 48, 76, 64,
+    choice (ParamIDs::voicing, "Voicing", namesFrom (sgk::numVoicings, sgk::voicingName), 2);   // rootless: the house piano sound
+    layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::registerPos, 1 }, "Register", 48, 76, 61,
                     AudioParameterIntAttributes().withStringFromValueFunction ([] (int v, int)
                     {
                         return String (sgk::noteName (v)) + String (v / 12 - 1);
@@ -86,14 +86,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     for (int i = 0; i < sgk::numSegments; ++i)
         choice (ParamIDs::segment (i), "Segment " + String (i + 1), { "A", "B", "C", "D" }, i);
     unitFloat (ParamIDs::swing, "Swing", 0.0f, 0.25f);
-    unitFloat (ParamIDs::gate, "Gate", 0.1f, 0.55f);
-    layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::velocity, 1 }, "Velocity", 1, 127, 96));
+    unitFloat (ParamIDs::gate, "Gate", 0.1f, 0.7f);
+    layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::velocity, 1 }, "Velocity", 1, 127, 108));
     unitFloat (ParamIDs::humanize, "Humanize", 0.0f, 0.3f);
     choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars", "Every bar" }, 0);
     choice (ParamIDs::fillStyle, "Fill Style", namesFrom (sgk::numFillStyles, sgk::fillStyleName), 0);
     choice (ParamIDs::variation, "Variation", { "Off", "Every 4 bars", "Every 8 bars" }, 0);
     choice (ParamIDs::grooveBars, "Groove Length", { "2 bars", "1 bar", "4 bars" }, 0);
-    choice (ParamIDs::movement, "Voicing Movement", { "Off", "Subtle", "Lively" }, 1);
+    choice (ParamIDs::movement, "Voicing Movement", { "Off", "Subtle", "Lively" }, 0);
     choice (ParamIDs::strumDir, "Strum Direction", { "Up", "Down", "Alternate" }, 0);
     unitFloat (ParamIDs::strum, "Strum", 0.0f, 0.0f);
     layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::octaveTop, 1 }, "Top Note +8va", false));
@@ -202,6 +202,7 @@ namespace
     // bass: 0 off 1 root 2 octaves 3 root+5th   approach: 0 off 1 above 2 below
     // sound: 0 Rhodes 1 Soulful Grand 2 House Piano 3 House Organ
     const Style styles[] {
+        { "House Piano Loop",     "Minor Flow  i - VI - III - VII",    "Dotted House Stabs",   2, 2, 2, 0, 2, 61, 0.25f, 0.75f, 0.15f, 0.00f, false, 0, 0 },
         { "Classic Deep House",   "Dorian Vamp  i - IV",               "Deep Chords",          2, 2, 1, 0, 0, 62, 0.20f, 0.60f, 0.25f, 0.10f, false },
         { "Soulful House",        "Turnaround  I - vi - ii - V",       "Soulful Sunday",       7, 1, 1, 1, 1, 64, 0.25f, 0.55f, 0.30f, 0.20f, false, 3, 7 },
         { "Gospel House",         "Gospel Lift  IV - V - vi - I",      "Gospel Shout",         7, 0, 2, 1, 1, 64, 0.30f, 0.50f, 0.30f, 0.15f, true, 2, 3 },
@@ -415,8 +416,8 @@ void FaseGroovePianoProcessor::applyStyle (int index)
     setParameterFromUI (ParamIDs::section, 0.0f);
     {
         const juce::String name (st.name);
-        const bool lively = name.contains ("Jackin'") || name.contains ("Gospel") || name.contains ("Disco") || name.contains ("Organ");
-        setParameterFromUI (ParamIDs::movement, lively ? 2.0f : 1.0f);
+        // House piano keeps one voicing per chord; only the jackin' piano style dances.
+        setParameterFromUI (ParamIDs::movement, name == "Jackin' Piano" ? 2.0f : 0.0f);
     }
     setParameterFromUI (ParamIDs::fills, (float) st.fills);
     setParameterFromUI (ParamIDs::fillStyle, (float) st.fillStyle);

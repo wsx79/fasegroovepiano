@@ -249,6 +249,9 @@ namespace
         { "Alternate", "Alternato", "Alterno", "Alterné", "Abwechselnd", "Alternado" },
         { "Direction of the roll: up, down, or alternating (up on the beat, down off it). Click to change", "Direzione dell'arpeggiato: su, giù o alternato (su sui tempi, giù sui controtempi). Clicca per cambiare", "Dirección del arpegiado: arriba, abajo o alterno (arriba en el tiempo, abajo a contratiempo). Haz clic para cambiar", "Sens de l'arpège : haut, bas ou alterné (haut sur le temps, bas à contretemps). Clique pour changer", "Richtung des Anschlags: hoch, runter oder abwechselnd (hoch auf dem Schlag, runter dazwischen). Klicken zum Wechseln", "Direção do dedilhado: cima, baixo ou alternado (cima no tempo, baixo no contratempo). Clique para mudar" },
 
+        { "Piano House", "Piano house", "Piano house", "Piano house", "Piano House", "Piano house" },
+        { "House Piano Loop", "Loop di piano house", "Loop de piano house", "Boucle de piano house", "House-Piano-Loop", "Loop de piano house" },
+
         // ---- v1.10 ----
         { "Jackin' Piano", "Piano jackin'", "Piano jackin'", "Piano jackin'", "Jackin' Piano", "Piano jackin'" },
         { "Hit, voicing up", "Colpo, rivolto su", "Golpe, inversión arriba", "Coup, renversement vers le haut", "Anschlag, Umkehrung hoch", "Toque, inversão acima" },

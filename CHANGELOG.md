@@ -6,6 +6,23 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.13.0] - 2026-10-13
+
+### Added
+- **16 "Piano House" grooves** (128 in total), first in the menu: the classic house piano loop
+  language, rootless chords on syncopated offbeats (often every three 16ths) over an octave bass
+  on the 1 and the "&" of 2.
+- **STYLE → House Piano Loop**, now the first style.
+
+### Changed
+- **House piano voicings:** the voicing engine now accepts the semitone between the 9th and the
+  minor 3rd inside the chord, so it plays the classic rootless shapes (Am9 = G B C E,
+  b7-9-b3-5; Gmaj9 = A B D F#, 9-3-5-7) instead of avoiding them.
+- **New defaults** (new instances and RESET): Rootless voicing, register C#4, gate 70%,
+  velocity 108, Movement Off (one voicing per chord, the house way).
+- **Random riffs:** half of them now start from the classic piano house loop figures (with an
+  octave bass), and riffs no longer add inversion moves on their own.
+
 ## [1.12.0] - 2026-10-13
 
 ### Changed

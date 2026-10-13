@@ -918,8 +918,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
                 if (patterns[(size_t) i].category == genres[g])
                     group.items.push_back (i);
 
-            // Columns: soulful, deep, gospel | jackin', jackin' piano | garage, afro, funky | '90s, neo soul, chill, generate
-            group.columnBreakAfter = g == 2 || g == 4 || g == 7;
+            // Columns: piano house, soulful, deep | gospel, jackin', jackin' piano | garage, afro, funky | '90s, neo soul, chill, generate
+            group.columnBreakAfter = g == 2 || g == 5 || g == 8;
             groups.push_back (group);
         }
         groups.push_back ({ "Generate", { sgk::randomPatternIndex(), sgk::userPatternIndex() }, false });

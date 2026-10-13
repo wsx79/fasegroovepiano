@@ -195,8 +195,81 @@ GroovePattern applySection (const GroovePattern& source, Section section)
 }
 
 //==============================================================================
+namespace
+{
+    /** Piano house riff from the classic loop figures: syncopated offbeat stabs (often every
+        three 16ths) over an octave bass on the 1 and the "&" of 2, decorated per seed. */
+    GroovePattern makeLoopRiff (Random& rng, double density)
+    {
+        static const char* const rhBars[] {
+            "..x..x..x..x..x.", "..x....x...x..x.", "x......x..x..x..", "x...x..x..x..x..",
+            "x..x..x...x..x..", ".x..x.x.x..x..x.", "..xx.x..x.x.....", "..x..x....x..x..",
+            "x..x..x..x..x.x.", "..x..x..x...x...",
+        };
+        static const char* const lhBars[] {
+            "x.....x.........", "x.....x.......x.", "x.....x.....x...", "x.....x.x...x.x.",
+        };
+        constexpr int numRh = (int) (sizeof (rhBars) / sizeof (*rhBars));
+        constexpr int numLh = (int) (sizeof (lhBars) / sizeof (*lhBars));
+
+        const int a = rng.below (numRh);
+        const int b = rng.chance (0.45) ? a : rng.below (numRh);
+        std::string right = std::string (rhBars[a]) + rhBars[b];
+
+        const int la = rng.below (numLh);
+        std::string left = std::string (lhBars[la]) + lhBars[rng.chance (0.6) ? la : rng.below (numLh)];
+
+        // Accent the first hit of each bar, sometimes an offbeat; hold some stabs a little
+        // longer in sparse riffs; a ghost before a hit in busy ones.
+        for (int bar = 0; bar < 2; ++bar)
+        {
+            bool first = true;
+            for (int i = bar * 16; i < bar * 16 + 16; ++i)
+            {
+                char& c = right[(size_t) i];
+                if (c != 'x')
+                    continue;
+                if (first || rng.chance (0.2))
+                    c = 'X';
+                first = false;
+                if (i + 1 < 32 && right[(size_t) i + 1] == '.' && rng.chance (0.3 * (1.0 - density)))
+                    right[(size_t) i + 1] = '=';
+            }
+        }
+        for (int i = 1; i < 31; ++i)
+            if (right[(size_t) i] == '.' && isHit (right[(size_t) i + 1]) && rng.chance (0.12 * density))
+                right[(size_t) i] = 'g';
+
+        // Push into the next loop, now and then with the bass.
+        if (rng.chance (0.45) && right[30] != '=')
+        {
+            right[30] = '>'; right[31] = '=';
+            if (rng.chance (0.5)) { left[30] = '>'; left[31] = '='; }
+        }
+
+        repairHolds (right);
+        repairHolds (left);
+
+        GroovePattern p;
+        p.rightHand = right;
+        p.leftHand = left;
+        return p;
+    }
+}
+
 GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
 {
+    {
+        // Half of the riffs come from the classic piano house loop figures.
+        Random pick (seed ^ 0xC0FFEEu);
+        if (pick.chance (0.5))
+        {
+            auto p = makeLoopRiff (pick, std::clamp ((double) densityIn, 0.0, 1.0));
+            p.name = "Random Riff #" + std::to_string (seed % 100000);
+            return p;
+        }
+    }
+
     // Built like a keyboard player builds a riff: a half-bar motif made of house
     // comping cells, answered by a second half-bar, then repeated with a different ending
     // that pushes into the next bar (A B A B'). The bass keeps it simple and locks to it.
@@ -263,25 +336,11 @@ GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
         answer = std::string (answer.rbegin(), answer.rend());
     answer = decorate (answer);
 
-    // The answer moves: some hits play the chord an inversion up or down, so the top note
-    // sings a little melody against the motif (call and response).
-    auto addMovement = [&] (std::string half)
-    {
-        bool first = true;
-        for (auto& c : half)
-        {
-            if (! isHit (c) || c == 'g' || c == '>')
-                continue;
-            if (! first && rng.chance (0.55))
-                c = rng.chance (0.6) ? (c == 'X' ? 'U' : 'u') : (c == 'X' ? 'D' : 'd');
-            first = false;
-        }
-        return half;
-    };
-    answer = addMovement (answer);
+    // House piano keeps one voicing per chord, so riffs don't move by default
+    // (the Movement control adds it when wanted).
 
     // B': the answer with a new last beat.
-    const std::string ending = answer.substr (0, 4) + addMovement (decorate (pickCell()));
+    const std::string ending = answer.substr (0, 4) + decorate (pickCell());
 
     std::string right = motif + answer + motif + ending;
 
