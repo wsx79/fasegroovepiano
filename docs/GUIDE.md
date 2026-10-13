@@ -104,9 +104,10 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 |---|---|
 | **Load a progression…** | 38 ready-made progressions in a three-column menu, grouped by style: *Soulful & Gospel*, *Circle of 5ths*, *Deep house*, *Modal & exotic*, *Jackin' & funky*. Loading one also sets the recommended scale. (Long menus like *Groove* also open in columns.) |
 | **DICE** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
+| **LEARN** | Play chords on your **MIDI keyboard**: each chord you play (and release) fills the next slot, starting from slot 1, and the progression grows with it. Chords of the scale become degrees, the others free chords. Press LEARN again to stop. |
 | **Length** | How many chords (1–8). Slots beyond the length are greyed out. |
 | **Each chord** | How long each chord lasts: ½, 1, 2 or 4 bars. |
-| **Slots 1–8** | Each slot is a scale degree (I…VII). Above it you see the chord name and the Roman numeral (upper case = major, lower case = minor, ø = half-diminished). The playing slot lights up. A coloured bar on top of each slot shows how well that chord sounds with the chords next to it (green = great, grey = clashes; hover for a hint). A slot that shows **Free** plays a free chord set from the circle of fifths (e.g. *bVI*); pick a degree from its menu to go back to the scale. |
+| **Slots 1–8** | Each slot is a scale degree (I…VII). Above it you see the chord name and the Roman numeral (upper case = major, lower case = minor, ø = half-diminished). The playing slot lights up. A coloured bar on top of each slot shows how well that chord sounds with the chords next to it (green = great, grey = clashes; hover for a hint). A slot that shows **Free** plays a free chord set from the circle of fifths (e.g. *bVI*); pick a degree from its menu to go back to the scale. The small **▲ ▼ arrows** in the top corners change the **inversion** of that chord (up to three steps each way, shown as +1, -2…) when the automatic choice doesn't convince you. |
 
 Degrees are relative to the scale: change the key or mode and the progression follows.
 
@@ -118,7 +119,8 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Scale / mode** | Major (Ionian), **Dorian** (the deep house classic), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, plus (v1.5) **Locrian**, **Harmonic Major** (gospel minor iv), **Lydian Dominant** (funky I7#11), **Mixolydian b6** (soulful borrowed iv) and **Phrygian Dominant** (dark, exotic deep house). |
 | **Extensions** | Triads, 7ths, 9ths, 11ths/13ths, plus (v1.5): **6/9** (the warm soulful tonic chord, no 7th), **Add 9** (pop/house triad with a 9th), **Sus (9sus4)** (the open, floating deep house chord) and **9ths + altered V** (every chord a 9th, and degree V becomes a gospel **13(b9)**, or **7(b9,b13)** in minor keys). Clashing tensions are handled automatically: a b9 on a non-dominant chord is dropped, an 11th on a major chord becomes a 13th, a 6th that would be a b6 becomes a 7th, and sus4 is used only where the 4th is perfect. |
 | **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound), *Shell (3-7-top)* (just 3rd, 7th and the top colour note: light and jazzy, leaves room for the bass and vocals), *Drop 2+4* (open, spread pianist voicing, great for pads and breaks). Fast repeated hits use a lighter voicing (the top three notes) and ghost notes only the top two, like a pianist's touch; steady 8th-note bass lines bounce between root and octave. Every voicing follows the rules a pianist uses: no semitone rubs between neighbouring notes, no muddy small intervals in the low register, the 9th above the 3rd, and the voice that moves the least (the top note sings a smooth line). |
-| **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th. |
+| **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th, **Walking** (root, 5th, octave on the beats and a chromatic step into the next chord) or **Syncopated octaves** (the offbeats jump up an octave: the pumping house bass). |
+| **Top line** | The melody drawn by the top notes of the chords: *Smooth (auto)* moves as little as possible, *Steady* keeps the top note in place, *Rising*, *Falling* or *Arch* shape it across the progression. |
 | **Approach chord** | The gospel **slide**: on the last 16th before each chord change the next chord (and its bass note) is played a half step **from above** or **from below**, then resolves. Only where the hand is already playing, so a muted bass stays muted. |
 | **Top +8va** | Doubles the top note of every chord an octave higher: the bright, ringing classic house piano sound. |
 | **Strum** | Rolls the chord notes upwards like a real pianist instead of hitting them all at once (0% = together, 100% = clear roll). 15–35% sounds natural. |
@@ -172,6 +174,8 @@ Outer ring = major keys, inner ring = relative minors.
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
 | **Fills** | **Off** by default. Every bar, or every 2/4/8 bars, the end of the bar becomes a short fill leading into the next chord. |
 | **Fill style** | 11 styles, all aimed at the top note of the next chord: *Pentatonic run up* / *down*, *Chord roll* (arpeggio of the next chord), *Gospel run* (eight 16ths up the scale over the last two beats), *Chromatic walk-up* (four semitones into the next chord), *Push stabs* (a stab, a ghost, then the next chord pushed in on the "&" of 4), *16th chord chops* (four light chops with a crescendo), *Gospel thirds* (parallel thirds walking down), *Piano glissando* (a fast sweep up), *Blues lick* (down the blues scale) and *Mix*, which plays a different one at every fill. |
+| **Variation** | Every 4 or 8 bars the last bar plays a **variation** of the groove (a hit moved, a ghost note, a push into the next bar, a bass pick-up), so a long loop never sounds static. |
+| **Groove length** | *2 bars* (normal), *1 bar* (the first bar looped: tighter, more hypnotic) or *4 bars* (the groove followed by a variation of it). |
 | **Swing** | 0% = straight, 100% = triplet shuffle. 15–35% is the classic house feel. |
 | **Gate** | How long short hits last: low = staccato, high = legato. |
 | **Velocity** | Overall dynamics. |
@@ -233,11 +237,12 @@ disappears from the grid.
 | Control | What it does |
 |---|---|
 | **Guide sound** | Turns the built-in sound on/off. Turn it off if you only use the MIDI. |
-| **Sound** | *Rhodes (FM)* electric piano, *Soulful Grand* acoustic piano, *House Piano (M1 style)* – the bright '90s house piano – or *House Organ* for jackin' organ stabs. |
+| **Sound** | *Rhodes (FM)* electric piano, *Soulful Grand* acoustic piano, *House Piano (M1 style)* – the bright '90s house piano – *House Organ* for jackin' organ stabs, *Wurlitzer* (reedy, a little driven), *Gospel Organ (Leslie)* (full drawbars through a rotating speaker) or *Warm Pad* (soft detuned pad for breaks). |
 | **PREVIEW** | Plays the groove even with the DAW stopped. |
 | **MIDI out** | *All on channel 1* or *Bass on channel 2* (to send the bass to a different instrument). |
 | **Play mode** (in the Groove panel) | *Host transport*: plays with the DAW's Play. *Hold a key*: plays while you hold a MIDI key, and **that key sets the key** (great for live jamming and in the Standalone app). |
 | **Tone / Reverb / Volume** | Brightness (or drawbars for the organ), reverb and volume of the guide sound (they don't affect the MIDI). |
+| **Chorus / Pump** | *Chorus* widens the sound; *Pump* ducks it on every beat like a kick sidechain, so the riff sounds the way it will in the mix. Guide sound only. |
 
 ### MIDI clip
 
@@ -247,6 +252,15 @@ See the next chapter.
 
 Drag the bottom-right corner to **enlarge or shrink** the interface (60% to 200%). The size is
 remembered with your project.
+
+### PRESETS, undo and redo
+
+- **PRESETS** (top of the window): *Save current settings as…* stores everything (progression,
+  free chords, groove, your grid, sound…) under a name; the list below loads it in any project.
+  *Delete* removes one, *Open the presets folder* shows the files (`.fgp`) so you can back them up
+  or share them.
+- **◀ ▶** next to it (or **Ctrl+Z / Ctrl+Shift+Z**, **Cmd** on Mac): **undo and redo** your last
+  changes: chords, grid edits, styles, presets, everything except the window size.
 
 ### STYLE and RESET
 
@@ -292,7 +306,9 @@ In the **MIDI CLIP** panel:
    - *Song: intro > drop > outro*: a full 60-bar arrangement (see chapter 6).
 2. **Notes**: *Chords + bass*, *Chords only* or *Bass only*.
 3. **Drag** the **DRAG MIDI TO DAW** tile onto a track or the DAW timeline.
-   Or use **Save .mid…** to save the file wherever you want.
+   Or use **Save .mid…**: *Save this clip as .mid…* saves the file wherever you want, and
+   **Save all parts to a folder…** writes six files at once: the loop and the whole song, each as
+   full, chords only and bass only, ready to drop on separate tracks.
 
 With **Mini window while dragging** on, the plug-in window shrinks to a small tile while you drag,
 so you can see the DAW and drop the clip where you want. It comes back when you release. If your

@@ -86,6 +86,10 @@ public:
     /** Called when the user picks a degree from the menu (it replaces a free chord). */
     std::function<void()> onDegreePicked;
 
+    /** Called with +1 / -1 when an inversion arrow is clicked. */
+    std::function<void (int)> onInvert;
+    void setInversion (int);
+
     /** isFree: the slot plays a free chord (from the circle), shown instead of a degree. */
     void setInfo (const juce::String& chordName, const juce::String& roman, bool enabled, bool playing,
                   bool isFree, int degreeValue, float harmonyScore);
@@ -103,6 +107,8 @@ private:
     int index;
     DegreeBox degree;
     bool showingFree = false;
+    int inversion = 0;
+    juce::ArrowButton invertUp { "up", 0.75f, Palette::accent }, invertDown { "down", 0.25f, Palette::accent };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
     juce::String name, numeral;
     bool isEnabledSlot = true, isPlaying = false;
@@ -184,7 +190,7 @@ private:
 };
 
 //==============================================================================
-class FaseGroovePianoEditor : public juce::AudioProcessorEditor, private juce::Timer
+class FaseGroovePianoEditor : public juce::AudioProcessorEditor, public juce::Timer
 {
 public:
     explicit FaseGroovePianoEditor (FaseGroovePianoProcessor&);
@@ -211,6 +217,19 @@ private:
 
     juce::TextButton optionsButton { "OPTIONS" };
     juce::TextButton styleMenuButton { "STYLE" }, resetButton { "RESET" };
+    juce::TextButton presetsButton { "PRESETS" }, learnButton { "LEARN" };
+    juce::ArrowButton undoButton { "undo", 0.5f, Palette::accent }, redoButton { "redo", 0.0f, Palette::accent };
+    void showPresetMenu();
+    void savePresetAs();
+    void showSaveMenu();
+    void saveAllParts();
+    void undo();
+    void redo();
+    void afterRestore();
+    bool keyPressed (const juce::KeyPress&) override;
+    juce::StringArray undoStack, redoStack;
+    juce::String lastSnapshot;
+    int snapshotTicks = 0, lastLearnCount = 0;
     void showStyleMenu();
     void confirmReset();
     void afterReset();
@@ -228,7 +247,7 @@ private:
     juce::OwnedArray<ChordSlot> slots;
 
     // Harmony
-    Choice key, scale, extension, voicing, bass, approach;
+    Choice key, scale, extension, voicing, bass, approach, topLine;
     Knob registerKnob, strumKnob;
     juce::ToggleButton octaveToggle { "Top +8va" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> octaveAttachment;
@@ -236,7 +255,7 @@ private:
     juce::ToggleButton freeToggle { "Free" };
 
     // Groove
-    Choice pattern, section, fills, fillStyle, playMode;
+    Choice pattern, section, fills, fillStyle, playMode, variation, grooveBars;
     juce::TextButton newRiffButton { "NEW RIFF" };
     Knob swing, gate, velocity, humanize, riffDensity;
 
@@ -245,7 +264,7 @@ private:
     juce::TextButton previewButton { "PREVIEW" };
     Choice bassChannel, soundType;
     juce::AudioProcessorValueTreeState::ButtonAttachment soundAttachment;
-    Knob tone, reverb, volume;
+    Knob tone, reverb, volume, chorus, pump;
 
     PatternView patternView;
     juce::TextButton bassButton { "BASS" };

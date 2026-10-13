@@ -89,7 +89,11 @@ struct VoicedChord
 /** Spreads the chord on the keyboard around `centre` (MIDI note), choosing the
     inversion that stays close to the centre and moves the least from `previous`. */
 VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
-                        const NoteSet* previousRightHand) noexcept;
+                        const NoteSet* previousRightHand, int topTarget = -1) noexcept;
+
+/** Moves a voicing up (positive) or down (negative) by inversions: the lowest note goes up
+    an octave, or the highest note goes down an octave, `steps` times. */
+void invert (NoteSet& voicing, int steps) noexcept;
 
 //==============================================================================
 /** How well chord `b` sounds after chord `a`, from 0 (clashes) to 1 (sounds great):

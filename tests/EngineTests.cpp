@@ -609,6 +609,90 @@ static void testHarmonyScores()
                  good.slot[0], good.slot[1], good.slot[2], bad.slot[0], bad.slot[1], bad.slot[2]);
 }
 
+static void testV19Features()
+{
+    auto voicedOf = [] (const GrooveSettings& s)
+    {
+        std::array<Chord, maxProgressionLength> chords;
+        std::array<VoicedChord, maxProgressionLength> voiced;
+        GrooveEngine::voiceProgression (s, chords, voiced);
+        return voiced;
+    };
+
+    // Top line: rising ends higher than it starts, falling the other way round.
+    GrooveSettings s;
+    s.keyRoot = 0; s.scale = 0; s.progressionLength = 4;
+    s.progression = { 0, 5, 1, 4, 0, 0, 0, 0 };
+    s.topLine = TopLine::rising;
+    auto up = voicedOf (s);
+    CHECK (up[3].rightHand.highest() > up[0].rightHand.highest());
+    s.topLine = TopLine::falling;
+    auto down = voicedOf (s);
+    CHECK (down[3].rightHand.highest() < down[0].rightHand.highest());
+
+    // Manual inversion: +1 lifts the chord.
+    s.topLine = TopLine::automatic;
+    const auto plain = voicedOf (s);
+    s.inversions[1] = 1;
+    const auto lifted = voicedOf (s);
+    CHECK (lifted[1].rightHand.mean() > plain[1].rightHand.mean());
+    s.inversions[1] = 0;
+
+    // Groove length: 1 bar = 16 steps, 4 bars = 64 steps.
+    s.pattern = 1;
+    s.grooveBars = 1;
+    CHECK (GrooveEngine::resolvePattern (s).length() == 16 && GrooveEngine::patternLength (s) == 16);
+    s.grooveBars = 4;
+    CHECK (GrooveEngine::resolvePattern (s).length() == 64 && GrooveEngine::patternLength (s) == 64);
+    s.grooveBars = 2;
+
+    // Variations: with "every 4 bars" bar 4 differs from bar 2, and nothing is left hanging.
+    s.humanize = 0.0f; s.swing = 0.0f;
+    auto hitsInBar = [] (const std::vector<NoteEvent>& clip, int bar)
+    {
+        std::vector<std::pair<double, int>> out;
+        for (const auto& e : clip)
+            if (e.isNoteOn() && e.ppq >= bar * 4.0 && e.ppq < bar * 4.0 + 4.0)
+                out.push_back ({ e.ppq - bar * 4.0, e.note });
+        return out;
+    };
+    s.progressionLength = 1;
+    s.variationEvery = 4;
+    bool anyDifferent = false;
+    for (int pattern = 0; pattern < 12 && ! anyDifferent; ++pattern)
+    {
+        s.pattern = pattern;
+        const auto clip = GrooveEngine::renderClip (s, 16.0);
+        anyDifferent = hitsInBar (clip, 1) != hitsInBar (clip, 3);
+        int balance = 0;
+        for (const auto& e : clip) balance += e.isNoteOn() ? 1 : -1;
+        CHECK (balance == 0);
+    }
+    CHECK (anyDifferent);
+    s.variationEvery = 0;
+
+    // Walking bass: plays more than one pitch class over one chord.
+    s.pattern = 8;   // Disco Octaves: bass on every 8th
+    s.bass = BassMode::walking;
+    s.progressionLength = 2;
+    s.progression = { 0, 3, 0, 0, 0, 0, 0, 0 };
+    std::set<int> bassNotes;
+    for (const auto& e : GrooveEngine::renderClip (s, 4.0))
+        if (e.isNoteOn() && e.part == Part::bass)
+            bassNotes.insert (e.note);
+    CHECK (bassNotes.size() >= 3);
+
+    // Build-up: louder at the end than at the start.
+    s.bass = BassMode::off;
+    s.section = Section::buildup;
+    s.pattern = 1;
+    const auto clip = GrooveEngine::renderClip (s, 8.0);
+    int first = 0, last = 0;
+    for (const auto& e : clip)
+        if (e.isNoteOn()) { if (first == 0) first = e.velocity; last = e.velocity; }
+    CHECK (last > first);
+}
+
 static void testPatternsWellFormed()
 {
     CHECK (groovePatterns().size() == 96);
@@ -649,6 +733,7 @@ int main()
     testApproachChords();
     testFreeChords();
     testHarmonyScores();
+    testV19Features();
     testPatternsWellFormed();
 
     if (failures == 0)

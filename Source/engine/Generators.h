@@ -48,6 +48,10 @@ void repairHolds (std::string& line);
     density 0..1 goes from sparse stabs to busy 16th chops. Same seed = same riff. */
 GroovePattern makeRandomPattern (std::uint32_t seed, float density);
 
+/** A variation of a groove for the turnaround bars: a hit moved a 16th later here, a ghost
+    note there, a push into the next bar, a bass pick-up. Same seed = same variation. */
+GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed);
+
 /** A random but musical progression of scale degrees (0 = I), built from the
     moves soulful house uses most: ii-V, IV-iii-ii, falling fifths... */
 std::vector<int> randomProgression (std::uint32_t seed, int length);

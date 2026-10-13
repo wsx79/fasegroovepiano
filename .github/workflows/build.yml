@@ -62,13 +62,49 @@ jobs:
       - name: Engine tests
         run: ctest --test-dir build -C Release --output-on-failure
 
-      - name: Ad-hoc sign (macOS)
+      # macOS signing. Without the secrets below the plug-in is signed ad hoc (as before).
+      # With an Apple Developer account, add these repository secrets and every release is
+      # signed with your Developer ID, notarized by Apple and stapled (no Gatekeeper warning):
+      #   MACOS_CERTIFICATE           base64 of the "Developer ID Application" .p12
+      #   MACOS_CERTIFICATE_PASSWORD  password of that .p12
+      #   MACOS_SIGN_IDENTITY         e.g. "Developer ID Application: Your Name (TEAMID)"
+      #   APPLE_ID, APPLE_APP_PASSWORD (app-specific password), APPLE_TEAM_ID
+      - name: Sign and notarize (macOS)
         if: runner.os == 'macOS'
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          for f in build/FaseGroovePiano_artefacts/Release/VST3/*.vst3 \
-                   build/FaseGroovePiano_artefacts/Release/AU/*.component \
-                   build/FaseGroovePiano_artefacts/Release/Standalone/*.app; do
-            codesign --force --deep --sign - "$f"
+          BUNDLES=(build/FaseGroovePiano_artefacts/Release/VST3/*.vst3
+                   build/FaseGroovePiano_artefacts/Release/AU/*.component
+                   build/FaseGroovePiano_artefacts/Release/Standalone/*.app)
+
+          if [ -z "$MACOS_CERTIFICATE" ]; then
+            echo "No Developer ID certificate: ad-hoc signing."
+            for f in "${BUNDLES[@]}"; do codesign --force --deep --sign - "$f"; done
+            exit 0
+          fi
+
+          # Temporary keychain with the Developer ID certificate.
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p ci "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p ci "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -s -k ci "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+
+          for f in "${BUNDLES[@]}"; do
+            codesign --force --deep --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY" "$f"
+            ditto -c -k --keepParent "$f" "$RUNNER_TEMP/notarize.zip"
+            xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+            xcrun stapler staple "$f"
           done
 
       - name: Package

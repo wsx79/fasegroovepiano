@@ -6,6 +6,30 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.9.0] - 2026-10-13
+
+### Aggiunto
+- **Linea in alto:** scegli la melodia che disegnano le note alte degli accordi: Morbida (auto),
+  Ferma, In salita, In discesa o Ad arco.
+- **Rivolti manuali:** frecce ▲▼ su ogni slot della progressione (fino a tre passi per verso).
+- **Variazioni:** ogni 4 o 8 battute l'ultima battuta suona una variazione del groove.
+- **Lunghezza groove:** 1, 2 o 4 battute (4 = il groove seguito dalla sua variazione).
+- Basso **Walking** e a **Ottave sincopate**.
+- **IMPARA:** suona gli accordi sulla tastiera MIDI e riempiono la progressione slot dopo slot
+  (gli accordi della scala diventano gradi, gli altri accordi liberi).
+- **Preset personali:** salva, carica ed elimina le tue impostazioni (PRESET, in alto).
+- **Annulla / ripeti** (◀ ▶ o Ctrl+Z / Ctrl+Maiusc+Z) per ogni modifica tranne la dimensione
+  della finestra.
+- **Salva tutte le parti in una cartella:** il loop e il brano intero, ognuno completo, solo
+  accordi e solo basso, con un clic (menu Save .mid…).
+- **Tre nuovi suoni guida:** Wurlitzer, Organo gospel (Leslie) e Pad caldo.
+- **Chorus** e **Pompa** (abbassamento a ogni battito stile sidechain) sul suono guida.
+- **Crescendo** automatico nel build-up.
+- **Sito web** (`docs/index.html`, inglese/italiano) e una demo animata nel README.
+- La build per macOS ora può essere **firmata con un Developer ID e notarizzata** in automatico,
+  appena si aggiungono al repository i secret dell'account Apple Developer (altrimenti firma ad
+  hoc, come prima).
+
 ## [1.8.0] - 2026-10-13
 
 ### Aggiunto

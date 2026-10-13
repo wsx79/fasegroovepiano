@@ -38,6 +38,11 @@ namespace ParamIDs
     inline constexpr const char* strum       = "strum";
     inline constexpr const char* octaveTop   = "octaveTop";
     inline constexpr const char* approach    = "approach";
+    inline constexpr const char* topLine     = "topLine";
+    inline constexpr const char* variation   = "variation";
+    inline constexpr const char* grooveBars  = "grooveBars";
+    inline constexpr const char* chorus      = "chorus";
+    inline constexpr const char* pump        = "pump";
     inline constexpr const char* riffSeed    = "riffSeed";
     inline constexpr const char* riffDensity = "riffDensity";
     inline constexpr const char* sound       = "sound";
@@ -47,6 +52,7 @@ namespace ParamIDs
 
     inline juce::String slot (int index)    { return "slot" + juce::String (index + 1); }
     inline juce::String segment (int index) { return "segment" + juce::String (index + 1); }
+    inline juce::String inversion (int index) { return "inversion" + juce::String (index + 1); }
 }
 
 class FaseGroovePianoProcessor : public juce::AudioProcessor
@@ -128,6 +134,33 @@ public:
     /** Index in progressionPresets() that a style loads, or -1. */
     static int stylePreset (int index);
 
+    //==============================================================================
+    // LEARN: play chords on a MIDI keyboard and they fill the progression, slot by slot.
+    std::atomic<bool> learnMode { false };
+    std::atomic<int> learnedCount { 0 };       // bumps every time a chord is heard
+    std::atomic<int> learnedMask { 0 };        // pitch classes of the last chord (bit per pc)
+    std::atomic<int> learnedBass { 0 };        // its lowest note's pitch class
+    int learnSlot = 0;                         // next slot to fill (message thread)
+    void startLearning()                       { learnSlot = 0; learnMode = true; }
+
+    /** Recognises a chord from its pitch classes: root and whether it is minor. */
+    static bool recogniseChord (int pitchClassMask, int lowestPc, int& rootPc, bool& minor);
+
+    /** Puts the chord into the next slot: as a scale degree when it belongs to the key,
+        otherwise as a free chord. Returns the slot used, or -1. */
+    int learnChord (int pitchClassMask, int lowestPc);
+
+    //==============================================================================
+    // User presets: files in the user's application data folder.
+    static juce::File presetFolder();
+    static juce::Array<juce::File> presetFiles();
+    bool savePreset (const juce::String& name);
+    bool loadPreset (const juce::File&);
+
+    // Undo / redo: snapshots of everything but the window size.
+    juce::String snapshot();
+    void restoreSnapshot (const juce::String&);
+
     // Free chords (any chord, even outside the scale), set from the circle of fifths.
     void setFreeChord (int slot, int code);          // code: sgk::noFreeChord or sgk::freeChordCode()
     int freeChord (int slot) const                   { return freeChords[(size_t) juce::jlimit (0, sgk::maxProgressionLength - 1, slot)].load(); }
@@ -167,6 +200,7 @@ private:
 
     std::array<std::atomic<float>*, sgk::maxProgressionLength> slotParams {};
     std::array<std::atomic<float>*, sgk::numSegments> segmentParams {};
+    std::array<std::atomic<float>*, sgk::maxProgressionLength> inversionParams {};
 
     void setUserPattern (const sgk::GroovePattern&);
 
@@ -183,11 +217,16 @@ private:
 
     juce::Synthesiser synth;
     juce::Reverb reverb;
+    juce::dsp::Chorus<float> chorusFx;
     juce::SmoothedValue<float> outputGain;
 
     // Hold-key mode
     std::array<int, 16> heldStack {};
     int heldCount = 0;
+
+    // LEARN: notes currently down
+    std::array<bool, 128> learnDown {};
+    int learnPeakMask = 0, learnPeakCount = 0, learnPeakLowest = 0;   // the fullest chord of this press
 
     double internalPpq = 0.0;
     double expectedNextPpq = 0.0;

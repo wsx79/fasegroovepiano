@@ -6,6 +6,28 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] - 2026-10-13
+
+### Added
+- **Top line:** choose the melody the top notes of the chords draw: Smooth (auto), Steady,
+  Rising, Falling or Arch.
+- **Manual inversions:** ▲▼ arrows on every chord slot (up to three steps each way).
+- **Variations:** every 4 or 8 bars the last bar plays a variation of the groove.
+- **Groove length:** 1, 2 or 4 bars (4 = the groove followed by its variation).
+- **Walking** and **Syncopated octaves** bass.
+- **LEARN:** play chords on your MIDI keyboard and they fill the progression slot by slot
+  (scale chords become degrees, the others free chords).
+- **User presets:** save, load and delete your own setups (PRESETS, top of the window).
+- **Undo / redo** (◀ ▶ or Ctrl+Z / Ctrl+Shift+Z) for every change except the window size.
+- **Save all parts to a folder:** the loop and the whole song, each as full, chords only and bass
+  only, in one click (Save .mid… menu).
+- **Three new guide sounds:** Wurlitzer, Gospel Organ (Leslie) and Warm Pad.
+- **Chorus** and **Pump** (sidechain-style ducking on every beat) on the guide sound.
+- Automatic **crescendo** through the build-up.
+- **Website** (`docs/index.html`, English/Italian) and an animated demo in the README.
+- The macOS build can now be **signed with a Developer ID and notarized** automatically, as soon
+  as the Apple Developer secrets are added to the repository (otherwise ad-hoc signing, as before).
+
 ## [1.8.0] - 2026-10-13
 
 ### Added

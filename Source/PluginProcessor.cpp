@@ -59,6 +59,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
                     })));
     choice (ParamIDs::bass, "Bass", namesFrom (sgk::numBassModes, sgk::bassModeName), 1);
     choice (ParamIDs::approach, "Approach Chord", namesFrom (sgk::numApproachStyles, sgk::approachStyleName), 0);
+    choice (ParamIDs::topLine, "Top Line", namesFrom (sgk::numTopLines, sgk::topLineName), 0);
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+        layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::inversion (i), 1 }, "Inversion " + String (i + 1), -3, 3, 0));
 
     // Progression
     const StringArray degrees { "I", "II", "III", "IV", "V", "VI", "VII" };
@@ -88,6 +91,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     unitFloat (ParamIDs::humanize, "Humanize", 0.0f, 0.3f);
     choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars", "Every bar" }, 0);
     choice (ParamIDs::fillStyle, "Fill Style", namesFrom (sgk::numFillStyles, sgk::fillStyleName), 0);
+    choice (ParamIDs::variation, "Variation", { "Off", "Every 4 bars", "Every 8 bars" }, 0);
+    choice (ParamIDs::grooveBars, "Groove Length", { "2 bars", "1 bar", "4 bars" }, 0);
     unitFloat (ParamIDs::strum, "Strum", 0.0f, 0.0f);
     layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::octaveTop, 1 }, "Top Note +8va", false));
     choice (ParamIDs::playMode, "Play Mode", { "Host transport", "Hold a key" }, 0);
@@ -107,6 +112,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::soundType, "Guide Sound Type", namesFrom (numGuideSounds, guideSoundName), 0);
     unitFloat (ParamIDs::tone, "Tone", 0.0f, 0.5f);
     unitFloat (ParamIDs::reverb, "Reverb", 0.0f, 0.3f);
+    unitFloat (ParamIDs::chorus, "Chorus", 0.0f, 0.0f);
+    unitFloat (ParamIDs::pump, "Pump", 0.0f, 0.0f);
     layout.add (std::make_unique<AudioParameterFloat> (ParameterID { ParamIDs::volume, 1 }, "Volume",
                                                        NormalisableRange<float> (-30.0f, 6.0f), -6.0f,
                                                        AudioParameterFloatAttributes().withStringFromValueFunction ([] (float v, int)
@@ -134,6 +141,9 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
 
     for (int i = 0; i < sgk::numSegments; ++i)
         segmentParams[(size_t) i] = apvts.getRawParameterValue (ParamIDs::segment (i));
+
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+        inversionParams[(size_t) i] = apvts.getRawParameterValue (ParamIDs::inversion (i));
 
     clearFreeChords();
     resetUserPattern();
@@ -223,6 +233,140 @@ namespace
     }
 }
 
+//==============================================================================
+bool FaseGroovePianoProcessor::recogniseChord (int mask, int lowestPc, int& rootPc, bool& minor)
+{
+    auto has = [mask] (int pc) { return (mask & (1 << (((pc % 12) + 12) % 12))) != 0; };
+
+    int bestScore = -1;
+    for (int r = 0; r < 12; ++r)
+    {
+        if (! has (r))
+            continue;
+
+        int score = 0;
+        const bool major3 = has (r + 4), minor3 = has (r + 3);
+        if (major3 || minor3)               score += 4;
+        if (has (r + 7))                    score += 3;
+        else if (has (r + 6) || has (r + 8)) score += 1;
+        if (has (r + 10) || has (r + 11))   score += 2;
+        if (r == lowestPc)                  score += 2;   // the bass usually plays the root
+
+        if (score > bestScore)
+        {
+            bestScore = score;
+            rootPc = r;
+            minor = minor3 && ! major3;
+        }
+    }
+
+    return bestScore >= 5;
+}
+
+int FaseGroovePianoProcessor::learnChord (int mask, int lowestPc)
+{
+    int root = 0;
+    bool minor = false;
+    if (! recogniseChord (mask, lowestPc, root, minor))
+        return -1;
+
+    const auto s = currentSettings();
+    const int slot = juce::jlimit (0, sgk::maxProgressionLength - 1, learnSlot);
+
+    int degree = -1;
+    for (int d = 0; d < 7 && degree < 0; ++d)
+    {
+        const auto c = sgk::buildChord (s.keyRoot, s.scale, d, s.extension);
+        if (c.rootPc == root && (c.third == 3) == minor)
+            degree = d;
+    }
+
+    if (degree >= 0)
+    {
+        setFreeChord (slot, sgk::noFreeChord);
+        setParameterFromUI (ParamIDs::slot (slot), (float) degree);
+    }
+    else
+    {
+        setFreeChord (slot, sgk::freeChordCode (root - s.keyRoot, minor));
+    }
+
+    setParameterFromUI (ParamIDs::progLength, (float) juce::jmax (slot + 1, slot == 0 ? 1 : s.progressionLength));
+    if (slot == 0)
+        setParameterFromUI (ParamIDs::progLength, 1.0f);
+
+    learnSlot = (slot + 1) % sgk::maxProgressionLength;
+    return slot;
+}
+
+//==============================================================================
+juce::File FaseGroovePianoProcessor::presetFolder()
+{
+    return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+               .getChildFile ("Fase Groove Piano").getChildFile ("Presets");
+}
+
+juce::Array<juce::File> FaseGroovePianoProcessor::presetFiles()
+{
+    auto files = presetFolder().findChildFiles (juce::File::findFiles, false, "*.fgp");
+    files.sort();
+    return files;
+}
+
+bool FaseGroovePianoProcessor::savePreset (const juce::String& name)
+{
+    const auto clean = juce::File::createLegalFileName (name.trim());
+    if (clean.isEmpty())
+        return false;
+
+    presetFolder().createDirectory();
+    juce::MemoryBlock data;
+    getStateInformation (data);
+    return presetFolder().getChildFile (clean + ".fgp").replaceWithData (data.getData(), data.getSize());
+}
+
+bool FaseGroovePianoProcessor::loadPreset (const juce::File& file)
+{
+    juce::MemoryBlock data;
+    if (! file.loadFileAsData (data) || data.getSize() == 0)
+        return false;
+
+    // A preset is music, not window layout: keep the current size.
+    const auto scale = editorScale;
+    const auto shrink = shrinkWhileDragging;
+    setStateInformation (data.getData(), (int) data.getSize());
+    editorScale = scale;
+    shrinkWhileDragging = shrink;
+    return true;
+}
+
+juce::String FaseGroovePianoProcessor::snapshot()
+{
+    juce::MemoryBlock data;
+    getStateInformation (data);
+    auto xml = getXmlFromBinary (data.getData(), (int) data.getSize());
+    if (xml == nullptr)
+        return {};
+
+    xml->removeAttribute ("editorScale");
+    xml->removeAttribute ("shrinkWhileDragging");
+    return xml->toString (juce::XmlElement::TextFormat().singleLine());
+}
+
+void FaseGroovePianoProcessor::restoreSnapshot (const juce::String& text)
+{
+    auto xml = juce::parseXML (text);
+    if (xml == nullptr)
+        return;
+
+    xml->setAttribute ("editorScale", editorScale);
+    xml->setAttribute ("shrinkWhileDragging", shrinkWhileDragging);
+
+    juce::MemoryBlock data;
+    copyXmlToBinary (*xml, data);
+    setStateInformation (data.getData(), (int) data.getSize());
+}
+
 juce::StringArray FaseGroovePianoProcessor::styleNames()
 {
     juce::StringArray names;
@@ -305,6 +449,15 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.strum = raw (ParamIDs::strum);
     s.octaveTop = raw (ParamIDs::octaveTop) > 0.5f;
     s.approach = (sgk::ApproachStyle) juce::jlimit (0, sgk::numApproachStyles - 1, asInt (ParamIDs::approach));
+    s.topLine = (sgk::TopLine) juce::jlimit (0, sgk::numTopLines - 1, asInt (ParamIDs::topLine));
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+        s.inversions[(size_t) i] = juce::roundToInt (inversionParams[(size_t) i]->load());
+    {
+        constexpr int every[] { 0, 4, 8 };
+        constexpr int bars[] { 2, 1, 4 };
+        s.variationEvery = every[juce::jlimit (0, 2, asInt (ParamIDs::variation))];
+        s.grooveBars = bars[juce::jlimit (0, 2, asInt (ParamIDs::grooveBars))];
+    }
     s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
     s.riffDensity = raw (ParamIDs::riffDensity);
@@ -397,7 +550,9 @@ char FaseGroovePianoProcessor::stepSymbol (bool bassRow, int displayedStep) cons
 void FaseGroovePianoProcessor::editStep (bool bassRow, int displayedStep, char symbol)
 {
     auto current = sgk::GrooveEngine::basePattern (currentSettings());
-    if (current.length() != sgk::userPatternLength || displayedStep < 0 || displayedStep >= sgk::userPatternLength)
+    if (displayedStep >= sgk::userPatternLength)
+        displayedStep %= sgk::userPatternLength;   // 4-bar grooves: bars 3-4 vary bars 1-2
+    if (current.length() != sgk::userPatternLength || displayedStep < 0)
         return;
 
     // Map the displayed step back through the segment order.
@@ -456,11 +611,13 @@ void FaseGroovePianoProcessor::rollNewProgression()
 }
 
 //==============================================================================
-void FaseGroovePianoProcessor::prepareToPlay (double sampleRate, int)
+void FaseGroovePianoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     synth.setCurrentPlaybackSampleRate (sampleRate);
     reverb.setSampleRate (sampleRate);
     reverb.reset();
+    chorusFx.prepare ({ sampleRate, (juce::uint32) juce::jmax (1, samplesPerBlock), 2 });
+    chorusFx.reset();
     outputGain.reset (sampleRate, 0.05);
     outputGain.setCurrentAndTargetValue (juce::Decibels::decibelsToGain (raw (ParamIDs::volume)));
 
@@ -490,6 +647,42 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     for (const auto meta : midi)
     {
         const auto m = meta.getMessage();
+
+        if (learnMode.load() && m.isNoteOnOrOff())
+        {
+            learnDown[(size_t) m.getNoteNumber()] = m.isNoteOn();
+
+            int mask = 0, count = 0, lowest = -1, down = 0;
+            for (int n = 0; n < 128; ++n)
+                if (learnDown[(size_t) n])
+                {
+                    ++down;
+                    if (lowest < 0) lowest = n;
+                    if ((mask & (1 << (n % 12))) == 0) ++count;
+                    mask |= 1 << (n % 12);
+                }
+
+            // Remember the fullest chord of this press; it counts once all keys are up.
+            if (count > learnPeakCount)
+            {
+                learnPeakCount = count;
+                learnPeakMask = mask;
+                learnPeakLowest = lowest % 12;
+            }
+
+            if (down == 0)
+            {
+                if (learnPeakCount >= 3)
+                {
+                    learnedMask = learnPeakMask;
+                    learnedBass = learnPeakLowest;
+                    ++learnedCount;
+                }
+                learnPeakCount = 0;
+                learnPeakMask = 0;
+            }
+            continue;   // learning: the keys only teach chords
+        }
 
         if (holdMode && m.isNoteOnOrOff())
         {
@@ -608,6 +801,32 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     if (soundOn)
     {
         synth.renderNextBlock (buffer, outMidi, 0, numSamples);
+
+        // Chorus: a gentle stereo widening for keys.
+        if (const float chorusAmount = raw (ParamIDs::chorus); chorusAmount > 0.001f && buffer.getNumChannels() > 1)
+        {
+            chorusFx.setRate (0.6f);
+            chorusFx.setDepth (0.25f + 0.35f * chorusAmount);
+            chorusFx.setCentreDelay (8.0f);
+            chorusFx.setFeedback (0.0f);
+            chorusFx.setMix (0.5f * chorusAmount);
+            juce::dsp::AudioBlock<float> block (buffer);
+            chorusFx.process (juce::dsp::ProcessContextReplacing<float> (block));
+        }
+
+        // Pump: the classic house sidechain duck on every beat (only while the groove runs).
+        if (const float pumpAmount = raw (ParamIDs::pump); pumpAmount > 0.001f && running)
+        {
+            for (int i = 0; i < numSamples; ++i)
+            {
+                const double beat = startPpq + i / samplesPerBeat;
+                const double frac = beat - std::floor (beat);
+                const double recover = juce::jmin (1.0, frac / 0.55);
+                const float g = 1.0f - pumpAmount * 0.8f * (float) ((1.0 - recover) * (1.0 - recover));
+                for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+                    buffer.getWritePointer (ch)[i] *= g;
+            }
+        }
 
         const float amount = raw (ParamIDs::reverb);
         juce::Reverb::Parameters rp;

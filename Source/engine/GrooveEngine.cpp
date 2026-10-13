@@ -505,9 +505,15 @@ const char* approachStyleName (int style) noexcept
     return names[mod (style, numApproachStyles)];
 }
 
+const char* topLineName (int line) noexcept
+{
+    static const char* const names[numTopLines] { "Smooth (auto)", "Steady", "Rising", "Falling", "Arch" };
+    return names[mod (line, numTopLines)];
+}
+
 const char* bassModeName (int m) noexcept
 {
-    static const char* const names[numBassModes] { "Off", "Root", "Octaves", "Root + 5th" };
+    static const char* const names[numBassModes] { "Off", "Root", "Octaves", "Root + 5th", "Walking", "Syncopated octaves" };
     return names[mod (m, numBassModes)];
 }
 
@@ -539,6 +545,8 @@ int GrooveEngine::loopLengthInSteps (const GrooveSettings& s) noexcept
     long long steps = lcm (progression, patternLength);
     if (s.fillEveryBars > 0 && sectionAllowsFills (s.section))
         steps = lcm (steps, 16LL * s.fillEveryBars);
+    if (s.variationEvery > 0)
+        steps = lcm (steps, 16LL * s.variationEvery);
 
     steps = lcm (steps, 16);                 // whole bars
     return (int) std::min<long long> (steps, 64 * 16);
@@ -568,25 +576,48 @@ GroovePattern GrooveEngine::basePattern (const GrooveSettings& s)
 
 GroovePattern GrooveEngine::resolvePattern (const GrooveSettings& s)
 {
-    return applySection (applySegmentOrder (basePattern (s), s.segmentOrder), s.section);
+    auto p = applySection (applySegmentOrder (basePattern (s), s.segmentOrder), s.section);
+
+    if (s.grooveBars == 1 && p.length() > 16)
+    {
+        // One bar: the first bar of the groove, looped.
+        p.rightHand.resize (16);
+        p.leftHand.resize (16);
+        repairHolds (p.rightHand);
+        repairHolds (p.leftHand);
+    }
+    else if (s.grooveBars == 4)
+    {
+        // Four bars: the groove, then a variation of it as the answer.
+        const auto answer = makeVariation (p, s.riffSeed * 31u + (std::uint32_t) s.pattern);
+        p.rightHand += answer.rightHand;
+        p.leftHand += answer.leftHand;
+    }
+
+    return p;
 }
 
 int GrooveEngine::patternLength (const GrooveSettings& s) noexcept
 {
     const auto& patterns = groovePatterns();
-    if (s.pattern >= randomPatternIndex())
-        return 32;   // random riffs and the user pattern are always two bars
+    const int base = s.pattern >= randomPatternIndex() ? 32   // random riffs and the user pattern are two bars
+                   : patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)].length();
 
-    return patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)].length();
+    if (s.grooveBars == 1) return std::min (base, 16);
+    if (s.grooveBars == 4) return base * 2;
+    return base;
 }
 
 const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
 {
     if (s.pattern != cachedIndex || s.riffSeed != cachedSeed || s.riffDensity != cachedDensity
         || s.section != cachedSection || s.segmentOrder != cachedOrder
-        || s.userRight != cachedUserRight || s.userLeft != cachedUserLeft || cachedPattern.rightHand.empty())
+        || s.userRight != cachedUserRight || s.userLeft != cachedUserLeft || s.grooveBars != cachedBars
+        || cachedPattern.rightHand.empty())
     {
         cachedPattern = resolvePattern (s);
+        cachedVariation = makeVariation (cachedPattern, s.riffSeed * 17u + (std::uint32_t) s.pattern);
+        cachedBars = s.grooveBars;
         cachedIndex = s.pattern;
         cachedSeed = s.riffSeed;
         cachedDensity = s.riffDensity;
@@ -694,11 +725,36 @@ void GrooveEngine::voiceProgression (const GrooveSettings& s,
     for (int i = 0; i < len; ++i)
         chords[(size_t) i] = chordForSlot (s, i);
 
+    // Top line: the melody note each chord's top voice aims for.
+    auto topTarget = [&] (int i) -> int
+    {
+        const int base = s.centre + 8;
+        switch (s.topLine)
+        {
+            case TopLine::steady:  return base;
+            case TopLine::rising:  return base - 4 + (len > 1 ? 8 * i / (len - 1) : 0);
+            case TopLine::falling: return base + 4 - (len > 1 ? 8 * i / (len - 1) : 0);
+            case TopLine::arch:    return base - 3 + 3 * std::min (i, len - 1 - i);
+            case TopLine::automatic:
+            default:               return -1;
+        }
+    };
+
     auto pass = [&] (int first, const NoteSet* previous)
     {
         for (int i = first; i < len; ++i)
         {
-            voiced[(size_t) i] = voiceChord (chords[(size_t) i], s.voicing, s.centre, previous);
+            voiced[(size_t) i] = voiceChord (chords[(size_t) i], s.voicing, s.centre, previous, topTarget (i));
+
+            // Manual inversion of this slot (the chord's ▲▼ buttons).
+            const int inversion = std::clamp (s.inversions[(size_t) i], -3, 3);
+            if (inversion != 0)
+            {
+                invert (voiced[(size_t) i].rightHand, inversion);
+                while (voiced[(size_t) i].rightHand.highest() > 100) invert (voiced[(size_t) i].rightHand, -voiced[(size_t) i].rightHand.size);
+                while (voiced[(size_t) i].rightHand.lowest() < 28)   invert (voiced[(size_t) i].rightHand, voiced[(size_t) i].rightHand.size);
+            }
+
             previous = &voiced[(size_t) i].rightHand;
         }
     };
@@ -714,10 +770,15 @@ void GrooveEngine::voiceProgression (const GrooveSettings& s,
 }
 
 //==============================================================================
-void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const GroovePattern& pattern,
+void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const GroovePattern& normalPattern, const GroovePattern& variation,
                                 const std::array<Chord, maxProgressionLength>& chords,
                                 const std::array<VoicedChord, maxProgressionLength>& voiced)
 {
+    // Every N bars the last bar plays a variation of the groove (the turnaround).
+    const bool varied = s.variationEvery > 0 && mod (floorDiv (step, 16), s.variationEvery) == s.variationEvery - 1
+                     && variation.length() == normalPattern.length();
+    const GroovePattern& pattern = varied ? variation : normalPattern;
+
     const int pos = mod (step, pattern.length());
 
     const double swingDelay = (step % 2 != 0) ? std::clamp (s.swing, 0.0f, 1.0f) * stepLength / 3.0 : 0.0;
@@ -729,6 +790,8 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     auto hitVelocity = [&] (char symbol, double scale, int salt)
     {
         double v = s.velocity * scale * sectionVelocityScale (s.section) * (symbol == 'X' ? 1.0 : symbol == '>' ? 0.95 : symbol == 'g' ? 0.45 : 0.8);
+        if (s.section == Section::buildup)   // crescendo through the build-up
+            v *= 0.72 + 0.4 * (double) pos / (double) std::max (1, pattern.length() - 1);
         v += human * 18.0 * (noise (step, salt + 7) - 0.5) * 2.0;
         return std::clamp ((int) std::lround (v), 1, 127);
     };
@@ -958,7 +1021,35 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             const bool octaveBounce = bassMode == BassMode::root && symbol != '>' && mod (pos, 4) == 2
                                    && isHit (lh[(size_t) mod (pos - 2, n)]) && lh[(size_t) mod (pos - 1, n)] == '.';
 
-            pending.push_back ({ t, octaveBounce ? root + 12 : root, octaveBounce ? (int) (vel * 0.9) : vel, len, tie, Part::bass });
+            int note = octaveBounce ? root + 12 : root;
+            int noteVel = octaveBounce ? (int) (vel * 0.9) : vel;
+
+            if (bassMode == BassMode::walking && symbol != '>')
+            {
+                // Root, 5th, octave, 5th on the beats; on the last beat before a chord
+                // change, a chromatic step into the next root.
+                const int inChord = (int) (((step % s.stepsPerChord) + s.stepsPerChord) % s.stepsPerChord);
+                const int nextSlot = slotForStep (step + (s.stepsPerChord - inChord), s);
+                static constexpr int walk[4] { 0, 7, 12, 7 };
+                note = root + walk[(inChord / 4) % 4];
+                if (s.stepsPerChord - inChord <= 4 && nextSlot != slotForStep (step, s))
+                {
+                    const int target = 36 + chords[(size_t) nextSlot].rootPc;
+                    note = target + (target - 1 >= root ? -1 : 1);
+                }
+                noteVel = (int) (vel * (inChord == 0 ? 1.0 : 0.85));
+            }
+            else if (bassMode == BassMode::syncopated && symbol != '>')
+            {
+                // Offbeats jump up an octave: the pumping house bass.
+                if (mod (pos, 4) >= 2)
+                {
+                    note = root + 12;
+                    noteVel = (int) (vel * 0.9);
+                }
+            }
+
+            pending.push_back ({ t, note, noteVel, len, tie, Part::bass });
             if (bassMode == BassMode::octaves)    pending.push_back ({ t, root + 12, (int) (vel * 0.85), len, tie, Part::bass });
             if (bassMode == BassMode::rootFifth)  pending.push_back ({ t, root + 7,  (int) (vel * 0.85), len, tie, Part::bass });
         }
@@ -993,7 +1084,7 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
 
     // Voicing a progression is the costly part: only redo it when the harmony changes.
     const HarmonyKey harmony { s.keyRoot, s.scale, (int) s.extension, (int) s.voicing, s.centre,
-                               s.progressionLength, s.progression, s.freeChords };
+                               s.progressionLength, (int) s.topLine, s.progression, s.freeChords, s.inversions };
     if (! (harmony == cachedHarmony) || ! harmonyCached)
     {
         voiceProgression (s, cachedChords, cachedVoiced);
@@ -1011,7 +1102,7 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
 
     const auto& pattern = patternFor (s);
     for (auto step = firstStep; step <= lastStep; ++step)
-        collectStep (step, s, pattern, chords, voiced);
+        collectStep (step, s, pattern, cachedVariation, chords, voiced);
 
     pending.erase (std::remove_if (pending.begin(), pending.end(),
                                    [&] (const PendingOn& p) { return p.ppq < startPpq || p.ppq >= endPpq

@@ -25,7 +25,9 @@ voicings, syncopated grooves with swing, a left-hand bass and pentatonic fills. 
 guide sound, then **drag it into your DAW as a MIDI clip** and play it with your own piano,
 Rhodes or synth.
 
-![Interface](docs/screenshot.png)
+![Fase Groove Piano playing](docs/demo.gif)
+
+🌐 **Website:** [wsx79.github.io/fasegroovepiano](https://wsx79.github.io/fasegroovepiano/)
 
 ## Features
 
@@ -54,8 +56,16 @@ Rhodes or synth.
 - ⏱️ **Tempo:** synced to the DAW or set by hand.
 - 📤 **MIDI:** drag the clip into your DAW (full, chords only, bass only), save it as `.mid`, or
   use live MIDI out (bass on its own channel if you like).
-- 🔊 **Guide sounds:** Rhodes, Soulful Grand, House Piano (M1 style) and House Organ, plus
+- 🔊 **Guide sounds:** Rhodes, Soulful Grand, House Piano (M1 style), House Organ, Wurlitzer,
+  Gospel Organ (Leslie) and Warm Pad, with chorus and a sidechain-style **pump**, plus
   **PREVIEW** to hear the riff with the DAW stopped.
+- 🎵 **Top line** (the melody of the top notes: smooth, steady, rising, falling, arch) and
+  **▲▼ inversions** on every chord.
+- 🎹 **LEARN:** play chords on your MIDI keyboard and they become the progression.
+- 🔄 **Variations** every 4 or 8 bars, grooves of 1, 2 or 4 bars, **walking** and
+  **syncopated-octave** bass, and an automatic crescendo in the build-up.
+- 💾 **Your own presets**, **undo / redo** (Ctrl+Z) and **save all parts** (loop and whole song,
+  full / chords / bass) to a folder in one click.
 
 Everything is explained in the **[user guide](docs/GUIDE.md)**.
 
@@ -146,6 +156,21 @@ ctest --test-dir build -C Release        # music engine tests
 ```
 
 The built plug-ins are in `build/FaseGroovePiano_artefacts/Release/`.
+
+### Website
+
+The project page is `docs/index.html` (English/Italian). To publish it: repository
+**Settings → Pages → Build and deployment → Deploy from a branch → `main` / `/docs` → Save**.
+It appears at `https://wsx79.github.io/fasegroovepiano/`.
+
+### macOS signing and notarization
+
+Without extra setup the macOS build is signed ad hoc (users run `xattr -cr` once). With an
+Apple Developer account, add these **repository secrets** (Settings → Secrets and variables →
+Actions) and every release is signed with your Developer ID, notarized and stapled:
+`MACOS_CERTIFICATE` (base64 of the *Developer ID Application* `.p12`),
+`MACOS_CERTIFICATE_PASSWORD`, `MACOS_SIGN_IDENTITY` (e.g. `Developer ID Application: Name (TEAMID)`),
+`APPLE_ID`, `APPLE_APP_PASSWORD` (an app-specific password) and `APPLE_TEAM_ID`.
 To use a local copy of JUCE: `-DJUCE_DIR=/path/to/JUCE`.
 
 On Linux you also need: `libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev

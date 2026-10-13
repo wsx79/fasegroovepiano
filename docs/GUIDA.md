@@ -106,9 +106,10 @@ Con *Play mode → Hold a key* mostra anche "HOLD" e la tonalità scelta col tas
 |---|---|
 | **Load a progression…** | 38 progressioni pronte in un menu a tre colonne, divise per stile: *Soulful e gospel*, *Circolo delle quinte*, *Deep house*, *Modali ed esotiche*, *Jackin' e funky*. Caricarne una imposta anche la scala consigliata. (Anche i menu lunghi come *Groove* si aprono a colonne.) |
 | **DICE** | Progressione casuale ma musicale, coi movimenti tipici della soulful house (ii–V, IV–iii–ii, quinte discendenti). Mantiene la lunghezza attuale. |
+| **LEARN** (IMPARA) | Suona gli accordi sulla **tastiera MIDI**: ogni accordo che suoni (e rilasci) riempie lo slot successivo, partendo dallo slot 1, e la progressione cresce con lui. Gli accordi della scala diventano gradi, gli altri accordi liberi. Premi di nuovo per fermare. |
 | **Length** | Quanti accordi (1–8). Quelli oltre la lunghezza appaiono spenti. |
 | **Each chord** | Durata di ogni accordo: ½, 1, 2 o 4 battute. |
-| **Slot 1–8** | Ogni slot è un grado della scala (I…VII). Sopra vedi il nome dell'accordo e il numero romano (maiuscolo = maggiore, minuscolo = minore, ø = semidiminuito). Lo slot che suona si illumina. Una barra colorata in alto in ogni slot mostra quanto quell'accordo suona bene con quelli vicini (verde = benissimo, grigio = stride; passa il mouse per un suggerimento). Uno slot che mostra **Libero** suona un accordo libero scelto dal circolo delle quinte (es. *bVI*); scegli un grado dal suo menu per tornare alla scala. |
+| **Slot 1–8** | Ogni slot è un grado della scala (I…VII). Sopra vedi il nome dell'accordo e il numero romano (maiuscolo = maggiore, minuscolo = minore, ø = semidiminuito). Lo slot che suona si illumina. Una barra colorata in alto in ogni slot mostra quanto quell'accordo suona bene con quelli vicini (verde = benissimo, grigio = stride; passa il mouse per un suggerimento). Uno slot che mostra **Libero** suona un accordo libero scelto dal circolo delle quinte (es. *bVI*); scegli un grado dal suo menu per tornare alla scala. Le piccole **frecce ▲ ▼** negli angoli in alto cambiano il **rivolto** di quell'accordo (fino a tre passi per verso, indicati come +1, -2…) quando la scelta automatica non ti convince. |
 
 I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si trasporta da sola.
 
@@ -120,7 +121,8 @@ I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si
 | **Scale / mode** | Maggiore (Ionian), **Dorian** (il classico della deep house), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, più (v1.5) **Locrian**, **Harmonic Major** (il iv minore gospel), **Lydian Dominant** (I7#11 funky), **Mixolydian b6** (iv "preso in prestito", soulful) e **Phrygian Dominant** (deep house scura ed esotica). |
 | **Extensions** | Triadi, 7ª, 9ª, 11ª/13ª, più (v1.5): **6/9** (il caldo accordo di tonica soulful, senza 7ª), **Add 9** (triade con la 9ª, pop/house), **Sus (9sus4)** (l'accordo aperto e sospeso della deep house) e **9ths + altered V** (tutti accordi di 9ª e il V grado diventa una dominante gospel **13(b9)**, o **7(b9,b13)** nelle tonalità minori). Le tensioni che stonano vengono gestite in automatico: la b9 sugli accordi non di dominante viene tolta, la 11ª sugli accordi maggiori diventa 13ª, una 6ª che sarebbe b6 diventa 7ª, e il sus4 si usa solo dove la 4ª è giusta. |
 | **Voicing** | *Close* (posizione stretta), *Drop 2* (più aperto, da tastierista jazz), *Rootless* (senza fondamentale, ideale con un basso separato), *Wide* (due mani: fondamentale + 7ª a sinistra), *Quartal* (accordi per quarte, sound deep/moderno), *Shell (3-7-top)* (solo 3ª, 7ª e la nota di colore in alto: leggero e jazzy, lascia spazio a basso e voce), *Drop 2+4* (voicing aperto e largo da pianista, ottimo per pad e break). I colpi veloci ripetuti usano un voicing più leggero (le tre note alte) e le ghost note solo le due note alte, come il tocco di un pianista; le linee di basso a ottavi rimbalzano tra fondamentale e ottava. Ogni voicing segue le regole di un pianista: niente semitoni stridenti tra note vicine, niente intervalli stretti e impastati nel registro basso, la 9ª sopra la 3ª, e le voci che si muovono il meno possibile (la nota in alto canta una linea morbida). |
-| **Left-hand bass** | La mano sinistra: Off, Root (fondamentale), Octaves (ottave), Root + 5th. |
+| **Left-hand bass** | La mano sinistra: Off, Root (fondamentale), Octaves (ottave), Root + 5th, **Walking** (fondamentale, quinta e ottava sui tempi e un passo cromatico verso l'accordo successivo) o **Syncopated octaves** (i controtempi saltano all'ottava: il basso house che pompa). |
+| **Top line** (Linea in alto) | La melodia disegnata dalle note alte degli accordi: *Smooth (auto)* si muove il meno possibile, *Steady* tiene ferma la nota in alto, *Rising*, *Falling* o *Arch* la fanno salire, scendere o andare ad arco lungo la progressione. |
 | **Approach chord** (Accordo di passaggio) | Lo **slide** gospel: sull'ultimo sedicesimo prima di ogni cambio d'accordo suona l'accordo successivo (e la sua nota di basso) mezzo tono **sopra** (*From above*) o **sotto** (*From below*), che poi risolve. Solo dove quella mano sta già suonando: un basso spento resta spento. |
 | **Top +8va** | Raddoppia all'ottava superiore la nota più alta di ogni accordo: il classico suono di piano house brillante. |
 | **Strum** | Arpeggia leggermente l'accordo dal basso verso l'alto, come un pianista vero, invece di suonare tutte le note insieme (0% = insieme, 100% = arpeggio evidente). Tra 15% e 35% suona naturale. |
@@ -177,6 +179,8 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). |
 | **Fills** | **Spenti (Off)** di default. Ogni battuta, oppure ogni 2/4/8 battute, la fine della battuta diventa un breve fill che porta all'accordo successivo. |
 | **Fill style** | 11 stili, tutti diretti verso la nota alta dell'accordo successivo: *Pentatonic run up* / *down* (scaletta in salita / discesa), *Chord roll* (arpeggio dell'accordo successivo), *Gospel run* (otto sedicesimi in salita sulla scala negli ultimi due tempi), *Chromatic walk-up* (quattro semitoni verso l'accordo successivo), *Push stabs* (uno stab, una ghost note, poi l'accordo successivo anticipato sul "e" del 4), *16th chord chops* (quattro chop leggeri in crescendo), *Gospel thirds* (terze parallele in discesa), *Piano glissando* (una spazzata veloce in salita), *Blues lick* (giù per la scala blues) e *Mix*, che a ogni fill ne suona uno diverso. |
+| **Variation** (Variazione) | Ogni 4 o 8 battute l'ultima battuta suona una **variazione** del groove (un colpo spostato, una ghost note, un anticipo, una nota di basso in levare), così un loop lungo non è mai statico. |
+| **Groove length** (Lunghezza groove) | *2 battute* (normale), *1 battuta* (la prima battuta in loop: più stretto e ipnotico) o *4 battute* (il groove seguito da una sua variazione). |
 | **Swing** | 0% = dritto, 100% = shuffle terzinato. 15–35% è il classico feel house. |
 | **Gate** | Quanto durano i colpi brevi: basso = staccato, alto = legato. |
 | **Velocity** | Dinamica generale. |
@@ -238,11 +242,12 @@ sparisce dalla griglia.
 | Controllo | Cosa fa |
 |---|---|
 | **Guide sound** | Accende/spegne il suono interno. Spegnilo se usi solo il MIDI. |
-| **Sound** | *Rhodes (FM)* (piano elettrico), *Soulful Grand* (pianoforte acustico), *House Piano (M1 style)* (il piano brillante della house anni '90) o *House Organ* (organo per gli stab jackin'). |
+| **Sound** | *Rhodes (FM)* (piano elettrico), *Soulful Grand* (pianoforte acustico), *House Piano (M1 style)* (il piano brillante della house anni '90) *House Organ* (organo per gli stab jackin'), *Wurlitzer* (ancioso, un po' saturato), *Gospel Organ (Leslie)* (tiranti pieni con altoparlante rotante) o *Warm Pad* (pad morbido e detunato per i break). |
 | **PREVIEW** | Fa suonare il groove anche a DAW ferma. |
 | **MIDI out** | *All on channel 1* oppure *Bass on channel 2* (per mandare il basso a uno strumento diverso). |
 | **Play mode** (nel riquadro Groove) | *Host transport*: suona col Play della DAW. *Hold a key*: suona mentre tieni premuto un tasto MIDI, e **il tasto sceglie la tonalità** (ottimo per jam dal vivo e nello Standalone). |
 | **Tone / Reverb / Volume** | Brillantezza (per l'organo: i tiranti), riverbero e volume del suono guida (non influiscono sul MIDI). |
+| **Chorus / Pump** | *Chorus* allarga il suono; *Pump* lo abbassa a ogni battito come un sidechain sulla cassa, così senti il riff come suonerà nel mix. Solo sul suono guida. |
 
 ### MIDI clip
 
@@ -252,6 +257,15 @@ Vedi il prossimo capitolo.
 
 Trascina l'angolo in basso a destra per **ingrandire o rimpicciolire** l'interfaccia (dal 60% al
 200%). La dimensione viene ricordata nel progetto.
+
+### PRESET, annulla e ripeti
+
+- **PRESET** (in alto nella finestra): *Salva le impostazioni attuali come…* memorizza tutto
+  (progressione, accordi liberi, groove, la tua griglia, suono…) con un nome; l'elenco sotto lo
+  carica in qualsiasi progetto. *Elimina* ne cancella uno, *Apri la cartella dei preset* mostra i
+  file (`.fgp`) per farne una copia o condividerli.
+- **◀ ▶** accanto (o **Ctrl+Z / Ctrl+Maiusc+Z**, **Cmd** su Mac): **annulla e ripeti** le ultime
+  modifiche: accordi, griglia, stili, preset, tutto tranne la dimensione della finestra.
 
 ### STILE e RESET
 
@@ -299,7 +313,9 @@ Nel riquadro **MIDI CLIP**:
    - *Song: intro > drop > outro*: un arrangiamento completo di 60 battute (vedi capitolo 6).
 2. **Notes**: *Chords + bass*, *Chords only* o *Bass only*.
 3. **Trascina** il riquadro **DRAG MIDI TO DAW** sulla traccia o sulla timeline della DAW.
-   In alternativa **Save .mid…** salva il file dove vuoi.
+   In alternativa **Save .mid…**: *Salva questa clip come .mid…* salva il file dove vuoi, e
+   **Salva tutte le parti in una cartella…** scrive sei file in un colpo: il loop e il brano intero,
+   ognuno completo, solo accordi e solo basso, pronti da mettere su tracce separate.
 
 Con **Mini window while dragging** attivo, durante il trascinamento la finestra del plugin si
 riduce a un piccolo riquadro, così vedi bene la DAW dove rilasciare la clip. Al rilascio torna

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fase Groove Piano</title>
+<meta name="description" content="Free VST3 / AU / Standalone plug-in that writes funky piano MIDI grooves for soulful, deep and jackin' house. By Fabio 'Pitch' Serra.">
+<link rel="icon" href="icon.png">
+<style>
+  :root {
+    --bg: #17111c; --panel: #231a2b; --edge: #3b2c46;
+    --accent: #f2a65a; --accent2: #e85d75; --text: #f4e9dc; --dim: #9c8ca8; --green: #1db954;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  header { display: flex; justify-content: flex-end; padding: 14px 0; }
+  .lang button { background: var(--panel); color: var(--dim); border: 1px solid var(--edge);
+                 border-radius: 8px; padding: 4px 10px; cursor: pointer; font-weight: 600; }
+  .lang button.on { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+  .hero { text-align: center; padding: 20px 0 10px; }
+  .hero img.logo { width: min(520px, 100%); }
+  .hero p.tag { font-size: 1.25rem; color: var(--dim); margin: 8px 0 22px; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 26px; }
+  .btn { display: inline-block; padding: 11px 20px; border-radius: 10px; font-weight: 700; text-decoration: none; }
+  .btn.main { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: var(--bg); }
+  .btn.alt { background: var(--panel); color: var(--text); border: 1px solid var(--edge); }
+  .btn.spotify { background: var(--green); color: #0b130e; }
+  .shot { width: 100%; border-radius: 14px; border: 1px solid var(--edge); display: block; }
+  h2 { color: var(--accent); margin-top: 44px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 14px 16px; }
+  .card b { color: var(--text); }
+  .card p { margin: 6px 0 0; color: var(--dim); font-size: .95rem; }
+  footer { margin: 50px 0 30px; color: var(--dim); font-size: .9rem; text-align: center; }
+  [data-lang="it"] .en, [data-lang="en"] .it { display: none; }
+</style>
+</head>
+<body data-lang="en">
+<div class="wrap">
+  <header>
+    <div class="lang">
+      <button id="b-en" class="on" onclick="setLang('en')">EN</button>
+      <button id="b-it" onclick="setLang('it')">IT</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <img class="logo" src="logo.png" alt="Fase Groove Piano">
+    <p class="tag en">Funky piano grooves for soulful, deep &amp; jackin' house, ready to drag into your DAW.</p>
+    <p class="tag it">Giri di piano funky per soulful, deep e jackin' house, pronti da trascinare nella tua DAW.</p>
+    <div class="buttons">
+      <a class="btn main" href="https://github.com/wsx79/fasegroovepiano/releases/latest">
+        <span class="en">Download (free)</span><span class="it">Scarica (gratis)</span></a>
+      <a class="btn alt" href="https://github.com/wsx79/fasegroovepiano/blob/main/docs/GUIDE.md">
+        <span class="en">User guide</span><span class="it">Guida</span></a>
+      <a class="btn spotify" href="https://open.spotify.com/artist/29iQGuXML8LEw3xRp1dNRP">
+        <span class="en">Listen on Spotify</span><span class="it">Ascolta su Spotify</span></a>
+    </div>
+    <img class="shot" src="demo.gif" alt="Fase Groove Piano playing">
+  </section>
+
+  <h2><span class="en">What it does</span><span class="it">Cosa fa</span></h2>
+  <div class="grid">
+    <div class="card"><b>🎹 <span class="en">Harmony</span><span class="it">Armonia</span></b>
+      <p class="en">13 scales, 9ths, 11ths, 6/9, sus and gospel dominants, voiced like a real pianist.</p>
+      <p class="it">13 scale, none, undicesime, 6/9, sus e dominanti gospel, con voicing da pianista vero.</p></div>
+    <div class="card"><b>🥁 <span class="en">96 grooves</span><span class="it">96 groove</span></b>
+      <p class="en">Soulful, deep, gospel, jackin', garage, afro, disco, '90s piano, neo soul, chill.</p>
+      <p class="it">Soulful, deep, gospel, jackin', garage, afro, disco, piano anni '90, neo soul, chill.</p></div>
+    <div class="card"><b>🎚️ <span class="en">One-click styles</span><span class="it">Stili con un clic</span></b>
+      <p class="en">Pick a genre and get progression, voicing, groove, feel and sound together.</p>
+      <p class="it">Scegli un genere e ottieni insieme progressione, voicing, groove, feel e suono.</p></div>
+    <div class="card"><b>⭕ <span class="en">Circle of fifths</span><span class="it">Circolo delle quinte</span></b>
+      <p class="en">Drag the chords around and see in colour how well they sound together.</p>
+      <p class="it">Trascina gli accordi e vedi a colori quanto suonano bene insieme.</p></div>
+    <div class="card"><b>🎹 LEARN</b>
+      <p class="en">Play chords on your MIDI keyboard and they become the progression.</p>
+      <p class="it">Suona gli accordi sulla tastiera MIDI e diventano la progressione.</p></div>
+    <div class="card"><b>📤 MIDI</b>
+      <p class="en">Drag the clip into your DAW, or save every part (chords, bass, whole song) at once.</p>
+      <p class="it">Trascina la clip nella DAW, o salva tutte le parti (accordi, basso, brano intero) in un colpo.</p></div>
+  </div>
+
+  <h2><span class="en">Free &amp; open source</span><span class="it">Gratis e open source</span></h2>
+  <p class="en">VST3, AU and Standalone for Windows, macOS and Linux. Free under the GNU AGPL v3. If you like it, you can support it:</p>
+  <p class="it">VST3, AU e Standalone per Windows, macOS e Linux. Gratis con licenza GNU AGPL v3. Se ti piace, puoi sostenerlo:</p>
+  <div class="buttons" style="justify-content:flex-start">
+    <a class="btn alt" href="https://ko-fi.com/fabios1979">Ko-fi</a>
+    <a class="btn alt" href="https://paypal.me/fabios79">PayPal</a>
+    <a class="btn alt" href="https://github.com/wsx79/fasegroovepiano"><span class="en">Source code</span><span class="it">Codice sorgente</span></a>
+  </div>
+
+  <footer>
+    <span class="en">Created by</span><span class="it">Creato da</span> <b>Fabio 'Pitch' Serra</b> – DJ &amp; Producer ·
+    <span class="en">code by</span><span class="it">codice di</span> Claude (Anthropic) · Built with JUCE<br>
+    VST is a registered trademark of Steinberg Media Technologies GmbH.
+  </footer>
+</div>
+<script>
+  function setLang (lang) {
+    document.body.dataset.lang = lang;
+    document.documentElement.lang = lang;
+    document.getElementById ('b-en').classList.toggle ('on', lang === 'en');
+    document.getElementById ('b-it').classList.toggle ('on', lang === 'it');
+    try { localStorage.setItem ('fgp-lang', lang); } catch (e) {}
+  }
+  let saved = null;
+  try { saved = localStorage.getItem ('fgp-lang'); } catch (e) {}
+  setLang (saved || ((navigator.language || 'en').startsWith ('it') ? 'it' : 'en'));
+</script>
+</body>
+</html>

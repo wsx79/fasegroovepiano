@@ -490,8 +490,22 @@ namespace
     }
 }
 
+void invert (NoteSet& v, int steps) noexcept
+{
+    if (v.size < 2)
+        return;
+
+    for (int i = 0; i < std::abs (steps); ++i)
+    {
+        v.sort();
+        if (steps > 0) v.notes[0] += 12;
+        else           v.notes[(size_t) v.size - 1] -= 12;
+    }
+    v.sort();
+}
+
 VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
-                        const NoteSet* previousRightHand) noexcept
+                        const NoteSet* previousRightHand, int topTarget) noexcept
 {
     VoicedChord v;
 
@@ -623,6 +637,10 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
             cost += movement (c, *previousRightHand) + 0.5 * movement (*previousRightHand, c);
             cost += 0.35 * std::abs (c.highest() - previousRightHand->highest());
         }
+
+        // Top line: steer the highest note towards the melody note asked for.
+        if (topTarget >= 0)
+            cost += 3.0 * std::abs (c.highest() - topTarget);
 
         if (cost < bestCost - 1.0e-9)
         {

@@ -24,7 +24,9 @@ tonalità, scala e progressione e ottieni accordi estesi (9ª, 11ª, 13ª), voic
 groove sincopati con swing, basso alla mano sinistra e fill pentatonici. Lo ascolti col suono
 guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rhodes o synth.
 
-![Interfaccia](docs/screenshot.png)
+![Fase Groove Piano mentre suona](docs/demo.gif)
+
+🌐 **Sito:** [wsx79.github.io/fasegroovepiano](https://wsx79.github.io/fasegroovepiano/)
 
 ## Funzioni
 
@@ -53,8 +55,16 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - ⏱️ **Tempo:** agganciato alla DAW o impostato a mano.
 - 📤 **MIDI:** trascina la clip nella DAW (completa, solo accordi, solo basso), salvala in
   `.mid` oppure usa il MIDI in tempo reale (basso su un canale separato, se vuoi).
-- 🔊 **Suoni guida:** Rhodes, Soulful Grand, House Piano (stile M1) e House Organ, più
-  **PREVIEW** per ascoltare il riff anche a DAW ferma.
+- 🔊 **Suoni guida:** Rhodes, Soulful Grand, House Piano (stile M1), House Organ, Wurlitzer,
+  Gospel Organ (Leslie) e Warm Pad, con chorus e **pompaggio** stile sidechain, più **PREVIEW**
+  per sentire il riff a DAW ferma.
+- 🎵 **Linea in alto** (la melodia delle note alte: morbida, ferma, in salita, in discesa, ad
+  arco) e **rivolti ▲▼** su ogni accordo.
+- 🎹 **IMPARA:** suona gli accordi sulla tastiera MIDI e diventano la progressione.
+- 🔄 **Variazioni** ogni 4 o 8 battute, groove da 1, 2 o 4 battute, basso **walking** e a
+  **ottave sincopate**, e crescendo automatico nel build-up.
+- 💾 **Preset personali**, **annulla / ripeti** (Ctrl+Z) e **salva tutte le parti** (loop e brano
+  intero, completo / accordi / basso) in una cartella con un clic.
 
 Tutti i dettagli sono nella **[guida di utilizzo](docs/GUIDA.md)**.
 
@@ -147,6 +157,21 @@ ctest --test-dir build -C Release        # test del motore musicale
 ```
 
 I plugin compilati si trovano in `build/FaseGroovePiano_artefacts/Release/`.
+
+### Sito web
+
+La pagina del progetto è `docs/index.html` (inglese/italiano). Per pubblicarla: nel repository
+**Settings → Pages → Build and deployment → Deploy from a branch → `main` / `/docs` → Save**.
+Sarà online su `https://wsx79.github.io/fasegroovepiano/`.
+
+### Firma e notarizzazione su macOS
+
+Senza altre impostazioni la build per macOS è firmata "ad hoc" (l'utente lancia `xattr -cr` una
+volta). Con un account Apple Developer aggiungi questi **secret** al repository (Settings →
+Secrets and variables → Actions) e ogni release sarà firmata col tuo Developer ID, notarizzata e
+"stapled": `MACOS_CERTIFICATE` (il `.p12` *Developer ID Application* in base64),
+`MACOS_CERTIFICATE_PASSWORD`, `MACOS_SIGN_IDENTITY` (es. `Developer ID Application: Nome (TEAMID)`),
+`APPLE_ID`, `APPLE_APP_PASSWORD` (una password specifica per app) e `APPLE_TEAM_ID`.
 Per usare una copia locale di JUCE: `-DJUCE_DIR=/percorso/JUCE`.
 
 Su Linux servono anche: `libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev

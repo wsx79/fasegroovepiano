@@ -240,6 +240,12 @@ ChordSlot::ChordSlot (juce::AudioProcessorValueTreeState& state, int i) : index 
     fillChoiceItems (degree, state.getParameter (id));
     attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (state, id, degree);
     degree.setJustificationType (juce::Justification::centred);
+
+    for (auto* arrow : { &invertUp, &invertDown })
+        addAndMakeVisible (arrow);
+    invertUp.onClick   = [this] { if (onInvert != nullptr) onInvert (1); };
+    invertDown.onClick = [this] { if (onInvert != nullptr) onInvert (-1); };
+
     degree.onChange = [this]
     {
         if (degree.userOpened && onDegreePicked != nullptr)
@@ -302,7 +308,8 @@ void ChordSlot::paint (juce::Graphics& g)
     auto text = getLocalBounds().reduced (4, 6).withTrimmedBottom (34);
     g.setColour (Palette::dim.withMultipliedAlpha (alpha));
     g.setFont (font (11.0f, true));
-    g.drawText (juce::String (index + 1) + "  " + numeral, text.removeFromTop (14), juce::Justification::centred);
+    g.drawText (juce::String (index + 1) + "  " + numeral + (inversion != 0 ? "  " + juce::String (inversion > 0 ? "+" : "") + juce::String (inversion) : juce::String()),
+                text.removeFromTop (14), juce::Justification::centred);
 
     g.setColour (Palette::text.withMultipliedAlpha (alpha));
     g.setFont (font (name.length() > 7 ? 14.0f : 17.0f, true));
@@ -312,6 +319,19 @@ void ChordSlot::paint (juce::Graphics& g)
 void ChordSlot::resized()
 {
     degree.setBounds (getLocalBounds().reduced (6, 6).removeFromBottom (26));
+
+    // Inversion arrows in the top corners.
+    auto top = getLocalBounds().reduced (5, 5).removeFromTop (12);
+    invertDown.setBounds (top.removeFromLeft (12));
+    invertUp.setBounds (top.removeFromRight (12));
+}
+
+void ChordSlot::setInversion (int newInversion)
+{
+    if (newInversion == inversion)
+        return;
+    inversion = newInversion;
+    repaint();
 }
 
 //==============================================================================
@@ -391,7 +411,7 @@ void PatternView::paint (juce::Graphics& g)
     }
 
     // Segment separators (A | B | C | D)
-    if (len % sgk::numSegments == 0)
+    if (len == sgk::userPatternLength)
     {
         g.setColour (Palette::accent.withAlpha (0.35f));
         for (int k = 1; k < sgk::numSegments; ++k)
@@ -738,6 +758,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       voicing (p.apvts, ParamIDs::voicing, "Voicing"),
       bass (p.apvts, ParamIDs::bass, "Left-hand bass"),
       approach (p.apvts, ParamIDs::approach, "Approach chord"),
+      topLine (p.apvts, ParamIDs::topLine, "Top line"),
       registerKnob (p.apvts, ParamIDs::registerPos, "Register"),
       strumKnob (p.apvts, ParamIDs::strum, "Strum"),
       pattern (p.apvts, ParamIDs::pattern, "Groove"),
@@ -745,6 +766,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       fills (p.apvts, ParamIDs::fills, "Fills"),
       fillStyle (p.apvts, ParamIDs::fillStyle, "Fill style"),
       playMode (p.apvts, ParamIDs::playMode, "Play mode"),
+      variation (p.apvts, ParamIDs::variation, "Variation"),
+      grooveBars (p.apvts, ParamIDs::grooveBars, "Groove length"),
       swing (p.apvts, ParamIDs::swing, "Swing"),
       gate (p.apvts, ParamIDs::gate, "Gate"),
       velocity (p.apvts, ParamIDs::velocity, "Velocity"),
@@ -756,6 +779,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       tone (p.apvts, ParamIDs::tone, "Tone"),
       reverb (p.apvts, ParamIDs::reverb, "Reverb"),
       volume (p.apvts, ParamIDs::volume, "Volume"),
+      chorus (p.apvts, ParamIDs::chorus, "Chorus"),
+      pump (p.apvts, ParamIDs::pump, "Pump"),
       syncAttachment (p.apvts, ParamIDs::tempoSync, syncButton),
       tempoAttachment (p.apvts, ParamIDs::tempo, tempoSlider)
 {
@@ -774,7 +799,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
 
     for (juce::Component* c : std::initializer_list<juce::Component*> {
-             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &registerKnob, &strumKnob,
+             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &variation, &grooveBars, &chorus, &pump, &registerKnob, &strumKnob,
              &octaveToggle, &circle,
              &diceProgression, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
              &swing, &gate, &velocity, &humanize, &riffDensity,
@@ -984,7 +1009,42 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
 
     saveButton.setColour (juce::TextButton::buttonColourId, Palette::background);
     saveButton.setColour (juce::TextButton::textColourOffId, Palette::text);
-    saveButton.onClick = [this] { saveClip(); };
+    saveButton.onClick = [this] { showSaveMenu(); };
+
+    // Presets, undo / redo, learn.
+    for (auto* b : { &presetsButton, &learnButton })
+    {
+        b->setColour (juce::TextButton::buttonColourId, Palette::background);
+        b->setColour (juce::TextButton::textColourOffId, Palette::dim);
+        addAndMakeVisible (b);
+    }
+    learnButton.setClickingTogglesState (false);
+    learnButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent2);
+    learnButton.setColour (juce::TextButton::textColourOnId, Palette::background);
+    learnButton.onClick = [this]
+    {
+        if (processor.learnMode.load())
+            processor.learnMode = false;
+        else
+        {
+            processor.startLearning();
+            lastLearnCount = processor.learnedCount.load();
+        }
+    };
+    presetsButton.onClick = [this] { showPresetMenu(); };
+    addAndMakeVisible (undoButton);
+    addAndMakeVisible (redoButton);
+    undoButton.onClick = [this] { undo(); };
+    redoButton.onClick = [this] { redo(); };
+    setWantsKeyboardFocus (true);
+
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+        slots[i]->onInvert = [this, i] (int delta)
+        {
+            const auto id = ParamIDs::inversion (i);
+            const int now = juce::roundToInt (processor.apvts.getRawParameterValue (id)->load());
+            processor.setParameterFromUI (id, (float) juce::jlimit (-3, 3, now + delta));
+        };
 
     applyLanguage();
 
@@ -1043,6 +1103,163 @@ void FaseGroovePianoEditor::confirmReset()
                                   });
 }
 
+void FaseGroovePianoEditor::afterRestore()
+{
+    presetBox.setSelectedId (0, juce::dontSendNotification);
+    freeToggle.setToggleState (processor.freeCircle, juce::dontSendNotification);
+    circle.setFreeMode (processor.freeCircle);
+    shrinkToggle.setToggleState (processor.shrinkWhileDragging, juce::dontSendNotification);
+    timerCallback();
+    repaint();
+}
+
+void FaseGroovePianoEditor::undo()
+{
+    if (undoStack.isEmpty())
+        return;
+
+    redoStack.add (lastSnapshot);
+    lastSnapshot = undoStack[undoStack.size() - 1];
+    undoStack.remove (undoStack.size() - 1);
+    processor.restoreSnapshot (lastSnapshot);
+    afterRestore();
+}
+
+void FaseGroovePianoEditor::redo()
+{
+    if (redoStack.isEmpty())
+        return;
+
+    undoStack.add (lastSnapshot);
+    lastSnapshot = redoStack[redoStack.size() - 1];
+    redoStack.remove (redoStack.size() - 1);
+    processor.restoreSnapshot (lastSnapshot);
+    afterRestore();
+}
+
+bool FaseGroovePianoEditor::keyPressed (const juce::KeyPress& key)
+{
+    const auto mods = key.getModifiers();
+    if (mods.isCommandDown() && (key.getKeyCode() == 'Z' || key.getKeyCode() == 'z'))
+    {
+        mods.isShiftDown() ? redo() : undo();
+        return true;
+    }
+    if (mods.isCommandDown() && (key.getKeyCode() == 'Y' || key.getKeyCode() == 'y'))
+    {
+        redo();
+        return true;
+    }
+    return false;
+}
+
+void FaseGroovePianoEditor::showPresetMenu()
+{
+    juce::PopupMenu menu, remove;
+    menu.addItem (1, tr ("Save current settings as..."));
+    menu.addSeparator();
+
+    const auto files = FaseGroovePianoProcessor::presetFiles();
+    if (files.isEmpty())
+        menu.addItem (-1, tr ("No presets yet"), false);
+    for (int i = 0; i < files.size(); ++i)
+    {
+        menu.addItem (100 + i, files[i].getFileNameWithoutExtension());
+        remove.addItem (1000 + i, files[i].getFileNameWithoutExtension());
+    }
+
+    menu.addSeparator();
+    menu.addSubMenu (tr ("Delete"), remove, ! files.isEmpty());
+    menu.addItem (2, tr ("Open the presets folder"));
+
+    juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&presetsButton), [safe, files] (int result)
+    {
+        if (safe == nullptr || result <= 0)
+            return;
+
+        if (result == 1)
+            safe->savePresetAs();
+        else if (result == 2)
+        {
+            FaseGroovePianoProcessor::presetFolder().createDirectory();
+            FaseGroovePianoProcessor::presetFolder().startAsProcess();
+        }
+        else if (result >= 1000 && result - 1000 < files.size())
+            files[result - 1000].deleteFile();
+        else if (result >= 100 && result - 100 < files.size())
+        {
+            safe->processor.loadPreset (files[result - 100]);
+            safe->afterRestore();
+        }
+    });
+}
+
+void FaseGroovePianoEditor::savePresetAs()
+{
+    auto* window = new juce::AlertWindow (tr ("Save preset"), tr ("Name:"), juce::MessageBoxIconType::NoIcon, this);
+    window->addTextEditor ("name", tr ("My groove"));
+    window->addButton (tr ("Save"), 1, juce::KeyPress (juce::KeyPress::returnKey));
+    window->addButton (tr ("Cancel"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
+
+    juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+    juce::Component::SafePointer<juce::AlertWindow> safeWindow (window);
+    window->enterModalState (true, juce::ModalCallbackFunction::create ([safe, safeWindow] (int result)
+    {
+        if (safe != nullptr && safeWindow != nullptr && result == 1)
+            safe->processor.savePreset (safeWindow->getTextEditorContents ("name"));
+    }), true);
+}
+
+void FaseGroovePianoEditor::showSaveMenu()
+{
+    juce::PopupMenu menu;
+    menu.addItem (1, tr ("Save this clip as .mid..."));
+    menu.addItem (2, tr ("Save all parts to a folder..."));
+
+    juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&saveButton), [safe] (int result)
+    {
+        if (safe == nullptr)
+            return;
+        if (result == 1) safe->saveClip();
+        if (result == 2) safe->saveAllParts();
+    });
+}
+
+void FaseGroovePianoEditor::saveAllParts()
+{
+    fileChooser = std::make_unique<juce::FileChooser> (tr ("Choose a folder"),
+                                                       juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
+
+    fileChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+                              [this] (const juce::FileChooser& chooser)
+                              {
+                                  const auto folder = chooser.getResult();
+                                  if (! folder.isDirectory())
+                                      return;
+
+                                  // The loop (in the clip length you chose) and the whole song, each as
+                                  // full, chords only and bass only: ready to drop on separate tracks.
+                                  juce::Array<int> lengths { selectedClipBars() };
+                                  if (selectedClipBars() != FaseGroovePianoProcessor::songArrangement)
+                                      lengths.add (FaseGroovePianoProcessor::songArrangement);
+
+                                  for (int bars : lengths)
+                                      for (auto part : { FaseGroovePianoProcessor::ClipPart::all, FaseGroovePianoProcessor::ClipPart::chords,
+                                                         FaseGroovePianoProcessor::ClipPart::bass })
+                                      {
+                                          auto file = folder.getChildFile (processor.clipFileName (bars, part));
+                                          file.deleteFile();
+                                          juce::FileOutputStream stream (file);
+                                          if (stream.openedOk())
+                                              processor.createMidiClip (bars, part).writeTo (stream);
+                                      }
+
+                                  folder.revealToUser();
+                              });
+}
+
 void FaseGroovePianoEditor::afterReset()
 {
     presetBox.setSelectedId (0, juce::dontSendNotification);
@@ -1081,10 +1298,10 @@ void FaseGroovePianoEditor::buildPresetMenu()
 
 void FaseGroovePianoEditor::applyLanguage()
 {
-    for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume })
+    for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump })
         k->refreshText();
 
-    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &pattern, &section,
+    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &variation, &grooveBars, &pattern, &section,
                      &fills, &fillStyle, &playMode, &bassChannel, &soundType })
         c->refreshText();
 
@@ -1114,6 +1331,15 @@ void FaseGroovePianoEditor::applyLanguage()
     styleMenuButton.setButtonText (tr ("STYLE"));
     styleMenuButton.setTooltip (tr ("Ready-made setups by genre: progression, voicing, groove, feel and sound in one click (the key stays)"));
     resetButton.setButtonText (tr ("RESET"));
+    presetsButton.setButtonText (tr ("PRESETS"));
+    presetsButton.setTooltip (tr ("Save your own setups and load them in any project"));
+    learnButton.setButtonText (tr ("LEARN"));
+    learnButton.setTooltip (tr ("Learn: play chords on your MIDI keyboard, they fill the progression slot by slot (press again to stop)"));
+    undoButton.setTooltip (tr ("Undo (Ctrl+Z)"));
+    redoButton.setTooltip (tr ("Redo (Ctrl+Shift+Z)"));
+    topLine.box.setTooltip (tr ("The melody the top notes of the chords draw across the progression"));
+    variation.box.setTooltip (tr ("Every 4 or 8 bars the last bar plays a variation of the groove, so the loop never feels static"));
+    grooveBars.box.setTooltip (tr ("1 bar, 2 bars, or 4 bars (the groove followed by a variation of it)"));
     resetButton.setTooltip (tr ("Put every setting back to its default (the language stays)"));
     soundToggle.setButtonText (tr ("Guide sound"));
     octaveToggle.setButtonText (tr ("Top +8va"));
@@ -1155,7 +1381,7 @@ void FaseGroovePianoEditor::mouseUp (const juce::MouseEvent& e)
 {
     // Clicking the logo opens the credits.
     const auto pos = e.getEventRelativeTo (this).position / uiScale;
-    if (! miniMode && headerArea.toFloat().withWidth (330.0f).withHeight (56.0f).contains (pos))
+    if (! miniMode && headerArea.toFloat().withWidth (300.0f).withHeight (56.0f).contains (pos))
         options.show (true, uiScale, processor.shrinkWhileDragging);
 }
 
@@ -1305,6 +1531,39 @@ void FaseGroovePianoEditor::timerCallback()
     std::array<sgk::VoicedChord, sgk::maxProgressionLength> voiced;
     sgk::GrooveEngine::voiceProgression (s, chords, voiced);
 
+    // LEARN: chords heard on the MIDI keyboard fill the progression.
+    learnButton.setToggleState (processor.learnMode.load(), juce::dontSendNotification);
+    if (const int heard = processor.learnedCount.load(); heard != lastLearnCount)
+    {
+        lastLearnCount = heard;
+        if (processor.learnMode.load() && processor.learnChord (processor.learnedMask.load(), processor.learnedBass.load()) >= 0)
+            presetBox.setSelectedId (0, juce::dontSendNotification);
+    }
+
+    // Undo history: a snapshot every half second; a change pushes the previous one.
+    if (++snapshotTicks >= 15)
+    {
+        snapshotTicks = 0;
+        const auto now = processor.snapshot();
+        if (lastSnapshot.isEmpty())
+            lastSnapshot = now;
+        else if (now != lastSnapshot)
+        {
+            undoStack.add (lastSnapshot);
+            if (undoStack.size() > 60)
+                undoStack.remove (0);
+            redoStack.clear();
+            lastSnapshot = now;
+        }
+    }
+    undoButton.setEnabled (! undoStack.isEmpty());
+    redoButton.setEnabled (! redoStack.isEmpty());
+    undoButton.setAlpha (undoStack.isEmpty() ? 0.3f : 1.0f);
+    redoButton.setAlpha (redoStack.isEmpty() ? 0.3f : 1.0f);
+
+    for (int i = 0; i < sgk::maxProgressionLength; ++i)
+        slots[i]->setInversion (s.inversions[(size_t) i]);
+
     const int playingSlot = processor.uiSlot.load();
     const auto harmony = sgk::GrooveEngine::harmonyScores (s, chords, voiced);
 
@@ -1395,7 +1654,7 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
 
     // Header: logo + credit line
     auto header = headerArea.toFloat();
-    Branding::drawFullLogo (g, header.removeFromTop (56.0f).withWidth (330.0f));
+    Branding::drawFullLogo (g, header.removeFromTop (56.0f).withWidth (300.0f));
     g.setColour (Palette::dim);
     g.setFont (font (11.5f));
     g.drawText (tr ("by") + " " + Branding::artist, header.withTrimmedLeft (66.0f), juce::Justification::centredLeft);
@@ -1468,6 +1727,14 @@ void FaseGroovePianoEditor::layoutFull()
     optionsButton.setBounds (headerArea.getRight() - 78, headerArea.getBottom() - 22, 74, 20);
     resetButton.setBounds (optionsButton.getBounds().translated (-62, 0).withWidth (58));
     styleMenuButton.setBounds (resetButton.getBounds().translated (-70, 0).withWidth (66));
+    {
+        auto topRow = juce::Rectangle<int> (headerArea.getRight() - 118, headerArea.getY() + 4, 114, 22);
+        redoButton.setBounds (topRow.removeFromRight (20).reduced (2));
+        topRow.removeFromRight (4);
+        undoButton.setBounds (topRow.removeFromRight (20).reduced (2));
+        topRow.removeFromRight (6);
+        presetsButton.setBounds (topRow);
+    }
     options.setBounds (0, 0, baseWidth, baseHeight);
     {
         auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
@@ -1484,10 +1751,12 @@ void FaseGroovePianoEditor::layoutFull()
     {
         auto inner = progressionPanel.reduced (14, 8);
         inner.removeFromTop (20);
-        auto leftCol = inner.removeFromLeft (240);
+        auto leftCol = inner.removeFromLeft (276);
         presetLabel.setBounds (leftCol.removeFromTop (16));
         auto presetRow = leftCol.removeFromTop (28);
-        diceProgression.setBounds (presetRow.removeFromRight (64));
+        learnButton.setBounds (presetRow.removeFromRight (58));
+        presetRow.removeFromRight (4);
+        diceProgression.setBounds (presetRow.removeFromRight (54));
         presetBox.setBounds (presetRow.withTrimmedRight (6));
         leftCol.removeFromTop (4);
         progLength.setBounds (leftCol.removeFromLeft (114));
@@ -1529,6 +1798,8 @@ void FaseGroovePianoEditor::layoutFull()
         octaveToggle.setBounds (leftCol.removeFromTop (24));
         leftCol.removeFromTop (10);
         approach.setBounds (leftCol.removeFromTop (44));
+        leftCol.removeFromTop (6);
+        topLine.setBounds (leftCol.removeFromTop (44));
         last.removeFromLeft (6);
         const int kw = last.getWidth() / 2;
         const int kh = juce::jmin (kw + 34, last.getHeight());
@@ -1550,6 +1821,7 @@ void FaseGroovePianoEditor::layoutFull()
         pattern.setBounds (grooveRow.withTrimmedRight (8));
         split (row (inner, 44), section, fills, inner.getWidth() / 2 - 5);
         split (row (inner, 44), fillStyle, playMode, inner.getWidth() / 2 - 5);
+        split (row (inner, 44), variation, grooveBars, inner.getWidth() / 2 - 5);
         const int w = inner.getWidth() / 5;
         auto knobs = inner.withSizeKeepingCentre (inner.getWidth(), juce::jmin (inner.getHeight(), w + 40));
         for (auto* k : { &swing, &gate, &velocity, &humanize, &riffDensity })
@@ -1565,8 +1837,12 @@ void FaseGroovePianoEditor::layoutFull()
         soundType.setBounds (row (inner, 44));
         bassChannel.setBounds (row (inner, 44));
         const int w = inner.getWidth() / 3;
+        auto top = inner.removeFromTop (inner.getHeight() / 2);
         for (auto* k : { &tone, &reverb, &volume })
-            k->setBounds (inner.removeFromLeft (w));
+            k->setBounds (top.removeFromLeft (w));
+        auto bottom = inner.withSizeKeepingCentre (w * 2, inner.getHeight());
+        for (auto* k : { &chorus, &pump })
+            k->setBounds (bottom.removeFromLeft (w));
     }
 
     r.removeFromTop (10);

@@ -70,7 +70,7 @@ constexpr int freeChordCode (int semitonesAboveKey, bool minor) noexcept
 const std::vector<ProgressionPreset>& progressionPresets();
 
 //==============================================================================
-enum class BassMode { off = 0, root, octaves, rootFifth };
+enum class BassMode { off = 0, root, octaves, rootFifth, walking, syncopated };
 
 /** What the last beat of a fill bar plays. */
 enum class FillStyle { pentatonicUp = 0, pentatonicDown, chordRoll,
@@ -80,7 +80,12 @@ constexpr int numFillStyles = 11;
 /** First 16th (in the bar) a fill style takes over: most use the last beat, the gospel run two. */
 int fillStartStep (FillStyle style) noexcept;
 const char* fillStyleName (int style) noexcept;
-constexpr int numBassModes = 4;
+constexpr int numBassModes = 6;
+
+/** Shape of the top note of the chords across the progression (the melody you hear). */
+enum class TopLine { automatic = 0, steady, rising, falling, arch };
+constexpr int numTopLines = 5;
+const char* topLineName (int line) noexcept;
 
 /** Gospel "slide": on the last 16th before a chord change, play the next chord
     (and bass note) a half step above or below, resolving onto the new chord. */
@@ -115,6 +120,10 @@ struct GrooveSettings
     float strum = 0.0f;                    // 0..1: roll the chord notes like a pianist
     bool octaveTop = false;                // double the top note an octave higher
     ApproachStyle approach = ApproachStyle::off;
+    TopLine topLine = TopLine::automatic;
+    std::array<int, maxProgressionLength> inversions {};   // per slot, -3..3
+    int variationEvery = 0;                // 0 = off, else every 4 or 8 bars the last bar varies
+    int grooveBars = 2;                    // 1, 2 or 4 bars
 
     Section section = Section::main;
     std::uint32_t riffSeed = 1;            // used when pattern == randomPatternIndex()
@@ -202,7 +211,7 @@ private:
 
     const GroovePattern& patternFor (const GrooveSettings& s);
 
-    void collectStep (long long step, const GrooveSettings& s, const GroovePattern& pattern,
+    void collectStep (long long step, const GrooveSettings& s, const GroovePattern& normalPattern, const GroovePattern& variation,
                       const std::array<Chord, maxProgressionLength>& chords,
                       const std::array<VoicedChord, maxProgressionLength>& voiced);
     void flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out);
@@ -215,12 +224,13 @@ private:
     // Cache of the voiced progression, rebuilt only when the harmony changes.
     struct HarmonyKey
     {
-        int key, scale, extension, voicing, centre, length;
-        std::array<int, maxProgressionLength> progression, freeChords;
+        int key, scale, extension, voicing, centre, length, topLine;
+        std::array<int, maxProgressionLength> progression, freeChords, inversions;
         bool operator== (const HarmonyKey& o) const noexcept
         {
             return key == o.key && scale == o.scale && extension == o.extension && voicing == o.voicing
-                && centre == o.centre && length == o.length && progression == o.progression && freeChords == o.freeChords;
+                && centre == o.centre && length == o.length && topLine == o.topLine && progression == o.progression
+                && freeChords == o.freeChords && inversions == o.inversions;
         }
     };
     HarmonyKey cachedHarmony {};
@@ -229,7 +239,8 @@ private:
     std::array<VoicedChord, maxProgressionLength> cachedVoiced {};
 
     // Cache of the resolved pattern, rebuilt only when its inputs change.
-    GroovePattern cachedPattern;
+    GroovePattern cachedPattern, cachedVariation;
+    int cachedBars = 2;
     int cachedIndex = -1;
     std::uint32_t cachedSeed = 0;
     float cachedDensity = -1.0f;

@@ -18,6 +18,7 @@ Fase Groove Piano respects your privacy in the simplest possible way: **it colle
 | Plug-in settings | Inside your DAW project | So you get your settings back when you reopen the project (saved by the DAW, not by the plug-in). |
 | Dragged MIDI clips | `Documents/Fase Groove Piano/` | Dragging to the DAW needs a real file. You can delete them at any time. |
 | `.mid` files saved with *Save .mid…* | Wherever you choose | At your request. |
+| Your presets (`.fgp`) | `Fase Groove Piano/Presets` in your system's user application data folder | Only when you save one, to load it in other projects. |
 | Interface language | `Fase Groove Piano.settings` in your system's user settings folder | So the plug-in speaks your language in every project. |
 | Audio/MIDI settings of the Standalone app | Your system's user settings folder | Handled by the JUCE framework to remember your audio interface. |
 

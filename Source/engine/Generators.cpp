@@ -304,6 +304,74 @@ GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
     return p;
 }
 
+GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed)
+{
+    Random rng (seed ^ 0x5EEDu);
+    GroovePattern p = source;
+    auto& r = p.rightHand;
+    auto& l = p.leftHand;
+    const int len = (int) r.size();
+
+    for (int beat = 0; beat + 4 <= len; beat += 4)
+    {
+        if (! rng.chance (0.35))
+            continue;
+
+        int hits = 0;
+        for (int k = 0; k < 4; ++k)
+            hits += isHit (r[(size_t) (beat + k)]) ? 1 : 0;
+
+        const int choice = rng.below (3);
+        if (choice == 0)
+        {
+            // Delay one hit by a 16th (more syncopation).
+            for (int k = 0; k < 3; ++k)
+                if ((r[(size_t) (beat + k)] == 'x' || r[(size_t) (beat + k)] == 'X') && r[(size_t) (beat + k + 1)] == '.')
+                {
+                    std::swap (r[(size_t) (beat + k)], r[(size_t) (beat + k + 1)]);
+                    break;
+                }
+        }
+        else if (choice == 1)
+        {
+            // A ghost note just before a hit.
+            for (int k = 1; k < 4; ++k)
+                if (r[(size_t) (beat + k - 1)] == '.' && isHit (r[(size_t) (beat + k)]))
+                {
+                    r[(size_t) (beat + k - 1)] = 'g';
+                    break;
+                }
+        }
+        else if (hits >= 2)
+        {
+            // Leave a gap: drop a non-accented hit.
+            for (int k = 3; k >= 0; --k)
+                if (r[(size_t) (beat + k)] == 'x')
+                {
+                    r[(size_t) (beat + k)] = '.';
+                    break;
+                }
+        }
+    }
+
+    // Push into the next bar at the end of each bar, and a bass pick-up.
+    for (int bar = 0; bar + 16 <= len; bar += 16)
+    {
+        if (rng.chance (0.6) && r[(size_t) (bar + 14)] != '=' && r[(size_t) (bar + 15)] != '>')
+        {
+            r[(size_t) (bar + 14)] = '>';
+            r[(size_t) (bar + 15)] = '=';
+        }
+        if (rng.chance (0.5) && l[(size_t) (bar + 14)] == '.' && l[(size_t) (bar + 13)] != '=')
+            l[(size_t) (bar + 14)] = 'x';
+    }
+
+    repairHolds (r);
+    repairHolds (l);
+    p.name = source.name + " (variation)";
+    return p;
+}
+
 //==============================================================================
 std::vector<int> randomProgression (std::uint32_t seed, int length)
 {

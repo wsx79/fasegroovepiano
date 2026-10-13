@@ -9,6 +9,9 @@
 //                   hammer noise, damper on release)
 //  - House Piano:   bright, hollow "M1-style" piano (additive body + FM bite + shimmer)
 //  - House Organ:   drawbar organ with percussion, key click and vibrato
+//  - Wurlitzer:     reedy FM electric piano with a little drive ("bark")
+//  - Gospel Organ:  full drawbars through a rotating speaker (tremolo + vibrato)
+//  - Warm Pad:      three detuned saws through a soft low-pass, slow attack
 
 #include <juce_audio_basics/juce_audio_basics.h>
 
@@ -16,12 +19,13 @@
 #include <atomic>
 #include <cmath>
 
-enum class GuideSound { rhodes = 0, grand, housePiano, organ };
-constexpr int numGuideSounds = 4;
+enum class GuideSound { rhodes = 0, grand, housePiano, organ, wurlitzer, gospelOrgan, pad };
+constexpr int numGuideSounds = 7;
 
 inline const char* guideSoundName (int sound) noexcept
 {
-    static const char* const names[numGuideSounds] { "Rhodes (FM)", "Soulful Grand", "House Piano (M1 style)", "House Organ" };
+    static const char* const names[numGuideSounds] { "Rhodes (FM)", "Soulful Grand", "House Piano (M1 style)", "House Organ",
+                                                     "Wurlitzer", "Gospel Organ (Leslie)", "Warm Pad" };
     return names[juce::jlimit (0, numGuideSounds - 1, sound)];
 }
 
@@ -65,6 +69,9 @@ public:
             case GuideSound::grand:      startGrand (note, false); break;
             case GuideSound::housePiano: startGrand (note, true);  break;
             case GuideSound::organ:      startOrgan();             break;
+            case GuideSound::gospelOrgan: startOrgan(); startLeslie(); break;
+            case GuideSound::wurlitzer:  startRhodes (note); startWurli(); break;
+            case GuideSound::pad:        startPad();               break;
             case GuideSound::rhodes:
             default:                     startRhodes (note);       break;
         }
@@ -79,8 +86,9 @@ public:
         }
 
         releasing = true;
-        const double releaseSeconds = sound == GuideSound::organ ? 0.06
-                                    : sound == GuideSound::rhodes ? 0.09 : 0.14;
+        const double releaseSeconds = sound == GuideSound::organ || sound == GuideSound::gospelOrgan ? 0.06
+                                    : sound == GuideSound::pad ? 0.6
+                                    : sound == GuideSound::rhodes || sound == GuideSound::wurlitzer ? 0.09 : 0.14;
         releaseCoeff = std::exp (-1.0 / (releaseSeconds * sr));
     }
 
@@ -102,6 +110,9 @@ public:
                 case GuideSound::grand:
                 case GuideSound::housePiano: sample = renderGrand (env); break;
                 case GuideSound::organ:      sample = renderOrgan (env); break;
+                case GuideSound::gospelOrgan: sample = renderOrgan (env) * leslieGain(); break;
+                case GuideSound::wurlitzer:  sample = renderWurli (env); break;
+                case GuideSound::pad:        sample = renderPad (env); break;
                 case GuideSound::rhodes:
                 default:                     sample = renderRhodes (env); break;
             }
@@ -303,6 +314,85 @@ private:
     }
 
     //==============================================================================
+    void startWurli()
+    {
+        decayTime *= 0.65;                 // shorter, reedier than a Rhodes
+        modDepth = bright * (0.9 + 2.0 * vel * vel);
+        tineDepth = 0.0;
+        drive = 1.2 + 2.2 * vel;
+        gain = 0.095 * (0.2 + 0.8 * std::pow (vel, 1.4));
+    }
+
+    double renderWurli (double& env) noexcept
+    {
+        constexpr double twoPi = juce::MathConstants<double>::twoPi;
+        env = juce::jmin (1.0, time / 0.001) * std::exp (-time / decayTime);
+
+        // Odd-harmonic reed tone: the modulator at 1x plus a 3x component, then soft clipping.
+        const double index = modDepth * std::exp (-time / 0.2) + 0.25 * modDepth;
+        const double mod = index * (std::sin (twoPi * modPhase) + 0.3 * std::sin (twoPi * 3.0 * modPhase));
+        const double raw = std::sin (twoPi * carrierPhase + mod) * env;
+        const double out = std::tanh (raw * drive) / std::tanh (drive);
+
+        carrierPhase += carrierInc; if (carrierPhase >= 1.0) carrierPhase -= 1.0;
+        modPhase     += carrierInc; if (modPhase >= 1.0)     modPhase -= 1.0;
+        return out;
+    }
+
+    void startLeslie()
+    {
+        // Full gospel drawbars and a fast rotating speaker.
+        for (auto& l : organLevel)
+            l = l > 0.0 ? juce::jmax (l, 0.7) : 0.0;
+        percussion = 0.35 * vel;
+        lesliePhase = random.nextDouble();
+        gain = 0.06 * (0.55 + 0.45 * vel);
+    }
+
+    double leslieGain() noexcept
+    {
+        // Amplitude tremolo of the horn (~6.8 Hz); the organ's vibrato does the pitch part.
+        lesliePhase += 6.8 / sr; if (lesliePhase >= 1.0) lesliePhase -= 1.0;
+        return 0.82 + 0.18 * std::sin (juce::MathConstants<double>::twoPi * lesliePhase);
+    }
+
+    void startPad()
+    {
+        static constexpr double detune[3] { -0.006, 0.0, 0.0065 };
+        for (int i = 0; i < 3; ++i)
+        {
+            padInc[(size_t) i] = freq * (1.0 + detune[i]) / sr;
+            padPhase[(size_t) i] = random.nextDouble();
+        }
+        padLow = 0.0;
+        padCutoff = juce::jlimit (0.02, 0.45, (freq * (2.0 + 4.0 * bright)) / sr * juce::MathConstants<double>::twoPi);
+        gain = 0.15 * (0.5 + 0.5 * vel);
+    }
+
+    double renderPad (double& env) noexcept
+    {
+        // Band-limited saws (polyBLEP), mixed, then a gentle low-pass.
+        auto blep = [] (double t, double dt)
+        {
+            if (t < dt)       { t /= dt; return t + t - t * t - 1.0; }
+            if (t > 1.0 - dt) { t = (t - 1.0) / dt; return t * t + t + t + 1.0; }
+            return 0.0;
+        };
+
+        double saw = 0.0;
+        for (int i = 0; i < 3; ++i)
+        {
+            const double t = padPhase[(size_t) i], dt = padInc[(size_t) i];
+            saw += (2.0 * t - 1.0) - blep (t, dt);
+            padPhase[(size_t) i] += dt; if (padPhase[(size_t) i] >= 1.0) padPhase[(size_t) i] -= 1.0;
+        }
+
+        padLow += padCutoff * (saw / 3.0 - padLow);
+        env = juce::jmin (1.0, time / 0.25);
+        return padLow * env;
+    }
+
+    //==============================================================================
     const std::atomic<float>& tone;
     const std::atomic<float>& soundChoice;
     juce::Random random;
@@ -327,4 +417,9 @@ private:
     // Organ
     std::array<double, 5> organPhase {}, organInc {}, organLevel {};
     double percussion = 0.0, lfoPhase = 0.0;
+
+    // Wurlitzer / Leslie / Pad
+    double drive = 1.0, lesliePhase = 0.0;
+    std::array<double, 3> padPhase {}, padInc {};
+    double padLow = 0.0, padCutoff = 0.1;
 };
