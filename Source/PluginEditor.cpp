@@ -548,6 +548,10 @@ OptionsOverlay::OptionsOverlay() : artist (Branding::artistLogo())
     addChildComponent (shrinkToggle);
     tipsToggle.onClick = [this] { if (onTipsChanged != nullptr) onTipsChanged (tipsToggle.getToggleState()); };
     addChildComponent (tipsToggle);
+    updatesToggle.onClick = [this] { Updater::setAutoCheckEnabled (updatesToggle.getToggleState()); };
+    addChildComponent (updatesToggle);
+    checkUpdatesButton.onClick = [this] { if (onCheckUpdates != nullptr) onCheckUpdates(); };
+    addChildComponent (checkUpdatesButton);
 
     refreshText();
     selectTab (false);
@@ -565,6 +569,7 @@ void OptionsOverlay::show (bool about, float currentScale, bool shrinkWhileDragg
 
     shrinkToggle.setToggleState (shrinkWhileDragging, juce::dontSendNotification);
     tipsToggle.setToggleState (Localisation::tipsEnabled(), juce::dontSendNotification);
+    updatesToggle.setToggleState (Updater::autoCheckEnabled(), juce::dontSendNotification);
     selectTab (about);
     setVisible (true);
     toFront (false);
@@ -584,6 +589,8 @@ void OptionsOverlay::refreshText()
     sizeLabel.setText (Localisation::upper (tr ("Interface size")), juce::dontSendNotification);
     shrinkToggle.setButtonText (tr ("Mini window while dragging"));
     tipsToggle.setButtonText (tr ("Show tips when the mouse rests on a control"));
+    updatesToggle.setButtonText (tr ("Check for updates automatically (GitHub)"));
+    checkUpdatesButton.setButtonText (tr ("CHECK NOW"));
     repaint();
 }
 
@@ -593,7 +600,8 @@ void OptionsOverlay::selectTab (bool about)
     settingsTab.setToggleState (! about, juce::dontSendNotification);
     aboutTab.setToggleState (about, juce::dontSendNotification);
 
-    for (auto* c : std::initializer_list<juce::Component*> { &languageLabel, &languageBox, &sizeLabel, &sizeBox, &shrinkToggle, &tipsToggle })
+    for (auto* c : std::initializer_list<juce::Component*> { &languageLabel, &languageBox, &sizeLabel, &sizeBox, &shrinkToggle, &tipsToggle,
+                                                                 &updatesToggle, &checkUpdatesButton })
         c->setVisible (! about);
 
     auto showLink = [about] (juce::Component& b, const char* url) { b.setVisible (about && juce::String (url).isNotEmpty()); };
@@ -633,6 +641,12 @@ void OptionsOverlay::resized()
     shrinkToggle.setBounds (settings.removeFromTop (26).withWidth (360));
     settings.removeFromTop (10);
     tipsToggle.setBounds (settings.removeFromTop (26).withWidth (460));
+    settings.removeFromTop (10);
+    {
+        auto row = settings.removeFromTop (26);
+        updatesToggle.setBounds (row.removeFromLeft (380));
+        checkUpdatesButton.setBounds (row.removeFromLeft (130).reduced (0, 1));
+    }
 
     // About tab: link buttons above the footer
     auto row = inner.withTrimmedBottom (26).removeFromBottom (30);
@@ -669,7 +683,7 @@ void OptionsOverlay::paint (juce::Graphics& g)
         g.setColour (Palette::dim);
         g.setFont (font (12.0f));
         g.drawText (tr ("Settings are saved for all your projects."),
-                    juce::Rectangle<float> (r.getX() + 28.0f, r.getY() + 250.0f, r.getWidth() - 28.0f, 18.0f), juce::Justification::centredLeft);
+                    juce::Rectangle<float> (r.getX() + 28.0f, r.getY() + 290.0f, r.getWidth() - 28.0f, 18.0f), juce::Justification::centredLeft);
         g.setFont (font (11.0f));
         g.drawText ("Fase Groove Piano " + juce::String (JucePlugin_VersionString) + dot + tr ("Built with JUCE"),
                     r.removeFromBottom (16.0f), juce::Justification::centred);
@@ -765,6 +779,106 @@ void MidiDragTile::mouseDrag (const juce::MouseEvent& e)
         if (safeThis != nullptr && safeThis->onDragEnd != nullptr)
             safeThis->onDragEnd();
     });
+}
+
+//==============================================================================
+UpdateOverlay::UpdateOverlay()
+{
+    notes.setMultiLine (true, true);
+    notes.setReadOnly (true);
+    notes.setScrollbarsShown (true);
+    notes.setIndents (10, 8);
+    notes.setCaretVisible (false);
+    notes.setFont (font (14.0f));
+    notes.setColour (juce::TextEditor::backgroundColourId, Palette::background);
+    notes.setColour (juce::TextEditor::textColourId, Palette::text);
+    notes.setColour (juce::TextEditor::outlineColourId, Palette::accent.withAlpha (0.3f));
+    addAndMakeVisible (notes);
+
+    installButton.setColour (juce::TextButton::buttonColourId, Palette::accent);
+    installButton.setColour (juce::TextButton::textColourOffId, Palette::background);
+    for (auto* b : { &installButton, &laterButton, &skipButton })
+        addAndMakeVisible (b);
+
+    installButton.onClick = [this]
+    {
+        Updater::install (result.file);
+        setVisible (false);
+    };
+    laterButton.onClick = [this] { setVisible (false); };
+    skipButton.onClick = [this]
+    {
+        Updater::skipVersion (result.version);
+        setVisible (false);
+    };
+    refreshText();
+}
+
+void UpdateOverlay::show (const Updater::Result& r)
+{
+    result = r;
+    notes.setText (r.notes, false);
+    notes.moveCaretToTop (false);
+    refreshText();
+    setVisible (true);
+    toFront (false);
+}
+
+void UpdateOverlay::refreshText()
+{
+    installButton.setButtonText (tr ("INSTALL NOW"));
+    laterButton.setButtonText (tr ("LATER"));
+    skipButton.setButtonText (tr ("SKIP THIS VERSION"));
+    repaint();
+}
+
+void UpdateOverlay::resized()
+{
+    auto inner = card().toNearestInt().reduced (28, 22);
+    inner.removeFromTop (92);
+    auto buttons = inner.removeFromBottom (34);
+    inner.removeFromBottom (44);
+    notes.setBounds (inner);
+
+    const int w = 170, gap = 12;
+    buttons = buttons.withSizeKeepingCentre (3 * w + 2 * gap, buttons.getHeight());
+    for (auto* b : { &installButton, &laterButton, &skipButton })
+    {
+        b->setBounds (buttons.removeFromLeft (w));
+        buttons.removeFromLeft (gap);
+    }
+}
+
+void UpdateOverlay::paint (juce::Graphics& g)
+{
+    g.fillAll (juce::Colours::black.withAlpha (0.78f));
+
+    auto c = card();
+    g.setColour (Palette::panel);
+    g.fillRoundedRectangle (c, 16.0f);
+    g.setColour (Palette::accent.withAlpha (0.6f));
+    g.drawRoundedRectangle (c, 16.0f, 1.5f);
+
+    auto r = c.reduced (28.0f, 22.0f);
+    g.setColour (Palette::accent);
+    g.setFont (font (22.0f, true));
+    g.drawText (tr ("New version") + " " + result.version + " " + tr ("downloaded"), r.removeFromTop (30.0f), juce::Justification::centredLeft);
+    g.setColour (Palette::dim);
+    g.setFont (font (13.0f));
+    g.drawText (tr ("You have") + " " + juce::String (JucePlugin_VersionString) + ". " + tr ("What's new:"),
+                r.removeFromTop (26.0f), juce::Justification::centredLeft);
+
+   #if JUCE_WINDOWS
+    const char* how = "INSTALL NOW starts the installer. Close your DAW when it asks, then reopen it.";
+   #elif JUCE_MAC
+    const char* how = "INSTALL NOW opens the zip: copy the plug-ins to the same folders as the first time, then restart your DAW.";
+   #else
+    const char* how = "INSTALL NOW shows the downloaded zip: copy the plug-ins to the same folders as the first time.";
+   #endif
+    auto bottom = c.reduced (28.0f, 22.0f).removeFromBottom (34.0f + 44.0f).removeFromTop (44.0f);
+    g.drawFittedText (tr (how), bottom.toNearestInt(), juce::Justification::centredLeft, 2);
+    g.setFont (font (11.0f));
+    g.drawText (result.file.getFullPathName(), r.removeFromTop (20.0f), juce::Justification::centredLeft);
 }
 
 //==============================================================================
@@ -952,7 +1066,36 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         Localisation::setTipsEnabled (on);
         applyTips();
     };
+    options.onCheckUpdates = [this]
+    {
+        options.checkUpdatesButton.setEnabled (false);
+        options.checkUpdatesButton.setButtonText (tr ("CHECKING..."));
+        updateChecker.start (true);
+    };
     addChildComponent (options);
+    addChildComponent (updateOverlay);
+    updateChecker.onResult = [this] (const Updater::Result& result, bool manual)
+    {
+        options.checkUpdatesButton.setEnabled (true);
+        options.refreshText();
+    updateOverlay.refreshText();
+
+        if (result.status == Updater::Result::Status::ready)
+        {
+            options.setVisible (false);
+            updateOverlay.show (result);
+        }
+        else if (manual)
+        {
+            const bool upToDate = result.status == Updater::Result::Status::upToDate;
+            juce::AlertWindow::showMessageBoxAsync (upToDate ? juce::MessageBoxIconType::InfoIcon : juce::MessageBoxIconType::WarningIcon,
+                                                    "Fase Groove Piano",
+                                                    upToDate ? tr ("You have the latest version.") + " (" + juce::String (JucePlugin_VersionString) + ")"
+                                                             : tr ("Could not check for updates. Check your internet connection and try again."));
+        }
+    };
+    if (Updater::autoCheckEnabled() && Updater::firstAutoCheckThisSession())
+        updateChecker.start (false);
     applyTips();
 
     previewButton.setClickingTogglesState (true);
@@ -1877,6 +2020,7 @@ void FaseGroovePianoEditor::layoutFull()
         presetsButton.setBounds (topRow);
     }
     options.setBounds (0, 0, baseWidth, baseHeight);
+    updateOverlay.setBounds (0, 0, baseWidth, baseHeight);
     {
         auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
         auto controls = inner.withSizeKeepingCentre (inner.getWidth(), 32);

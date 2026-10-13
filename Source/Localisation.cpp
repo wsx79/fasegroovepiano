@@ -374,6 +374,44 @@ namespace
         { "Deep house", "Deep house", "Deep house", "Deep house", "Deep House", "Deep house" },
         { "Modal & exotic", "Modali ed esotiche", "Modales y exóticas", "Modales et exotiques", "Modal & exotisch", "Modais e exóticas" },
         { "Jackin' & funky", "Jackin' e funky", "Jackin' y funky", "Jackin' et funky", "Jackin' & Funky", "Jackin' e funky" },
+        // ---- v1.15 updates ----
+        { "Check for updates automatically (GitHub)", "Controlla gli aggiornamenti in automatico (GitHub)", "Buscar actualizaciones automáticamente (GitHub)",
+          "Rechercher les mises à jour automatiquement (GitHub)", "Automatisch nach Updates suchen (GitHub)", "Procurar atualizações automaticamente (GitHub)" },
+        { "CHECK NOW", "CONTROLLA ORA", "BUSCAR AHORA", "VÉRIFIER", "JETZT PRÜFEN", "VERIFICAR AGORA" },
+        { "CHECKING...", "CONTROLLO...", "BUSCANDO...", "VÉRIFICATION...", "PRÜFE...", "VERIFICANDO..." },
+        { "INSTALL NOW", "INSTALLA ORA", "INSTALAR AHORA", "INSTALLER", "JETZT INSTALLIEREN", "INSTALAR AGORA" },
+        { "LATER", "PIÙ TARDI", "MÁS TARDE", "PLUS TARD", "SPÄTER", "MAIS TARDE" },
+        { "SKIP THIS VERSION", "SALTA QUESTA VERSIONE", "OMITIR ESTA VERSIÓN", "IGNORER CETTE VERSION", "VERSION ÜBERSPRINGEN", "PULAR ESTA VERSÃO" },
+        { "New version", "Nuova versione", "Nueva versión", "Nouvelle version", "Neue Version", "Nova versão" },
+        { "downloaded", "scaricata", "descargada", "téléchargée", "heruntergeladen", "baixada" },
+        { "You have", "Hai la", "Tienes la", "Vous avez la", "Du hast", "Você tem a" },
+        { "What's new:", "Cosa c'è di nuovo:", "Novedades:", "Nouveautés :", "Neu:", "Novidades:" },
+        { "You have the latest version.", "Hai già l'ultima versione.", "Ya tienes la última versión.", "Vous avez déjà la dernière version.",
+          "Du hast bereits die neueste Version.", "Você já tem a versão mais recente." },
+        { "Could not check for updates. Check your internet connection and try again.",
+          "Impossibile controllare gli aggiornamenti. Controlla la connessione a internet e riprova.",
+          "No se pudo buscar actualizaciones. Comprueba tu conexión a internet e inténtalo de nuevo.",
+          "Impossible de vérifier les mises à jour. Vérifiez votre connexion internet et réessayez.",
+          "Updates konnten nicht geprüft werden. Prüfe deine Internetverbindung und versuche es erneut.",
+          "Não foi possível verificar atualizações. Verifique sua conexão com a internet e tente novamente." },
+        { "INSTALL NOW starts the installer. Close your DAW when it asks, then reopen it.",
+          "INSTALLA ORA avvia l'installer. Chiudi la DAW quando te lo chiede, poi riaprila.",
+          "INSTALAR AHORA abre el instalador. Cierra tu DAW cuando te lo pida y vuelve a abrirla.",
+          "INSTALLER lance l'installateur. Fermez votre DAW quand il le demande, puis rouvrez-la.",
+          "JETZT INSTALLIEREN startet das Setup. Schließe deine DAW, wenn es danach fragt, und öffne sie dann wieder.",
+          "INSTALAR AGORA abre o instalador. Feche sua DAW quando ele pedir e depois abra de novo." },
+        { "INSTALL NOW opens the zip: copy the plug-ins to the same folders as the first time, then restart your DAW.",
+          "INSTALLA ORA apre lo zip: copia i plug-in nelle stesse cartelle della prima volta, poi riavvia la DAW.",
+          "INSTALAR AHORA abre el zip: copia los plug-ins en las mismas carpetas que la primera vez y reinicia tu DAW.",
+          "INSTALLER ouvre le zip : copiez les plug-ins dans les mêmes dossiers que la première fois, puis redémarrez votre DAW.",
+          "JETZT INSTALLIEREN öffnet das Zip: kopiere die Plug-ins in dieselben Ordner wie beim ersten Mal und starte die DAW neu.",
+          "INSTALAR AGORA abre o zip: copie os plug-ins para as mesmas pastas da primeira vez e reinicie sua DAW." },
+        { "INSTALL NOW shows the downloaded zip: copy the plug-ins to the same folders as the first time.",
+          "INSTALLA ORA mostra lo zip scaricato: copia i plug-in nelle stesse cartelle della prima volta.",
+          "INSTALAR AHORA muestra el zip descargado: copia los plug-ins en las mismas carpetas que la primera vez.",
+          "INSTALLER affiche le zip téléchargé : copiez les plug-ins dans les mêmes dossiers que la première fois.",
+          "JETZT INSTALLIEREN zeigt das heruntergeladene Zip: kopiere die Plug-ins in dieselben Ordner wie beim ersten Mal.",
+          "INSTALAR AGORA mostra o zip baixado: copie os plug-ins para as mesmas pastas da primeira vez." },
         // ---- v1.14 dance pack ----
         { "Chromatic & borrowed", "Cromatiche e prestiti", "Cromáticas y prestadas", "Chromatiques et empruntées", "Chromatisch & entlehnt", "Cromáticas e emprestadas" },
         { "Octave triads (disco)", "Triadi in ottava (disco)", "Tríadas en octava (disco)", "Triades à l'octave (disco)", "Oktav-Dreiklänge (Disco)", "Tríades em oitava (disco)" },
@@ -490,6 +528,22 @@ void setTipsEnabled (bool enabled)
     if (auto settings = openSettings())
     {
         settings->setValue ("tips", enabled);
+        settings->saveIfNeeded();
+    }
+}
+
+juce::String setting (const char* key, const juce::String& fallback)
+{
+    if (auto settings = openSettings())
+        return settings->getValue (key, fallback);
+    return fallback;
+}
+
+void setSetting (const char* key, const juce::var& value)
+{
+    if (auto settings = openSettings())
+    {
+        settings->setValue (key, value);
         settings->saveIfNeeded();
     }
 }

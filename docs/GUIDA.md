@@ -298,6 +298,14 @@ o su **CHIUDI** per tornare indietro):
   - **Mostra i suggerimenti quando il mouse resta fermo su un comando:** attivo di default.
     Tieni il mouse fermo un attimo su una manopola, un menu o un pulsante e un suggerimento ti
     spiega a cosa serve. Spegnilo quando conosci il plugin.
+  - **Controlla gli aggiornamenti in automatico (GitHub):** attivo di default. Quando apri il
+    plugin chiede a GitHub, una volta per sessione, se c'è una versione più nuova. Se c'è, la
+    scarica in *Download/Fase Groove Piano updates* e ti mostra **cosa c'è di nuovo** (il
+    changelog, in italiano se il plugin è in italiano). Non installa niente finché non confermi:
+    **INSTALLA ORA** avvia l'installer su Windows (chiudi la DAW quando te lo chiede), apre lo zip
+    su macOS e lo mostra su Linux (copia i plug-in come la prima volta); **PIÙ TARDI** te lo
+    richiede la prossima volta; **SALTA QUESTA VERSIONE** non te la propone più. **CONTROLLA ORA**
+    controlla subito. Se lo spegni il plugin non si collega mai a internet.
   - Nella versione **Standalone**, il menu *Opzioni* della finestra (impostazioni audio/MIDI,
     salva/carica stato, ripristina) e le impostazioni audio seguono anche loro la lingua scelta.
 - **INFO** (si apre anche cliccando il logo): versione, crediti, licenza, codice sorgente, il

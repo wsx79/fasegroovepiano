@@ -1,14 +1,18 @@
 # Privacy – Fase Groove Piano
 
-*Ultimo aggiornamento: 12 ottobre 2026 · 🇬🇧 [English version](PRIVACY.md)*
+*Ultimo aggiornamento: 13 ottobre 2026 · 🇬🇧 [English version](PRIVACY.md)*
 
 Fase Groove Piano rispetta la tua privacy nel modo più semplice: **non raccoglie nulla**.
 
 ## In breve
 
 - **Nessun dato personale** raccolto, salvato o inviato.
-- **Nessuna connessione a internet**: il plugin non contiene codice di rete, analytics,
-  telemetria, pubblicità, controllo licenze o aggiornamenti automatici.
+- **Niente analytics, telemetria, pubblicità o controllo licenze.**
+- **Una sola connessione, facoltativa: il controllo aggiornamenti.** Quando apri il plugin chiede
+  a GitHub (una volta per sessione) qual è l'ultima versione e, se ce n'è una più nuova, la
+  scarica. Come ogni richiesta web, GitHub vede il tuo indirizzo IP e lo user agent
+  "FaseGroovePiano-Updater"; nient'altro viene inviato. Spegnilo in **OPZIONI → IMPOSTAZIONI →
+  Controlla gli aggiornamenti in automatico** e il plugin non si collega mai a internet.
 - **Nessun account** e nessuna registrazione.
 
 ## Cosa resta sul tuo computer
@@ -19,6 +23,7 @@ Fase Groove Piano rispetta la tua privacy nel modo più semplice: **non raccogli
 | Clip MIDI trascinate | `Documenti/Fase Groove Piano/` | Il trascinamento verso la DAW ha bisogno di un file reale. Puoi cancellarli quando vuoi. |
 | File `.mid` salvati con *Save .mid…* | Dove scegli tu | Su tua richiesta. |
 | I tuoi preset (`.fgp`) | `Fase Groove Piano/Presets` nella cartella dati applicazioni dell'utente | Solo quando ne salvi uno, per caricarlo in altri progetti. |
+| Aggiornamenti scaricati | `Download/Fase Groove Piano updates/` (o `Documenti/` se non c'è la cartella Download) | Solo quando trova una versione più nuova. Puoi cancellarli quando vuoi. |
 | Lingua dell'interfaccia | `Fase Groove Piano.settings` nella cartella impostazioni utente del sistema | Per avere la tua lingua in tutti i progetti. |
 | Impostazioni audio/MIDI della versione Standalone | Cartella impostazioni utente del sistema | Le gestisce il framework JUCE per ricordare la scheda audio scelta. |
 

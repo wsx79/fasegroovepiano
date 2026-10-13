@@ -117,8 +117,8 @@ The **SPOTIFY** button there takes you to my artist page.
 
 ## Privacy
 
-The plug-in **collects no data and never connects to the internet**. Everything stays on your
-computer. See the [privacy policy](PRIVACY.md).
+The plug-in **collects no data**. Its only internet connection is the optional update check on
+GitHub (switch it off in OPTIONS → SETTINGS). Everything else stays on your computer. See the [privacy policy](PRIVACY.md).
 
 ## License
 

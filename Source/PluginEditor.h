@@ -7,6 +7,7 @@
 #include "Localisation.h"
 #include "CircleOfFifths.h"
 #include "PluginProcessor.h"
+#include "Updater.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -171,6 +172,9 @@ public:
     std::function<void (float)> onScaleChosen;
     std::function<void (bool)> onShrinkChanged;
     std::function<void (bool)> onTipsChanged;
+    std::function<void()> onCheckUpdates;
+
+    juce::TextButton checkUpdatesButton;
 
     void show (bool aboutTab, float currentScale, bool shrinkWhileDragging);
     void refreshText();
@@ -189,7 +193,27 @@ private:
     juce::TextButton sourceButton, kofiButton, paypalButton, spotifyButton;
     juce::Label languageLabel, sizeLabel;
     juce::ComboBox languageBox, sizeBox;
-    juce::ToggleButton shrinkToggle, tipsToggle;
+    juce::ToggleButton shrinkToggle, tipsToggle, updatesToggle;
+};
+
+/** "A new version is ready": what's new (the changelog) and the user confirms the install. */
+class UpdateOverlay : public juce::Component
+{
+public:
+    UpdateOverlay();
+
+    void show (const Updater::Result&);
+    void refreshText();
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+
+private:
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (640.0f, 560.0f); }
+
+    Updater::Result result;
+    juce::TextEditor notes;
+    juce::TextButton installButton, laterButton, skipButton;
 };
 
 //==============================================================================
@@ -240,6 +264,8 @@ private:
     void confirmReset();
     void afterReset();
     OptionsOverlay options;
+    UpdateOverlay updateOverlay;
+    Updater::Checker updateChecker;
 
     void applyLanguage();
     void buildPresetMenu();

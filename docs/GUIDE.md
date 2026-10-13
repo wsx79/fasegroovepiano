@@ -292,6 +292,14 @@ to go back):
   - **Show tips when the mouse rests on a control:** on by default. Rest the mouse on any knob,
     menu or button for a moment and a tip explains what it does. Switch it off once you know
     the plug-in.
+  - **Check for updates automatically (GitHub):** on by default. When you open the plug-in it
+    asks GitHub, once per session, whether there is a newer version. If there is, it downloads it
+    into *Downloads/Fase Groove Piano updates* and shows you **what's new** (the changelog, in
+    Italian when the plug-in speaks Italian). Nothing is installed until you confirm:
+    **INSTALL NOW** starts the installer on Windows (close your DAW when it asks), opens the zip
+    on macOS and shows it on Linux (copy the plug-ins as the first time); **LATER** asks again
+    next time; **SKIP THIS VERSION** stops asking for that version. **CHECK NOW** checks
+    straight away. Switch it off and the plug-in never connects to the internet.
   - In the **Standalone** app, the window's *Options* menu (Audio/MIDI settings, save/load
     state, reset) and the audio settings also follow the chosen language.
 - **ABOUT** (also opens when you click the logo): version, credits, license, source code, the

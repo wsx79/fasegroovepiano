@@ -117,7 +117,8 @@ Il pulsante **SPOTIFY** porta alla mia pagina artista.
 
 ## Privacy
 
-Il plugin **non raccoglie dati e non si collega a internet**. Tutto resta sul tuo computer.
+Il plugin **non raccoglie dati**. L'unica connessione a internet è il controllo aggiornamenti su
+GitHub, che puoi spegnere in OPZIONI → IMPOSTAZIONI. Tutto il resto resta sul tuo computer.
 Vedi la [privacy policy](PRIVACY.it.md).
 
 ## Licenza

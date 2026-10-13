@@ -6,6 +6,20 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.15.0] - 2026-10-13
+
+### Added
+- **Automatic updates from GitHub:** when you open the plug-in it checks (once per session)
+  whether a newer version exists. If so, it downloads it and shows you what's new (the changelog,
+  in Italian when the plug-in speaks Italian); nothing is installed until you confirm with
+  **INSTALL NOW**. Also **LATER** and **SKIP THIS VERSION**.
+- **OPTIONS → SETTINGS:** *Check for updates automatically (GitHub)* switch (on by default) and a
+  **CHECK NOW** button.
+
+### Changed
+- Privacy policy updated: the update check is the only internet connection, and it can be
+  switched off.
+
 ## [1.14.0] - 2026-10-13
 
 ### Added

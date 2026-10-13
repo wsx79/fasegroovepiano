@@ -33,6 +33,10 @@ namespace Localisation
     bool tipsEnabled();
     void setTipsEnabled (bool);
 
+    /** Other user preferences shared by every project (same settings file as the language). */
+    juce::String setting (const char* key, const juce::String& fallback = {});
+    void setSetting (const char* key, const juce::var& value);
+
     /** Translates an English UI text into the current language. */
     juce::String tr (const juce::String& english);
 }

@@ -6,6 +6,20 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.15.0] - 2026-10-13
+
+### Aggiunto
+- **Aggiornamenti automatici da GitHub:** quando apri il plugin controlla (una volta per
+  sessione) se esiste una versione più nuova. Se c'è la scarica e ti mostra cosa c'è di nuovo (il
+  changelog, in italiano se il plugin è in italiano); non installa niente finché non confermi con
+  **INSTALLA ORA**. Ci sono anche **PIÙ TARDI** e **SALTA QUESTA VERSIONE**.
+- **OPZIONI → IMPOSTAZIONI:** interruttore *Controlla gli aggiornamenti in automatico (GitHub)*
+  (attivo di default) e pulsante **CONTROLLA ORA**.
+
+### Modificato
+- Informativa privacy aggiornata: il controllo aggiornamenti è l'unica connessione a internet e
+  si può spegnere.
+
 ## [1.14.0] - 2026-10-13
 
 ### Aggiunto
