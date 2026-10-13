@@ -1059,6 +1059,16 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         }
     };
     presetsButton.onClick = [this] { showPresetMenu(); };
+
+    // Strum direction: click to cycle Up / Down / Alternate.
+    strumDirButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    strumDirButton.setColour (juce::TextButton::textColourOffId, Palette::accent);
+    strumDirButton.onClick = [this]
+    {
+        const int now = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::strumDir)->load());
+        processor.setParameterFromUI (ParamIDs::strumDir, (float) ((now + 1) % 3));
+    };
+    addAndMakeVisible (strumDirButton);
     addAndMakeVisible (undoButton);
     addAndMakeVisible (redoButton);
     undoButton.onClick = [this] { undo(); };
@@ -1471,6 +1481,7 @@ void FaseGroovePianoEditor::applyLanguage()
     bass.box.setTooltip (tr ("What the left hand plays"));
     registerKnob.setTip (tr ("Moves the right hand up or down the keyboard"));
     strumKnob.setTip (tr ("Rolls the chord notes like a pianist instead of hitting them all together"));
+    strumDirButton.setTooltip (tr ("Direction of the roll: up, down, or alternating (up on the beat, down off it). Click to change"));
     pattern.box.setTooltip (tr ("The rhythm of both hands, grouped by genre"));
     section.box.setTooltip (tr ("Reshapes the groove for intro, main, break, build-up, drop and outro"));
     fills.box.setTooltip (tr ("How often a fill leads into the next chord"));
@@ -1696,6 +1707,13 @@ void FaseGroovePianoEditor::timerCallback()
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         slots[i]->setInversion (s.inversions[(size_t) i]);
+
+    {
+        static const char* const directions[] { "Up", "Down", "Alternate" };
+        const auto text = Localisation::upper (tr (directions[juce::jlimit (0, 2, s.strumDirection)]));
+        if (strumDirButton.getButtonText() != text)
+            strumDirButton.setButtonText (text);
+    }
 
     const int playingSlot = processor.uiSlot.load();
     const auto harmony = sgk::GrooveEngine::harmonyScores (s, chords, voiced);
@@ -1940,6 +1958,7 @@ void FaseGroovePianoEditor::layoutFull()
         const int kh = juce::jmin (kw + 34, last.getHeight());
         registerKnob.setBounds (last.removeFromLeft (kw).withSizeKeepingCentre (kw, kh));
         strumKnob.setBounds (last.withSizeKeepingCentre (kw, kh));
+        strumDirButton.setBounds (strumKnob.getBounds().getCentreX() - 34, strumKnob.getBottom() + 2, 68, 18);
     }
 
     {

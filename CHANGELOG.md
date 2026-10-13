@@ -6,6 +6,17 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.12.0] - 2026-10-13
+
+### Changed
+- **Strum rewritten:** the roll is now a real time (up to ~90 ms at 100%) instead of a note
+  value, so it sounds the same at any tempo; it accelerates slightly like a pianist's hand, never
+  takes more than half the note (short stabs stay tight) and never rolls ghost notes.
+- **Strum direction:** Up, Down or Alternate (up on the beat, down off it), with the button under
+  the Strum knob.
+- **Chord roll fill:** a flowing arpeggio of eight 32nd notes sweeping up the next chord from an
+  octave below, instead of four stiff 16ths.
+
 ## [1.11.0] - 2026-10-13
 
 ### Added

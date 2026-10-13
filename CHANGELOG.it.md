@@ -6,6 +6,18 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.12.0] - 2026-10-13
+
+### Modificato
+- **Arpeggiato riscritto:** l'arpeggio ora dura un tempo reale (fino a ~90 ms al 100%) invece
+  di un valore di nota, quindi suona uguale a qualsiasi BPM; accelera leggermente come la mano di
+  un pianista, non supera mai metà della nota (gli stab corti restano stretti) e non tocca mai le
+  ghost note.
+- **Direzione dell'arpeggiato:** Su, Giù o Alternato (su sui tempi, giù sui controtempi), col
+  pulsante sotto la manopola Arpeggiato.
+- **Fill Chord roll:** un arpeggio fluido di otto trentaduesimi che sale sull'accordo successivo
+  partendo un'ottava sotto, invece di quattro sedicesimi rigidi.
+
 ## [1.11.0] - 2026-10-13
 
 ### Aggiunto

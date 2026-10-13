@@ -125,6 +125,8 @@ struct GrooveSettings
     int variationEvery = 0;                // 0 = off, else every 4 or 8 bars the last bar varies
     int grooveBars = 2;                    // 1, 2 or 4 bars
     int movement = 1;                      // voicing movement: 0 off, 1 subtle, 2 lively
+    int strumDirection = 0;                // 0 up, 1 down, 2 alternate (up on the beat, down off it)
+    double bpm = 120.0;                    // used to make the strum a real time (ms), not a note value
 
     Section section = Section::main;
     std::uint32_t riffSeed = 1;            // used when pattern == randomPatternIndex()

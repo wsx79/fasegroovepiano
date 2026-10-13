@@ -977,15 +977,23 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         }
         else if (fillStyle == FillStyle::chordRoll)
         {
-            // Arpeggiate the NEXT chord upwards, landing on its top note.
-            const long long nextBar = (floorDiv (step, 16) + 1) * 16;
-            const auto& next = voiced[(size_t) slotForStep (nextBar, s)].rightHand;
-            if (next.size > 0)
+            // A flowing arpeggio of the NEXT chord: eight 32nd notes sweeping up from an
+            // octave below, the last one just before the chord lands on the downbeat.
+            if (nextChord.size > 0)
             {
-                const int idx = next.size - 4 + k;   // last four notes of the (wrapped) chord
-                const int octaveShift = idx < 0 ? -12 * ((-idx + next.size - 1) / next.size) : 0;
-                const int note = next[(idx % next.size + next.size) % next.size] + octaveShift;
-                pending.push_back ({ hitTime (31), note, vel, len });
+                NoteSet sweep;
+                for (int i = 0; i < nextChord.size; ++i) sweep.add (nextChord[i] - 12);
+                for (int i = 0; i < nextChord.size; ++i) sweep.add (nextChord[i]);
+                sweep.sort();
+
+                for (int half = 0; half < 2; ++half)
+                {
+                    const int idx = std::clamp (sweep.size - 8 + 2 * k + half, 0, sweep.size - 1);
+                    const bool lastNote = k == lastK && half == 1;
+                    pending.push_back ({ t + half * stepLength * 0.5, sweep[idx],
+                                         hitVelocity ('x', 0.62 + 0.05 * (2 * k + half), 31 + half),
+                                         (lastNote ? 1.2 : 0.55) * stepLength });
+                }
             }
         }
         else
@@ -1010,7 +1018,8 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     {
         const auto& next = voiced[(size_t) slotNext];
         const double t = hitTime (1);
-        const double roll = std::clamp (s.strum, 0.0f, 1.0f) * 0.03;
+        const double roll = std::min (std::clamp (s.strum, 0.0f, 1.0f) * 0.05 * std::max (30.0, s.bpm) / 60.0, approachLength * 0.4)
+                          / std::max (1, next.rightHand.size - 1);
         for (int i = 0; i < next.rightHand.size; ++i)
             pending.push_back ({ t + i * roll, next.rightHand[i] + approachShift, hitVelocity ('x', 0.8, 60 + i), approachLength });
     }
@@ -1039,20 +1048,32 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             const bool tie = isTiedFromPush (pattern.rightHand, pos);
 
             // Strum: roll the chord upwards, up to ~1/32 note between the notes.
-            const double roll = std::clamp (s.strum, 0.0f, 1.0f) * 0.06;
-
             // A pianist's touch: ghost notes are just the top two notes, and a hit right after
             // another one (fast 16th chops) uses the top three, so busy riffs stay light.
             const bool fastRepeat = isHit (pattern.rightHand[(size_t) mod (pos - 1, pattern.length())]);
             const int firstNote = symbol == 'g' ? std::max (0, v.rightHand.size - 2)
                                 : fastRepeat    ? std::max (0, v.rightHand.size - 3) : 0;
 
+            // Strum ("Arpeggiato"): a real-time roll (up to ~90 ms at 100%, whatever the tempo),
+            // slightly accelerating like a pianist's hand, never longer than half the note, and
+            // never on ghost notes. Up, down, or alternating (up on the beat, down off it).
+            const int count = v.rightHand.size - firstNote;
+            const double rollBeats = symbol == 'g' ? 0.0
+                                   : std::min (std::clamp (s.strum, 0.0f, 1.0f) * 0.09 * std::max (30.0, s.bpm) / 60.0, len * 0.45);
+            const bool rollDown = s.strumDirection == 1 || (s.strumDirection == 2 && mod (pos, 4) != 0);
+            auto rollOffset = [&] (int k)
+            {
+                if (count < 2) return 0.0;
+                const int order = rollDown ? count - 1 - k : k;
+                return rollBeats * std::pow ((double) order / (double) (count - 1), 0.8);
+            };
+
             for (int i = firstNote; i < v.rightHand.size; ++i)
-                pending.push_back ({ t + 0.004 * human * noise (step, 50 + i) + i * roll, v.rightHand[i],
+                pending.push_back ({ t + 0.004 * human * noise (step, 50 + i) + rollOffset (i - firstNote), v.rightHand[i],
                                      hitVelocity (symbol, 1.0 - 0.03 * (v.rightHand.size - 1 - i), 60 + i), len, tie });
 
             if (s.octaveTop && v.rightHand.size > 0 && v.rightHand.highest() + 12 <= 108)
-                pending.push_back ({ t + v.rightHand.size * roll, v.rightHand.highest() + 12,
+                pending.push_back ({ t + (rollDown ? 0.0 : rollBeats), v.rightHand.highest() + 12,
                                      hitVelocity (symbol, 0.8, 70), len, tie });
 
             if (firstNote == 0)

@@ -451,10 +451,10 @@ static void testFillStylesStrumOctave()
             CHECK (n == 0);   // nothing left hanging
 
         const auto st = (FillStyle) style;
-        if (st == FillStyle::pentatonicUp || st == FillStyle::pentatonicDown || st == FillStyle::chordRoll
+        if (st == FillStyle::pentatonicUp || st == FillStyle::pentatonicDown
             || st == FillStyle::chromaticWalk || st == FillStyle::bluesLick)
             CHECK (fill.size() == 4);
-        if (st == FillStyle::gospelRun || st == FillStyle::gospelThirds || st == FillStyle::glissando)
+        if (st == FillStyle::gospelRun || st == FillStyle::gospelThirds || st == FillStyle::glissando || st == FillStyle::chordRoll)
             CHECK (fill.size() == 8);
         if (st == FillStyle::chordChops)
             CHECK (fill.size() == 12);
@@ -748,6 +748,31 @@ static void testAutoMovement()
     CHECK (plain.length() == 32);
 }
 
+static void testStrum()
+{
+    // The roll is a real time: at half the tempo it covers half as many beats.
+    auto spread = [] (double bpm, int direction)
+    {
+        GrooveSettings s;
+        s.humanize = 0.0f; s.swing = 0.0f; s.bass = BassMode::off; s.pattern = 9;   // Long Chords
+        s.strum = 1.0f; s.bpm = bpm; s.strumDirection = direction;
+        std::vector<NoteEvent> first;
+        for (const auto& e : GrooveEngine::renderClip (s, 4.0))
+            if (e.isNoteOn() && e.ppq < 0.5) first.push_back (e);
+        std::sort (first.begin(), first.end(), [] (const NoteEvent& a, const NoteEvent& b) { return a.ppq < b.ppq; });
+        return first;
+    };
+
+    const auto fast = spread (120.0, 0), slow = spread (60.0, 0);
+    const double fastSpan = fast.back().ppq - fast.front().ppq, slowSpan = slow.back().ppq - slow.front().ppq;
+    CHECK (fastSpan > 0.1 && fastSpan < 0.2);            // ~90 ms at 120 BPM = 0.18 beats
+    CHECK (std::abs (slowSpan - fastSpan / 2.0) < 0.01);
+    CHECK (fast.front().note < fast.back().note);         // up: low note first
+
+    const auto down = spread (120.0, 1);
+    CHECK (down.front().note > down.back().note);         // down: top note first
+}
+
 static void testPatternsWellFormed()
 {
     CHECK (groovePatterns().size() == 112);
@@ -791,6 +816,7 @@ int main()
     testV19Features();
     testVoicingMovement();
     testAutoMovement();
+    testStrum();
     testPatternsWellFormed();
 
     if (failures == 0)

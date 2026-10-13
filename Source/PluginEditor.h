@@ -255,6 +255,7 @@ private:
     // Harmony
     Choice key, scale, extension, voicing, bass, approach, topLine, movement;
     Knob registerKnob, strumKnob;
+    juce::TextButton strumDirButton;
     juce::ToggleButton octaveToggle { "Top +8va" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> octaveAttachment;
     CircleOfFifths circle;

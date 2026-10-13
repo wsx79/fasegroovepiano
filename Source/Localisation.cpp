@@ -243,6 +243,12 @@ namespace
         { "Language, interface size, tips and credits", "Lingua, dimensione dell'interfaccia, suggerimenti e crediti", "Idioma, tamaño de la interfaz, consejos y créditos", "Langue, taille de l'interface, astuces et crédits", "Sprache, Fenstergröße, Tipps und Credits", "Idioma, tamanho da interface, dicas e créditos" },
         { "Scale degree of this chord; the small arrows change its inversion", "Grado della scala di questo accordo; le frecce piccole ne cambiano il rivolto", "Grado de la escala de este acorde; las flechas cambian su inversión", "Degré de la gamme de cet accord ; les petites flèches changent son renversement", "Stufe dieses Akkords; die kleinen Pfeile ändern seine Umkehrung", "Grau da escala deste acorde; as setinhas mudam sua inversão" },
 
+        // ---- v1.12: strum ----
+        { "Up", "Su", "Arriba", "Haut", "Hoch", "Cima" },
+        { "Down", "Giù", "Abajo", "Bas", "Runter", "Baixo" },
+        { "Alternate", "Alternato", "Alterno", "Alterné", "Abwechselnd", "Alternado" },
+        { "Direction of the roll: up, down, or alternating (up on the beat, down off it). Click to change", "Direzione dell'arpeggiato: su, giù o alternato (su sui tempi, giù sui controtempi). Clicca per cambiare", "Dirección del arpegiado: arriba, abajo o alterno (arriba en el tiempo, abajo a contratiempo). Haz clic para cambiar", "Sens de l'arpège : haut, bas ou alterné (haut sur le temps, bas à contretemps). Clique pour changer", "Richtung des Anschlags: hoch, runter oder abwechselnd (hoch auf dem Schlag, runter dazwischen). Klicken zum Wechseln", "Direção do dedilhado: cima, baixo ou alternado (cima no tempo, baixo no contratempo). Clique para mudar" },
+
         // ---- v1.10 ----
         { "Jackin' Piano", "Piano jackin'", "Piano jackin'", "Piano jackin'", "Jackin' Piano", "Piano jackin'" },
         { "Hit, voicing up", "Colpo, rivolto su", "Golpe, inversión arriba", "Coup, renversement vers le haut", "Anschlag, Umkehrung hoch", "Toque, inversão acima" },

@@ -94,6 +94,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::variation, "Variation", { "Off", "Every 4 bars", "Every 8 bars" }, 0);
     choice (ParamIDs::grooveBars, "Groove Length", { "2 bars", "1 bar", "4 bars" }, 0);
     choice (ParamIDs::movement, "Voicing Movement", { "Off", "Subtle", "Lively" }, 1);
+    choice (ParamIDs::strumDir, "Strum Direction", { "Up", "Down", "Alternate" }, 0);
     unitFloat (ParamIDs::strum, "Strum", 0.0f, 0.0f);
     layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::octaveTop, 1 }, "Top Note +8va", false));
     choice (ParamIDs::playMode, "Play Mode", { "Host transport", "Hold a key" }, 0);
@@ -465,6 +466,8 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
         s.variationEvery = every[juce::jlimit (0, 2, asInt (ParamIDs::variation))];
         s.grooveBars = bars[juce::jlimit (0, 2, asInt (ParamIDs::grooveBars))];
         s.movement = juce::jlimit (0, 2, asInt (ParamIDs::movement));
+        s.strumDirection = juce::jlimit (0, 2, asInt (ParamIDs::strumDir));
+        s.bpm = lastBpm.load();
     }
     s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
@@ -748,6 +751,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     const double bpm = tempoSynced ? hostBpm.load() : juce::jlimit (20.0, 400.0, (double) raw (ParamIDs::tempo));
     lastBpm = bpm;
     const double samplesPerBeat = sampleRate * 60.0 / bpm;
+    settings.bpm = bpm;
     const double blockBeats = numSamples / samplesPerBeat;
 
     const bool followHost = tempoSynced && hostPlaying && haveHostPpq;

@@ -42,6 +42,7 @@ namespace ParamIDs
     inline constexpr const char* variation   = "variation";
     inline constexpr const char* grooveBars  = "grooveBars";
     inline constexpr const char* movement    = "movement";
+    inline constexpr const char* strumDir    = "strumDir";
     inline constexpr const char* chorus      = "chorus";
     inline constexpr const char* pump        = "pump";
     inline constexpr const char* riffSeed    = "riffSeed";
