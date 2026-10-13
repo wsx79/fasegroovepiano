@@ -251,6 +251,8 @@ private:
     juce::ArrowButton undoButton { "undo", 0.5f, Palette::accent }, redoButton { "redo", 0.0f, Palette::accent };
     void showPresetMenu();
     void savePresetAs();
+    void showGrooveMenu();
+    void saveGrooveAs();
     void showSaveMenu();
     void saveAllParts();
     void undo();
@@ -301,7 +303,7 @@ private:
 
     PatternView patternView;
     juce::TextButton bassButton { "BASS" };
-    juce::TextButton rndPianoButton { "RND PIANO" }, rndBassButton { "RND BASS" };
+    juce::TextButton rndPianoButton { "RND PIANO" }, rndBassButton { "RND BASS" }, myGroovesButton { "MY GROOVES" };
     juce::OwnedArray<juce::ComboBox> segmentBoxes;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ComboBoxAttachment> segmentAttachments;
     juce::OwnedArray<juce::TextButton> segmentDice, segmentLocks;

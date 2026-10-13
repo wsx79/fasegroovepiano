@@ -6,6 +6,20 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.17.0] - 2026-10-13
+
+### Aggiunto
+- **I MIEI GROOVE** sopra la griglia ritmica: salva la griglia (le due mani) come groove tuo e
+  ricaricala su qualsiasi progressione.
+- **Una cartella per i tuoi file:** `Documenti/Fase Groove Piano/` con `Presets/`, `Grooves/` e
+  `MIDI clips/`. I preset salvati con le versioni vecchie vengono copiati lì in automatico.
+
+### Modificato
+- **Automazione nella DAW:** tutti i parametri erano già automatizzabili; ora sono raggruppati
+  (Harmony, Progression, Groove, Tempo & MIDI, Guide sound) così la lista di automazione della
+  DAW è facile da sfogliare.
+- Le clip trascinate vanno in `MIDI clips/`, che è anche la cartella proposta da *Salva .mid…*.
+
 ## [1.16.0] - 2026-10-13
 
 ### Modificato

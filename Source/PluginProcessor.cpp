@@ -5,6 +5,8 @@
 #include "GuideVoice.h"
 #include "PluginEditor.h"
 
+#include <mutex>
+
 namespace
 {
     juce::StringArray noteNames()
@@ -36,14 +38,27 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     using namespace juce;
     AudioProcessorValueTreeState::ParameterLayout layout;
 
-    auto choice = [&layout] (const String& id, const String& name, const StringArray& items, int def)
+    // Parameters are grouped (Harmony, Progression, Groove, Tempo & MIDI, Sound) so the DAW's
+    // automation list is easy to browse. Groups don't change the parameter IDs.
+    std::vector<std::unique_ptr<RangedAudioParameter>> current;
+    auto add = [&current] (auto param) { current.push_back (std::move (param)); };
+    auto group = [&layout, &current] (const String& id, const String& name)
     {
-        layout.add (std::make_unique<AudioParameterChoice> (ParameterID { id, 1 }, name, items, def));
+        auto g = std::make_unique<AudioProcessorParameterGroup> (id, name, " | ");
+        for (auto& p : current)
+            g->addChild (std::move (p));
+        current.clear();
+        layout.add (std::move (g));
     };
 
-    auto unitFloat = [&layout] (const String& id, const String& name, float lo, float def)
+    auto choice = [&add] (const String& id, const String& name, const StringArray& items, int def)
     {
-        layout.add (std::make_unique<AudioParameterFloat> (ParameterID { id, 1 }, name, NormalisableRange<float> (lo, 1.0f),
+        add (std::make_unique<AudioParameterChoice> (ParameterID { id, 1 }, name, items, def));
+    };
+
+    auto unitFloat = [&add] (const String& id, const String& name, float lo, float def)
+    {
+        add (std::make_unique<AudioParameterFloat> (ParameterID { id, 1 }, name, NormalisableRange<float> (lo, 1.0f),
                                                            def, AudioParameterFloatAttributes().withStringFromValueFunction (percent)));
     };
 
@@ -52,7 +67,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::scale, "Scale", namesFrom (sgk::numScales, sgk::scaleName), 1);
     choice (ParamIDs::extension, "Extensions", namesFrom (sgk::numExtensions, sgk::extensionName), 2);
     choice (ParamIDs::voicing, "Voicing", namesFrom (sgk::numVoicings, sgk::voicingName), 2);   // rootless: the house piano sound
-    layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::registerPos, 1 }, "Register", 48, 76, 61,
+    add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::registerPos, 1 }, "Register", 48, 76, 61,
                     AudioParameterIntAttributes().withStringFromValueFunction ([] (int v, int)
                     {
                         return String (sgk::noteName (v)) + String (v / 12 - 1);
@@ -61,7 +76,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::approach, "Approach Chord", namesFrom (sgk::numApproachStyles, sgk::approachStyleName), 0);
     choice (ParamIDs::topLine, "Top Line", namesFrom (sgk::numTopLines, sgk::topLineName), 0);
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
-        layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::inversion (i), 1 }, "Inversion " + String (i + 1), -3, 3, 0));
+        add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::inversion (i), 1 }, "Inversion " + String (i + 1), -3, 3, 0));
+
+    group ("harmony", "Harmony");
 
     // Progression
     const StringArray degrees { "I", "II", "III", "IV", "V", "VI", "VII" };
@@ -69,9 +86,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         choice (ParamIDs::slot (i), "Chord " + String (i + 1), degrees, defaults[i]);
 
-    layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::progLength, 1 }, "Progression Length", 1,
+    add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::progLength, 1 }, "Progression Length", 1,
                                                      sgk::maxProgressionLength, 2));
     choice (ParamIDs::chordLength, "Chord Length", { "1/2 bar", "1 bar", "2 bars", "4 bars" }, 1);
+
+    group ("progression", "Progression");
 
     // Groove
     auto grooveNames = namesFrom ((int) sgk::groovePatterns().size(),
@@ -80,14 +99,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     grooveNames.add ("* User pattern *");
     choice (ParamIDs::pattern, "Groove", grooveNames, 1);
     choice (ParamIDs::section, "Section", namesFrom (sgk::numSections, sgk::sectionName), 0);
-    layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::riffSeed, 1 }, "Riff Seed", 1, 99999, 1));
+    add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::riffSeed, 1 }, "Riff Seed", 1, 99999, 1));
     unitFloat (ParamIDs::riffDensity, "Riff Density", 0.0f, 0.5f);
 
     for (int i = 0; i < sgk::numSegments; ++i)
         choice (ParamIDs::segment (i), "Segment " + String (i + 1), { "A", "B", "C", "D" }, i);
     unitFloat (ParamIDs::swing, "Swing", 0.0f, 0.25f);
     unitFloat (ParamIDs::gate, "Gate", 0.1f, 0.65f);
-    layout.add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::velocity, 1 }, "Velocity", 1, 127, 118));
+    add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::velocity, 1 }, "Velocity", 1, 127, 118));
     unitFloat (ParamIDs::humanize, "Humanize", 0.0f, 0.3f);
     choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars", "Every bar" }, 0);
     choice (ParamIDs::fillStyle, "Fill Style", namesFrom (sgk::numFillStyles, sgk::fillStyleName), 0);
@@ -96,12 +115,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::movement, "Voicing Movement", { "Off", "Subtle", "Lively" }, 0);
     choice (ParamIDs::strumDir, "Strum Direction", { "Up", "Down", "Alternate" }, 0);
     unitFloat (ParamIDs::strum, "Strum", 0.0f, 0.0f);
-    layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::octaveTop, 1 }, "Top Note +8va", false));
+    add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::octaveTop, 1 }, "Top Note +8va", false));
     choice (ParamIDs::playMode, "Play Mode", { "Host transport", "Hold a key" }, 0);
 
+    group ("groove", "Groove");
+
     // Tempo: follows the DAW by default, or runs at its own BPM.
-    layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::tempoSync, 1 }, "Sync Tempo to DAW", true));
-    layout.add (std::make_unique<AudioParameterFloat> (ParameterID { ParamIDs::tempo, 1 }, "Tempo",
+    add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::tempoSync, 1 }, "Sync Tempo to DAW", true));
+    add (std::make_unique<AudioParameterFloat> (ParameterID { ParamIDs::tempo, 1 }, "Tempo",
                                                        NormalisableRange<float> (60.0f, 180.0f, 0.1f), 124.0f,
                                                        AudioParameterFloatAttributes().withStringFromValueFunction ([] (float v, int)
                                                        {
@@ -109,19 +130,22 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
                                                        })));
     choice (ParamIDs::bassChannel, "MIDI Out Channels", { "All on channel 1", "Bass on channel 2" }, 0);
 
+    group ("tempo", "Tempo & MIDI");
+
     // Sound
-    layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::sound, 1 }, "Guide Sound", true));
+    add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::sound, 1 }, "Guide Sound", true));
     choice (ParamIDs::soundType, "Guide Sound Type", namesFrom (numGuideSounds, guideSoundName), 0);
     unitFloat (ParamIDs::tone, "Tone", 0.0f, 0.5f);
     unitFloat (ParamIDs::reverb, "Reverb", 0.0f, 0.3f);
     unitFloat (ParamIDs::chorus, "Chorus", 0.0f, 0.0f);
     unitFloat (ParamIDs::pump, "Pump", 0.0f, 0.0f);
-    layout.add (std::make_unique<AudioParameterFloat> (ParameterID { ParamIDs::volume, 1 }, "Volume",
+    add (std::make_unique<AudioParameterFloat> (ParameterID { ParamIDs::volume, 1 }, "Volume",
                                                        NormalisableRange<float> (-30.0f, 6.0f), -6.0f,
                                                        AudioParameterFloatAttributes().withStringFromValueFunction ([] (float v, int)
                                                        {
                                                            return String (v, 1) + " dB";
                                                        })));
+    group ("sound", "Guide sound");
     return layout;
 }
 
@@ -306,10 +330,85 @@ int FaseGroovePianoProcessor::learnChord (int mask, int lowestPc)
 }
 
 //==============================================================================
+juce::File FaseGroovePianoProcessor::userFolder()
+{
+    return juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("Fase Groove Piano");
+}
+
 juce::File FaseGroovePianoProcessor::presetFolder()
 {
-    return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
-               .getChildFile ("Fase Groove Piano").getChildFile ("Presets");
+    const auto folder = userFolder().getChildFile ("Presets");
+
+    // Up to v1.16 presets lived in the hidden application-data folder: bring them over once.
+    static std::once_flag moved;
+    std::call_once (moved, [folder]
+    {
+        const auto old = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+                             .getChildFile ("Fase Groove Piano").getChildFile ("Presets");
+        for (const auto& f : old.findChildFiles (juce::File::findFiles, false, "*.fgp"))
+            if (folder.createDirectory() && ! folder.getChildFile (f.getFileName()).exists())
+                f.copyFileTo (folder.getChildFile (f.getFileName()));
+    });
+    return folder;
+}
+
+juce::File FaseGroovePianoProcessor::grooveFolder()
+{
+    return userFolder().getChildFile ("Grooves");
+}
+
+juce::File FaseGroovePianoProcessor::clipFolder()
+{
+    return userFolder().getChildFile ("MIDI clips");
+}
+
+juce::Array<juce::File> FaseGroovePianoProcessor::grooveFiles()
+{
+    auto files = grooveFolder().findChildFiles (juce::File::findFiles, false, "*.fgg");
+    files.sort();
+    return files;
+}
+
+bool FaseGroovePianoProcessor::saveGroove (const juce::String& name)
+{
+    const auto clean = juce::File::createLegalFileName (name.trim());
+    if (clean.isEmpty() || ! grooveFolder().createDirectory())
+        return false;
+
+    const auto s = currentSettings();
+    const auto p = sgk::applySegmentOrder (sgk::GrooveEngine::basePattern (s), s.segmentOrder);
+
+    juce::XmlElement xml ("FaseGroovePianoGroove");
+    xml.setAttribute ("version", 1);
+    xml.setAttribute ("name", name.trim());
+    xml.setAttribute ("chords", juce::String (p.rightHand));
+    xml.setAttribute ("bass", juce::String (p.leftHand));
+    return xml.writeTo (grooveFolder().getChildFile (clean + ".fgg"));
+}
+
+bool FaseGroovePianoProcessor::loadGroove (const juce::File& file)
+{
+    const auto xml = juce::XmlDocument::parse (file);
+    if (xml == nullptr || ! xml->hasTagName ("FaseGroovePianoGroove"))
+        return false;
+
+    const auto right = xml->getStringAttribute ("chords"), left = xml->getStringAttribute ("bass");
+    auto valid = [] (const juce::String& line)
+    {
+        return line.length() == sgk::userPatternLength && line.containsOnly ("XxgUuDd>=.");
+    };
+    if (! valid (right) || ! valid (left))
+        return false;
+
+    sgk::GroovePattern p;
+    p.rightHand = right.toStdString();
+    p.leftHand = left.toStdString();
+    for (int i = 0; i < sgk::numSegments; ++i)   // saved as heard: play the parts in order
+        setParameterFromUI (ParamIDs::segment (i), (float) i);
+    setUserPattern (p);
+    if (left.containsAnyOf ("XxgUuDd>") && ! isBassOn())
+        toggleBass();
+    return true;
 }
 
 juce::Array<juce::File> FaseGroovePianoProcessor::presetFiles()
@@ -992,7 +1091,7 @@ juce::String FaseGroovePianoProcessor::clipFileName (int bars, ClipPart part) co
 
 juce::File FaseGroovePianoProcessor::writeMidiClip (int bars, ClipPart part) const
 {
-    auto folder = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("Fase Groove Piano");
+    auto folder = clipFolder();
     if (! folder.createDirectory())
         folder = juce::File::getSpecialLocation (juce::File::tempDirectory);
 

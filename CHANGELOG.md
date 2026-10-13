@@ -6,6 +6,19 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.17.0] - 2026-10-13
+
+### Added
+- **MY GROOVES** above the rhythm grid: save the grid (both hands) as your own groove and load
+  it back on any progression.
+- **One folder for your files:** `Documents/Fase Groove Piano/` with `Presets/`, `Grooves/` and
+  `MIDI clips/`. Presets saved with older versions are copied there automatically.
+
+### Changed
+- **DAW automation:** all parameters were already automatable; they are now grouped (Harmony,
+  Progression, Groove, Tempo & MIDI, Guide sound) so the DAW's automation list is easy to browse.
+- Dragged clips go into `MIDI clips/`, which is also where *Save .mid…* starts.
+
 ## [1.16.0] - 2026-10-13
 
 ### Changed

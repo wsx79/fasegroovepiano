@@ -20,9 +20,10 @@ Fase Groove Piano rispetta la tua privacy nel modo più semplice: **non raccogli
 | Cosa | Dove | Perché |
 |---|---|---|
 | Impostazioni del plugin | Dentro il progetto della tua DAW | Per ritrovare le tue impostazioni quando riapri il progetto (le salva la DAW, non il plugin). |
-| Clip MIDI trascinate | `Documenti/Fase Groove Piano/` | Il trascinamento verso la DAW ha bisogno di un file reale. Puoi cancellarli quando vuoi. |
+| Clip MIDI trascinate | `Documenti/Fase Groove Piano/MIDI clips/` | Il trascinamento verso la DAW ha bisogno di un file reale. Puoi cancellarli quando vuoi. |
 | File `.mid` salvati con *Save .mid…* | Dove scegli tu | Su tua richiesta. |
-| I tuoi preset (`.fgp`) | `Fase Groove Piano/Presets` nella cartella dati applicazioni dell'utente | Solo quando ne salvi uno, per caricarlo in altri progetti. |
+| I tuoi preset (`.fgp`) | `Documenti/Fase Groove Piano/Presets/` | Solo quando ne salvi uno, per caricarlo in altri progetti. |
+| I tuoi groove (`.fgg`) | `Documenti/Fase Groove Piano/Grooves/` | Solo quando ne salvi uno con I MIEI GROOVE. |
 | Aggiornamenti scaricati | `Download/Fase Groove Piano updates/` (o `Documenti/` se non c'è la cartella Download) | Solo quando trova una versione più nuova. Puoi cancellarli quando vuoi. |
 | Lingua dell'interfaccia | `Fase Groove Piano.settings` nella cartella impostazioni utente del sistema | Per avere la tua lingua in tutti i progetti. |
 | Impostazioni audio/MIDI della versione Standalone | Cartella impostazioni utente del sistema | Le gestisce il framework JUCE per ricordare la scheda audio scelta. |

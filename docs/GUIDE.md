@@ -266,10 +266,25 @@ remembered with your project.
 
 - **PRESETS** (top of the window): *Save current settings as…* stores everything (progression,
   free chords, groove, your grid, sound…) under a name; the list below loads it in any project.
-  *Delete* removes one, *Open the presets folder* shows the files (`.fgp`) so you can back them up
-  or share them.
+  *Delete* removes one, *Open the presets folder* shows the files (`.fgp`, in
+  `Documents/Fase Groove Piano/Presets`) so you can back them up or share them.
 - **◀ ▶** next to it (or **Ctrl+Z / Ctrl+Shift+Z**, **Cmd** on Mac): **undo and redo** your last
   changes: chords, grid edits, styles, presets, everything except the window size.
+
+### Your Fase Groove Piano folder
+
+Everything you save goes into **`Documents/Fase Groove Piano/`**, easy to find and back up:
+
+| Folder | What |
+|---|---|
+| `Presets/` | Your presets (`.fgp`): the whole setup. Presets saved with older versions are copied here automatically. |
+| `Grooves/` | Your grooves (`.fgg`): the rhythm grid only, see **MY GROOVES**. |
+| `MIDI clips/` | Every clip you drag into the DAW, and the default place for *Save .mid…*. |
+
+**MY GROOVES** (above the rhythm grid): *Save this groove as…* stores the grid as you hear it
+(both hands, parts in the A B C D order you chose) under a name. The list loads it back as
+the *User pattern*, keeping the chords and everything else. Use it to build your own library of
+grooves and try them on any progression.
 
 ### STYLE and RESET
 
@@ -336,7 +351,7 @@ With **Mini window while dragging** on, the plug-in window shrinks to a small ti
 so you can see the DAW and drop the clip where you want. It comes back when you release. If your
 DAW doesn't handle plug-in resizing well, turn this option off.
 
-Every dragged clip is also saved in `Documents/Fase Groove Piano/` with a name describing
+Every dragged clip is also saved in `Documents/Fase Groove Piano/MIDI clips/` with a name describing
 chords, groove, length and BPM, for example `Am9-D9 Soulful Push 4bars 124bpm.mid`.
 
 **Tip:** export *Chords only* and *Bass only* to two different tracks (e.g. a Rhodes and a synth bass).
@@ -378,8 +393,12 @@ Two ways to use it:
 - **Automatic export:** *Clip length → Song: intro > drop > outro* creates a 60-bar clip
   (Intro 8 · Main 16 · Break 8 · Build-up 4 · Drop 16 · Outro 8) with section **markers**,
   visible in the timeline of most DAWs.
-- **Automation:** *Song section* is an automatable parameter. Draw automation in your DAW to
-  switch sections wherever you want, in real time.
+- **Automation:** every knob, menu and switch is a DAW parameter, so you can automate anything:
+  song section, groove, fills, gate, swing, chords of the progression, sound… In the DAW's
+  automation list the parameters are grouped (*Harmony*, *Progression*, *Groove*, *Tempo & MIDI*,
+  *Guide sound*). For example, draw *Song section* to switch sections wherever you want, in real
+  time. (Free chords, LEARN and your edited grid are saved with the project but are not
+  automatable.)
 
 ---
 
@@ -423,7 +442,7 @@ turn off *SYNC DAW* and set the BPM.
 Turn on *SYNC DAW*.
 
 **Drag & drop doesn't work in my DAW.**
-Use *Save .mid…* and import the file, or grab it from `Documents/Fase Groove Piano/`.
+Use *Save .mid…* and import the file, or grab it from `Documents/Fase Groove Piano/MIDI clips/`.
 
 **My DAW can't find the plug-in.**
 Check the install folder (chapter 1) and rescan plug-ins. On macOS also run the `xattr` command

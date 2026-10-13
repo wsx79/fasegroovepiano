@@ -158,7 +158,15 @@ public:
 
     //==============================================================================
     // User presets: files in the user's application data folder.
+    /** Documents/Fase Groove Piano: presets, saved grooves and MIDI clips, easy to find and back up. */
+    static juce::File userFolder();
     static juce::File presetFolder();
+    static juce::File grooveFolder();
+    static juce::File clipFolder();
+    static juce::Array<juce::File> grooveFiles();
+    /** Saves the rhythm grid (both hands, in the A B C D order you hear) as a .fgg file. */
+    bool saveGroove (const juce::String& name);
+    bool loadGroove (const juce::File&);
     static juce::Array<juce::File> presetFiles();
     bool savePreset (const juce::String& name);
     bool loadPreset (const juce::File&);

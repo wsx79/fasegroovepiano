@@ -272,9 +272,24 @@ Trascina l'angolo in basso a destra per **ingrandire o rimpicciolire** l'interfa
 - **PRESET** (in alto nella finestra): *Salva le impostazioni attuali come…* memorizza tutto
   (progressione, accordi liberi, groove, la tua griglia, suono…) con un nome; l'elenco sotto lo
   carica in qualsiasi progetto. *Elimina* ne cancella uno, *Apri la cartella dei preset* mostra i
-  file (`.fgp`) per farne una copia o condividerli.
+  file (`.fgp`, in `Documenti/Fase Groove Piano/Presets`) per farne una copia o condividerli.
 - **◀ ▶** accanto (o **Ctrl+Z / Ctrl+Maiusc+Z**, **Cmd** su Mac): **annulla e ripeti** le ultime
   modifiche: accordi, griglia, stili, preset, tutto tranne la dimensione della finestra.
+
+### La tua cartella Fase Groove Piano
+
+Tutto quello che salvi va in **`Documenti/Fase Groove Piano/`**, facile da trovare e da copiare:
+
+| Cartella | Cosa |
+|---|---|
+| `Presets/` | I tuoi preset (`.fgp`): tutte le impostazioni. I preset salvati con le versioni vecchie vengono copiati qui in automatico. |
+| `Grooves/` | I tuoi groove (`.fgg`): solo la griglia ritmica, vedi **I MIEI GROOVE**. |
+| `MIDI clips/` | Ogni clip che trascini nella DAW, e la cartella proposta da *Salva .mid…*. |
+
+**I MIEI GROOVE** (sopra la griglia ritmica): *Salva questo groove come…* memorizza la griglia
+come la senti (le due mani, con le parti nell'ordine A B C D che hai scelto) con un nome.
+L'elenco la ricarica come *User pattern*, lasciando accordi e tutto il resto com'è. Così ti
+costruisci una libreria di groove tuoi da provare su qualsiasi progressione.
 
 ### STILE e RESET
 
@@ -343,7 +358,7 @@ Con **Mini window while dragging** attivo, durante il trascinamento la finestra 
 riduce a un piccolo riquadro, così vedi bene la DAW dove rilasciare la clip. Al rilascio torna
 come prima. Se la tua DAW non gestisce bene il ridimensionamento dei plugin, disattiva l'opzione.
 
-Ogni clip trascinata viene salvata anche in `Documenti/Fase Groove Piano/` con un nome che
+Ogni clip trascinata viene salvata anche in `Documenti/Fase Groove Piano/MIDI clips/` con un nome che
 descrive accordi, groove, lunghezza e BPM, per esempio
 `Am9-D9 Soulful Push 4bars 124bpm.mid`.
 
@@ -386,8 +401,12 @@ Due modi di usarla:
 - **Esportazione automatica:** *Clip length → Song: intro > drop > outro* crea una clip di 60
   battute (Intro 8 · Main 16 · Break 8 · Build-up 4 · Drop 16 · Outro 8) con i **marker** delle
   sezioni, visibili nella timeline della maggior parte delle DAW.
-- **Automazione:** *Song section* è un parametro automatizzabile. Disegna l'automazione nella DAW
-  per cambiare sezione dove vuoi, in tempo reale.
+- **Automazione:** ogni manopola, menu e interruttore è un parametro della DAW, quindi puoi
+  automatizzare tutto: sezione del brano, groove, fill, gate, swing, accordi della progressione,
+  suono… Nella lista di automazione della DAW i parametri sono raggruppati (*Harmony*,
+  *Progression*, *Groove*, *Tempo & MIDI*, *Guide sound*). Per esempio disegna *Song section* per
+  cambiare sezione dove vuoi, in tempo reale. (Accordi liberi, LEARN e la griglia modificata a
+  mano vengono salvati nel progetto ma non sono automatizzabili.)
 
 ---
 
@@ -431,7 +450,7 @@ tempo spegni *SYNC DAW* e imposta i BPM.
 Accendi *SYNC DAW*.
 
 **Il trascinamento non funziona nella mia DAW.**
-Usa *Save .mid…* e importa il file, oppure prendilo da `Documenti/Fase Groove Piano/`.
+Usa *Save .mid…* e importa il file, oppure prendilo da `Documenti/Fase Groove Piano/MIDI clips/`.
 
 **La DAW non trova il plugin.**
 Verifica la cartella di installazione (capitolo 1) e rifai la scansione dei plugin. Su macOS

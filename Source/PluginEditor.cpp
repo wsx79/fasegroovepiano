@@ -1150,6 +1150,10 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         b->setColour (juce::TextButton::textColourOffId, Palette::accent);
         addAndMakeVisible (b);
     }
+    myGroovesButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    myGroovesButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    myGroovesButton.onClick = [this] { showGrooveMenu(); };
+    addAndMakeVisible (myGroovesButton);
     rndPianoButton.onClick = [this] { processor.rerollHand (false); };
     rndBassButton.onClick = [this] { processor.rerollHand (true); };
 
@@ -1444,6 +1448,61 @@ void FaseGroovePianoEditor::showPresetMenu()
     });
 }
 
+void FaseGroovePianoEditor::showGrooveMenu()
+{
+    juce::PopupMenu menu, remove;
+    menu.addItem (1, tr ("Save this groove as..."));
+    menu.addSeparator();
+
+    const auto files = FaseGroovePianoProcessor::grooveFiles();
+    if (files.isEmpty())
+        menu.addItem (-1, tr ("No saved grooves yet"), false);
+    for (int i = 0; i < files.size(); ++i)
+    {
+        menu.addItem (100 + i, files[i].getFileNameWithoutExtension());
+        remove.addItem (1000 + i, files[i].getFileNameWithoutExtension());
+    }
+
+    menu.addSeparator();
+    menu.addSubMenu (tr ("Delete"), remove, ! files.isEmpty());
+    menu.addItem (2, tr ("Open the Fase Groove Piano folder"));
+
+    juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&myGroovesButton), [safe, files] (int result)
+    {
+        if (safe == nullptr || result <= 0)
+            return;
+
+        if (result == 1)
+            safe->saveGrooveAs();
+        else if (result == 2)
+        {
+            FaseGroovePianoProcessor::grooveFolder().createDirectory();
+            FaseGroovePianoProcessor::userFolder().startAsProcess();
+        }
+        else if (result >= 1000 && result - 1000 < files.size())
+            files[result - 1000].deleteFile();
+        else if (result >= 100 && result - 100 < files.size())
+            safe->processor.loadGroove (files[result - 100]);
+    });
+}
+
+void FaseGroovePianoEditor::saveGrooveAs()
+{
+    auto* window = new juce::AlertWindow (tr ("Save groove"), tr ("Name:"), juce::MessageBoxIconType::NoIcon, this);
+    window->addTextEditor ("name", tr ("My groove"));
+    window->addButton (tr ("Save"), 1, juce::KeyPress (juce::KeyPress::returnKey));
+    window->addButton (tr ("Cancel"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
+
+    juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+    juce::Component::SafePointer<juce::AlertWindow> safeWindow (window);
+    window->enterModalState (true, juce::ModalCallbackFunction::create ([safe, safeWindow] (int result)
+    {
+        if (safe != nullptr && safeWindow != nullptr && result == 1)
+            safe->processor.saveGroove (safeWindow->getTextEditorContents ("name"));
+    }), true);
+}
+
 void FaseGroovePianoEditor::savePresetAs()
 {
     auto* window = new juce::AlertWindow (tr ("Save preset"), tr ("Name:"), juce::MessageBoxIconType::NoIcon, this);
@@ -1478,8 +1537,8 @@ void FaseGroovePianoEditor::showSaveMenu()
 
 void FaseGroovePianoEditor::saveAllParts()
 {
-    fileChooser = std::make_unique<juce::FileChooser> (tr ("Choose a folder"),
-                                                       juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
+    FaseGroovePianoProcessor::clipFolder().createDirectory();
+    fileChooser = std::make_unique<juce::FileChooser> (tr ("Choose a folder"), FaseGroovePianoProcessor::clipFolder());
 
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                               [this] (const juce::FileChooser& chooser)
@@ -1610,6 +1669,8 @@ void FaseGroovePianoEditor::applyLanguage()
     patternView.setTooltip (tr ("Click a step: hit > accent > ghost > rest.  Right-click: more options"));
     bassButton.setTooltip (tr ("Left-hand bass on / off"));
     rndPianoButton.setButtonText (tr ("RND PIANO"));
+    myGroovesButton.setButtonText (tr ("MY GROOVES"));
+    myGroovesButton.setTooltip (tr ("Save the rhythm grid as your own groove, or load one you saved (Documents/Fase Groove Piano/Grooves)"));
     rndBassButton.setButtonText (tr ("RND BASS"));
     rndPianoButton.setTooltip (tr ("New random rhythm for the piano (chords) only: the bass stays"));
     rndBassButton.setTooltip (tr ("New random rhythm for the bass only: the piano stays"));
@@ -1693,7 +1754,9 @@ void FaseGroovePianoEditor::saveClip()
 {
     const int bars = selectedClipBars();
     const auto part = selectedClipPart();
-    const auto folder = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory);
+    auto folder = FaseGroovePianoProcessor::clipFolder();
+    if (! folder.createDirectory())
+        folder = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory);
 
     fileChooser = std::make_unique<juce::FileChooser> ("Save MIDI clip",
                                                        folder.getChildFile (processor.clipFileName (bars, part)), "*.mid");
@@ -2158,6 +2221,8 @@ void FaseGroovePianoEditor::layoutFull()
             rndBassButton.setBounds (header.removeFromRight (92));
             header.removeFromRight (6);
             rndPianoButton.setBounds (header.removeFromRight (92));
+            header.removeFromRight (14);
+            myGroovesButton.setBounds (header.removeFromRight (120));
         }
 
         auto strip = inner.removeFromTop (24);

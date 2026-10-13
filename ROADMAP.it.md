@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v1.17.0: I MIEI GROOVE, cartella Documenti/Fase Groove Piano, parametri di automazione raggruppati.
 - v1.16.0: piano più vivo (durate, velocity), basso a stab, RND PIANO / RND BASSO.
 - v1.15.0: aggiornamenti automatici da GitHub (con changelog e conferma, disattivabili).
 - v1.14.0: progressioni cromatiche e con accordi in prestito, voicing a triadi in ottava, groove Stab dance.
