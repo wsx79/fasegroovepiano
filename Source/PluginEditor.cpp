@@ -773,6 +773,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       bass (p.apvts, ParamIDs::bass, "Left-hand bass"),
       approach (p.apvts, ParamIDs::approach, "Approach chord"),
       topLine (p.apvts, ParamIDs::topLine, "Top line"),
+      movement (p.apvts, ParamIDs::movement, "Movement"),
       registerKnob (p.apvts, ParamIDs::registerPos, "Register"),
       strumKnob (p.apvts, ParamIDs::strum, "Strum"),
       pattern (p.apvts, ParamIDs::pattern, "Groove"),
@@ -813,7 +814,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
 
     for (juce::Component* c : std::initializer_list<juce::Component*> {
-             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &variation, &grooveBars, &chorus, &pump, &registerKnob, &strumKnob,
+             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &movement, &variation, &grooveBars, &chorus, &pump, &registerKnob, &strumKnob,
              &octaveToggle, &circle,
              &diceProgression, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
              &swing, &gate, &velocity, &humanize, &riffDensity,
@@ -1315,7 +1316,7 @@ void FaseGroovePianoEditor::applyLanguage()
     for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump })
         k->refreshText();
 
-    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &variation, &grooveBars, &pattern, &section,
+    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &movement, &variation, &grooveBars, &pattern, &section,
                      &fills, &fillStyle, &playMode, &bassChannel, &soundType })
         c->refreshText();
 
@@ -1351,6 +1352,7 @@ void FaseGroovePianoEditor::applyLanguage()
     learnButton.setTooltip (tr ("Learn: play chords on your MIDI keyboard, they fill the progression slot by slot (press again to stop)"));
     undoButton.setTooltip (tr ("Undo (Ctrl+Z)"));
     redoButton.setTooltip (tr ("Redo (Ctrl+Shift+Z)"));
+    movement.box.setTooltip (tr ("Voicing movement: some hits play the chord an inversion up or down so the riff moves instead of repeating the same chord"));
     topLine.box.setTooltip (tr ("The melody the top notes of the chords draw across the progression"));
     variation.box.setTooltip (tr ("Every 4 or 8 bars the last bar plays a variation of the groove, so the loop never feels static"));
     grooveBars.box.setTooltip (tr ("1 bar, 2 bars, or 4 bars (the groove followed by a variation of it)"));
@@ -1821,6 +1823,8 @@ void FaseGroovePianoEditor::layoutFull()
         leftCol.removeFromTop (6);
         topLine.setBounds (leftCol.removeFromTop (44));
         last.removeFromLeft (6);
+        movement.setBounds (last.removeFromBottom (44));
+        last.removeFromBottom (6);
         const int kw = last.getWidth() / 2;
         const int kh = juce::jmin (kw + 34, last.getHeight());
         registerKnob.setBounds (last.removeFromLeft (kw).withSizeKeepingCentre (kw, kh));

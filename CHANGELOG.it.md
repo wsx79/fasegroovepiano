@@ -18,6 +18,9 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
   Piano, Jackin' Gospel Answer, Shuffle Piano Stabs, Disco Jack Piano, Deep Jack Piano, Piano
   Hook, Organ Piano Jack.
 - **STILE → Jackin' Piano:** house piano, stab corti con swing, ottava in alto, fill a stab.
+- **Movimento** (pannello Armonia): movimento dei rivolti per **tutti** i groove: Spento, Leggero
+  (di default) o Vivace. Gli accordi si muovono di rivolto invece di suonare piatti; gli stili
+  jackin', gospel, disco e organo usano Vivace.
 
 ### Modificato
 - Dodici groove esistenti ora si muovono anch'essi di rivolto (Classic Offbeat Stabs, Soulful

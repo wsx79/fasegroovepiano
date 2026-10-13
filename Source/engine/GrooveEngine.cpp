@@ -626,7 +626,8 @@ GroovePattern GrooveEngine::basePattern (const GrooveSettings& s)
 
 GroovePattern GrooveEngine::resolvePattern (const GrooveSettings& s)
 {
-    auto p = applySection (applySegmentOrder (basePattern (s), s.segmentOrder), s.section);
+    auto p = addVoicingMovement (applySection (applySegmentOrder (basePattern (s), s.segmentOrder), s.section),
+                                 s.section == Section::breakdown ? 0 : s.movement);
 
     if (s.grooveBars == 1 && p.length() > 16)
     {
@@ -663,11 +664,12 @@ const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
     if (s.pattern != cachedIndex || s.riffSeed != cachedSeed || s.riffDensity != cachedDensity
         || s.section != cachedSection || s.segmentOrder != cachedOrder
         || s.userRight != cachedUserRight || s.userLeft != cachedUserLeft || s.grooveBars != cachedBars
-        || cachedPattern.rightHand.empty())
+        || s.movement != cachedMovement || cachedPattern.rightHand.empty())
     {
         cachedPattern = resolvePattern (s);
         cachedVariation = makeVariation (cachedPattern, s.riffSeed * 17u + (std::uint32_t) s.pattern);
         cachedBars = s.grooveBars;
+        cachedMovement = s.movement;
         cachedIndex = s.pattern;
         cachedSeed = s.riffSeed;
         cachedDensity = s.riffDensity;

@@ -17,6 +17,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   Stabs, Three Three Two, Late Night Jack Piano, Piano Riff Runner, Warehouse Piano, Jackin'
   Gospel Answer, Shuffle Piano Stabs, Disco Jack Piano, Deep Jack Piano, Piano Hook, Organ Piano Jack.
 - **STYLE → Jackin' Piano:** house piano, short swung stabs, top octave, push-stab fills.
+- **Movement** (Harmony panel): voicing movement for **every** groove: Off, Subtle (default) or
+  Lively. The chords move by inversions instead of sounding flat; the jackin', gospel, disco and
+  organ styles use Lively.
 
 ### Changed
 - Twelve existing grooves now move by inversions too (Classic Offbeat Stabs, Soulful Push,

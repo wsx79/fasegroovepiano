@@ -124,6 +124,7 @@ struct GrooveSettings
     std::array<int, maxProgressionLength> inversions {};   // per slot, -3..3
     int variationEvery = 0;                // 0 = off, else every 4 or 8 bars the last bar varies
     int grooveBars = 2;                    // 1, 2 or 4 bars
+    int movement = 1;                      // voicing movement: 0 off, 1 subtle, 2 lively
 
     Section section = Section::main;
     std::uint32_t riffSeed = 1;            // used when pattern == randomPatternIndex()
@@ -240,7 +241,7 @@ private:
 
     // Cache of the resolved pattern, rebuilt only when its inputs change.
     GroovePattern cachedPattern, cachedVariation;
-    int cachedBars = 2;
+    int cachedBars = 2, cachedMovement = 1;
     int cachedIndex = -1;
     std::uint32_t cachedSeed = 0;
     float cachedDensity = -1.0f;

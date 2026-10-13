@@ -93,6 +93,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::fillStyle, "Fill Style", namesFrom (sgk::numFillStyles, sgk::fillStyleName), 0);
     choice (ParamIDs::variation, "Variation", { "Off", "Every 4 bars", "Every 8 bars" }, 0);
     choice (ParamIDs::grooveBars, "Groove Length", { "2 bars", "1 bar", "4 bars" }, 0);
+    choice (ParamIDs::movement, "Voicing Movement", { "Off", "Subtle", "Lively" }, 1);
     unitFloat (ParamIDs::strum, "Strum", 0.0f, 0.0f);
     layout.add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::octaveTop, 1 }, "Top Note +8va", false));
     choice (ParamIDs::playMode, "Play Mode", { "Host transport", "Hold a key" }, 0);
@@ -411,6 +412,11 @@ void FaseGroovePianoProcessor::applyStyle (int index)
     setParameterFromUI (ParamIDs::strum, st.strum);
     setParameterFromUI (ParamIDs::octaveTop, st.octaveTop ? 1.0f : 0.0f);
     setParameterFromUI (ParamIDs::section, 0.0f);
+    {
+        const juce::String name (st.name);
+        const bool lively = name.contains ("Jackin'") || name.contains ("Gospel") || name.contains ("Disco") || name.contains ("Organ");
+        setParameterFromUI (ParamIDs::movement, lively ? 2.0f : 1.0f);
+    }
     setParameterFromUI (ParamIDs::fills, (float) st.fills);
     setParameterFromUI (ParamIDs::fillStyle, (float) st.fillStyle);
     for (int i = 0; i < sgk::numSegments; ++i)
@@ -458,6 +464,7 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
         constexpr int bars[] { 2, 1, 4 };
         s.variationEvery = every[juce::jlimit (0, 2, asInt (ParamIDs::variation))];
         s.grooveBars = bars[juce::jlimit (0, 2, asInt (ParamIDs::grooveBars))];
+        s.movement = juce::jlimit (0, 2, asInt (ParamIDs::movement));
     }
     s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);

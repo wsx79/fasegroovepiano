@@ -17,6 +17,11 @@ using namespace sgk;
 
 static int failures = 0;
 
+static bool isHitChar (char c)
+{
+    return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D';
+}
+
 #define CHECK(cond) \
     do { if (! (cond)) { std::printf ("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++failures; } } while (0)
 
@@ -416,6 +421,7 @@ static void testSegmentsAndUserPattern()
 
     // Segment order also applies to the user pattern: D C B A moves the hit at 0 to bar 2, beat 3.
     s.segmentOrder = { 3, 2, 1, 0 };
+    s.movement = 0;   // compare the raw rhythm
     CHECK (GrooveEngine::resolvePattern (s).rightHand.substr (24, 8) == "X.....x.");
 }
 
@@ -712,6 +718,32 @@ static void testVoicingMovement()
     CHECK (mean (c) < mean (a));
 }
 
+static void testAutoMovement()
+{
+    // Movement turns some plain hits into inversion moves; off leaves the groove untouched.
+    GrooveSettings s;
+    s.pattern = 9;   // Long Chords
+    s.movement = 0;
+    const auto plain = GrooveEngine::resolvePattern (s);
+    for (int level = 1; level <= 2; ++level)
+    {
+        s.pattern = 2;   // Deep Chords
+        s.movement = 0;
+        const auto off = GrooveEngine::resolvePattern (s).rightHand;
+        s.movement = level;
+        const auto on = GrooveEngine::resolvePattern (s).rightHand;
+        CHECK (off.size() == on.size());
+        int moved = 0;
+        for (size_t i = 0; i < on.size(); ++i)
+        {
+            if (on[i] != off[i]) ++moved;
+            CHECK (isHitChar (on[i]) == isHitChar (off[i]));   // same rhythm
+        }
+        CHECK (moved > 0);
+    }
+    CHECK (plain.length() == 32);
+}
+
 static void testPatternsWellFormed()
 {
     CHECK (groovePatterns().size() == 112);
@@ -754,6 +786,7 @@ int main()
     testHarmonyScores();
     testV19Features();
     testVoicingMovement();
+    testAutoMovement();
     testPatternsWellFormed();
 
     if (failures == 0)

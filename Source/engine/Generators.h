@@ -52,6 +52,11 @@ GroovePattern makeRandomPattern (std::uint32_t seed, float density);
     note there, a push into the next bar, a bass pick-up. Same seed = same variation. */
 GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed);
 
+/** Voicing movement for any groove: some hits play the chord an inversion up or down so
+    the top note moves. level 0 = off, 1 = subtle (the answer half-bars move), 2 = lively
+    (every half-bar moves: base, up, base, down). Hits already marked u/d are kept. */
+GroovePattern addVoicingMovement (const GroovePattern& source, int level);
+
 /** A random but musical progression of scale degrees (0 = I), built from the
     moves soulful house uses most: ii-V, IV-iii-ii, falling fifths... */
 std::vector<int> randomProgression (std::uint32_t seed, int length);

@@ -176,6 +176,16 @@ namespace
         { "Hit, voicing up", "Colpo, rivolto su", "Golpe, inversión arriba", "Coup, renversement vers le haut", "Anschlag, Umkehrung hoch", "Toque, inversão acima" },
         { "Hit, voicing down", "Colpo, rivolto giù", "Golpe, inversión abajo", "Coup, renversement vers le bas", "Anschlag, Umkehrung runter", "Toque, inversão abaixo" },
 
+        { "Movement", "Movimento", "Movimiento", "Mouvement", "Bewegung", "Movimento" },
+        { "Subtle", "Leggero", "Suave", "Léger", "Dezent", "Leve" },
+        { "Lively", "Vivace", "Vivo", "Vif", "Lebhaft", "Vivo" },
+        { "Voicing movement: some hits play the chord an inversion up or down so the riff moves instead of repeating the same chord",
+          "Movimento: alcuni colpi suonano l'accordo rivoltato su o giù, così il riff si muove invece di ripetere lo stesso accordo",
+          "Movimiento: algunos golpes tocan el acorde invertido arriba o abajo, así el riff se mueve en vez de repetir el mismo acorde",
+          "Mouvement : certains coups jouent l'accord renversé vers le haut ou le bas, le riff bouge au lieu de répéter le même accord",
+          "Bewegung: manche Anschläge spielen den Akkord eine Umkehrung höher oder tiefer, so bewegt sich das Riff",
+          "Movimento: alguns toques tocam o acorde invertido acima ou abaixo, assim o riff se move em vez de repetir o mesmo acorde" },
+
         // ---- v1.9 ----
         { "Top line", "Linea in alto", "Línea superior", "Ligne du haut", "Oberstimme", "Linha superior" },
         { "Smooth (auto)", "Morbida (auto)", "Suave (auto)", "Douce (auto)", "Weich (auto)", "Suave (auto)" },

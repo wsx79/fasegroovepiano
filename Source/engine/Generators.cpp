@@ -391,6 +391,54 @@ GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed)
     return p;
 }
 
+GroovePattern addVoicingMovement (const GroovePattern& source, int level)
+{
+    if (level <= 0)
+        return source;
+
+    GroovePattern p = source;
+    auto& r = p.rightHand;
+
+    for (int half = 0; half * 8 < (int) r.size(); ++half)
+    {
+        const bool answer = half % 2 == 1;
+        if (level == 1 && ! answer)
+            continue;
+
+        // Already moving? Leave the phrase as written.
+        bool written = false;
+        for (int k = half * 8; k < half * 8 + 8 && k < (int) r.size(); ++k)
+            written = written || r[(size_t) k] == 'u' || r[(size_t) k] == 'd' || r[(size_t) k] == 'U' || r[(size_t) k] == 'D';
+        if (written)
+            continue;
+
+        int hit = 0;
+        for (int k = half * 8; k < half * 8 + 8 && k < (int) r.size(); ++k)
+        {
+            char& c = r[(size_t) k];
+            if (c != 'x' && c != 'X')
+                continue;
+
+            // Subtle: the 2nd and 4th hits of an answer go up. Lively: base, up, base, down,
+            // mirrored in the answer (down first) for a call-and-response contour.
+            int move = 0;
+            if (level == 1)
+                move = (hit % 2 == 1) ? 1 : 0;
+            else
+            {
+                static constexpr int contour[4] { 0, 1, 0, -1 };
+                move = contour[hit % 4] * (answer ? -1 : 1);
+            }
+
+            if (move > 0) c = (c == 'X') ? 'U' : 'u';
+            if (move < 0) c = (c == 'X') ? 'D' : 'd';
+            ++hit;
+        }
+    }
+
+    return p;
+}
+
 //==============================================================================
 std::vector<int> randomProgression (std::uint32_t seed, int length)
 {
