@@ -395,6 +395,40 @@ namespace
     }
 
     //==============================================================================
+    void testMusicalDna()
+    {
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::pattern, 3.0f);
+        const auto before = p.currentSettings();
+        const auto sourceRight = sgk::GrooveEngine::basePattern (before).rightHand;
+        std::array<int, 4> chordRoots {};
+        for (int i = 0; i < 4; ++i) chordRoots[(size_t) i] = sgk::GrooveEngine::chordForSlot (before, i).rootPc;
+
+        // Funkier, harmony kept: swing +8%, the grid changes (not the locked part), chords and voicing stay.
+        p.setSegmentLocked (0, true);
+        const float swing = value (p, ParamIDs::swing);
+        p.applyIntention ((int) sgk::Intention::funky, false, true);
+        CHECK (std::abs (value (p, ParamIDs::swing) - (swing + 0.08f)) < 0.01f);
+        const auto after = p.currentSettings();
+        const auto right = sgk::GrooveEngine::basePattern (after).rightHand;
+        CHECK (right.substr (0, 8) == sourceRight.substr (0, 8));
+        CHECK (after.voicing == before.voicing && after.extension == before.extension);
+        for (int i = 0; i < 4; ++i)
+            CHECK (sgk::GrooveEngine::chordForSlot (after, i).rootPc == chordRoots[(size_t) i]);
+
+        // More sophisticated, rhythm kept: only extensions / voicing move, the grid stays.
+        const auto grid = sgk::GrooveEngine::basePattern (p.currentSettings()).rightHand;
+        const float swingNow = value (p, ParamIDs::swing);
+        p.applyIntention ((int) sgk::Intention::sophisticated, true, false);
+        const auto smart = p.currentSettings();
+        CHECK (sgk::GrooveEngine::basePattern (smart).rightHand == grid);
+        CHECK (value (p, ParamIDs::swing) == swingNow);
+        CHECK ((int) smart.extension == 3 || (int) smart.extension == 4);
+        for (int i = 0; i < 4; ++i)
+            CHECK (sgk::GrooveEngine::chordForSlot (smart, i).rootPc == chordRoots[(size_t) i]);
+    }
+
+    //==============================================================================
     void testUpdateSwap()
     {
         CHECK (Updater::isNewer ("v1.18.1", "1.18.0"));
@@ -471,6 +505,7 @@ int main()
     testMidiImport();
     testBassLineControls();
     testMorphAndSong();
+    testMusicalDna();
     testUpdateSwap();
 
     if (failures == 0)

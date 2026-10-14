@@ -230,6 +230,16 @@ grid). Above each part you'll find:
 both. SOLO BASS only affects what plays: dragged and saved clips still contain everything (use
 *Notes* in the MIDI clip panel to export one part).
 
+**DNA** (top of the grid) opens **Musical DNA**: five buttons that each take your groove **one
+step** towards an intention: **More soulful** (held chords, a push into the next bar, fewer ghost
+notes, 9ths, rootless voicing, a passing chord), **Funkier** (ghost notes, 16th anticipations,
+short notes, more swing), **More minimal** (fewer notes that ring longer, shell voicing, no fills),
+**More energy** (offbeats filled, accents, pick-ups, octave on top, fills) and **More sophisticated**
+(the chord moves through its inversions, 11ths/13ths or 6/9, drop voicings, a passing chord from
+below). Click again to go further. **Keep the rhythm** changes only extensions and voicing; **Keep
+the harmony** changes only the grid and its feel. The chords of the progression never change and
+**locked** parts stay. Undo with ◀.
+
 **MORPH** (top of the grid) turns your groove into another one **step by step**: choose the
 target groove and move the **Amount** slider; the grid changes as you move it, so you can stop
 anywhere in between (each step switches at its own point, so more amount only adds more of the

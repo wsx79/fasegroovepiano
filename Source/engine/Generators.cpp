@@ -413,6 +413,141 @@ GroovePattern morphPatterns (const GroovePattern& a, const GroovePattern& b, dou
     return out;
 }
 
+const char* intentionName (int i) noexcept
+{
+    static const char* const names[numIntentions] { "More soulful", "Funkier", "More minimal", "More energy", "More sophisticated" };
+    return names[std::clamp (i, 0, numIntentions - 1)];
+}
+
+GroovePattern applyIntention (const GroovePattern& source, Intention intention, std::uint32_t seed)
+{
+    GroovePattern p = source;
+    auto& rh = p.rightHand;
+    auto& lh = p.leftHand;
+    const int len = p.length();
+    if (len == 0)
+        return p;
+
+    auto chance = [seed] (int step, int salt)
+    {
+        auto x = (std::uint64_t) (step + 1) * 0x9E3779B97F4A7C15ULL ^ ((std::uint64_t) (seed * 31u + (std::uint32_t) salt) * 0xBF58476D1CE4E5B9ULL);
+        x ^= x >> 31; x *= 0x94D049BB133111EBULL; x ^= x >> 29;
+        return (double) (x >> 11) * (1.0 / 9007199254740992.0);
+    };
+    auto at = [len] (std::string& line, int i) -> char& { return line[(size_t) (((i % len) + len) % len)]; };
+    auto empty = [] (char c) { return c == '.'; };
+
+    switch (intention)
+    {
+        case Intention::minimal:
+        {
+            // Fewer notes: no ghosts, weak hits go, the strong ones stay and ring longer.
+            for (int i = 0; i < len; ++i)
+            {
+                char& c = rh[(size_t) i];
+                const bool strong = c == 'X' || c == 'U' || c == 'D' || c == '>' || i % 8 == 0;
+                if (c == 'g' || (isHit (c) && ! strong && chance (i, 1) < 0.55))
+                    c = '.';
+            }
+            for (int i = 0; i < len; ++i)
+                if (isHit (rh[(size_t) i]) && i + 1 < len && empty (rh[(size_t) (i + 1)]) && chance (i, 2) < 0.6)
+                    rh[(size_t) (i + 1)] = '=';
+            for (int i = 0; i < len; ++i)
+                if (isHit (lh[(size_t) i]) && i % 8 != 0 && chance (i, 3) < 0.6)
+                    lh[(size_t) i] = '.';
+            break;
+        }
+
+        case Intention::energetic:
+        {
+            // More drive: offbeat 8ths filled in, accents on the beat, a pick-up into each bar.
+            for (int i = 0; i < len; ++i)
+            {
+                char& c = rh[(size_t) i];
+                if (empty (c) && i % 4 == 2 && chance (i, 4) < 0.6) c = 'x';
+                else if (c == 'x' && i % 4 == 0) c = 'X';
+                else if (c == '=' && chance (i, 5) < 0.4) c = '.';
+            }
+            for (int bar = 0; bar < len / 16; ++bar)
+                if (empty (at (rh, bar * 16 + 15)) && chance (bar, 6) < 0.7)
+                    at (rh, bar * 16 + 15) = 'x';
+            for (int i = 0; i < len; ++i)
+            {
+                char& c = lh[(size_t) i];
+                if (empty (c) && i % 4 == 0 && chance (i, 7) < 0.5) c = 'x';
+                else if (empty (c) && i % 4 == 2 && chance (i, 8) < 0.3) c = 'x';
+            }
+            break;
+        }
+
+        case Intention::funky:
+        {
+            // Ghost notes around the hits, some hits anticipated by a 16th, short notes.
+            for (int i = 0; i < len; ++i)
+            {
+                char& c = rh[(size_t) i];
+                if (c == '=') { c = '.'; continue; }
+                if (empty (c) && i % 2 == 1 && (isHit (at (rh, i - 1)) || isHit (at (rh, i + 1))) && chance (i, 9) < 0.5)
+                    c = 'g';
+            }
+            for (int i = 4; i < len; i += 4)
+                if (i % 16 != 0 && (rh[(size_t) i] == 'x') && empty (at (rh, i - 1)) && chance (i, 10) < 0.35)
+                {
+                    at (rh, i - 1) = 'x';
+                    rh[(size_t) i] = '.';
+                }
+            for (int i = 0; i < len; ++i)
+            {
+                char& c = lh[(size_t) i];
+                if (c == '=') c = '.';
+                else if (empty (c) && i % 4 == 3 && chance (i, 11) < 0.3) c = 'x';
+            }
+            break;
+        }
+
+        case Intention::soulful:
+        {
+            // Smoother: fewer ghosts, chords held, a push into the next bar, a calmer bass.
+            for (int i = 0; i < len; ++i)
+                if (rh[(size_t) i] == 'g' && chance (i, 12) < 0.7)
+                    rh[(size_t) i] = '.';
+            for (int i = 0; i < len; ++i)
+                if (isHit (rh[(size_t) i]))
+                    for (int k = 1; k <= 2 && i + k < len && empty (rh[(size_t) (i + k)])
+                                    && (i + k + 1 >= len || ! isHit (rh[(size_t) (i + k + 1)]) || k == 1); ++k)
+                        rh[(size_t) (i + k)] = '=';
+            for (int bar = 0; bar < len / 16; ++bar)
+                if (empty (at (rh, bar * 16 + 14)) && chance (bar, 13) < 0.5)
+                {
+                    at (rh, bar * 16 + 14) = '>';
+                    if (empty (at (rh, bar * 16 + 15))) at (rh, bar * 16 + 15) = '=';
+                }
+            for (int i = 0; i < len; ++i)
+                if (isHit (lh[(size_t) i]) && i % 2 == 1 && chance (i, 14) < 0.6)
+                    lh[(size_t) i] = '.';
+            break;
+        }
+
+        case Intention::sophisticated:
+        {
+            // The same rhythm, with the chord moving through its inversions inside the bar.
+            for (int i = 0; i < len; ++i)
+            {
+                char& c = rh[(size_t) i];
+                if (c == 'x' && i % 16 != 0 && chance (i, 15) < 0.3)
+                    c = chance (i, 16) < 0.5 ? 'u' : 'd';
+            }
+            break;
+        }
+    }
+
+    repairHolds (rh);
+    repairHolds (lh);
+    if (std::none_of (rh.begin(), rh.end(), isHit))
+        rh[0] = 'X';
+    return p;
+}
+
 GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed)
 {
     Random rng (seed ^ 0x5EEDu);

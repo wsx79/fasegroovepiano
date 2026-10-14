@@ -1150,6 +1150,76 @@ int FaseGroovePianoProcessor::saveSongSections (const juce::File& folder, ClipPa
     return written;
 }
 
+void FaseGroovePianoProcessor::applyIntention (int intention, bool keepRhythm, bool keepHarmony)
+{
+    const auto which = (sgk::Intention) juce::jlimit (0, sgk::numIntentions - 1, intention);
+    const auto s = currentSettings();
+    auto nudge = [this] (const char* id, float delta, float lo, float hi)
+    {
+        setParameterFromUI (id, juce::jlimit (lo, hi, raw (id) + delta));
+    };
+
+    if (! keepRhythm)
+    {
+        const auto source = sgk::applySegmentOrder (sgk::GrooveEngine::basePattern (s), s.segmentOrder);
+        if (source.length() == sgk::userPatternLength)
+        {
+            auto result = sgk::applyIntention (source, which, (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 1 << 30 }));
+            for (int seg = 0; seg < sgk::numSegments; ++seg)
+                if (segmentLocked[(size_t) seg])
+                    sgk::copySegment (result, source, seg);   // locked parts stay
+            sgk::repairHolds (result.rightHand);
+            sgk::repairHolds (result.leftHand);
+            for (int i = 0; i < sgk::numSegments; ++i)
+                setParameterFromUI (ParamIDs::segment (i), (float) i);
+            setUserPattern (result);
+        }
+
+        // The feel goes with the rhythm.
+        switch (which)
+        {
+            case sgk::Intention::soulful:   nudge (ParamIDs::swing, 0.05f, 0.0f, 0.5f); nudge (ParamIDs::gate, 0.08f, 0.1f, 1.0f); nudge (ParamIDs::humanize, 0.05f, 0.0f, 0.6f); break;
+            case sgk::Intention::funky:     nudge (ParamIDs::swing, 0.08f, 0.0f, 0.55f); nudge (ParamIDs::gate, -0.12f, 0.2f, 1.0f); nudge (ParamIDs::velocity, 4.0f, 1.0f, 127.0f); break;
+            case sgk::Intention::minimal:   nudge (ParamIDs::gate, 0.08f, 0.1f, 1.0f); setParameterFromUI (ParamIDs::fills, 0.0f); break;
+            case sgk::Intention::energetic: nudge (ParamIDs::velocity, 6.0f, 1.0f, 127.0f); nudge (ParamIDs::gate, -0.05f, 0.2f, 1.0f);
+                                            if (juce::roundToInt (raw (ParamIDs::fills)) == 0) setParameterFromUI (ParamIDs::fills, 2.0f);
+                                            setParameterFromUI (ParamIDs::octaveTop, 1.0f); break;
+            case sgk::Intention::sophisticated: nudge (ParamIDs::strum, 0.08f, 0.0f, 1.0f); break;
+        }
+    }
+
+    if (! keepHarmony)
+    {
+        // Only colours and voicings: the chords of the progression never change.
+        const int ext = juce::roundToInt (raw (ParamIDs::extension));
+        const int voicing = juce::roundToInt (raw (ParamIDs::voicing));
+        switch (which)
+        {
+            case sgk::Intention::soulful:
+                if (ext < 2) setParameterFromUI (ParamIDs::extension, 2.0f);                     // 9ths
+                if (voicing == (int) sgk::Voicing::close) setParameterFromUI (ParamIDs::voicing, (float) sgk::Voicing::rootless);
+                if (juce::roundToInt (raw (ParamIDs::approach)) == 0) setParameterFromUI (ParamIDs::approach, 1.0f);
+                break;
+            case sgk::Intention::funky:
+                if (ext == 0) setParameterFromUI (ParamIDs::extension, 1.0f);                    // 7ths
+                if (voicing == (int) sgk::Voicing::wide) setParameterFromUI (ParamIDs::voicing, (float) sgk::Voicing::close);
+                break;
+            case sgk::Intention::minimal:
+                if (ext > 2) setParameterFromUI (ParamIDs::extension, 1.0f);
+                setParameterFromUI (ParamIDs::voicing, (float) sgk::Voicing::shell);
+                break;
+            case sgk::Intention::energetic:
+                if (voicing == (int) sgk::Voicing::shell) setParameterFromUI (ParamIDs::voicing, (float) sgk::Voicing::close);
+                break;
+            case sgk::Intention::sophisticated:
+                setParameterFromUI (ParamIDs::extension, ext == 3 ? 4.0f : 3.0f);                // 11ths / 13ths, or 6/9
+                setParameterFromUI (ParamIDs::voicing, (float) (voicing == (int) sgk::Voicing::drop2 ? sgk::Voicing::drop24 : sgk::Voicing::drop2));
+                if (juce::roundToInt (raw (ParamIDs::approach)) == 0) setParameterFromUI (ParamIDs::approach, 2.0f);
+                break;
+        }
+    }
+}
+
 void FaseGroovePianoProcessor::beginMorph()
 {
     const auto s = currentSettings();

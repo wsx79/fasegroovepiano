@@ -7,10 +7,11 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Prossima release
 
-- Musical DNA: variazioni guidate da un'intenzione (più soulful, più funky, più minimale, più energico), tenendo quello che blocchi.
+- In attesa dei tuoi test sulle versioni dalla 1.19 alla 1.23.
 
 ## Fatto
 
+- v1.23.0: Musical DNA (variazioni per intenzione).
 - v1.22.0: morphing del groove, arrangiamento con variazioni per sezione e un .mid per sezione.
 - v1.21.0: Voicing Coach (confronto A/B di due voicing).
 - v1.20.0: libreria di linee di basso (disco, funky, house, soulful).

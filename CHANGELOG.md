@@ -6,6 +6,14 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.23.0] - 2026-10-14
+
+### Added
+- **Musical DNA** (**DNA** above the grid): five intentions, *More soulful*, *Funkier*, *More
+  minimal*, *More energy*, *More sophisticated*; each click takes the groove one step further
+  (rhythm, feel, extensions, voicing). *Keep the rhythm* / *Keep the harmony* limit what changes;
+  the chords never change and locked parts stay.
+
 ## [1.22.0] - 2026-10-14
 
 ### Added

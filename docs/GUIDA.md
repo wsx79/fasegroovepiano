@@ -235,6 +235,17 @@ sulla griglia). Sopra ogni parte trovi:
 entrambi. SOLO BASSO cambia solo quello che suona: le clip trascinate e salvate contengono
 sempre tutto (per esportare una parte sola usa *Note* nel pannello MIDI clip).
 
+**DNA** (in alto sulla griglia) apre **Musical DNA**: cinque pulsanti che portano il tuo groove
+**un passo** verso un'intenzione: **Più soulful** (accordi tenuti, un anticipo verso la battuta
+dopo, meno ghost note, none, voicing rootless, accordo di passaggio), **Più funky** (ghost note,
+anticipi di un sedicesimo, note corte, più swing), **Più minimale** (meno note che suonano più a
+lungo, voicing shell, niente fill), **Più energia** (controtempi riempiti, accenti, note di
+raccordo, ottava sopra, fill) e **Più raffinato** (l'accordo si muove tra i suoi rivolti,
+undicesime/tredicesime o 6/9, voicing drop, accordo di passaggio da sotto). Clicca di nuovo per
+andare oltre. **Tieni il ritmo** cambia solo estensioni e voicing; **Tieni l'armonia** cambia solo la
+griglia e il suo feel. Gli accordi della progressione non cambiano mai e le parti **bloccate**
+restano. Annulla con ◀.
+
 **MORPH** (in alto sulla griglia) trasforma il tuo groove in un altro **passo dopo passo**:
 scegli il groove di arrivo e muovi lo slider **Quantità**; la griglia cambia mentre lo muovi, così
 ti puoi fermare a metà strada (ogni passo cambia in un suo punto, quindi aumentando la quantità

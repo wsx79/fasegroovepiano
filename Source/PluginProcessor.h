@@ -210,6 +210,10 @@ public:
     int saveSongSections (const juce::File& folder, ClipPart) const;
 
     // Groove morphing: from the current groove (kept as it is when you start) towards another one.
+    /** Musical DNA: one step towards an intention. The grid (with its feel) and the harmony can each
+        be kept; locked parts always stay. */
+    void applyIntention (int intention, bool keepRhythm, bool keepHarmony);
+
     void beginMorph();
     void setMorph (int targetPattern, float amount);
 

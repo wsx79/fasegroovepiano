@@ -56,6 +56,12 @@ GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed);
     same way (each step switches from a to b at its own point), with the holds repaired. */
 GroovePattern morphPatterns (const GroovePattern& a, const GroovePattern& b, double amount, std::uint32_t seed);
 
+/** Musical DNA: one step of a variation guided by an intention. */
+enum class Intention { soulful = 0, funky, minimal, energetic, sophisticated };
+constexpr int numIntentions = 5;
+const char* intentionName (int) noexcept;
+GroovePattern applyIntention (const GroovePattern&, Intention, std::uint32_t seed);
+
 /** Voicing movement for any groove: some hits play the chord an inversion up or down so
     the top note moves. level 0 = off, 1 = subtle (the answer half-bars move), 2 = lively
     (every half-bar moves: base, up, base, down). Hits already marked u/d are kept. */

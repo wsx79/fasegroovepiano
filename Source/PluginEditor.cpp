@@ -1816,6 +1816,102 @@ void MorphOverlay::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+DnaOverlay::DnaOverlay (FaseGroovePianoProcessor& p) : processor (p)
+{
+    for (int i = 0; i < sgk::numIntentions; ++i)
+    {
+        auto* b = intentions.add (new juce::TextButton());
+        b->setColour (juce::TextButton::buttonColourId, Palette::background);
+        b->setColour (juce::TextButton::textColourOffId, i % 2 == 0 ? Palette::accent : Palette::accent2.brighter (0.3f));
+        b->onClick = [this, i]
+        {
+            processor.applyIntention (i, keepRhythm.getToggleState(), keepHarmony.getToggleState());
+            ++steps;
+            repaint();
+        };
+        addAndMakeVisible (b);
+    }
+    addAndMakeVisible (keepRhythm);
+    addAndMakeVisible (keepHarmony);
+    closeButton.onClick = [this] { setVisible (false); };
+    addAndMakeVisible (closeButton);
+    refreshText();
+}
+
+juce::Rectangle<float> DnaOverlay::card() const
+{
+    return getLocalBounds().toFloat().withSizeKeepingCentre (860.0f, 270.0f).withY (150.0f);
+}
+
+void DnaOverlay::refreshText()
+{
+    for (int i = 0; i < intentions.size(); ++i)
+        intentions[i]->setButtonText (Localisation::upper (tr (sgk::intentionName (i))));
+    keepRhythm.setButtonText (tr ("Keep the rhythm (grid and feel)"));
+    keepHarmony.setButtonText (tr ("Keep the harmony (extensions and voicing)"));
+    closeButton.setButtonText (tr ("CLOSE"));
+    repaint();
+}
+
+void DnaOverlay::show()
+{
+    steps = 0;
+    refreshText();
+    setVisible (true);
+    toFront (true);
+}
+
+void DnaOverlay::mouseUp (const juce::MouseEvent& e)
+{
+    if (! card().contains (e.position))
+        setVisible (false);
+}
+
+void DnaOverlay::resized()
+{
+    auto inner = card().toNearestInt().reduced (24, 18);
+    closeButton.setBounds (inner.removeFromTop (40).removeFromRight (100).withSizeKeepingCentre (100, 30));
+    inner.removeFromTop (30);
+    auto row = inner.removeFromTop (54);
+    const int gap = 10, w = (row.getWidth() - gap * (intentions.size() - 1)) / intentions.size();
+    for (auto* b : intentions)
+    {
+        b->setBounds (row.removeFromLeft (w));
+        row.removeFromLeft (gap);
+    }
+    inner.removeFromTop (14);
+    auto toggles = inner.removeFromTop (26);
+    keepRhythm.setBounds (toggles.removeFromLeft (toggles.getWidth() / 2));
+    keepHarmony.setBounds (toggles);
+}
+
+void DnaOverlay::paint (juce::Graphics& g)
+{
+    g.fillAll (juce::Colours::black.withAlpha (0.35f));   // the grid stays visible
+    auto c = card();
+    g.setColour (Palette::panel);
+    g.fillRoundedRectangle (c, 16.0f);
+    g.setColour (Palette::accent.withAlpha (0.6f));
+    g.drawRoundedRectangle (c, 16.0f, 1.5f);
+
+    auto inner = c.reduced (24.0f, 18.0f);
+    g.setColour (Palette::accent);
+    g.setFont (font (20.0f, true));
+    g.drawText ("MUSICAL DNA", inner.removeFromTop (26.0f), juce::Justification::centredLeft);
+    g.setColour (Palette::dim);
+    g.setFont (font (12.0f));
+    g.drawText (tr ("Each click goes one step further. The chords never change, locked parts stay; undo with the arrow."),
+                inner.removeFromTop (22.0f), juce::Justification::centredLeft);
+
+    if (steps > 0)
+    {
+        g.setColour (Palette::text);
+        g.setFont (font (12.0f));
+        g.drawText (juce::String (steps) + " " + tr ("steps applied"), c.reduced (24.0f, 18.0f).removeFromBottom (22.0f), juce::Justification::centredLeft);
+    }
+}
+
+//==============================================================================
 UpdateOverlay::UpdateOverlay()
 {
     notes.setMultiLine (true, true);
@@ -1979,7 +2075,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     addChildComponent (voicingCoach);
     addChildComponent (songOverlay);
     addChildComponent (morphOverlay);
-    for (auto* b : { &songButton, &morphButton })
+    addChildComponent (dnaOverlay);
+    for (auto* b : { &songButton, &morphButton, &dnaButton })
     {
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
         b->setColour (juce::TextButton::textColourOffId, Palette::accent);
@@ -1987,6 +2084,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     }
     songButton.onClick = [this] { songOverlay.show(); };
     morphButton.onClick = [this] { morphOverlay.show(); };
+    dnaButton.onClick = [this] { dnaOverlay.show(); };
     songOverlay.onSaveSections = [this]
     {
         FaseGroovePianoProcessor::clipFolder().createDirectory();
@@ -2184,6 +2282,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     voicingCoach.refreshText();
     songOverlay.refreshText();
     morphOverlay.refreshText();
+    dnaOverlay.refreshText();
+    dnaButton.setTooltip (tr ("Musical DNA: variations by intention (more soulful, funkier, more minimal, more energy, more sophisticated)"));
     songButton.setButtonText (tr ("SONG"));
     morphButton.setButtonText (tr ("MORPH"));
     songButton.setTooltip (tr ("Song arrangement: bars of each section, a new variation for one section, one .mid per section"));
@@ -3310,6 +3410,7 @@ void FaseGroovePianoEditor::layoutFull()
     voicingCoach.setBounds (0, 0, baseWidth, baseHeight);
     songOverlay.setBounds (0, 0, baseWidth, baseHeight);
     morphOverlay.setBounds (0, 0, baseWidth, baseHeight);
+    dnaOverlay.setBounds (0, 0, baseWidth, baseHeight);
     {
         auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
         auto controls = inner.withSizeKeepingCentre (inner.getWidth(), 32);
@@ -3445,7 +3546,9 @@ void FaseGroovePianoEditor::layoutFull()
             header.removeFromRight (14);
             myGroovesButton.setBounds (header.removeFromRight (120));
             header.removeFromRight (8);
-            morphButton.setBounds (header.removeFromRight (80));
+            morphButton.setBounds (header.removeFromRight (74));
+            header.removeFromRight (6);
+            dnaButton.setBounds (header.removeFromRight (54));
         }
 
         auto strip = inner.removeFromTop (24);

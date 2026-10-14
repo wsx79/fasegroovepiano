@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <set>
 #include <string>
 #include <vector>
@@ -1069,6 +1070,38 @@ static void testMorphAndSections()
     CHECK (last <= 16.0 + 1.0e-9);
 }
 
+static void testMusicalDna()
+{
+    auto hits = [] (const std::string& line, const char* set) { int n = 0; for (char c : line) n += std::strchr (set, c) != nullptr && c != 0 ? 1 : 0; return n; };
+    for (int pattern : { 1, 3, 26, 60, 100 })
+    {
+        const auto& src = groovePatterns()[(size_t) pattern];
+        const auto minimal = applyIntention (src, Intention::minimal, 5);
+        const auto energy = applyIntention (src, Intention::energetic, 5);
+        const auto funky = applyIntention (src, Intention::funky, 5);
+        const auto soulful = applyIntention (src, Intention::soulful, 5);
+        const auto smart = applyIntention (src, Intention::sophisticated, 5);
+
+        CHECK (hits (minimal.rightHand, "XxgUuDd>") <= hits (src.rightHand, "XxgUuDd>"));
+        CHECK (hits (minimal.rightHand, "g") == 0);
+        CHECK (hits (energy.rightHand, "XxgUuDd>") >= hits (src.rightHand, "XxgUuDd>"));
+        CHECK (hits (funky.rightHand, "=") == 0);                                   // short notes
+        CHECK (hits (soulful.rightHand, "=") >= hits (src.rightHand, "="));         // held chords
+        CHECK (hits (smart.rightHand, "XxgUuDd>") == hits (src.rightHand, "XxgUuDd>"));   // same rhythm
+
+        for (const auto* p : { &minimal, &energy, &funky, &soulful, &smart })
+        {
+            CHECK (p->length() == src.length() && p->leftHand.size() == src.leftHand.size());
+            CHECK (hits (p->rightHand, "XxgUuDd>") > 0);
+            for (const auto* line : { &p->rightHand, &p->leftHand })
+                for (size_t i = 1; i < line->size(); ++i)
+                    if ((*line)[i] == '=') CHECK ((*line)[i - 1] != '.');
+        }
+        // The same seed gives the same result.
+        CHECK (applyIntention (src, Intention::funky, 5).rightHand == funky.rightHand);
+    }
+}
+
 int main()
 {
     testChordNames();
@@ -1096,6 +1129,7 @@ int main()
     testBassLines();
     testVoicingCoach();
     testMorphAndSections();
+    testMusicalDna();
 
     if (failures == 0)
         std::printf ("All engine tests passed.\n");

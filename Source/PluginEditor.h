@@ -359,6 +359,29 @@ private:
     juce::String before, fromName;
 };
 
+/** Musical DNA: one click = one step towards an intention (more soulful, funkier...). */
+class DnaOverlay : public juce::Component
+{
+public:
+    explicit DnaOverlay (FaseGroovePianoProcessor&);
+
+    void show();
+    void refreshText();
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
+
+private:
+    juce::Rectangle<float> card() const;
+
+    FaseGroovePianoProcessor& processor;
+    juce::OwnedArray<juce::TextButton> intentions;
+    juce::ToggleButton keepRhythm, keepHarmony;
+    juce::TextButton closeButton;
+    int steps = 0;
+};
+
 /** "A new version is ready": what's new (the changelog) and the user confirms the install. */
 class UpdateOverlay : public juce::Component
 {
@@ -439,7 +462,8 @@ private:
     VoicingCoach voicingCoach { processor };
     SongOverlay songOverlay { processor };
     MorphOverlay morphOverlay { processor };
-    juce::TextButton songButton { "SONG" }, morphButton { "MORPH" };
+    DnaOverlay dnaOverlay { processor };
+    juce::TextButton songButton { "SONG" }, morphButton { "MORPH" }, dnaButton { "DNA" };
     juce::TextButton coachButton { "A/B" };
     juce::ArrowButton groovePrev { "previous groove", 0.5f, Palette::accent }, grooveNext { "next groove", 0.0f, Palette::accent };
     void stepGroove (int direction);
