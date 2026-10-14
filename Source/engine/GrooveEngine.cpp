@@ -695,7 +695,7 @@ const char* approachStyleName (int style) noexcept
 
 const char* topLineName (int line) noexcept
 {
-    static const char* const names[numTopLines] { "Smooth (auto)", "Steady", "Rising", "Falling", "Arch" };
+    static const char* const names[numTopLines] { "Smooth (auto)", "Steady", "Rising", "Falling", "Arch", "House pedal (same top note)" };
     return names[mod (line, numTopLines)];
 }
 
@@ -987,6 +987,48 @@ void GrooveEngine::voiceProgression (const GrooveSettings& s,
     for (int i = 0; i < len; ++i)
         chords[(size_t) i] = chordForSlot (s, i);
 
+    // House pedal: the classic house piano way, one top note that the chords share (usually
+    // their 5th, 7th or 3rd), or the smallest step away from it when a chord doesn't have it.
+    std::array<int, maxProgressionLength> pedal {};
+    if (s.topLine == TopLine::pedal)
+    {
+        auto inChord = [] (const Chord& c, int note)
+        {
+            for (int k = 0; k < c.tones.size; ++k)
+                if (mod (c.rootPc + c.tones[k] - note, 12) == 0)
+                    return true;
+            return false;
+        };
+        auto weight = [] (const Chord& c, int note)
+        {
+            switch (mod (note - c.rootPc, 12))
+            {
+                case 7:            return 3.0;   // the 5th: the classic top note
+                case 10: case 11:  return 2.5;   // the 7th
+                case 3:  case 4:   return 2.5;   // the 3rd
+                case 0:  case 2:   return 2.0;   // root, 9th
+                default:           return 1.0;
+            }
+        };
+
+        int best = s.centre + 5;
+        double bestScore = -1.0e9;
+        for (int note = s.centre; note <= s.centre + 9; ++note)
+        {
+            double score = -0.15 * std::abs (note - (s.centre + 5));
+            for (int i = 0; i < len; ++i)
+                score += inChord (chords[(size_t) i], note) ? weight (chords[(size_t) i], note) : -1.5;
+            if (score > bestScore) { bestScore = score; best = note; }
+        }
+        for (int i = 0; i < len; ++i)
+        {
+            int target = best;
+            for (int d = 1; d <= 3 && ! inChord (chords[(size_t) i], target); ++d)
+                target = inChord (chords[(size_t) i], best - d) ? best - d : inChord (chords[(size_t) i], best + d) ? best + d : best;
+            pedal[(size_t) i] = target;
+        }
+    }
+
     // Top line: the melody note each chord's top voice aims for.
     auto topTarget = [&] (int i) -> int
     {
@@ -997,6 +1039,7 @@ void GrooveEngine::voiceProgression (const GrooveSettings& s,
             case TopLine::rising:  return base - 4 + (len > 1 ? 8 * i / (len - 1) : 0);
             case TopLine::falling: return base + 4 - (len > 1 ? 8 * i / (len - 1) : 0);
             case TopLine::arch:    return base - 3 + 3 * std::min (i, len - 1 - i);
+            case TopLine::pedal:   return pedal[(size_t) i];
             case TopLine::automatic:
             default:               return -1;
         }
@@ -1267,19 +1310,33 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         const char symbol = pattern.rightHand[(size_t) pos];
         if (isHit (symbol))
         {
-            // 'u' / 'd' (and accented 'U' / 'D'): the same chord one inversion up or down,
-            // so the top note moves inside the bar like a real piano riff.
+            // 'u' / 'd' (and accented 'U' / 'D'): the top note steps to a neighbour and back.
+            // With the house pedal top line the top note holds still, as in house piano
+            // loops: only the accented moves (U / D) still step away from it.
             auto v = voiced[(size_t) slotFor (symbol)];
-            const bool moveUp = symbol == 'u' || symbol == 'U', moveDown = symbol == 'd' || symbol == 'D';
-            if (moveUp || moveDown)
+            const bool pedal = s.topLine == TopLine::pedal;
+            const bool moveUp = symbol == 'U' || (symbol == 'u' && ! pedal);
+            const bool moveDown = symbol == 'D' || (symbol == 'd' && ! pedal);
+            if ((moveUp || moveDown) && v.rightHand.size > 0)
             {
-                // Like a pianist's right hand: only the top three notes move, as a clean
-                // close-position inversion (the top note steps to the next chord tone).
-                NoteSet upper;
-                for (int i = std::max (0, v.rightHand.size - 3); i < v.rightHand.size; ++i)
-                    upper.add (v.rightHand[i]);
-                invert (upper, moveUp ? 1 : -1);
-                v.rightHand = upper;
+                // A neighbour note, the house piano way: only the top voice steps to the
+                // next note of the scale (up or down) and comes back; the chord under it stays.
+                const auto& scale = scaleIntervals (s.scale);
+                auto inScale = [&] (int note)
+                {
+                    return std::find (scale.begin(), scale.end(), mod (note - s.keyRoot, 12)) != scale.end();
+                };
+                const int top = v.rightHand.highest();
+                const int dir = moveUp ? 1 : -1;
+                int neighbour = top + dir;
+                while (! inScale (neighbour) && std::abs (neighbour - top) < 3)
+                    neighbour += dir;
+                const int below = v.rightHand.size > 1 ? v.rightHand[v.rightHand.size - 2] : -1;
+                if (neighbour != below && neighbour > below)
+                {
+                    v.rightHand.removeAt (v.rightHand.size - 1);
+                    v.rightHand.add (neighbour);
+                }
                 v.leftHand = {};
             }
             const double len = durationFor (pattern.rightHand);
@@ -1352,24 +1409,34 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     else if (bassMode == BassMode::withChords)
     {
         // House piano stabs: the left hand plays the root with every chord (one big stab, bass
-        // included), plus its own hits in between.
-        const char lhSymbol = pattern.leftHand[(size_t) pos], rhSymbol = pattern.rightHand[(size_t) pos];
-        const bool rhStab = isHit (rhSymbol) && rhSymbol != 'g' && rhSymbol != 'u' && rhSymbol != 'd';
-        if (isHit (lhSymbol) || rhStab)
+        // included), plus its own hits only where they don't crowd a chord (a 16th either side
+        // would sound like a flam, not a groove).
+        auto rhStabAt = [&] (int i)
+        {
+            const auto n = (int) pattern.rightHand.size();
+            const char r = pattern.rightHand[(size_t) ((i % n + n) % n)];
+            return isHit (r) && r != 'g';
+        };
+        auto lhHitAt = [&] (int i)
+        {
+            const char l = pattern.leftHand[(size_t) i];
+            return isHit (l) && ! rhStabAt (i) && ! rhStabAt (i - 1) && ! rhStabAt (i + 1);
+        };
+        if (lhHitAt (pos) || rhStabAt (pos))
         {
             // Both hands' hits on one line, so a note never rings over the next stab.
             auto& line = stabLine;
             line = pattern.leftHand;
-            for (size_t i = 0; i < line.size() && i < pattern.rightHand.size(); ++i)
+            for (int i = 0; i < (int) line.size() && i < (int) pattern.rightHand.size(); ++i)
             {
-                const char r = pattern.rightHand[i];
-                if (! isHit (line[i]) && isHit (r) && r != 'g' && r != 'u' && r != 'd')
-                    line[i] = r == '>' ? 'x' : r;
-                else if (line[i] == '=' && isHit (r))
-                    line[i] = 'x';
+                const char r = pattern.rightHand[(size_t) i];
+                if (rhStabAt (i))
+                    line[(size_t) i] = r == '>' ? 'x' : (r == 'u' || r == 'd') ? 'x' : (r == 'U' || r == 'D') ? 'X' : r;
+                else if (isHit (line[(size_t) i]) && ! lhHitAt (i))
+                    line[(size_t) i] = '.';
             }
-            const char symbol = isHit (lhSymbol) ? lhSymbol : rhSymbol;
-            const int root = 36 + chords[(size_t) slotFor (symbol)].rootPc;
+            const char symbol = line[(size_t) pos];
+            const int root = 36 + chords[(size_t) slotFor (pattern.rightHand[(size_t) pos] == '>' ? '>' : symbol)].rootPc;
             pending.push_back ({ (hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02), root, hitVelocity (symbol, 0.92, 91, human * hv.bassVel), durationFor (line),
                                  isTiedFromPush (line, pos), Part::bass });
         }

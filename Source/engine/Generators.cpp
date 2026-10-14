@@ -201,10 +201,13 @@ namespace
         three 16ths) over an octave bass on the 1 and the "&" of 2, decorated per seed. */
     GroovePattern makeLoopRiff (Random& rng, double density)
     {
+        // One-bar figures: the dotted-8th (3+3+3+3+2+2) family and its relatives, the rhythms
+        // that most piano house loops are built on.
         static const char* const rhBars[] {
-            "..x..x..x..x..x.", "..x....x...x..x.", "x......x..x..x..", "x...x..x..x..x..",
-            "x..x..x...x..x..", ".x..x.x.x..x..x.", "..xx.x..x.x.....", "..x..x....x..x..",
-            "x..x..x..x..x.x.", "..x..x..x...x...",
+            "x..x..x..x..x.x.", "x...x..x..x..x..", "x...x..x..x.x.x.", "..x.x..x..x.x.x.",
+            "x..x..x..x..x...", "x...x.x.x..x..x.", "x...x..x..x...x.", "x...x..x.x..x.x.",
+            "..x..x..x..x..x.", "x.x.x..x..x.x..x", "x...x...x..x..x.", "x..x..x.x..x..x.",
+            "x..x..x...x..x..", "..x..x....x..x..", "x......x..x..x..", "..x....x...x..x.",
         };
         static const char* const lhBars[] {
             "x.....x.........", "x.....x.......x.", "x.....x.....x...", "x.....x.x...x.x.",
@@ -212,15 +215,16 @@ namespace
         constexpr int numRh = (int) (sizeof (rhBars) / sizeof (*rhBars));
         constexpr int numLh = (int) (sizeof (lhBars) / sizeof (*lhBars));
 
+        // House loops repeat their bar; now and then the second bar answers with another figure.
         const int a = rng.below (numRh);
-        const int b = rng.chance (0.45) ? a : rng.below (numRh);
+        const int b = rng.chance (0.7) ? a : rng.below (numRh);
         std::string right = std::string (rhBars[a]) + rhBars[b];
 
         const int la = rng.below (numLh);
         std::string left = std::string (lhBars[la]) + lhBars[rng.chance (0.6) ? la : rng.below (numLh)];
 
-        // Accent the first hit of each bar, sometimes an offbeat; hold some stabs a little
-        // longer in sparse riffs; a ghost before a hit in busy ones.
+        // Steady touch, like the loops: only the first hit of each bar is accented; sparse
+        // riffs hold a stab a little longer now and then.
         for (int bar = 0; bar < 2; ++bar)
         {
             bool first = true;
@@ -229,16 +233,13 @@ namespace
                 char& c = right[(size_t) i];
                 if (c != 'x')
                     continue;
-                if (first || rng.chance (0.2))
+                if (first)
                     c = 'X';
                 first = false;
-                if (i + 1 < 32 && right[(size_t) i + 1] == '.' && rng.chance (0.3 * (1.0 - density)))
+                if (i + 1 < 32 && right[(size_t) i + 1] == '.' && rng.chance (0.25 * (1.0 - density)))
                     right[(size_t) i + 1] = '=';
             }
         }
-        for (int i = 1; i < 31; ++i)
-            if (right[(size_t) i] == '.' && isHit (right[(size_t) i + 1]) && rng.chance (0.12 * density))
-                right[(size_t) i] = 'g';
 
         // Push into the next loop, now and then with the bass.
         if (rng.chance (0.45) && right[30] != '=')
@@ -260,9 +261,10 @@ namespace
 GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
 {
     {
-        // Half of the riffs come from the classic piano house loop figures.
+        // Most riffs come from the classic piano house loop figures; only busy settings
+        // sometimes build one from comping cells instead.
         Random pick (seed ^ 0xC0FFEEu);
-        if (pick.chance (0.5))
+        if (pick.chance (0.95 - 0.35 * std::clamp ((double) densityIn, 0.0, 1.0)))
         {
             auto p = makeLoopRiff (pick, std::clamp ((double) densityIn, 0.0, 1.0));
             p.name = "Random Riff #" + std::to_string (seed % 100000);

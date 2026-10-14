@@ -114,8 +114,8 @@ const std::vector<BassLine>& bassLines();
 std::string bassLineRhythm (int lineIndex, int length);
 
 /** Shape of the top note of the chords across the progression (the melody you hear). */
-enum class TopLine { automatic = 0, steady, rising, falling, arch };
-constexpr int numTopLines = 5;
+enum class TopLine { automatic = 0, steady, rising, falling, arch, pedal };
+constexpr int numTopLines = 6;
 const char* topLineName (int line) noexcept;
 
 /** Gospel "slide": on the last 16th before a chord change, play the next chord

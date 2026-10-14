@@ -72,9 +72,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
                     {
                         return String (sgk::noteName (v)) + String (v / 12 - 1);
                     })));
-    choice (ParamIDs::bass, "Bass", namesFrom (sgk::numBassModes, sgk::bassModeName), 1);
+    choice (ParamIDs::bass, "Bass", namesFrom (sgk::numBassModes, sgk::bassModeName), (int) sgk::BassMode::withChords);   // the piano's left hand: bass in every stab
     choice (ParamIDs::approach, "Approach Chord", namesFrom (sgk::numApproachStyles, sgk::approachStyleName), 0);
-    choice (ParamIDs::topLine, "Top Line", namesFrom (sgk::numTopLines, sgk::topLineName), 0);
+    choice (ParamIDs::topLine, "Top Line", namesFrom (sgk::numTopLines, sgk::topLineName), (int) sgk::TopLine::pedal);
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::inversion (i), 1 }, "Inversion " + String (i + 1), -3, 3, 0));
 
@@ -224,6 +224,7 @@ namespace
         float swing, gate, humanize, strum;
         bool octaveTop;
         int fills = 0, fillStyle = 0;   // fills: 0 off 1 every 2 bars 2 every 4 3 every 8 4 every bar
+        int topLine = (int) sgk::TopLine::pedal;   // house loops hold one top note; 0 = smooth (auto)
     };
 
     // extension: 0 triads 1 7ths 2 9ths 3 11ths 4 6/9 5 add9 6 sus 7 9ths+altered V
@@ -243,9 +244,9 @@ namespace
         { "Funky Disco",          "Funky Dominant  I7 - IV7",          "Funky Clavinet 16ths", 2, 5, 11, 0, 2, 64, 0.20f, 0.30f, 0.20f, 0.00f, false, 2, 9 },
         { "UK Garage",            "Minor Flow  i - VI - III - VII",    "UK Garage 2-Step",     2, 2, 1, 0, 0, 64, 0.50f, 0.45f, 0.25f, 0.10f, false },
         { "Afro House",           "Deep Minor  i - v",                 "Afro House Keys",      2, 4, 1, 0, 0, 62, 0.15f, 0.50f, 0.30f, 0.00f, false },
-        { "Neo Soul",             "Neo Soul  ii - iii - IV - V",       "Neo Soul Ghosts",      3, 6, 1, 2, 0, 62, 0.45f, 0.60f, 0.40f, 0.30f, false, 3, 7 },
-        { "Jackin' Piano",        "Jack Swing  i - v - VII - IV",      "Chicago Piano Bounce", 1, 0, 1, 0, 2, 66, 0.55f, 0.30f, 0.20f, 0.00f, true, 2, 5 },
-        { "Chill Lounge",         "Lydian Float  I - II",              "Lounge Keys",          2, 3, 1, 0, 0, 64, 0.20f, 0.80f, 0.30f, 0.35f, false },
+        { "Neo Soul",             "Neo Soul  ii - iii - IV - V",       "Neo Soul Ghosts",      3, 6, 1, 2, 0, 62, 0.45f, 0.60f, 0.40f, 0.30f, false, 3, 7, 0 },
+        { "Jackin' Piano",        "Jack Swing  i - v - VII - IV",      "Chicago Piano Bounce", 1, 0, 1, 0, 2, 66, 0.55f, 0.30f, 0.20f, 0.00f, true, 2, 5, 0 },
+        { "Chill Lounge",         "Lydian Float  I - II",              "Lounge Keys",          2, 3, 1, 0, 0, 64, 0.20f, 0.80f, 0.30f, 0.35f, false, 0, 0, 0 },
         { "Future House",         "Maj9 Drift  I - bIII - bVI - bVII", "Future Stab 3-3-2",    2, 2, 6, 0, 2, 62, 0.05f, 0.30f, 0.10f, 0.00f, false, 2, 6 },
         { "Disco Piano",          "Minor Glide  i - bVII - bVI - V7",  "Disco Octave Pump",    0, 7, 7, 0, 1, 64, 0.10f, 0.40f, 0.15f, 0.00f, false, 3, 8 },
     };
@@ -583,6 +584,7 @@ void FaseGroovePianoProcessor::applyStyle (int index)
     setParameterFromUI (ParamIDs::voicing, (float) st.voicing);
     setParameterFromUI (ParamIDs::bass, (float) st.bass);
     setParameterFromUI (ParamIDs::approach, (float) st.approach);
+    setParameterFromUI (ParamIDs::topLine, (float) st.topLine);
     setParameterFromUI (ParamIDs::soundType, (float) st.sound);
     setParameterFromUI (ParamIDs::registerPos, (float) st.registerNote);
     setParameterFromUI (ParamIDs::swing, st.swing);

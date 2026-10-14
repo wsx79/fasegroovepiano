@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstring>
 #include <set>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -286,7 +287,8 @@ static void testRandomRiffs()
         CHECK (makeRandomPattern (seed, (seed % 5) / 4.0f).rightHand == p.rightHand);
     }
 
-    CHECK (distinct.size() > 350);
+    std::printf ("  random riffs: %d distinct of 399\n", (int) distinct.size());
+    CHECK (distinct.size() > 250);   // fewer than before on purpose: classic loop figures, mostly repeated bars
 
     // Denser riffs have more hits on average.
     int sparse = 0, busy = 0;
@@ -704,7 +706,7 @@ static void testV19Features()
 
 static void testVoicingMovement()
 {
-    // 'u' plays the same chord one inversion up: same notes, higher on average.
+    // 'u' / 'd' move only the top voice to a neighbouring scale note; the lower voices stay.
     GrooveSettings s;
     s.humanize = 0.0f; s.swing = 0.0f; s.bass = BassMode::off; s.progressionLength = 1;
     s.pattern = userPatternIndex();
@@ -715,14 +717,44 @@ static void testVoicingMovement()
         if (e.isNoteOn())
             (e.ppq < 1.0 ? a : e.ppq < 3.0 ? b : c).push_back (e.note);
 
-    auto mean = [] (const std::vector<int>& v) { double m = 0; for (int n : v) m += n; return v.empty() ? 0.0 : m / (double) v.size(); };
-    // Moved hits are the top three notes, re-voiced: up has a higher top, down a lower one.
-    std::sort (a.begin(), a.end());
-    const std::vector<int> top3 (a.end() - 3, a.end());
-    CHECK (b.size() == 3 && c.size() == 3);
-    CHECK (*std::max_element (b.begin(), b.end()) > top3.back());
-    CHECK (*std::max_element (c.begin(), c.end()) < top3.back());
-    CHECK (mean (b) > mean (top3) && mean (c) < mean (top3));
+    std::sort (a.begin(), a.end()); std::sort (b.begin(), b.end()); std::sort (c.begin(), c.end());
+    CHECK (! b.empty() && ! c.empty());
+    const int top = a.back();
+    CHECK (b.back() > top && b.back() - top <= 3);
+    CHECK (c.back() < top && top - c.back() <= 3);
+    // The voices under the top are the right hand's own, unchanged.
+    CHECK (std::vector<int> (b.begin(), b.end() - 1) == std::vector<int> (c.begin(), c.end() - 1));
+}
+
+static void testHousePedalAndStabBass()
+{
+    // House pedal: one top note through each chord, whatever the moves; piano-stab bass: a root
+    // under every chord hit and never a 16th away from one (no flams).
+    for (int pattern : { 0, 1, 5 })
+    {
+        GrooveSettings s;
+        s.humanize = 0.0f; s.swing = 0.0f; s.movement = 0;
+        s.voicing = Voicing::rootless; s.centre = 61;
+        s.progression = { 0, 3, 0, 4, 5, 3, 1, 4 }; s.progressionLength = 2;
+        s.bass = BassMode::withChords; s.topLine = TopLine::pedal; s.pattern = pattern;
+
+        std::map<long long, std::vector<int>> chordHits, bassHits;
+        for (const auto& e : GrooveEngine::renderClip (s, 16.0))
+            if (e.isNoteOn())
+                (e.part == Part::bass ? bassHits : chordHits)[std::llround (e.ppq * 4.0)].push_back (e.note);
+
+        std::map<long long, std::set<int>> topsPerBar;
+        for (const auto& [step, notes] : chordHits)
+        {
+            topsPerBar[step / 16].insert (*std::max_element (notes.begin(), notes.end()));
+            CHECK (bassHits.count (step) == 1);
+        }
+        for (const auto& [bar, tops] : topsPerBar)
+            CHECK (tops.size() <= 2);   // one top note (a push can bring the next chord's)
+        for (const auto& [step, notes] : bassHits)
+            if (chordHits.count (step) == 0)
+                CHECK (chordHits.count (step - 1) == 0 && chordHits.count (step + 1) == 0);
+    }
 }
 
 static void testAutoMovement()
@@ -1256,6 +1288,7 @@ int main()
     testHarmonyScores();
     testV19Features();
     testVoicingMovement();
+    testHousePedalAndStabBass();
     testAutoMovement();
     testStrum();
     testPatternsWellFormed();
