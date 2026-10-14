@@ -348,6 +348,9 @@ class VoicingCoach : public juce::Component
 public:
     explicit VoicingCoach (FaseGroovePianoProcessor&);
 
+    /** HEAR plays even with the DAW stopped: it starts the preview (stopped again on close). */
+    void visibilityChanged() override;
+    bool startedPreview = false;
     void show();
     void refreshText();
     void update();   // recompute (the progression or the register may have changed)
@@ -397,6 +400,21 @@ private:
     juce::OwnedArray<juce::ComboBox> fillBoxes;
     juce::TextButton saveButton, saveSongButton, closeButton;
     bool mini = false;
+};
+
+/** A tool button with a small drawn icon (pencil, arrow, eraser) and a caption. */
+class ToolButton : public juce::Button
+{
+public:
+    enum class Icon { pencil, arrow, eraser };
+    ToolButton (Icon i) : juce::Button ({}), icon (i) {}
+    void paintButton (juce::Graphics&, bool highlighted, bool down) override;
+    static void drawIcon (juce::Graphics&, Icon, juce::Rectangle<float>, juce::Colour);
+    /** A mouse cursor drawn like the icon. */
+    static juce::MouseCursor cursor (Icon);
+
+private:
+    Icon icon;
 };
 
 /** The big piano roll: every note of the loop, zoomable, to edit one by one. Click an empty
@@ -449,11 +467,22 @@ private:
     std::vector<sgk::LoopNote> notes;
     std::vector<PianoRollView::ChordSpan> chords;
     double length = 8.0, pixelsPerBeat = 100.0, scroll = 0.0, snap = 0.25, playhead = -1.0;
+    bool snapOn = false;   // free movement by default; SNAP sticks to the grid (Alt while dragging: the other way)
+    bool snapping (const juce::MouseEvent&) const;
+    void quantize();
     int lowNote = 36, highNote = 84;
     int selected = -1;
     sgk::Part drawPart = sgk::Part::chords;
 
-    enum class Drag { none, move, resize, velocity };
+    enum class Tool { draw, select, erase };
+    Tool tool = Tool::draw;
+    void setTool (Tool);
+    void updateCursor (const juce::MouseEvent&);
+    bool follow = true;                            // the view follows the playhead
+    int shown = 0;                                 // 0 everything, 1 piano only, 2 bass only
+    bool isShown (const sgk::LoopNote& n) const    { return shown == 0 || (shown == 2) == (n.part == sgk::Part::bass); }
+
+    enum class Drag { none, move, resize, velocity, erase };
     Drag drag = Drag::none;
     double dragStartBeat = 0.0, noteStartBeat = 0.0, noteStartLength = 0.0;
     int dragStartNote = 0, noteStartPitch = 0;
@@ -461,7 +490,10 @@ private:
 
     FaseGroovePianoProcessor::EditedLoop lastLoop;   // to notice an undo / a preset while open
     juce::ScrollBar scrollBar { false };
-    juce::TextButton zoomOut { "-" }, zoomIn { "+" }, fitButton, snapButton, partButton, generatedButton, closeButton;
+    juce::TextButton zoomOut { "-" }, zoomIn { "+" }, fitButton, snapButton, snapToggle, quantizeButton, generatedButton, closeButton;
+    juce::TextButton pianoPartButton, bassPartButton, followButton;
+    juce::TextButton showAllButton, showPianoButton, showBassButton;
+    ToolButton drawTool { ToolButton::Icon::pencil }, selectTool { ToolButton::Icon::arrow }, eraseTool { ToolButton::Icon::eraser };
     juce::String status;
 };
 
@@ -501,6 +533,9 @@ class ChordLab : public juce::Component
 public:
     explicit ChordLab (FaseGroovePianoProcessor&);
 
+    /** HEAR plays even with the DAW stopped: it starts the preview (stopped again on close). */
+    void visibilityChanged() override;
+    bool startedPreview = false;
     void show();
     void refreshText();
 

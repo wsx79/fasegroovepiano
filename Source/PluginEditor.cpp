@@ -1475,6 +1475,11 @@ bool GrooveBrowser::keyPressed (const juce::KeyPress& key)
         setVisible (false);
         return true;
     }
+    if (key == juce::KeyPress::spaceKey)
+    {
+        processor.previewOn = ! processor.previewOn.load();   // play / stop the preview
+        return true;
+    }
     return false;
 }
 
@@ -1605,11 +1610,43 @@ void VoicingCoach::update()
     repaint();
 }
 
+namespace
+{
+    /** HEAR in a window: when nothing plays, start the preview so you can hear it. */
+    void startPreviewIfSilent (FaseGroovePianoProcessor& processor, bool& started)
+    {
+        if (processor.uiStep.load() < 0 && ! processor.previewOn.load())
+        {
+            processor.previewOn = true;
+            started = true;
+        }
+    }
+}
+
+void VoicingCoach::visibilityChanged()
+{
+    if (! isVisible() && startedPreview)
+    {
+        processor.previewOn = false;
+        startedPreview = false;
+    }
+}
+
+void ChordLab::visibilityChanged()
+{
+    if (! isVisible() && startedPreview)
+    {
+        processor.previewOn = false;
+        startedPreview = false;
+    }
+}
+
 void VoicingCoach::hear (int side)
 {
     const int voicing = (side == 0 ? boxA : boxB).getSelectedId() - 1;
     if (voicing >= 0)
         processor.setParameterFromUI (ParamIDs::voicing, (float) voicing);   // only the voicing: the chords stay
+    startPreviewIfSilent (processor, startedPreview);
     update();
 }
 
@@ -2023,10 +2060,88 @@ void SongOverlay::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+void ToolButton::drawIcon (juce::Graphics& g, Icon icon, juce::Rectangle<float> r, juce::Colour colour)
+{
+    const float s = juce::jmin (r.getWidth(), r.getHeight());
+    const auto c = r.getCentre();
+    juce::Path path;
+    if (icon == Icon::pencil)
+    {
+        // A pencil pointing down-left: body, tip.
+        path.startNewSubPath (c.x + 0.42f * s, c.y - 0.30f * s);
+        path.lineTo (c.x + 0.30f * s, c.y - 0.42f * s);
+        path.lineTo (c.x - 0.30f * s, c.y + 0.18f * s);
+        path.lineTo (c.x - 0.42f * s, c.y + 0.42f * s);
+        path.lineTo (c.x - 0.18f * s, c.y + 0.30f * s);
+        path.closeSubPath();
+        g.setColour (colour);
+        g.fillPath (path);
+    }
+    else if (icon == Icon::arrow)
+    {
+        path.startNewSubPath (c.x - 0.30f * s, c.y - 0.42f * s);
+        path.lineTo (c.x - 0.30f * s, c.y + 0.32f * s);
+        path.lineTo (c.x - 0.10f * s, c.y + 0.14f * s);
+        path.lineTo (c.x + 0.04f * s, c.y + 0.44f * s);
+        path.lineTo (c.x + 0.16f * s, c.y + 0.38f * s);
+        path.lineTo (c.x + 0.02f * s, c.y + 0.09f * s);
+        path.lineTo (c.x + 0.30f * s, c.y + 0.09f * s);
+        path.closeSubPath();
+        g.setColour (colour);
+        g.fillPath (path);
+    }
+    else
+    {
+        // An eraser: a tilted block with a lighter end.
+        juce::Path block;
+        block.addRoundedRectangle (-0.40f * s, -0.18f * s, 0.80f * s, 0.36f * s, 0.06f * s);
+        block.applyTransform (juce::AffineTransform::rotation (-0.7f).translated (c.x, c.y));
+        g.setColour (colour);
+        g.fillPath (block);
+        juce::Path tip;
+        tip.addRoundedRectangle (-0.40f * s, -0.18f * s, 0.28f * s, 0.36f * s, 0.06f * s);
+        tip.applyTransform (juce::AffineTransform::rotation (-0.7f).translated (c.x, c.y));
+        g.setColour (Palette::accent2);
+        g.fillPath (tip);
+    }
+}
+
+juce::MouseCursor ToolButton::cursor (Icon icon)
+{
+    if (icon == Icon::arrow)
+        return juce::MouseCursor::NormalCursor;
+
+    juce::Image image (juce::Image::ARGB, 24, 24, true);
+    {
+        juce::Graphics g (image);
+        drawIcon (g, icon, { 1.0f, 1.0f, 22.0f, 22.0f }, juce::Colours::black);
+        drawIcon (g, icon, { 2.5f, 2.5f, 19.0f, 19.0f }, juce::Colours::white);
+    }
+    // The hot spot is the pencil tip, or the middle of the eraser.
+    return icon == Icon::pencil ? juce::MouseCursor (image, 3, 21) : juce::MouseCursor (image, 12, 12);
+}
+
+void ToolButton::paintButton (juce::Graphics& g, bool highlighted, bool)
+{
+    auto r = getLocalBounds().toFloat().reduced (0.5f);
+    const bool on = getToggleState();
+    g.setColour (on ? Palette::accent : highlighted ? Palette::panelEdge : Palette::background);
+    g.fillRoundedRectangle (r, 5.0f);
+    g.setColour (Palette::panelEdge);
+    g.drawRoundedRectangle (r, 5.0f, 1.0f);
+    auto iconArea = r.removeFromLeft (r.getHeight()).reduced (5.0f);
+    drawIcon (g, icon, iconArea, on ? Palette::background : Palette::text);
+    g.setColour (on ? Palette::background : Palette::text);
+    g.setFont (font (12.0f, true));
+    g.drawFittedText (getButtonText(), r.toNearestInt().withTrimmedRight (4), juce::Justification::centredLeft, 1, 0.7f);
+}
+
+//==============================================================================
 PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
 {
     setWantsKeyboardFocus (true);
-    for (auto* b : { &zoomOut, &zoomIn, &fitButton, &snapButton, &partButton, &generatedButton, &closeButton })
+    for (auto* b : { &zoomOut, &zoomIn, &fitButton, &snapButton, &snapToggle, &quantizeButton, &pianoPartButton, &bassPartButton,
+                     &followButton, &showAllButton, &showPianoButton, &showBassButton, &generatedButton, &closeButton })
     {
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
         b->setColour (juce::TextButton::textColourOffId, Palette::text);
@@ -2040,16 +2155,51 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
     zoomOut.onClick = [this] { setZoom (pixelsPerBeat / 1.5, gridArea().getCentreX()); };
     zoomIn.onClick  = [this] { setZoom (pixelsPerBeat * 1.5, gridArea().getCentreX()); };
     fitButton.onClick = [this] { setZoom (gridArea().getWidth() / length, gridArea().getX()); };
+    snapToggle.setClickingTogglesState (false);
+    snapToggle.onClick = [this]
+    {
+        snapOn = ! snapOn;
+        refreshText();
+    };
+    quantizeButton.onClick = [this] { quantize(); };
     snapButton.onClick = [this]
     {
         snap = snap > 0.2 ? 0.125 : snap > 0.1 ? 0.5 : 0.25;
         refreshText();
     };
-    partButton.onClick = [this]
+    // Which part the pencil draws: the colours are the notes' own.
+    pianoPartButton.setConnectedEdges (juce::Button::ConnectedOnRight);
+    bassPartButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+    pianoPartButton.onClick = [this] { drawPart = sgk::Part::chords; setTool (Tool::draw); refreshText(); };
+    bassPartButton.onClick  = [this] { drawPart = sgk::Part::bass;   setTool (Tool::draw); refreshText(); };
+    followButton.onClick = [this] { follow = ! follow; refreshText(); };
+
+    // What the roll shows: everything, or only the piano / the bass (the others are greyed out and can't be touched).
+    showAllButton.setConnectedEdges (juce::Button::ConnectedOnRight);
+    showPianoButton.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
+    showBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+    auto showOnly = [this] (int which)
     {
-        drawPart = drawPart == sgk::Part::bass ? sgk::Part::chords : sgk::Part::bass;
+        shown = which;
+        if (juce::isPositiveAndBelow (selected, (int) notes.size()) && ! isShown (notes[(size_t) selected]))
+            selected = -1;
+        if (which != 0)
+            drawPart = which == 2 ? sgk::Part::bass : sgk::Part::chords;   // the pencil draws what you see
         refreshText();
     };
+    showAllButton.onClick   = [showOnly] { showOnly (0); };
+    showPianoButton.onClick = [showOnly] { showOnly (1); };
+    showBassButton.onClick  = [showOnly] { showOnly (2); };
+
+    drawTool.onClick   = [this] { setTool (Tool::draw); };
+    selectTool.onClick = [this] { setTool (Tool::select); };
+    eraseTool.onClick  = [this] { setTool (Tool::erase); };
+    for (auto* b : { &drawTool, &selectTool, &eraseTool })
+    {
+        b->setWantsKeyboardFocus (false);
+        addAndMakeVisible (b);
+    }
+    setTool (Tool::draw);
     generatedButton.onClick = [this]
     {
         processor.clearEditedLoop();
@@ -2078,13 +2228,53 @@ void PianoRollEditor::refreshText()
 {
     fitButton.setButtonText (tr ("FIT"));
     snapButton.setButtonText (tr ("Grid") + ": " + (snap > 0.4 ? "1/8" : snap > 0.2 ? "1/16" : "1/32"));
-    partButton.setButtonText (tr ("New notes") + ": " + tr (drawPart == sgk::Part::bass ? "BASS" : "PIANO"));
+    snapToggle.setButtonText (tr ("SNAP"));
+    snapToggle.setColour (juce::TextButton::buttonColourId, snapOn ? Palette::accent : Palette::background);
+    snapToggle.setColour (juce::TextButton::textColourOffId, snapOn ? Palette::background : Palette::dim);
+    snapToggle.setTooltip (tr ("On: notes stick to the grid. Off: move them freely (Alt while dragging does the opposite)"));
+    quantizeButton.setButtonText (tr ("QUANTIZE"));
+    quantizeButton.setTooltip (tr ("Moves the selected note (or every note, when none is selected) onto the grid"));
+    pianoPartButton.setButtonText (tr ("PIANO"));
+    bassPartButton.setButtonText (tr ("BASS"));
+    {
+        const bool bass = drawPart == sgk::Part::bass;
+        pianoPartButton.setColour (juce::TextButton::buttonColourId, bass ? Palette::background : Palette::accent);
+        pianoPartButton.setColour (juce::TextButton::textColourOffId, bass ? Palette::accent : Palette::background);
+        bassPartButton.setColour (juce::TextButton::buttonColourId, bass ? Palette::accent2 : Palette::background);
+        bassPartButton.setColour (juce::TextButton::textColourOffId, bass ? Palette::background : Palette::accent2);
+    }
+    pianoPartButton.setTooltip (tr ("The pencil draws piano notes (orange)"));
+    bassPartButton.setTooltip (tr ("The pencil draws bass notes (pink, exported on the bass track)"));
+    showAllButton.setButtonText (tr ("ALL"));
+    showPianoButton.setButtonText (tr ("PIANO"));
+    showBassButton.setButtonText (tr ("BASS"));
+    {
+        int index = 0;
+        for (auto* b : { &showAllButton, &showPianoButton, &showBassButton })
+        {
+            const bool on = index++ == shown;
+            b->setColour (juce::TextButton::buttonColourId, on ? Palette::text : Palette::background);
+            b->setColour (juce::TextButton::textColourOffId, on ? Palette::background : Palette::dim);
+        }
+    }
+    showAllButton.setTooltip (tr ("Show all the notes"));
+    showPianoButton.setTooltip (tr ("Show only the piano: the bass is greyed out and can't be touched"));
+    showBassButton.setTooltip (tr ("Show only the bass: the piano is greyed out and can't be touched"));
+    followButton.setButtonText (tr ("FOLLOW"));
+    followButton.setColour (juce::TextButton::buttonColourId, follow ? Palette::accent : Palette::background);
+    followButton.setColour (juce::TextButton::textColourOffId, follow ? Palette::background : Palette::dim);
+    followButton.setTooltip (tr ("The view follows the playhead while the loop plays"));
+    drawTool.setButtonText (tr ("DRAW"));
+    selectTool.setButtonText (tr ("MOVE"));
+    eraseTool.setButtonText (tr ("ERASE"));
+    drawTool.setTooltip (tr ("Pencil: click to add a note (drag to make it longer); drag a note to move it"));
+    selectTool.setTooltip (tr ("Arrow: drag a note to move it, its right edge to change its length"));
+    eraseTool.setTooltip (tr ("Eraser: click a note, or drag over several, to delete them"));
     generatedButton.setButtonText (tr ("BACK TO GENERATED"));
     closeButton.setButtonText (tr ("CLOSE"));
     zoomOut.setTooltip (tr ("Zoom out (Ctrl + mouse wheel)"));
     zoomIn.setTooltip (tr ("Zoom in (Ctrl + mouse wheel)"));
     generatedButton.setTooltip (tr ("Forget your edits: the plug-in plays the generated notes again"));
-    partButton.setTooltip (tr ("Whether the notes you add are piano or bass (exported on their own track)"));
     repaint();
 }
 
@@ -2135,13 +2325,13 @@ void PianoRollEditor::fitRange()
 
 juce::Rectangle<float> PianoRollEditor::keyboardArea() const
 {
-    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (52.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
+    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (76.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
     return r.withWidth (44.0f);
 }
 
 juce::Rectangle<float> PianoRollEditor::gridArea() const
 {
-    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (52.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
+    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (76.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
     return r.withTrimmedLeft (44.0f);
 }
 
@@ -2176,6 +2366,50 @@ int PianoRollEditor::noteAt (float y) const
     return juce::jlimit (lowNote, highNote, lowNote + (int) std::floor ((gridArea().getBottom() - y) / rowHeight()));
 }
 
+void PianoRollEditor::setTool (Tool t)
+{
+    tool = t;
+    drawTool.setToggleState (t == Tool::draw, juce::dontSendNotification);
+    selectTool.setToggleState (t == Tool::select, juce::dontSendNotification);
+    eraseTool.setToggleState (t == Tool::erase, juce::dontSendNotification);
+    setMouseCursor (t == Tool::draw ? ToolButton::cursor (ToolButton::Icon::pencil)
+                  : t == Tool::erase ? ToolButton::cursor (ToolButton::Icon::eraser) : juce::MouseCursor::NormalCursor);
+}
+
+void PianoRollEditor::updateCursor (const juce::MouseEvent& e)
+{
+    if (velocityArea().contains (e.position))
+        return setMouseCursor (juce::MouseCursor::UpDownResizeCursor);
+    if (! gridArea().contains (e.position))
+        return setMouseCursor (juce::MouseCursor::NormalCursor);
+    if (tool == Tool::erase)
+        return setMouseCursor (ToolButton::cursor (ToolButton::Icon::eraser));
+
+    bool edge = false;
+    const int hit = hitNote (e.position, edge);
+    if (hit >= 0)
+        setMouseCursor (edge ? juce::MouseCursor::LeftRightResizeCursor : juce::MouseCursor::DraggingHandCursor);
+    else
+        setMouseCursor (tool == Tool::draw ? ToolButton::cursor (ToolButton::Icon::pencil) : juce::MouseCursor::NormalCursor);
+}
+
+bool PianoRollEditor::snapping (const juce::MouseEvent& e) const
+{
+    return snapOn != e.mods.isAltDown();
+}
+
+void PianoRollEditor::quantize()
+{
+    auto onGrid = [this] (double beat) { return juce::jlimit (0.0, length - snap, std::round (beat / snap) * snap); };
+    if (juce::isPositiveAndBelow (selected, (int) notes.size()))
+        notes[(size_t) selected].start = onGrid (notes[(size_t) selected].start);
+    else
+        for (auto& n : notes)
+            if (isShown (n))
+                n.start = onGrid (n.start);
+    commit();
+}
+
 double PianoRollEditor::snapped (double beat) const
 {
     return juce::jlimit (0.0, length - snap, std::floor (beat / snap + 1.0e-6) * snap);
@@ -2207,20 +2441,41 @@ void PianoRollEditor::scrollBarMoved (juce::ScrollBar*, double newStart)
 
 void PianoRollEditor::resized()
 {
-    auto top = card().reduced (16.0f, 12.0f).toNearestInt().removeFromTop (30);
+    auto head = card().reduced (16.0f, 12.0f).toNearestInt();
+    auto top = head.removeFromTop (30);
     closeButton.setBounds (top.removeFromRight (90));
     top.removeFromRight (8);
     generatedButton.setBounds (top.removeFromRight (190));
-    top.removeFromRight (16);
-    partButton.setBounds (top.removeFromRight (170));
-    top.removeFromRight (6);
-    snapButton.setBounds (top.removeFromRight (100));
-    top.removeFromRight (16);
-    fitButton.setBounds (top.removeFromRight (74));
-    top.removeFromRight (4);
-    zoomIn.setBounds (top.removeFromRight (30));
-    top.removeFromRight (4);
-    zoomOut.setBounds (top.removeFromRight (30));
+    top.removeFromRight (24);
+    showBassButton.setBounds (top.removeFromRight (64));
+    showPianoButton.setBounds (top.removeFromRight (64));
+    showAllButton.setBounds (top.removeFromRight (64));
+
+    // Toolbar: tools, the part the pencil draws, grid, zoom, follow.
+    head.removeFromTop (8);
+    auto bar = head.removeFromTop (28);
+    drawTool.setBounds (bar.removeFromLeft (92));
+    bar.removeFromLeft (4);
+    selectTool.setBounds (bar.removeFromLeft (92));
+    bar.removeFromLeft (4);
+    eraseTool.setBounds (bar.removeFromLeft (100));
+    bar.removeFromLeft (76);   // "DRAWS" caption
+    pianoPartButton.setBounds (bar.removeFromLeft (76));
+    bassPartButton.setBounds (bar.removeFromLeft (76));
+    bar.removeFromLeft (18);
+    snapToggle.setBounds (bar.removeFromLeft (62));
+    bar.removeFromLeft (4);
+    snapButton.setBounds (bar.removeFromLeft (100));
+    bar.removeFromLeft (4);
+    quantizeButton.setBounds (bar.removeFromLeft (100));
+
+    followButton.setBounds (bar.removeFromRight (80));
+    bar.removeFromRight (14);
+    fitButton.setBounds (bar.removeFromRight (74));
+    bar.removeFromRight (4);
+    zoomIn.setBounds (bar.removeFromRight (30));
+    bar.removeFromRight (4);
+    zoomOut.setBounds (bar.removeFromRight (30));
 
     const auto g = gridArea();
     scrollBar.setBounds (juce::Rectangle<float> (g.getX(), velocityArea().getBottom() + 4.0f, g.getWidth(), 12.0f).toNearestInt());
@@ -2233,6 +2488,8 @@ int PianoRollEditor::hitNote (juce::Point<float> p, bool& onRightEdge) const
     for (int i = (int) notes.size(); --i >= 0;)
     {
         const auto& n = notes[(size_t) i];
+        if (! isShown (n))
+            continue;
         const auto r = juce::Rectangle<float> (xOf (n.start), yOf (n.note), juce::jmax (4.0f, (float) (n.length * pixelsPerBeat)), rowHeight());
         if (r.contains (p))
         {
@@ -2290,6 +2547,23 @@ void PianoRollEditor::mouseDown (const juce::MouseEvent& e)
 
     bool edge = false;
     const int hit = hitNote (p, edge);
+    if (tool == Tool::erase)
+    {
+        drag = Drag::erase;
+        if (hit >= 0)
+        {
+            notes.erase (notes.begin() + hit);
+            selected = -1;
+            commit();
+        }
+        return;
+    }
+    if (hit < 0 && tool == Tool::select)
+    {
+        selected = -1;
+        updateStatus();
+        return;
+    }
     if (hit >= 0 && (e.mods.isPopupMenu()))
     {
         notes.erase (notes.begin() + hit);
@@ -2307,7 +2581,7 @@ void PianoRollEditor::mouseDown (const juce::MouseEvent& e)
     {
         // A new note on the grid, as long as the grid step (or the last length you used).
         sgk::LoopNote n;
-        n.start = snapped (beatAt (p.x));
+        n.start = snapping (e) ? snapped (beatAt (p.x)) : juce::jlimit (0.0, length - 0.01, beatAt (p.x));
         n.length = snap;
         n.note = noteAt (p.y);
         n.velocity = 100;
@@ -2330,6 +2604,17 @@ void PianoRollEditor::mouseDown (const juce::MouseEvent& e)
 void PianoRollEditor::mouseDrag (const juce::MouseEvent& e)
 {
     const auto p = e.position;
+    if (drag == Drag::erase)
+    {
+        bool edge = false;
+        if (const int hit = hitNote (p, edge); hit >= 0)
+        {
+            notes.erase (notes.begin() + hit);
+            selected = -1;
+            commit();
+        }
+        return;
+    }
     if (drag == Drag::velocity)
     {
         // The note nearest to the mouse (the selected one first) takes the height as velocity.
@@ -2339,6 +2624,8 @@ void PianoRollEditor::mouseDrag (const juce::MouseEvent& e)
         float bestDistance = 8.0f;
         for (int i = 0; i < (int) notes.size(); ++i)
         {
+            if (! isShown (notes[(size_t) i]))
+                continue;
             const float d = std::abs (xOf (notes[(size_t) i].start) - p.x) - (i == selected ? 3.0f : 0.0f);
             if (d < bestDistance) { bestDistance = d; best = i; }
         }
@@ -2348,7 +2635,7 @@ void PianoRollEditor::mouseDrag (const juce::MouseEvent& e)
             const double start = notes[(size_t) best].start;
             const bool onlySelected = best == selected && e.mods.isShiftDown();
             for (auto& n : notes)
-                if (std::abs (n.start - start) < 1.0e-4 && n.part == notes[(size_t) best].part && (! onlySelected || &n == &notes[(size_t) best]))
+                if (isShown (n) && std::abs (n.start - start) < 1.0e-4 && n.part == notes[(size_t) best].part && (! onlySelected || &n == &notes[(size_t) best]))
                     n.velocity = velocity;
             commit();
         }
@@ -2362,13 +2649,16 @@ void PianoRollEditor::mouseDrag (const juce::MouseEvent& e)
     if (drag == Drag::move)
     {
         const double delta = beatAt (p.x) - dragStartBeat;
-        n.start = juce::jlimit (0.0, length - snap, std::round ((noteStartBeat + delta) / snap) * snap);
+        // Free: the note follows the mouse. SNAP: it moves by whole grid steps, keeping its own feel.
+        const double moved = snapping (e) ? std::round (delta / snap) * snap : delta;
+        n.start = juce::jlimit (0.0, length - 0.01, noteStartBeat + moved);
         n.note = juce::jlimit (lowNote, highNote, noteStartPitch + (noteAt (p.y) - dragStartNote));
     }
     else if (drag == Drag::resize)
     {
-        const double end = std::round (beatAt (p.x) / snap) * snap;
-        n.length = juce::jlimit (snap * 0.5, length - n.start, juce::jmax (snap * 0.5, end - n.start));
+        const double end = snapping (e) ? std::round (beatAt (p.x) / snap) * snap : beatAt (p.x);
+        const double shortest = snapping (e) ? snap * 0.5 : 0.03;
+        n.length = juce::jlimit (shortest, juce::jmax (shortest, length - n.start), juce::jmax (shortest, end - n.start));
     }
     repaint();
     updateStatus();
@@ -2392,11 +2682,7 @@ void PianoRollEditor::mouseUp (const juce::MouseEvent&)
 
 void PianoRollEditor::mouseMove (const juce::MouseEvent& e)
 {
-    bool edge = false;
-    const int hit = gridArea().contains (e.position) ? hitNote (e.position, edge) : -1;
-    setMouseCursor (hit >= 0 ? (edge ? juce::MouseCursor::LeftRightResizeCursor : juce::MouseCursor::DraggingHandCursor)
-                             : velocityArea().contains (e.position) ? juce::MouseCursor::UpDownResizeCursor
-                                                                    : juce::MouseCursor::NormalCursor);
+    updateCursor (e);
 }
 
 void PianoRollEditor::mouseDoubleClick (const juce::MouseEvent& e)
@@ -2479,6 +2765,19 @@ void PianoRollEditor::timerCallback()
     if (std::abs (now - playhead) > 1.0e-4)
     {
         playhead = now;
+
+        // FOLLOW: when the playhead leaves the view, turn the page (not while you drag a note).
+        if (follow && now >= 0.0 && drag == Drag::none)
+        {
+            const float x = xOf (now);
+            const auto grid = gridArea();
+            if (x < grid.getX() || x > grid.getRight() - 4.0f)
+            {
+                scroll = now * pixelsPerBeat - 8.0;
+                updateScrollBar();
+                repaint();
+            }
+        }
         repaint (gridArea().withTrimmedTop (-PianoRollView::chordLaneHeight).toNearestInt().expanded (2));
     }
 }
@@ -2495,10 +2794,17 @@ void PianoRollEditor::paint (juce::Graphics& g)
     auto head = c.reduced (16.0f, 12.0f);
     g.setColour (Palette::accent);
     g.setFont (font (18.0f, true));
-    g.drawText (Localisation::upper (tr ("Piano roll")), head.removeFromTop (30.0f).withWidth (200.0f), juce::Justification::centredLeft);
+    auto titleRow = head.removeFromTop (30.0f);
+    g.drawText (Localisation::upper (tr ("Piano roll")), titleRow.removeFromLeft (150.0f), juce::Justification::centredLeft);
     g.setColour (processor.hasEditedLoop() ? Palette::accent2 : Palette::dim);
-    g.setFont (font (11.5f));
-    g.drawText (status, head.removeFromTop (20.0f), juce::Justification::centredLeft);
+    g.setFont (font (12.0f));
+    g.drawText (status, titleRow.withTrimmedRight (600.0f), juce::Justification::centredLeft);
+
+    // Captions: what the two PIANO / BASS groups mean.
+    g.setColour (Palette::dim);
+    g.setFont (font (10.5f, true));
+    g.drawText (Localisation::upper (tr ("Show")), showAllButton.getBounds().toFloat().translated (-70.0f, 0.0f).withWidth (64.0f), juce::Justification::centredRight);
+    g.drawText (Localisation::upper (tr ("Draws")), pianoPartButton.getBounds().toFloat().translated (-72.0f, 0.0f).withWidth (66.0f), juce::Justification::centredRight);
 
     const auto grid = gridArea();
     const auto keys = keyboardArea();
@@ -2570,6 +2876,12 @@ void PianoRollEditor::paint (juce::Graphics& g)
             auto r = juce::Rectangle<float> (xOf (n.start), yOf (n.note), juce::jmax (3.0f, (float) (n.length * pixelsPerBeat)), rowH).reduced (0.5f, 1.0f);
             const auto colour = n.part == sgk::Part::bass ? Palette::accent2 : n.part == sgk::Part::fill ? fillColour : Palette::accent;
             const bool sounding = playhead >= n.start && playhead < n.start + n.length;
+            if (! isShown (n))
+            {
+                g.setColour (Palette::dim.withAlpha (0.18f));
+                g.fillRoundedRectangle (r, 3.0f);
+                continue;
+            }
             g.setColour ((sounding ? colour.brighter (0.4f) : colour).withAlpha (0.5f + 0.5f * (float) n.velocity / 127.0f));
             g.fillRoundedRectangle (r, 3.0f);
             g.setColour (i == selected ? Palette::text : juce::Colours::black.withAlpha (0.4f));
@@ -2617,6 +2929,8 @@ void PianoRollEditor::paint (juce::Graphics& g)
         for (int i = 0; i < (int) notes.size(); ++i)
         {
             const auto& n = notes[(size_t) i];
+            if (! isShown (n))
+                continue;
             const float x = xOf (n.start);
             const float h = lane.getHeight() * (float) n.velocity / 127.0f;
             const auto colour = n.part == sgk::Part::bass ? Palette::accent2 : Palette::accent;
@@ -2628,7 +2942,7 @@ void PianoRollEditor::paint (juce::Graphics& g)
 
     g.setColour (Palette::dim);
     g.setFont (font (10.5f));
-    g.drawText (tr ("Click: add a note  |  drag: move  |  drag the right edge: length  |  double-click or right-click: delete  |  arrows: move the selected note (Shift: octave)  |  bottom lane: velocity"),
+    g.drawText (tr ("Click: add a note  |  drag: move (freely, or on the grid with SNAP)  |  drag the right edge: length  |  double-click or right-click: delete  |  arrows: move the selected note (Shift: octave)  |  bottom lane: velocity"),
                 juce::Rectangle<float> (c.getX() + 16.0f, c.getBottom() - 22.0f, c.getWidth() - 32.0f, 16.0f), juce::Justification::centredLeft);
 }
 
@@ -2848,6 +3162,7 @@ void ChordLab::hear (int row)
     if (! juce::isPositiveAndBelow (row, (int) rows.size()))
         return;
     processor.applyProgressionCodes (rows[(size_t) row].second);   // only the chords: rhythm, key and length stay
+    startPreviewIfSilent (processor, startedPreview);
     playing = row;
     for (int i = 0; i < hearButtons.size(); ++i)
         hearButtons[i]->setToggleState (i == row, juce::dontSendNotification);
@@ -3645,6 +3960,19 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     redoButton.onClick = [this] { redo(); };
     setWantsKeyboardFocus (true);
 
+    // Buttons don't keep the keyboard focus, so the space bar always plays / stops the preview
+    // instead of pressing the last button clicked.
+    std::function<void (juce::Component&)> noButtonFocus = [&noButtonFocus] (juce::Component& c)
+    {
+        for (auto* child : c.getChildren())
+        {
+            if (dynamic_cast<juce::Button*> (child) != nullptr)
+                child->setWantsKeyboardFocus (false);
+            noButtonFocus (*child);
+        }
+    };
+    noButtonFocus (*this);
+
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         slots[i]->onInvert = [this, i] (int delta)
         {
@@ -3816,6 +4144,12 @@ bool FaseGroovePianoEditor::keyPressed (const juce::KeyPress& key)
     if (mods.isCommandDown() && (key.getKeyCode() == 'Y' || key.getKeyCode() == 'y'))
     {
         redo();
+        return true;
+    }
+    if (key == juce::KeyPress::spaceKey && ! mods.isAnyModifierKeyDown())
+    {
+        // Space: play / stop the preview (the plug-in can't start the DAW's transport).
+        processor.previewOn = ! processor.previewOn.load();
         return true;
     }
     return false;
