@@ -152,7 +152,7 @@ JUCE 8 is downloaded automatically.
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release --parallel
-ctest --test-dir build -C Release        # music engine tests
+ctest --test-dir build -C Release        # engine tests + plug-in tests
 ```
 
 The built plug-ins are in `build/FaseGroovePiano_artefacts/Release/`.
@@ -208,6 +208,7 @@ Source/Branding.*             logo, name, links
 Resources/                    app logo (SVG), icon, FS PITCH logo
 installer/windows/            Windows installer (Inno Setup script, icon, wizard images, texts)
 tests/EngineTests.cpp         engine tests (no JUCE dependency)
+tests/PluginTests.cpp         plug-in tests: state/presets, MIDI export, DAW transport, update swap
 ```
 
 To add a groove, add a line to `groovePatterns()` in `GrooveEngine.cpp`: each character is a

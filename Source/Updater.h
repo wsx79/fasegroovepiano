@@ -56,6 +56,12 @@ namespace Updater
         or (when neither is possible) shows the download. */
     InstallReport install (const Result&);
 
+    namespace testing
+    {
+        /** The portable swap, with a failure injected after N steps (-1: none). For the tests. */
+        bool replaceAll (const juce::File& staged, const juce::Array<juce::File>& targets, int failAfterSteps);
+    }
+
     /** Removes the files a portable update left behind (Windows can't delete a loaded DLL). */
     void cleanupAfterUpdate();
 

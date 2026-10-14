@@ -6,6 +6,18 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.18.2] - 2026-10-14
+
+### Fixed
+- **Portable updates are now all-or-nothing:** every file is checked before anything is touched,
+  and if any step fails, everything already replaced is put back (no half-updated plug-in).
+
+### Added
+- **Plug-in tests**, run on every build for Windows, macOS and Linux: project state and old
+  presets, undo snapshots, exported MIDI files (note pairs, channels, length, song markers), DAW
+  transport (play, stop, seek, loop, tempo changes, odd block sizes, SOLO BASS) and the update
+  swap with simulated failures.
+
 ## [1.18.1] - 2026-10-13
 
 ### Fixed

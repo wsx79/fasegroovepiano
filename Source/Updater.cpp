@@ -112,64 +112,153 @@ namespace
         return targets;
     }
 
-    /** Puts the new copy in place of the old one. */
-    bool swapIn (const juce::File& fresh, const juce::File& target)
+    /** Replaces copies of the plug-in as one transaction: everything is checked first, every
+        change is recorded, and if any step fails all of them are undone (including the copies
+        already replaced), so a failed update never leaves a half-new plug-in. */
+    class Transaction
     {
-       #if JUCE_WINDOWS
-        // A loaded DLL (or the running .exe) can't be overwritten or its folder renamed, but the
-        // file itself can be renamed: move each old file aside, copy the new one in.
-        juce::Array<juce::File> files;
-        if (fresh.isDirectory())
-            files = fresh.findChildFiles (juce::File::findFiles, true);
-        else
-            files.add (fresh);
+    public:
+        explicit Transaction (int failAfterSteps = -1) : failAfter (failAfterSteps) {}
+        ~Transaction() { if (! committed) rollback(); }
 
-        for (const auto& f : files)
+        /** Checks that every file can be replaced before anything is touched. */
+        static bool preflight (const juce::File& staged, const juce::Array<juce::File>& targets)
         {
-            const auto dest = fresh.isDirectory() ? target.getChildFile (f.getRelativePathFrom (fresh)) : target;
-            dest.getParentDirectory().createDirectory();
-            if (dest.exists())
+            for (const auto& target : targets)
             {
-                const auto old = dest.getSiblingFile (dest.getFileName() + ".old");
-                old.deleteFile();
-                if (old.exists() || ! dest.moveFileTo (old))   // still loaded from the last update
+                const auto fresh = stagedCounterpart (staged, target);
+                if (! fresh.exists() || ! target.getParentDirectory().hasWriteAccess())
+                    return false;
+               #if JUCE_WINDOWS
+                // Leftovers of an earlier update that are still loaded would block the renames.
+                juce::Array<juce::File> files;
+                if (fresh.isDirectory()) files = fresh.findChildFiles (juce::File::findFiles, true);
+                else                     files.add (fresh);
+                for (const auto& f : files)
+                {
+                    const auto dest = fresh.isDirectory() ? target.getChildFile (f.getRelativePathFrom (fresh)) : target;
+                    const auto old = dest.getSiblingFile (dest.getFileName() + ".old");
+                    if (old.exists() && ! old.deleteFile())
+                        return false;
+                }
+               #endif
+            }
+            return true;
+        }
+
+        bool replace (const juce::File& fresh, const juce::File& target)
+        {
+           #if JUCE_WINDOWS
+            // A loaded DLL (or the running .exe) can't be overwritten and its folder can't be
+            // renamed, but the file itself can: move each old file aside, copy the new one in.
+            juce::Array<juce::File> files;
+            if (fresh.isDirectory()) files = fresh.findChildFiles (juce::File::findFiles, true);
+            else                     files.add (fresh);
+
+            for (const auto& f : files)
+            {
+                const auto dest = fresh.isDirectory() ? target.getChildFile (f.getRelativePathFrom (fresh)) : target;
+                if (! step() || ! dest.getParentDirectory().createDirectory())
+                    return false;
+
+                juce::File backup;
+                if (dest.exists())
+                {
+                    backup = dest.getSiblingFile (dest.getFileName() + ".old");
+                    if (backup.exists() || ! dest.moveFileTo (backup))
+                        return false;
+                }
+                changes.push_back ({ dest, backup });
+                if (! f.copyFileTo (dest))
                     return false;
             }
-            if (! f.copyFileTo (dest))
-                return false;
-        }
-        return true;
-       #else
-        // macOS / Linux: build the new copy next to the old one, then swap them by renaming
-        // (the running code keeps working from the old files until the DAW restarts).
-        const auto incoming = target.getSiblingFile (target.getFileName() + ".new");
-        const auto old = target.getSiblingFile (target.getFileName() + ".old");
-        incoming.deleteRecursively();
-        old.deleteRecursively();
-        #if JUCE_MAC
-        if (! runTool ({ "/usr/bin/ditto", fresh.getFullPathName(), incoming.getFullPathName() }))
-            return false;
-        runTool ({ "/usr/bin/xattr", "-dr", "com.apple.quarantine", incoming.getFullPathName() });
-        #else
-        if (! (fresh.isDirectory() ? fresh.copyDirectoryTo (incoming) : fresh.copyFileTo (incoming)))
-            return false;
-        for (const auto& f : incoming.isDirectory() ? incoming.findChildFiles (juce::File::findFiles, true) : juce::Array<juce::File> { incoming })
-            if (f.getFileExtension().isEmpty() || f.hasFileExtension ("so") || f == incoming)
-                f.setExecutePermission (true);
-        #endif
-        if (! target.moveFileTo (old))
-        {
+            return true;
+           #else
+            // macOS / Linux: build the new copy next to the old one, then swap them by renaming
+            // (the running code keeps working from the old files until the DAW restarts).
+            const auto incoming = target.getSiblingFile (target.getFileName() + ".new");
+            const auto backup = target.getSiblingFile (target.getFileName() + ".old");
             incoming.deleteRecursively();
-            return false;
+            backup.deleteRecursively();
+            if (! step())
+                return false;
+            #if JUCE_MAC
+            if (! runTool ({ "/usr/bin/ditto", fresh.getFullPathName(), incoming.getFullPathName() }))
+            {
+                incoming.deleteRecursively();
+                return false;
+            }
+            runTool ({ "/usr/bin/xattr", "-dr", "com.apple.quarantine", incoming.getFullPathName() });
+            #else
+            if (! (fresh.isDirectory() ? fresh.copyDirectoryTo (incoming) : fresh.copyFileTo (incoming)))
+            {
+                incoming.deleteRecursively();
+                return false;
+            }
+            for (const auto& f : incoming.isDirectory() ? incoming.findChildFiles (juce::File::findFiles, true) : juce::Array<juce::File> { incoming })
+                if (f.getFileExtension().isEmpty() || f.hasFileExtension ("so") || f == incoming)
+                    f.setExecutePermission (true);
+            #endif
+            if (! step() || ! target.moveFileTo (backup))
+            {
+                incoming.deleteRecursively();
+                return false;
+            }
+            changes.push_back ({ target, backup });
+            if (! step() || ! incoming.moveFileTo (target))
+            {
+                incoming.deleteRecursively();
+                return false;
+            }
+            return true;
+           #endif
         }
-        if (! incoming.moveFileTo (target))
+
+        /** Keeps the new files; the old ones are deleted (or, on Windows, at the next start if loaded). */
+        void commit()
         {
-            old.moveFileTo (target);   // put the old one back
-            return false;
+            committed = true;
+            for (const auto& c : changes)
+                if (c.backup != juce::File())
+                    c.backup.deleteRecursively();
         }
-        old.deleteRecursively();
+
+        void rollback()
+        {
+            for (auto it = changes.rbegin(); it != changes.rend(); ++it)
+            {
+                it->dest.deleteRecursively();
+                if (it->backup != juce::File())
+                    it->backup.moveFileTo (it->dest);
+            }
+            changes.clear();
+            committed = true;
+        }
+
+    private:
+        struct Change { juce::File dest, backup; };   // backup empty: dest is a new file
+
+        bool step() { return failAfter < 0 || steps++ < failAfter; }   // failure injection for the tests
+
+        std::vector<Change> changes;
+        int failAfter = -1, steps = 0;
+        bool committed = false;
+    };
+
+    bool replaceAll (const juce::File& staged, const juce::Array<juce::File>& targets, int failAfterSteps)
+    {
+        if (targets.isEmpty() || ! Transaction::preflight (staged, targets))
+            return false;
+
+        Transaction transaction (failAfterSteps);
+        for (const auto& target : targets)
+            if (! transaction.replace (stagedCounterpart (staged, target), target))
+            {
+                transaction.rollback();
+                return false;
+            }
+        transaction.commit();
         return true;
-       #endif
     }
 
    #if JUCE_LINUX || JUCE_BSD
@@ -403,17 +492,15 @@ InstallReport install (const Result& result)
 
     if (result.kind == InstallKind::portable && result.staged.isDirectory())
     {
-        bool allOk = true;
-        for (const auto& target : updateTargets (result.staged))
+        // All copies or none: on any error everything already replaced is put back.
+        const auto targets = updateTargets (result.staged);
+        if (replaceAll (result.staged, targets, -1))
         {
-            if (swapIn (stagedCounterpart (result.staged, target), target))
-                report.updated.add (target.getFullPathName());
-            else
-                allOk = false;
-        }
-        report.done = allOk && ! report.updated.isEmpty();
-        if (report.done)
+            for (const auto& t : targets)
+                report.updated.add (t.getFullPathName());
+            report.done = true;
             return report;
+        }
     }
 
     // Fallback: show the download so it can be installed by hand.
@@ -429,6 +516,14 @@ InstallReport install (const Result& result)
     result.file.revealToUser();
    #endif
     return report;
+}
+
+namespace testing
+{
+    bool replaceAll (const juce::File& staged, const juce::Array<juce::File>& targets, int failAfterSteps)
+    {
+        return Updater::replaceAll (staged, targets, failAfterSteps);
+    }
 }
 
 void cleanupAfterUpdate()

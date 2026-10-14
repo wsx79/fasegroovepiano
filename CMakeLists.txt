@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(FaseGroovePiano VERSION 1.18.1 LANGUAGES C CXX)
+project(FaseGroovePiano VERSION 1.18.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -98,4 +98,12 @@ if(SGK_BUILD_PLUGIN)
             juce::juce_recommended_config_flags
             juce::juce_recommended_lto_flags
             juce::juce_recommended_warning_flags)
+
+    # Plug-in level tests (state, presets, MIDI export, transport, updates); run by ctest in CI.
+    if(SGK_BUILD_TESTS)
+        juce_add_console_app(sgk_plugin_tests PRODUCT_NAME "Fase Groove Piano Tests")
+        target_sources(sgk_plugin_tests PRIVATE tests/PluginTests.cpp)
+        target_link_libraries(sgk_plugin_tests PRIVATE FaseGroovePiano juce::juce_audio_utils juce::juce_dsp)
+        add_test(NAME plugin COMMAND sgk_plugin_tests)
+    endif()
 endif()
