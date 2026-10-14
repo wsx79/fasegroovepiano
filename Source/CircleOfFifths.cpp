@@ -27,24 +27,6 @@ namespace
     {
         return juce::Font (juce::FontOptions (h).withStyle (bold ? "Bold" : "Regular"));
     }
-
-    void drawArrowHead (juce::Graphics& g, juce::Point<float> from, juce::Point<float> to, float size)
-    {
-        const auto dir = to - from;
-        const float len = dir.getDistanceFromOrigin();
-        if (len < 1.0f)
-            return;
-
-        const auto unit = dir / len;
-        const juce::Point<float> normal (-unit.y, unit.x);
-        const auto tip = from + dir * 0.58f;
-
-        juce::Path head;
-        head.addTriangle (tip + unit * size * 0.6f,
-                          tip - unit * size * 0.6f + normal * size * 0.55f,
-                          tip - unit * size * 0.6f - normal * size * 0.55f);
-        g.fillPath (head);
-    }
 }
 
 //==============================================================================
@@ -288,11 +270,16 @@ void CircleOfFifths::paint (juce::Graphics& g)
     const float rOut = outerRadius(), rMid = ringSplit(), rIn = innerRadius();
     const int keyIndex = minor ? indexOfMinor (key) : indexOfMajor (key);
 
-    // Soft halo behind the wheel.
-    g.setGradientFill (juce::ColourGradient (Palette::accent.withAlpha (0.10f), c, Palette::panel.withAlpha (0.0f),
-                                             c.translated (rOut + 6.0f, 0.0f), true));
-    g.fillEllipse (juce::Rectangle<float> (rOut * 2.0f + 12.0f, rOut * 2.0f + 12.0f).withCentre (c));
+    // Which segments the progression uses (and the one playing now).
+    auto usedBy = [this] (int index, bool inner)
+    {
+        for (int i = 0; i < (int) chords.size(); ++i)
+            if (chords[(size_t) i].minor == inner && (inner ? indexOfMinor (chords[(size_t) i].rootPc) : indexOfMajor (chords[(size_t) i].rootPc)) == index)
+                return i;
+        return -1;
+    };
 
+    // 1. The rings: flat colours. Chords of the scale stand out, the others stay in the background.
     for (int i = 0; i < 12; ++i)
     {
         const float a0 = angleOf (i) - segment * 0.5f + juce::MathConstants<float>::halfPi;
@@ -309,116 +296,127 @@ void CircleOfFifths::paint (juce::Graphics& g)
             const bool exactInScale = degree >= 0 && scaleChords[(size_t) degree].minor == inner;
             const bool hovered = hover.index == i && hover.inner == inner;
             const bool target = dragging >= 0 && (degree >= 0 || freeMode);
+            const int used = usedBy (i, inner);
+            const bool playingHere = used >= 0 && playing >= 0 && chords[(size_t) playing].minor == inner
+                                     && (inner ? indexOfMinor (chords[(size_t) playing].rootPc) : indexOfMajor (chords[(size_t) playing].rootPc)) == i;
 
-            juce::Colour fill = Palette::background.interpolatedWith (Palette::panel, inner ? 0.55f : 0.75f);
-            if (exactInScale)  fill = Palette::panel.interpolatedWith (Palette::accent, inner ? 0.20f : 0.26f);
+            juce::Colour fill = Palette::background.interpolatedWith (Palette::panel, 0.35f);
+            if (exactInScale)  fill = Palette::panelEdge.interpolatedWith (Palette::panel, inner ? 0.35f : 0.1f);
+            if (used >= 0)     fill = fill.interpolatedWith (harmonyColour (chords[(size_t) used].harmony), 0.28f);
             if (isKey)         fill = Palette::accent;
-            if (hovered)       fill = fill.brighter (0.22f);
+            if (playingHere)   fill = fill.interpolatedWith (Palette::text, 0.35f);
+            if (hovered)       fill = fill.brighter (0.18f);
             if (dragging >= 0 && ! target)
                 fill = fill.withMultipliedAlpha (0.4f);
 
-            const auto mid = segmentCentre (i, inner);
-            g.setGradientFill (juce::ColourGradient (fill.brighter (0.12f), mid.translated (0.0f, -12.0f),
-                                                     fill.darker (0.12f), mid.translated (0.0f, 12.0f), false));
+            g.setColour (fill);
             g.fillPath (seg);
-            g.setColour (Palette::panel.darker (0.35f));
-            g.strokePath (seg, juce::PathStrokeType (1.5f));
+            g.setColour (Palette::panel);
+            g.strokePath (seg, juce::PathStrokeType (2.0f));
 
             if (target)
             {
                 g.setColour (Palette::accent2.withAlpha (hovered ? 1.0f : exactInScale ? 0.6f : 0.22f));
                 g.strokePath (seg, juce::PathStrokeType (hovered ? 2.5f : 1.5f));
             }
-
-            // Chord name, plus the Roman numeral for the chords of the scale.
-            const juce::String name = inner ? minorNames[i] : majorNames[i];
-            g.setColour (isKey ? Palette::background : exactInScale ? Palette::text : Palette::dim.withAlpha (0.8f));
-
-            if (exactInScale)
-            {
-                g.setFont (font (inner ? 11.5f : 14.0f, true));
-                g.drawText (name, juce::Rectangle<float> (44.0f, 15.0f).withCentre (mid.translated (0.0f, -4.0f)), juce::Justification::centred);
-                g.setColour ((isKey ? Palette::background : Palette::accent).withAlpha (0.9f));
-                g.setFont (font (inner ? 8.5f : 9.5f, true));
-                g.drawText (scaleChords[(size_t) degree].numeral,
-                            juce::Rectangle<float> (44.0f, 11.0f).withCentre (mid.translated (0.0f, inner ? 7.0f : 8.0f)),
-                            juce::Justification::centred);
-            }
-            else
-            {
-                g.setFont (font (inner ? 10.5f : 12.5f, false));
-                g.drawText (name, juce::Rectangle<float> (44.0f, 15.0f).withCentre (mid), juce::Justification::centred);
-            }
         }
     }
 
-    // Centre: key and mode.
-    g.setColour (Palette::background.withAlpha (0.85f));
-    g.fillEllipse (juce::Rectangle<float> (rIn * 2.0f - 4.0f, rIn * 2.0f - 4.0f).withCentre (c));
-    g.setColour (Palette::text);
-    g.setFont (font (17.0f, true));
-    g.drawText (minor ? juce::String (minorNames[indexOfMinor (key)]) : juce::String (majorNames[indexOfMajor (key)]),
-                juce::Rectangle<float> (rIn * 2.0f, 18.0f).withCentre (c.translated (0.0f, -6.0f)), juce::Justification::centred);
-    g.setColour (Palette::dim);
-    g.setFont (font (9.0f, false));
-    g.drawFittedText (modeName, juce::Rectangle<float> (rIn * 1.8f, 12.0f).withCentre (c.translated (0.0f, 10.0f)).toNearestInt(),
-                      juce::Justification::centred, 1, 0.7f);
-
-    // The progression: one arrow per chord change, coloured by how well the two chords sound together.
-    if (! chords.empty())
+    // 2. The progression's path: soft curves bending towards the centre, under the names.
+    std::vector<juce::Point<float>> points;
+    for (int i = 0; i < (int) chords.size(); ++i)
+        points.push_back (i == dragging ? dragPos : dotPosition (i));
+    const int n = (int) points.size();
+    if (n > 1)
     {
-        std::vector<juce::Point<float>> points;
-        for (int i = 0; i < (int) chords.size(); ++i)
-            points.push_back (i == dragging ? dragPos : dotPosition (i));
-
-        const int n = (int) points.size();
         const int lines = n > 2 ? n : n - 1;   // loop back to the first chord (two chords: one line)
         for (int i = 0; i < lines; ++i)
         {
             const auto from = points[(size_t) i], to = points[(size_t) ((i + 1) % n)];
             const float score = i < (int) moves.size() ? moves[(size_t) i] : 1.0f;
-
-            // Semi-transparent lines keep the chord names readable underneath.
-            g.setColour (harmonyColour (score).withAlpha (0.55f));
-            g.drawLine ({ from, to }, 2.2f);
-            g.setColour (harmonyColour (score));
-            drawArrowHead (g, from, to, 7.0f);
-        }
-
-        for (int i = 0; i < n; ++i)
-        {
-            const bool now = i == playing;
-            const bool held = i == dragging;
-            const float d = held ? 22.0f : 17.0f;
-            const auto r = juce::Rectangle<float> (d, d).withCentre (points[(size_t) i]);
-
-            if (now || held)
-            {
-                g.setColour (Palette::text.withAlpha (0.35f));
-                g.fillEllipse (r.expanded (4.0f));
-            }
-
-            g.setColour (harmonyColour (chords[(size_t) i].harmony));
-            g.fillEllipse (r);
-            g.setColour (now ? Palette::text : Palette::background);
-            g.drawEllipse (r, now ? 2.0f : 1.2f);
-
-            g.setColour (Palette::background);
-            g.setFont (font (held ? 12.0f : 10.5f, true));
-            g.drawText (juce::String (i + 1), r, juce::Justification::centred);
+            const auto mid = (from + to) * 0.5f;
+            const auto control = mid + (c - mid) * 0.45f;
+            juce::Path curve;
+            curve.startNewSubPath (from);
+            curve.quadraticTo (control, to);
+            g.setColour (harmonyColour (score).withAlpha (0.5f));
+            g.strokePath (curve, juce::PathStrokeType (2.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
         }
     }
 
+    // 3. Names: scale chords bold with their numeral, the others faint.
+    for (int i = 0; i < 12; ++i)
+        for (const bool inner : { false, true })
+        {
+            const bool isKey = i == keyIndex && inner == minor;
+            const int degree = degreeAt ({ i, inner });
+            const bool exactInScale = degree >= 0 && scaleChords[(size_t) degree].minor == inner;
+            const auto mid = segmentCentre (i, inner);
+            const juce::String name = inner ? minorNames[i] : majorNames[i];
+            const float scale = juce::jlimit (0.8f, 1.3f, rOut / 110.0f);
+
+            if (exactInScale)
+            {
+                g.setColour (isKey ? Palette::background : Palette::text);
+                g.setFont (font ((inner ? 11.0f : 13.5f) * scale, true));
+                g.drawText (name, juce::Rectangle<float> (48.0f, 15.0f).withCentre (mid.translated (0.0f, -4.5f * scale)), juce::Justification::centred);
+                g.setColour (isKey ? Palette::background.withAlpha (0.8f) : Palette::accent);
+                g.setFont (font ((inner ? 8.5f : 9.5f) * scale, true));
+                g.drawText (scaleChords[(size_t) degree].numeral,
+                            juce::Rectangle<float> (48.0f, 11.0f).withCentre (mid.translated (0.0f, (inner ? 6.5f : 7.5f) * scale)),
+                            juce::Justification::centred);
+            }
+            else
+            {
+                g.setColour (Palette::dim.withAlpha (freeMode ? 0.75f : 0.45f));
+                g.setFont (font ((inner ? 9.5f : 11.0f) * scale, false));
+                g.drawText (name, juce::Rectangle<float> (48.0f, 15.0f).withCentre (mid), juce::Justification::centred);
+            }
+        }
+
+    // Centre: key and mode.
+    g.setColour (Palette::panel);
+    g.fillEllipse (juce::Rectangle<float> (rIn * 2.0f - 4.0f, rIn * 2.0f - 4.0f).withCentre (c));
+    g.setColour (Palette::text);
+    g.setFont (font (juce::jlimit (14.0f, 20.0f, rIn * 0.45f), true));
+    g.drawText (minor ? juce::String (minorNames[indexOfMinor (key)]) : juce::String (majorNames[indexOfMajor (key)]),
+                juce::Rectangle<float> (rIn * 2.0f, 20.0f).withCentre (c.translated (0.0f, -6.0f)), juce::Justification::centred);
+    g.setColour (Palette::dim);
+    g.setFont (font (9.0f, false));
+    g.drawFittedText (modeName, juce::Rectangle<float> (rIn * 1.7f, 12.0f).withCentre (c.translated (0.0f, 10.0f)).toNearestInt(),
+                      juce::Justification::centred, 1, 0.7f);
+
+    // 4. Numbered dots on the rim: drag one onto another chord to change it.
+    for (int i = 0; i < n; ++i)
+    {
+        const bool now = i == playing;
+        const bool held = i == dragging;
+        const float d = held ? 20.0f : 15.0f;
+        const auto r = juce::Rectangle<float> (d, d).withCentre (points[(size_t) i]);
+
+        if (now || held)
+        {
+            g.setColour (Palette::text.withAlpha (0.3f));
+            g.fillEllipse (r.expanded (3.0f));
+        }
+        g.setColour (harmonyColour (chords[(size_t) i].harmony));
+        g.fillEllipse (r);
+        g.setColour (now ? Palette::text : Palette::panel);
+        g.drawEllipse (r, now ? 2.0f : 1.5f);
+        g.setColour (Palette::background);
+        g.setFont (font (held ? 11.5f : 9.5f, true));
+        g.drawText (juce::String (i + 1), r, juce::Justification::centred);
+    }
+
     // Legend: what the colours mean.
-    auto legend = juce::Rectangle<float> (0.0f, juce::jmin (c.y + rOut + 12.0f, getHeight() - legendHeight),
-                                          (float) getWidth(), legendHeight);
-    legend = legend.withSizeKeepingCentre (juce::jmin (legend.getWidth(), 210.0f), legend.getHeight());
+    auto legend = juce::Rectangle<float> (0.0f, getHeight() - legendHeight, (float) getWidth(), legendHeight);
+    legend = legend.withSizeKeepingCentre (juce::jmin (legend.getWidth(), 220.0f), legend.getHeight());
     g.setFont (font (10.0f, false));
 
     auto item = [&g] (juce::Rectangle<float> area, juce::Colour colour, const juce::String& text)
     {
         g.setColour (colour);
-        g.fillEllipse (juce::Rectangle<float> (8.0f, 8.0f).withCentre ({ area.getX() + 5.0f, area.getCentreY() }));
+        g.fillEllipse (juce::Rectangle<float> (7.0f, 7.0f).withCentre ({ area.getX() + 5.0f, area.getCentreY() }));
         g.setColour (Palette::dim);
         g.drawText (text, area.withTrimmedLeft (13.0f), juce::Justification::centredLeft);
     };

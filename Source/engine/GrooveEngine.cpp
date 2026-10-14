@@ -695,7 +695,7 @@ const char* approachStyleName (int style) noexcept
 
 const char* topLineName (int line) noexcept
 {
-    static const char* const names[numTopLines] { "Smooth (auto)", "Steady", "Rising", "Falling", "Arch", "House pedal (same top note)" };
+    static const char* const names[numTopLines] { "Smooth (auto)", "Steady", "Rising", "Falling", "Arch", "House pedal" };
     return names[mod (line, numTopLines)];
 }
 

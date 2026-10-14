@@ -121,8 +121,8 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Scale / mode** | Major (Ionian), **Dorian** (the deep house classic), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, plus (v1.5) **Locrian**, **Harmonic Major** (gospel minor iv), **Lydian Dominant** (funky I7#11), **Mixolydian b6** (soulful borrowed iv) and **Phrygian Dominant** (dark, exotic deep house). |
 | **Extensions** | Triads, 7ths, 9ths, 11ths/13ths, plus (v1.5): **6/9** (the warm soulful tonic chord, no 7th), **Add 9** (pop/house triad with a 9th), **Sus (9sus4)** (the open, floating deep house chord) and **9ths + altered V** (every chord a 9th, and degree V becomes a gospel **13(b9)**, or **7(b9,b13)** in minor keys). Clashing tensions are handled automatically: a b9 on a non-dominant chord is dropped, an 11th on a major chord becomes a 13th, a 6th that would be a b6 becomes a 7th, and sus4 is used only where the 4th is perfect. |
 | **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound), *Shell (3-7-top)* (just 3rd, 7th and the top colour note: light and jazzy, leaves room for the bass and vocals), *Drop 2+4* (open, spread pianist voicing, great for pads and breaks), *Octave triads (disco)* (a plain triad doubled an octave up, R 3 5 R 3 5: the bright disco and nu disco piano; best with *Triads*). Fast repeated hits use a lighter voicing (the top three notes) and ghost notes only the top two, like a pianist's touch; steady 8th-note bass lines bounce between root and octave. Every voicing follows the rules a pianist uses: no semitone rubs between neighbouring notes, no muddy small intervals in the low register, the 9th above the 3rd, and the voice that moves the least (the top note sings a smooth line). **A/B** (next to the *Voicing* caption) opens the **Voicing Coach**: two voicings of your progression side by side, every chord drawn as notes on a pitch grid with the **top line** joined, plus the **range**, how much the **voices move** at each chord change, the **biggest top-note leap**, **muddy low notes** and **semitone rubs** (circled). Press **HEAR A** or **HEAR B** while the loop plays to switch between them: only the voicing changes, the chords stay. A short verdict tells you which is smoother or more compact. |
-| **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th, **Walking** (root, 5th, octave on the beats and a chromatic step into the next chord) **Syncopated octaves** (the offbeats jump up an octave: the pumping house bass) or **Piano stabs (bass in every chord)**: the root plays with every chord hit, low and full, plus the bass's own hits in between. It is how house piano loops are played: one big stab, bass included. The menu also has a **library of bass lines** (each with its own rhythm and notes, following your chords): *Disco* (Disco Octave Gallop, Disco Octave Push, Philly Walk, Boogie Line), *Funky* (Funk Sixteenths, Slap & Pop, Dead Note Groove: with dead notes), *House* (Deep House Root, Offbeat House, Garage Skip) and *Soulful* (Soulful Walk, Gospel Walk). They use 3rds, 5ths, 6ths, 7ths, octaves and **approach notes** that lead by a semitone into the next chord, like a bass player. The grid shows the line's rhythm; editing a bass cell turns it into your own rhythm on the roots. |
-| **Top line** | The melody drawn by the top notes of the chords: *Smooth (auto)* moves as little as possible, *Steady* keeps the top note in place, *Rising*, *Falling* or *Arch* shape it across the progression. |
+| **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th, **Walking** (root, 5th, octave on the beats and a chromatic step into the next chord) **Syncopated octaves** (the offbeats jump up an octave: the pumping house bass) or **Piano stabs (bass in every chord)** (the default): the root plays with every chord hit, low and full, plus the bass's own hits in between, but never a 16th before or after a chord (that would sound like a flam). It is how house piano loops are played: one big stab, bass included. The menu also has a **library of bass lines** (each with its own rhythm and notes, following your chords): *Disco* (Disco Octave Gallop, Disco Octave Push, Philly Walk, Boogie Line), *Funky* (Funk Sixteenths, Slap & Pop, Dead Note Groove: with dead notes), *House* (Deep House Root, Offbeat House, Garage Skip) and *Soulful* (Soulful Walk, Gospel Walk). They use 3rds, 5ths, 6ths, 7ths, octaves and **approach notes** that lead by a semitone into the next chord, like a bass player. The grid shows the line's rhythm; editing a bass cell turns it into your own rhythm on the roots. |
+| **Top line** | The melody drawn by the top notes of the chords. **House pedal** (the default) is the classic house piano way: the chords share **one top note** (their 5th, 7th or 3rd) and step only to the nearest chord tone when a chord doesn't have it; the top note doesn't jump around inside the bar. *Smooth (auto)* moves as little as possible, *Steady* aims for one height, *Rising*, *Falling* or *Arch* shape it across the progression. |
 | **Movement** | **Voicing movement** for every groove: *Off* repeats the same chord on every hit, *Subtle* (default) moves the answer half-bars an inversion up, *Lively* makes every half-bar dance (chord, up, chord, down, mirrored in the answer). Grooves that already move keep their own figure; the break stays still. |
 | **Approach chord** | The gospel **slide**: on the last 16th before each chord change the next chord (and its bass note) is played a half step **from above** or **from below**, then resolves. Only where the hand is already playing, so a muted bass stays muted. |
 | **Top +8va** | Doubles the top note of every chord an octave higher: the bright, ringing classic house piano sound. |
@@ -146,10 +146,12 @@ Outer ring = major keys, inner ring = relative minors.
 - The orange slice is the **current key**. The **bright slices are the chords of the scale**,
   each with its Roman numeral (I, ii, iii…); the dark ones are outside the scale. The centre shows
   the key and the mode.
-- Your progression is drawn as **numbered dots** (1, 2, 3…, around the wheel for major chords,
-  around the centre for minor ones) joined by **arrows** that show the order of the chords. The
-  dot with the white ring is the chord that is playing.
-- **Harmony colours:** every dot and every arrow is coloured by **how well the chords sound
+- The slices of the chords you use are tinted with their harmony colour, and the one playing
+  lights up. Your progression is drawn as **numbered dots** (1, 2, 3…, on the rim for major
+  chords, around the centre for minor ones) joined by soft **curves** (under the names, so they
+  stay readable) in the order of the chords. The dot with the white ring is the chord that is
+  playing.
+- **Harmony colours:** every dot and every curve is coloured by **how well the chords sound
   together** (shared notes, smooth voice leading, strong root moves like down a fifth, staying in
   the key): **green = sounds great**, **amber = good**, **grey = clashes**. The legend is under
   the wheel. The same colour appears as a bar on top of each chord slot.
@@ -173,7 +175,7 @@ Outer ring = major keys, inner ring = relative minors.
 | Control | What it does |
 |---|---|
 | **Groove** | 142 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). Clicking it opens the **groove browser**: genres on the left, the grooves of that genre on the right with a **picture of their rhythm** (chords on top, bass below), a search box, **MY GROOVES** (your saved ones), **★ Favourites** (click the ☆ star on any groove) and **Recent** (the last twelve you tried). Click a groove to hear it while the loop plays, double-click (or Enter) to close. The **◀ ▶** arrows next to the menu step to the previous / next groove. |
-| **NEW RIFF** | Generates a new riff (chords + bass), built like a keyboard player builds one: a half-bar motif made of house comping figures, answered and repeated (A B A B'), often with a push into the next bar, over a simple bass figure that locks to it. If you locked some parts with **LOCK** (see *Rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
+| **NEW RIFF** | Generates a new riff (chords + bass), mostly from the classic piano house loop figures (the dotted-8th 3-3-3-3-2-2 family and its relatives), usually the same bar twice like a house loop, with a steady touch, over a simple bass figure that locks to it. If you locked some parts with **LOCK** (see *Piano roll and rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
 | **Fills** | **Off** by default. Every bar, or every 2/4/8 bars, the end of the bar becomes a short fill leading into the next chord. |
 | **Fill style** | 11 styles, all aimed at the top note of the next chord: *Pentatonic run up* / *down*, *Chord roll* (a flowing 32nd-note arpeggio of the next chord, from an octave below), *Gospel run* (eight 16ths up the scale over the last two beats), *Chromatic walk-up* (four semitones into the next chord), *Push stabs* (a stab, a ghost, then the next chord pushed in on the "&" of 4), *16th chord chops* (four light chops with a crescendo), *Gospel thirds* (parallel thirds walking down), *Piano glissando* (a fast sweep up), *Blues lick* (down the blues scale) and *Mix*, which plays a different one at every fill. |
@@ -182,7 +184,7 @@ Outer ring = major keys, inner ring = relative minors.
 | **Swing** | 0% = straight, 100% = triplet shuffle. 15–35% is the classic house feel. |
 | **Gate** | How much of the space before the next hit each note fills, like a pianist's hand: low = short stabs, high = almost legato. At the default 65% a stab three 16ths before the next one rings about two 16ths. Notes held with *=* in the grid keep their length. |
 | **Velocity** | Overall dynamics (default 118: a piano played softly sounds dull). Accents play at this value, normal hits just below, ghost notes about half. |
-| **Humanize** | Small timing and velocity variations for a hand-played feel. Under the knob, **Feel** shares it between the voices: *Even*, *Pianist* (the top note sings, a hair early and louder; steady bass), *Laid-back bass* (the bass a little behind the beat) or *Tight bass* (bass locked, chords looser). **NEW FEEL** (under Gate) gives another humanization of the same groove; it is repeatable and saved with the project. |
+| **Humanize** | Small timing and velocity variations for a hand-played feel. The **FEEL** heading above the knobs has a **Feel ▾** menu that shares it between the voices: *Even*, *Pianist* (the top note sings, a hair early and louder; steady bass), *Laid-back bass* (the bass a little behind the beat) or *Tight bass* (bass locked, chords looser), and **NEW FEEL**, another humanization of the same groove (repeatable and saved with the project). |
 | **Density** | Random riffs only: from sparse stabs to busy 16th-note chops. |
 
 **The grooves: 142, by genre.** New users: start from **Piano House**, the classic house piano loops (rootless chords on syncopated offbeats over an octave bass). The *Groove* menu opens in columns with one heading per genre;
@@ -205,10 +207,23 @@ Outer ring = major keys, inner ring = relative minors.
 | **Chill & Pads** (6) | *Long Chords*, *Whole Bar Pads*, *Half Bar Pads*, *Chill Swells*, *Lounge Keys*, *Sunset Chords* |
 | **Dance Stabs** (8) | *Future Stab 3-3-2*, *Tresillo Stabs*, *Rolling 3-3-3*, *Offbeat Push Stabs*, *Bounce Stabs*, *Call Stab Answer*, *Club Hook Stabs*, *Disco Octave Pump*: short chords on 3-3-3-3-2-2 figures with the bass doubling every hit |
 
-### Rhythm grid
+### Piano roll and rhythm grid
 
-Shows the rhythm in 16th notes over 2 bars: the **CHORDS** row (right hand) and the **BASS** row
-(left hand). **You can edit it by hand**:
+The big panel at the bottom has two views (tabs at the top left):
+
+- **PIANO ROLL** (the default): **every note the plug-in plays**, on a keyboard: chords in orange,
+  bass in pink, fills in blue, brighter while they sound. Above the notes, the **chord names** of
+  the loop (the playing one lit), and the white playhead. It shows the whole loop (until the groove
+  and the progression come round together, up to 8 bars) exactly as it will be exported.
+- **EDIT GRID**: the rhythm in 16th notes over 2 bars, to edit by hand (below).
+
+Next to the tabs, **BOTH / PIANO / BASS** choose what you hear: **PIANO** switches the bass off
+(it remembers the bass mode you had chosen), **BASS** keeps the chords silent so you hear only the
+bass, **BOTH** brings back both. BASS only affects what plays: dragged and saved clips still
+contain everything (use *Notes* in the EXPORT MIDI panel to export one part).
+
+The grid shows the **CHORDS** row (right hand) and the **BASS** row (left hand). **You can edit it
+by hand**:
 
 - **Click** a step: it cycles hit → accent → ghost note → rest.
 - **Right-click** (or Ctrl+click on Mac): a menu with *Hit*, *Accent*, *Ghost note*, *Push*
@@ -225,12 +240,6 @@ grid). Above each part you'll find:
 | **RND** | A new random rhythm for that part only. |
 | **LOCK** | Locks the part: **NEW RIFF** changes everything except the locked parts. |
 
-**SOLO PIANO** and **SOLO BASS** (top right of the grid): **SOLO PIANO** switches the bass off
-(it remembers the bass mode you had chosen, and the bass row disappears from the grid);
-**SOLO BASS** keeps the chords silent so you hear only the bass. Click the lit one again to hear
-both. SOLO BASS only affects what plays: dragged and saved clips still contain everything (use
-*Notes* in the MIDI clip panel to export one part).
-
 **DNA** (top of the grid) opens **Musical DNA**: five buttons that each take your groove **one
 step** towards an intention: **More soulful** (held chords, a push into the next bar, fewer ghost
 notes, 9ths, rootless voicing, a passing chord), **Funkier** (ghost notes, 16th anticipations,
@@ -241,8 +250,9 @@ below). Click again to go further. **Keep the rhythm** changes only extensions a
 the harmony** changes only the grid and its feel. The chords of the progression never change and
 **locked** parts stay. Undo with ◀.
 
-**MORPH** (top of the grid) turns your groove into another one **step by step**: choose the
-target groove and move the **Amount** slider; the grid changes as you move it, so you can stop
+**MORPH** (top of the grid) turns your groove into another one **step by step**: click the
+target to choose it in the **groove browser** (genres, search, favourites: no endless menu) or
+step through the grooves with **◀ ▶**, then move the **Amount** slider; the grid changes as you move it, so you can stop
 anywhere in between (each step switches at its own point, so more amount only adds more of the
 target). **Locked** parts stay as they are. **KEEP** keeps the blend (as your *User pattern*),
 **CANCEL** puts everything back.
@@ -253,7 +263,7 @@ kept. With a bass line from the library, **RND BASS** picks another line. Press 
 
 | Cell | Meaning |
 |---|---|
-| With a small ▲ / ▼ | the top three notes of the chord **one inversion up / down** (a lighter right-hand stab): the top note moves, like a real piano riff (choose *Hit, voicing up / down* with a right-click) |
+| With a small ▲ / ▼ | a **neighbour note**: the top voice steps to the next scale note up / down while the chord under it stays (choose *Hit, voicing up / down* with a right-click). With the *House pedal* top line the top note stays put on these hits; accented ones still step |
 | Solid bright | accented hit |
 | Solid medium | normal hit |
 | Solid faint | ghost note (very soft hit) |
@@ -273,7 +283,7 @@ kept. With a bass line from the library, **RND BASS** picks another line. Press 
 | **Tone / Reverb / Volume** | Brightness (or drawbars for the organ), reverb and volume of the guide sound (they don't affect the MIDI). |
 | **Chorus / Pump** | *Chorus* widens the sound; *Pump* ducks it on every beat like a kick sidechain, so the riff sounds the way it will in the mix. Guide sound only. |
 
-### MIDI clip
+### Export MIDI
 
 See the next chapter.
 
@@ -327,7 +337,7 @@ to go back):
     Português**. The change is immediate and is remembered for all your projects. The first time,
     the plug-in picks your computer's language.
   - **Interface size:** 60% to 200%, the same as dragging the corner.
-  - **Mini window while dragging:** the same switch you find in the MIDI clip panel.
+  - **Mini window while dragging:** the plug-in window shrinks to a small tile while you drag a clip.
   - **Show tips when the mouse rests on a control:** on by default. Rest the mouse on any knob,
     menu or button for a moment and a tip explains what it does. Switch it off once you know
     the plug-in.
@@ -362,7 +372,7 @@ to go back):
 
 ## 4. Exporting MIDI to your DAW
 
-In the **MIDI CLIP** panel:
+In the **EXPORT MIDI** panel:
 
 1. **Clip length**
    - *Full loop*: the right length for progression, rhythm and fills to repeat seamlessly
@@ -370,12 +380,15 @@ In the **MIDI CLIP** panel:
    - *1–32 bars*: a fixed length.
    - *Song: intro > drop > outro*: a full 60-bar arrangement (see chapter 6).
 2. **Notes**: *Chords + bass*, *Chords only*, *Bass only* or **Separate tracks** (one MIDI file with a Piano track, a Bass track (on channel 2 when *MIDI out* is set to *Bass on channel 2*) and, if there are fills, a Fills track, plus tempo and section markers: most DAWs open it as separate tracks).
-3. **Drag** the **DRAG MIDI TO DAW** tile onto a track or the DAW timeline.
-   Or use **Save .mid…**: *Save this clip as .mid…* saves the file wherever you want, and
+3. **Drag** the **DRAG MIDI TO DAW** tile onto a track or the DAW timeline (the tile shows what
+   it holds, e.g. *Chords + bass · Full loop*).
+   Or use **SAVE .MID…**: *Save this clip as .mid…* saves the file wherever you want, and
    **Save all parts to a folder…** writes six files at once: the loop and the whole song, each as
    full, chords only and bass only, ready to drop on separate tracks.
 
-With **Mini window while dragging** on, the plug-in window shrinks to a small tile while you drag,
+4. **FULL SONG…** opens the song window (chapter 6): there you drag or save the **whole song**.
+
+With **Mini window while dragging** on (in **OPTIONS → SETTINGS**), the plug-in window shrinks to a small tile while you drag,
 so you can see the DAW and drop the clip where you want. It comes back when you release. If your
 DAW doesn't handle plug-in resizing well, turn this option off.
 
@@ -421,14 +434,17 @@ Two ways to use it:
 - **Automatic export:** *Clip length → Song: intro > drop > outro* creates a 60-bar clip
   (Intro 8 · Main 16 · Break 8 · Build-up 4 · Drop 16 · Outro 8) with section **markers**,
   visible in the timeline of most DAWs.
-- **SONG** (top right of the MIDI clip panel) opens the **song arrangement**: the bars of each
+- **FULL SONG…** (in the EXPORT MIDI panel) opens the **song arrangement**. On top, a
+  **timeline** shows the sections as long as their bars; below, for each section: the bars of each
   section (2 to 32, or **-** to leave it out), **NEW VARIATION** to regenerate the groove of **one
   section only** (for example a different Drop) while the others stay, **ORIGINAL** to go back,
   and the **fill** that closes each section (as set in the Groove panel, none, or any fill style:
   you hear it while that *Song section* loops).
   The arrangement is used by *Clip length → Song*, by *Song section* while you play, and by
-  **SAVE EACH SECTION AS .MID…**, which writes one MIDI file per section (with the *Notes* part you
-  chose) to drop on separate clips. It is saved with the project.
+  the export at the bottom: **DRAG MIDI TO DAW** (the whole song, with section markers, as one
+  clip), **SAVE SONG .MID…** and **ONE .MID PER SECTION…** (one MIDI file per section to drop on
+  separate clips), all with the *Notes* part chosen in EXPORT MIDI. The total length is shown in
+  bars and minutes. It is saved with the project.
 - **Automation:** every knob, menu and switch is a DAW parameter, so you can automate anything:
   song section, groove, fills, gate, swing, chords of the progression, sound… In the DAW's
   automation list the parameters are grouped (*Harmony*, *Progression*, *Groove*, *Tempo & MIDI*,

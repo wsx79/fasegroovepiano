@@ -6,6 +6,37 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.25.0] - 2026-10-14
+
+### Changed
+- **Piano grooves in the classic house piano style.** The chords now share **one top
+  note** (new *House pedal* top line, the default: their 5th, 7th or 3rd, stepping only to the
+  nearest chord tone when a chord doesn't have it), so the riff no longer sounds like random
+  notes jumping around inside the bar. The ▲/▼ hits became **neighbour notes** on the top voice
+  only (the chord under it stays); with the pedal top line plain ▲/▼ hits keep the top note still.
+- **Bass in every stab, no flams:** *Piano stabs (bass in every chord)* is the default bass; the
+  bass never plays a 16th before or after a chord any more (it sounded like two hands that
+  missed each other).
+- **NEW RIFF / RND PIANO** build riffs from the classic piano house loop figures (the dotted-8th
+  3-3-3-3-2-2 family and its relatives), repeat their bar like a house loop and keep a steady
+  touch (no random accents or ghost notes).
+- House styles (STYLE menu) use the pedal top line.
+- **New layout of the bottom of the window** (a little taller):
+  - **PIANO ROLL** (default view): every note that plays (chords, bass, fills) on a keyboard,
+    the chord names above and the playhead; **EDIT GRID** switches to the rhythm grid.
+  - **BOTH / PIANO / BASS** instead of the two SOLO buttons.
+  - **EXPORT MIDI** panel: notes and length, a clear drag tile that shows what it holds,
+    **SAVE .MID…** and **FULL SONG…** (the mini-window switch is in OPTIONS → SETTINGS).
+- **Song window:** a timeline of the sections, column names, the song length in minutes, and the
+  whole-song export in one place: drag it, **SAVE SONG .MID…** or **ONE .MID PER SECTION…**.
+- **Circle of fifths** redrawn: bigger, flat and clean; the chords of the scale stand out, the
+  others stay faint; the chords you use are tinted with their harmony colour; the progression is
+  joined by soft curves under the names instead of arrows over them.
+- **MORPH:** the target is chosen in the groove browser (genres, search, favourites) or with
+  ◀ ▶, instead of an endless menu.
+- **FEEL:** its own heading above the knobs, with the **Feel ▾** menu and **NEW FEEL**.
+- *Play mode* moved next to *MIDI out*.
+
 ## [1.24.1] - 2026-10-14
 
 ### Fixed

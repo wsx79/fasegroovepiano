@@ -7,10 +7,11 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Prossima release
 
-- In attesa dei tuoi test sulle versioni dalla 1.19 alla 1.23.
+- In attesa dei tuoi test sui nuovi groove di piano e sull'interfaccia della 1.25.
 
 ## Fatto
 
+- v1.25.0: groove di piano nel classico stile house (linea in alto a pedale, basso in ogni stab), piano roll, nuovo pannello di export e finestra del brano, nuovo circolo delle quinte, arrivo del morph dal browser.
 - v1.24.0: Chord Variation Lab, humanize per voce, un fill per sezione, export MIDI su tracce separate.
 - v1.23.0: Musical DNA (variazioni per intenzione).
 - v1.22.0: morphing del groove, arrangiamento con variazioni per sezione e un .mid per sezione.

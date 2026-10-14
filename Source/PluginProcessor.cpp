@@ -1027,6 +1027,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         const int patternLength = sgk::GrooveEngine::patternLength (settings);
         uiStep = (int) (((step % patternLength) + patternLength) % patternLength);
         uiSlot = sgk::GrooveEngine::slotForStep (step, settings);
+        uiPpq = startPpq;
     }
     else
     {
@@ -1035,6 +1036,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
         uiStep = -1;
         uiSlot = -1;
+        uiPpq = -1.0;
     }
 
     wasRunning = running;

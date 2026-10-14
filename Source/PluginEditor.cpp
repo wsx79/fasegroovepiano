@@ -3,6 +3,9 @@
 
 #include "PluginEditor.h"
 
+#include <map>
+#include <numeric>
+
 namespace
 {
     juce::Font font (float height, bool bold = false)
@@ -485,6 +488,152 @@ void PatternView::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+void PianoRollView::setContent (std::vector<Note> newNotes, std::vector<ChordSpan> newChords, double lengthInBeats, bool chordsMuted)
+{
+    if (newNotes == notes && newChords == chords && juce::approximatelyEqual (lengthInBeats, length) && chordsMuted == mutedChords)
+        return;
+
+    notes = std::move (newNotes);
+    chords = std::move (newChords);
+    length = juce::jmax (1.0, lengthInBeats);
+    mutedChords = chordsMuted;
+
+    // The keyboard follows the notes, with a little room around them (two octaves at least).
+    int low = 127, high = 0;
+    for (const auto& n : notes)
+    {
+        low = juce::jmin (low, n.note);
+        high = juce::jmax (high, n.note);
+    }
+    if (low > high) { low = 48; high = 72; }
+    low -= 2; high += 2;
+    while (high - low < 24) { --low; ++high; }
+    lowNote = juce::jmax (0, low);
+    highNote = juce::jmin (127, high);
+    repaint();
+}
+
+void PianoRollView::setPlayhead (double beat)
+{
+    if (std::abs (beat - playhead) < 1.0e-4)
+        return;
+    playhead = beat;
+    repaint();
+}
+
+juce::Rectangle<float> PianoRollView::noteArea() const
+{
+    return getLocalBounds().toFloat().withTrimmedLeft (keyboardWidth).withTrimmedTop (chordLaneHeight);
+}
+
+float PianoRollView::xOf (double beat) const
+{
+    const auto area = noteArea();
+    return area.getX() + (float) (beat / length) * area.getWidth();
+}
+
+void PianoRollView::paint (juce::Graphics& g)
+{
+    const auto bounds = getLocalBounds().toFloat();
+    const auto area = noteArea();
+    const int rows = highNote - lowNote + 1;
+    const float rowH = area.getHeight() / (float) rows;
+    auto yOf = [&] (int note) { return area.getBottom() - (float) (note - lowNote + 1) * rowH; };
+    auto isBlack = [] (int note) { const int pc = note % 12; return pc == 1 || pc == 3 || pc == 6 || pc == 8 || pc == 10; };
+
+    g.setColour (Palette::background);
+    g.fillRoundedRectangle (bounds, 6.0f);
+
+    // Rows: the black keys a little darker, a line under every C.
+    for (int note = lowNote; note <= highNote; ++note)
+    {
+        const auto row = juce::Rectangle<float> (area.getX(), yOf (note), area.getWidth(), rowH);
+        if (isBlack (note))
+        {
+            g.setColour (juce::Colours::black.withAlpha (0.22f));
+            g.fillRect (row);
+        }
+        if (note % 12 == 0)
+        {
+            g.setColour (Palette::panelEdge.withAlpha (0.8f));
+            g.fillRect (row.getX(), row.getBottom() - 0.5f, row.getWidth(), 1.0f);
+        }
+    }
+
+    // Keyboard on the left.
+    for (int note = lowNote; note <= highNote; ++note)
+    {
+        const auto key = juce::Rectangle<float> (bounds.getX(), yOf (note), keyboardWidth - 2.0f, rowH);
+        g.setColour (isBlack (note) ? Palette::panel.darker (0.4f) : Palette::text.withAlpha (0.82f));
+        g.fillRect (key.reduced (0.0f, 0.25f));
+        if (note % 12 == 0 && rowH * 3.0f >= 9.0f)
+        {
+            g.setColour (Palette::background);
+            g.setFont (font (juce::jmin (9.0f, rowH * 2.2f), true));
+            g.drawText ("C" + juce::String (note / 12 - 1), key.withHeight (rowH * 2.0f).translated (0.0f, -rowH).withTrimmedRight (2.0f),
+                        juce::Justification::centredRight);
+        }
+    }
+
+    // Beat and bar lines.
+    const int sixteenths = (int) std::lround (length * 4.0);
+    for (int s = 0; s <= sixteenths; ++s)
+    {
+        const float x = xOf (s / 4.0);
+        const bool bar = s % 16 == 0, beat = s % 4 == 0;
+        g.setColour (bar ? Palette::accent.withAlpha (0.35f) : beat ? Palette::panelEdge.withAlpha (0.9f) : Palette::panelEdge.withAlpha (0.3f));
+        g.fillRect (x - (bar ? 0.75f : 0.5f), area.getY(), bar ? 1.5f : 1.0f, area.getHeight());
+    }
+
+    // Chord lane: one block per chord, with its name.
+    for (size_t i = 0; i < chords.size(); ++i)
+    {
+        const auto& c = chords[i];
+        auto block = juce::Rectangle<float> (xOf (c.start), bounds.getY(), xOf (c.start + c.length) - xOf (c.start), chordLaneHeight).reduced (1.0f, 2.0f);
+        const bool now = playhead >= c.start && playhead < c.start + c.length;
+        g.setColour (now ? Palette::accent : (i % 2 == 0 ? Palette::panelEdge : Palette::panelEdge.darker (0.25f)));
+        g.fillRoundedRectangle (block, 4.0f);
+        g.setColour (now ? Palette::background : Palette::text);
+        g.setFont (font (11.5f, true));
+        g.drawFittedText (c.name, block.reduced (5.0f, 0.0f).toNearestInt(), juce::Justification::centredLeft, 1, 0.6f);
+    }
+
+    // Notes: piano (orange), bass (pink), fills (blue); brighter while they sound.
+    const juce::Colour fillColour (0xff7fc4f2);
+    for (const auto& n : notes)
+    {
+        if (n.note < lowNote || n.note > highNote)
+            continue;
+        const float x0 = xOf (n.start), x1 = xOf (juce::jmin (n.start + n.length, length));
+        auto r = juce::Rectangle<float> (x0, yOf (n.note), juce::jmax (2.0f, x1 - x0), rowH).reduced (0.5f, rowH > 5.0f ? 0.75f : 0.25f);
+        juce::Colour c = n.part == sgk::Part::bass ? Palette::accent2 : n.part == sgk::Part::fill ? fillColour : Palette::accent;
+        float alpha = 0.55f + 0.45f * juce::jlimit (0.0f, 1.0f, (n.velocity - 40) / 87.0f);
+        if (mutedChords && n.part != sgk::Part::bass)
+            alpha *= 0.3f;
+        const bool sounding = playhead >= n.start && playhead < n.start + n.length;
+        g.setColour (sounding ? c.brighter (0.5f) : c.withAlpha (alpha));
+        g.fillRoundedRectangle (r, juce::jmin (2.5f, rowH * 0.4f));
+        g.setColour (juce::Colours::black.withAlpha (0.35f));
+        g.drawRoundedRectangle (r, juce::jmin (2.5f, rowH * 0.4f), 0.6f);
+    }
+
+    // Playhead.
+    if (playhead >= 0.0)
+    {
+        const float x = xOf (playhead);
+        g.setColour (Palette::text.withAlpha (0.9f));
+        g.fillRect (x - 0.75f, bounds.getY(), 1.5f, bounds.getHeight());
+    }
+
+    if (notes.empty())
+    {
+        g.setColour (Palette::dim);
+        g.setFont (font (12.0f));
+        g.drawText (tr ("No notes: the piano and the bass are both silent"), area, juce::Justification::centred);
+    }
+}
+
+//==============================================================================
 OptionsOverlay::OptionsOverlay() : artist (Branding::artistLogo())
 {
     setInterceptsMouseClicks (true, true);
@@ -751,13 +900,35 @@ void OptionsOverlay::paint (juce::Graphics& g)
 void MidiDragTile::paint (juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat().reduced (1.0f);
-    g.setGradientFill (juce::ColourGradient (Palette::accent.withAlpha (hover ? 1.0f : 0.85f), r.getTopLeft(),
-                                             Palette::accent2.withAlpha (hover ? 1.0f : 0.85f), r.getBottomRight(), false));
+    g.setColour (hover ? Palette::accent.brighter (0.1f) : Palette::accent);
     g.fillRoundedRectangle (r, 8.0f);
+    g.setColour (Palette::background.withAlpha (0.25f));
+    g.drawRoundedRectangle (r.reduced (4.0f), 6.0f, 1.0f);
+
+    // A small "MIDI clip" picture: four notes on a strip.
+    auto content = r.reduced (12.0f, 8.0f);
+    if (content.getHeight() > 54.0f)
+    {
+        auto icon = content.removeFromTop (content.getHeight() * 0.38f).withSizeKeepingCentre (56.0f, juce::jmin (26.0f, content.getHeight() * 0.38f));
+        g.setColour (Palette::background.withAlpha (0.85f));
+        g.fillRoundedRectangle (icon, 4.0f);
+        g.setColour (Palette::accent);
+        const float w = icon.getWidth() / 6.0f, h = icon.getHeight() / 5.0f;
+        const int rows[] { 3, 1, 2, 1 };
+        for (int k = 0; k < 4; ++k)
+            g.fillRoundedRectangle (icon.getX() + w * (0.6f + 1.2f * k), icon.getY() + h * (float) rows[k], w, h, 1.5f);
+    }
 
     g.setColour (Palette::background);
     g.setFont (juce::Font (juce::FontOptions (15.0f).withStyle ("Bold")));
-    g.drawFittedText (tr ("DRAG MIDI TO DAW"), r.reduced (6.0f, 2.0f).toNearestInt(), juce::Justification::centred, 2, 0.8f);
+    auto title = subtitle.isEmpty() ? content : content.removeFromTop (content.getHeight() * 0.55f);
+    g.drawFittedText (tr ("DRAG MIDI TO DAW"), title.toNearestInt(), subtitle.isEmpty() ? juce::Justification::centred : juce::Justification::centredBottom, 1, 0.8f);
+    if (subtitle.isNotEmpty())
+    {
+        g.setColour (Palette::background.withAlpha (0.75f));
+        g.setFont (juce::Font (juce::FontOptions (11.5f)));
+        g.drawFittedText (subtitle, content.toNearestInt().withTrimmedTop (3), juce::Justification::centredTop, 1, 0.8f);
+    }
 }
 
 void MidiDragTile::mouseDrag (const juce::MouseEvent& e)
@@ -948,7 +1119,7 @@ int GrooveBrowser::genreOfCurrent() const
         return firstCategory;
     }
 
-    const int current = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pattern)->load());
+    const int current = pickCurrent >= 0 ? pickCurrent : juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pattern)->load());
     const auto& patterns = sgk::groovePatterns();
     if (current >= (int) patterns.size())
         return firstCategory + (int) cats.size() + 1;   // Generate
@@ -960,6 +1131,8 @@ int GrooveBrowser::genreOfCurrent() const
 
 void GrooveBrowser::show (Mode newMode, int preset)
 {
+    onPicked = nullptr;
+    pickCurrent = -1;
     mode = newMode;
     currentPreset = preset;
     search.clear();
@@ -969,6 +1142,24 @@ void GrooveBrowser::show (Mode newMode, int preset)
     setVisible (true);
     toFront (true);
     list.grabKeyboardFocus();
+}
+
+void GrooveBrowser::pickGroove (int current, std::function<void (int)> picked)
+{
+    show (Mode::grooves);
+    pickCurrent = current;
+    onPicked = std::move (picked);
+    selectGenre (genreOfCurrent());
+    repaint();
+}
+
+void GrooveBrowser::visibilityChanged()
+{
+    if (! isVisible())
+    {
+        onPicked = nullptr;
+        pickCurrent = -1;
+    }
 }
 
 void GrooveBrowser::selectGenre (int g)
@@ -1132,6 +1323,17 @@ void GrooveBrowser::choose (int row)
         return;
 
     const auto e = entries[(size_t) row];
+    if (onPicked != nullptr)
+    {
+        // Pick mode: only the built-in grooves can be a morph target.
+        if (e.pattern >= 0 && ! e.file.existsAsFile())
+        {
+            auto picked = onPicked;
+            setVisible (false);
+            picked (e.pattern);
+        }
+        return;
+    }
     if (e.preset >= 0)
     {
         processor.applyProgressionPreset (e.preset);
@@ -1313,11 +1515,13 @@ void GrooveBrowser::paint (juce::Graphics& g)
     g.setColour (Palette::accent);
     g.setFont (font (20.0f, true));
     const bool progressions = mode == Mode::progressions;
-    g.drawText (Localisation::upper (tr (progressions ? "Progressions" : "Groove")), top.removeFromTop (26.0f), juce::Justification::centredLeft);
+    const bool picking = onPicked != nullptr;
+    g.drawText (Localisation::upper (tr (progressions ? "Progressions" : picking ? "Morph towards..." : "Groove")), top.removeFromTop (26.0f), juce::Justification::centredLeft);
     g.setColour (Palette::dim);
     g.setFont (font (12.0f));
     g.drawText (tr (progressions ? "Click a progression to hear it, double-click or Enter to close. The star keeps it in your favourites."
-                                 : "Click a groove to hear it, double-click or Enter to close. The star keeps it in your favourites."),
+                    : picking ? "Click the groove to morph towards: genres on the left, or type its name."
+                              : "Click a groove to hear it, double-click or Enter to close. The star keeps it in your favourites."),
                 top, juce::Justification::centredLeft);
 }
 
@@ -1591,6 +1795,11 @@ SongOverlay::SongOverlay (FaseGroovePianoProcessor& p) : processor (p)
     saveButton.setColour (juce::TextButton::textColourOffId, Palette::background);
     saveButton.onClick = [this] { if (onSaveSections != nullptr) onSaveSections(); };
     addAndMakeVisible (saveButton);
+    saveSongButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    saveSongButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    saveSongButton.onClick = [this] { if (onSaveSong != nullptr) onSaveSong(); };
+    addAndMakeVisible (saveSongButton);
+    addAndMakeVisible (songTile);
     closeButton.onClick = [this] { setVisible (false); };
     addAndMakeVisible (closeButton);
     refreshText();
@@ -1610,7 +1819,9 @@ void SongOverlay::refreshText()
             box->addItem (tr ("Fill") + ": " + tr (sgk::fillStyleName (f)), f + 3);
         box->setSelectedId (selected > 0 ? selected : 1, juce::dontSendNotification);
     }
-    saveButton.setButtonText (tr ("SAVE EACH SECTION AS .MID..."));
+    saveButton.setButtonText (tr ("ONE .MID PER SECTION..."));
+    saveSongButton.setButtonText (tr ("SAVE SONG .MID..."));
+    songTile.setTooltip (tr ("Drag the whole song (every section, with markers) onto a track in your DAW"));
     closeButton.setButtonText (tr ("CLOSE"));
     repaint();
 }
@@ -1647,11 +1858,16 @@ void SongOverlay::mouseUp (const juce::MouseEvent& e)
         setVisible (false);
 }
 
+juce::Rectangle<float> SongOverlay::timelineArea() const
+{
+    return card().reduced (28.0f, 20.0f).withTrimmedTop (64.0f).withHeight (46.0f);
+}
+
 juce::Rectangle<int> SongOverlay::rowArea (int part) const
 {
     auto inner = card().toNearestInt().reduced (28, 20);
-    inner.removeFromTop (70);
-    return inner.removeFromTop (54 * (part + 1)).removeFromBottom (54).reduced (0, 6);
+    inner.removeFromTop (64 + 46 + 14 + 18);   // title, timeline, gap, column names
+    return inner.removeFromTop (46 * (part + 1)).removeFromBottom (46).reduced (0, 4);
 }
 
 void SongOverlay::resized()
@@ -1659,19 +1875,24 @@ void SongOverlay::resized()
     for (int i = 0; i < barBoxes.size(); ++i)
     {
         auto row = rowArea (i);
-        row.removeFromLeft (170);   // section name
-        barBoxes[i]->setBounds (row.removeFromLeft (80));
+        row.removeFromLeft (190);   // section name
+        barBoxes[i]->setBounds (row.removeFromLeft (76));
         row.removeFromLeft (14);
         newButtons[i]->setBounds (row.removeFromLeft (150));
-        row.removeFromLeft (8);
-        originalButtons[i]->setBounds (row.removeFromLeft (110));
+        row.removeFromLeft (6);
+        originalButtons[i]->setBounds (row.removeFromLeft (100));
         row.removeFromLeft (14);
         fillBoxes[i]->setBounds (row);
     }
-    auto bottom = card().toNearestInt().reduced (28, 20).removeFromBottom (34);
-    closeButton.setBounds (bottom.removeFromRight (100));
-    bottom.removeFromRight (10);
-    saveButton.setBounds (bottom.removeFromRight (270));
+    // Bottom: the export of the whole song.
+    auto bottom = card().toNearestInt().reduced (28, 20).removeFromBottom (52);
+    closeButton.setBounds (bottom.removeFromRight (90).withSizeKeepingCentre (90, 32));
+    bottom.removeFromRight (12);
+    saveButton.setBounds (bottom.removeFromRight (200).withSizeKeepingCentre (200, 32));
+    bottom.removeFromRight (8);
+    saveSongButton.setBounds (bottom.removeFromRight (170).withSizeKeepingCentre (170, 32));
+    bottom.removeFromRight (8);
+    songTile.setBounds (bottom.removeFromRight (230));
 }
 
 void SongOverlay::paint (juce::Graphics& g)
@@ -1689,39 +1910,106 @@ void SongOverlay::paint (juce::Graphics& g)
     g.drawText (Localisation::upper (tr ("Song arrangement")), inner.removeFromTop (28.0f), juce::Justification::centredLeft);
     g.setColour (Palette::dim);
     g.setFont (font (12.0f));
-    g.drawFittedText (tr ("Bars of each section (- leaves it out), a NEW VARIATION of the groove for one section only, and the fill that leads out of it. Used by Clip length > Song, by Song section while playing (you hear the fill as it loops), and by SAVE EACH SECTION."),
-                      inner.removeFromTop (36.0f).toNearestInt(), juce::Justification::topLeft, 2);
+    g.drawFittedText (tr ("Bars of each section (- leaves it out), its own variation of the groove and the fill that leads out of it. Then drag or save the whole song."),
+                      inner.removeFromTop (30.0f).toNearestInt(), juce::Justification::topLeft, 2);
 
     const auto parts = processor.songArrangementParts();
     int total = 0;
+    for (const auto& part : parts)
+        total += juce::jmax (0, part.bars);
+
+    // The timeline: each section as long as its bars.
+    {
+        auto line = timelineArea();
+        g.setColour (Palette::background);
+        g.fillRoundedRectangle (line, 8.0f);
+        const juce::Colour colours[] { juce::Colour (0xff6f8fd6), Palette::accent, juce::Colour (0xff9b7fd6), juce::Colour (0xffd6b25f),
+                                       Palette::accent2, juce::Colour (0xff6fc8a8) };
+        float x = line.getX() + 3.0f;
+        const float width = line.getWidth() - 6.0f;
+        for (const auto& part : parts)
+        {
+            if (part.bars <= 0 || total == 0)
+                continue;
+            const float w = width * (float) part.bars / (float) total;
+            auto block = juce::Rectangle<float> (x, line.getY() + 3.0f, w, line.getHeight() - 6.0f).reduced (1.5f, 0.0f);
+            const auto colour = colours[(size_t) juce::jlimit (0, 5, (int) part.section)];
+            g.setColour (colour.withAlpha (part.variation != 0 ? 1.0f : 0.8f));
+            g.fillRoundedRectangle (block, 6.0f);
+            g.setColour (Palette::background);
+            g.setFont (font (12.0f, true));
+            auto text = block.reduced (6.0f, 3.0f);
+            g.drawFittedText (tr (sgk::sectionName ((int) part.section)), text.removeFromTop (text.getHeight() * 0.55f).toNearestInt(), juce::Justification::centredLeft, 1, 0.6f);
+            g.setFont (font (10.5f));
+            g.drawFittedText (juce::String (part.bars) + " " + tr ("bars"), text.toNearestInt(), juce::Justification::centredLeft, 1, 0.6f);
+            x += w;
+        }
+    }
+
+    // Column names.
+    {
+        auto header = rowArea (0).toFloat().translated (0.0f, -22.0f).withHeight (16.0f);
+        g.setColour (Palette::dim);
+        g.setFont (font (10.5f, true));
+        auto col = [&] (float w, const juce::String& text) { g.drawText (Localisation::upper (text), header.removeFromLeft (w), juce::Justification::centredLeft); };
+        col (190.0f, tr ("Section"));
+        col (90.0f, tr ("Bars"));
+        col (270.0f, tr ("Groove"));
+        col (300.0f, tr ("Fill out"));
+    }
+
     for (int i = 0; i < (int) parts.size(); ++i)
     {
         const auto row = rowArea (i).toFloat();
-        g.setColour (Palette::background);
+        g.setColour (Palette::background.withAlpha (i % 2 == 0 ? 1.0f : 0.6f));
         g.fillRoundedRectangle (row.expanded (8.0f, 2.0f), 6.0f);
-        auto label = row.withWidth (160.0f);
+        auto label = row.withWidth (180.0f);
         g.setColour (parts[(size_t) i].bars > 0 ? Palette::text : Palette::dim);
-        g.setFont (font (15.0f, true));
-        g.drawText (tr (sgk::sectionName ((int) parts[(size_t) i].section)), label.removeFromTop (label.getHeight() * 0.58f), juce::Justification::bottomLeft);
-        g.setFont (font (11.0f));
+        g.setFont (font (14.0f, true));
+        g.drawText (tr (sgk::sectionName ((int) parts[(size_t) i].section)), label.removeFromTop (label.getHeight() * 0.56f), juce::Justification::bottomLeft);
+        g.setFont (font (10.5f));
         g.setColour (parts[(size_t) i].variation != 0 ? Palette::accent : Palette::dim);
         g.drawText (parts[(size_t) i].bars <= 0 ? tr ("left out")
                     : parts[(size_t) i].variation != 0 ? tr ("own variation") : tr ("the groove as it is"),
                     label, juce::Justification::topLeft);
-        total += juce::jmax (0, parts[(size_t) i].bars);
     }
 
+    // Length of the whole song.
+    const double bpm = processor.exportBpm();
+    const int seconds = bpm > 0.0 ? juce::roundToInt (total * 4 * 60.0 / bpm) : 0;
     g.setColour (Palette::text);
-    g.setFont (font (13.0f));
-    g.drawText (tr ("Total") + ": " + juce::String (total) + " " + tr ("bars"),
-                c.reduced (28.0f, 20.0f).removeFromBottom (34.0f).withWidth (200.0f), juce::Justification::centredLeft);
+    g.setFont (font (14.0f, true));
+    auto info = c.reduced (28.0f, 20.0f).removeFromBottom (52.0f).withWidth (220.0f);
+    g.drawText (tr ("Total") + ": " + juce::String (total) + " " + tr ("bars"), info.removeFromTop (26.0f), juce::Justification::bottomLeft);
+    g.setColour (Palette::dim);
+    g.setFont (font (11.5f));
+    g.drawText (juce::String (seconds / 60) + ":" + juce::String (seconds % 60).paddedLeft ('0', 2) + "  @ " + juce::String (bpm, 1) + " BPM",
+                info, juce::Justification::topLeft);
 }
 
 //==============================================================================
 MorphOverlay::MorphOverlay (FaseGroovePianoProcessor& p) : processor (p)
 {
-    target.onChange = [this] { apply(); };
-    addAndMakeVisible (target);
+    // The target: a button that opens the groove browser (genres, search), plus previous / next.
+    targetButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    targetButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    targetButton.onClick = [this]
+    {
+        if (onChooseTarget != nullptr)
+            onChooseTarget (targetPattern, [this] (int pattern) { setTarget (pattern); });
+    };
+    addAndMakeVisible (targetButton);
+    auto step = [this] (int direction)
+    {
+        const auto order = GrooveBrowser::menuOrder();
+        auto it = std::find (order.begin(), order.end(), targetPattern);
+        const int index = it == order.end() ? 0 : (int) std::distance (order.begin(), it);
+        setTarget (order[(size_t) ((index + direction + (int) order.size()) % (int) order.size())]);
+    };
+    targetPrev.onClick = [step] { step (-1); };
+    targetNext.onClick = [step] { step (1); };
+    addAndMakeVisible (targetPrev);
+    addAndMakeVisible (targetNext);
 
     amount.setSliderStyle (juce::Slider::LinearHorizontal);
     amount.setTextBoxStyle (juce::Slider::TextBoxRight, false, 60, 24);
@@ -1764,20 +2052,11 @@ void MorphOverlay::show()
     fromName = sgk::GrooveEngine::basePattern (s).name;
     processor.beginMorph();
 
-    // The target menu: every groove, under its genre.
-    target.clear (juce::dontSendNotification);
-    const auto& patterns = sgk::groovePatterns();
-    for (const auto* genre : sgk::grooveCategories())
-    {
-        target.addSectionHeading (tr (genre));
-        for (int i = 0; i < (int) patterns.size(); ++i)
-            if (patterns[(size_t) i].category == genre)
-                target.addItem (patterns[(size_t) i].name, i + 1);
-    }
+    // The first target: the next groove in the browser's order.
     const auto order = GrooveBrowser::menuOrder();
     const auto it = std::find (order.begin(), order.end(), s.pattern);
-    const int next = it == order.end() || std::next (it) == order.end() ? order.front() : *std::next (it);
-    target.setSelectedId (next + 1, juce::dontSendNotification);
+    targetPattern = it == order.end() || std::next (it) == order.end() ? order.front() : *std::next (it);
+    targetButton.setButtonText (juce::String (sgk::groovePatterns()[(size_t) targetPattern].name) + juce::String::fromUTF8 ("  \xe2\x96\xbe"));
     amount.setValue (0.0, juce::dontSendNotification);
 
     refreshText();
@@ -1785,10 +2064,22 @@ void MorphOverlay::show()
     toFront (true);
 }
 
+void MorphOverlay::setTarget (int pattern)
+{
+    if (! juce::isPositiveAndBelow (pattern, (int) sgk::groovePatterns().size()))
+        return;
+    targetPattern = pattern;
+    const auto& groove = sgk::groovePatterns()[(size_t) pattern];
+    targetButton.setButtonText (juce::String (groove.name) + juce::String::fromUTF8 ("  \xe2\x96\xbe"));
+    targetButton.setTooltip (tr (groove.category));
+    apply();
+    repaint();
+}
+
 void MorphOverlay::apply()
 {
-    if (target.getSelectedId() > 0)
-        processor.setMorph (target.getSelectedId() - 1, (float) amount.getValue() / 100.0f);
+    if (targetPattern >= 0)
+        processor.setMorph (targetPattern, (float) amount.getValue() / 100.0f);
 }
 
 void MorphOverlay::mouseUp (const juce::MouseEvent& e)
@@ -1803,7 +2094,10 @@ void MorphOverlay::resized()
     inner.removeFromTop (58);
     auto row = inner.removeFromTop (30);
     row.removeFromLeft (90);
-    target.setBounds (row.removeFromLeft (320));
+    targetButton.setBounds (row.removeFromLeft (380));
+    row.removeFromLeft (8);
+    targetPrev.setBounds (row.removeFromLeft (22).withSizeKeepingCentre (22, 20));
+    targetNext.setBounds (row.removeFromLeft (22).withSizeKeepingCentre (22, 20));
     inner.removeFromTop (14);
     auto slider = inner.removeFromTop (34);
     slider.removeFromLeft (90);
@@ -1833,6 +2127,7 @@ void MorphOverlay::paint (juce::Graphics& g)
 
     g.setColour (Palette::text);
     g.setFont (font (13.0f, true));
+    inner.removeFromTop (6.0f);
     g.drawText (tr ("Towards"), inner.removeFromTop (30.0f).withWidth (90.0f), juce::Justification::centredLeft);
     inner.removeFromTop (14.0f);
     g.drawText (tr ("Amount"), inner.removeFromTop (34.0f).withWidth (90.0f), juce::Justification::centredLeft);
@@ -2241,14 +2536,48 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     }
     songButton.onClick = [this] { songOverlay.show(); };
     morphButton.onClick = [this] { morphOverlay.show(); };
+    morphOverlay.onChooseTarget = [this] (int current, std::function<void (int)> picked) { grooveBrowser.pickGroove (current, std::move (picked)); };
     dnaButton.onClick = [this] { dnaOverlay.show(); };
     variantsButton.onClick = [this] { chordLab.show(); };
     feelStyleButton.onClick = [this]
     {
+        // How Humanize is shared between the voices: a short menu, ticked on the current one.
         const int style = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::humanizeStyle)->load());
-        processor.setParameterFromUI (ParamIDs::humanizeStyle, (float) ((style + 1) % sgk::numHumanizeStyles));
+        juce::PopupMenu menu;
+        for (int i = 0; i < sgk::numHumanizeStyles; ++i)
+            menu.addItem (i + 1, tr (sgk::humanizeStyleName (i)), true, i == style);
+        juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+        menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&feelStyleButton), [safe] (int result)
+        {
+            if (safe != nullptr && result > 0)
+                safe->processor.setParameterFromUI (ParamIDs::humanizeStyle, (float) (result - 1));
+        });
     };
     newFeelButton.onClick = [this] { processor.newFeel(); };
+    // The whole song: drag it, or save it as one .mid (the parts chosen under EXPORT MIDI).
+    songOverlay.songTile.createFile = [this] { return processor.writeMidiClip (FaseGroovePianoProcessor::songArrangement, selectedClipPart()); };
+    songOverlay.onSaveSong = [this]
+    {
+        const auto part = selectedClipPart();
+        auto folder = FaseGroovePianoProcessor::clipFolder();
+        if (! folder.createDirectory())
+            folder = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory);
+        fileChooser = std::make_unique<juce::FileChooser> (tr ("Save MIDI clip"),
+                                                           folder.getChildFile (processor.clipFileName (FaseGroovePianoProcessor::songArrangement, part)), "*.mid");
+        fileChooser->launchAsync (juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
+                                      | juce::FileBrowserComponent::warnAboutOverwriting,
+                                  [this, part] (const juce::FileChooser& chooser)
+                                  {
+                                      auto file = chooser.getResult();
+                                      if (file == juce::File())
+                                          return;
+                                      file = file.withFileExtension ("mid");
+                                      file.deleteFile();
+                                      juce::FileOutputStream stream (file);
+                                      if (stream.openedOk())
+                                          processor.createMidiClip (FaseGroovePianoProcessor::songArrangement, part).writeTo (stream);
+                                  });
+    };
     songOverlay.onSaveSections = [this]
     {
         FaseGroovePianoProcessor::clipFolder().createDirectory();
@@ -2497,30 +2826,55 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     shrinkToggle.setToggleState (processor.shrinkWhileDragging, juce::dontSendNotification);
     shrinkToggle.setTooltip ("Shrink the plug-in window while you drag a clip, so you can see your DAW");
     shrinkToggle.onClick = [this] { processor.shrinkWhileDragging = shrinkToggle.getToggleState(); };
-    addAndMakeVisible (shrinkToggle);
+    addChildComponent (shrinkToggle);   // the same choice is in OPTIONS > SETTINGS
 
     // Rhythm grid: editable cells, A/B/C/D segments, quick bass on/off.
     patternView.onCellClicked = [this] (bool bassRow, int step, const juce::MouseEvent& e) { cellClicked (bassRow, step, e); };
     patternView.setTooltip ("Click a step: hit > accent > ghost > rest.  Right-click: more options");
 
-    bassButton.setClickingTogglesState (false);
-    // SOLO PIANO = bass off; SOLO BASS = chords silent. One at a time; click again to hear both.
-    bassButton.onClick = [this]
+    // What you hear: both, the piano alone (bass off) or the bass alone (chords silent).
+    playBothButton.onClick = [this]
     {
-        if (processor.isBassOn())
-            processor.chordsMuted = false;
-        processor.toggleBass();
-    };
-    soloBassButton.setClickingTogglesState (false);
-    soloBassButton.onClick = [this]
-    {
-        const bool solo = ! processor.chordsMuted.load();
-        processor.chordsMuted = solo;
-        if (solo && ! processor.isBassOn())
+        processor.chordsMuted = false;
+        if (! processor.isBassOn())
             processor.toggleBass();
     };
-    addAndMakeVisible (bassButton);
-    addAndMakeVisible (soloBassButton);
+    bassButton.onClick = [this]
+    {
+        processor.chordsMuted = false;
+        if (processor.isBassOn())
+            processor.toggleBass();
+    };
+    soloBassButton.onClick = [this]
+    {
+        processor.chordsMuted = true;
+        if (! processor.isBassOn())
+            processor.toggleBass();
+    };
+    playBothButton.setConnectedEdges (juce::Button::ConnectedOnRight);
+    bassButton.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
+    soloBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+    for (auto* b : { &playBothButton, &bassButton, &soloBassButton })
+    {
+        b->setClickingTogglesState (false);
+        addAndMakeVisible (b);
+    }
+
+    // Piano roll (what plays) or rhythm grid (what you edit).
+    rollTab.setConnectedEdges (juce::Button::ConnectedOnRight);
+    gridTab.setConnectedEdges (juce::Button::ConnectedOnLeft);
+    rollTab.onClick = [this] { showRoll (true); };
+    gridTab.onClick = [this] { showRoll (false); };
+    for (auto* b : { &rollTab, &gridTab })
+    {
+        b->setClickingTogglesState (false);
+        b->setColour (juce::TextButton::buttonColourId, Palette::background);
+        b->setColour (juce::TextButton::buttonOnColourId, Palette::accent);
+        b->setColour (juce::TextButton::textColourOffId, Palette::dim);
+        b->setColour (juce::TextButton::textColourOnId, Palette::background);
+        addAndMakeVisible (b);
+    }
+    addAndMakeVisible (pianoRoll);
     for (auto* b : { &rndPianoButton, &rndBassButton })
     {
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -2565,6 +2919,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     }
 
     newRiffButton.setTooltip ("New random funky riff (locked parts are kept)");
+    showRoll (true);
 
     saveButton.setColour (juce::TextButton::buttonColourId, Palette::background);
     saveButton.setColour (juce::TextButton::textColourOffId, Palette::text);
@@ -3112,7 +3467,7 @@ void FaseGroovePianoEditor::applyLanguage()
     resetButton.setTooltip (tr ("Put every setting back to its default (the language stays)"));
     soundToggle.setButtonText (tr ("Guide sound"));
     octaveToggle.setButtonText (tr ("Top +8va"));
-    saveButton.setButtonText (tr ("Save .mid..."));
+    saveButton.setButtonText (tr ("SAVE .MID..."));
     shrinkToggle.setButtonText (tr ("Mini window while dragging"));
 
     octaveToggle.setTooltip (tr ("Double the top note of every chord an octave higher (bright house piano)"));
@@ -3129,7 +3484,7 @@ void FaseGroovePianoEditor::applyLanguage()
     previewButton.setTooltip (tr ("Play the groove with the guide sound without starting the DAW"));
     shrinkToggle.setTooltip (tr ("Shrink the plug-in window while you drag a clip, so you can see your DAW"));
     patternView.setTooltip (tr ("Click a step: hit > accent > ghost > rest.  Right-click: more options"));
-    bassButton.setTooltip (tr ("Piano only: the bass is switched off (click again to hear both)"));
+    bassButton.setTooltip (tr ("Piano only: the bass is switched off"));
     soloBassButton.setTooltip (tr ("Bass only: the chords are silent while you play (exported clips keep everything)"));
     rndPianoButton.setButtonText (tr ("RND PIANO"));
     myGroovesButton.setButtonText (tr ("MY GROOVES"));
@@ -3161,9 +3516,17 @@ void FaseGroovePianoEditor::applyLanguage()
     newFeelButton.setTooltip (tr ("Another humanization of the same groove (repeatable: saved with the project)"));
     feelStyleButton.setTooltip (tr ("How Humanize is shared: Even, Pianist (the top note sings), Laid-back bass, Tight bass. Click to change"));
     dnaButton.setTooltip (tr ("Musical DNA: variations by intention (more soulful, funkier, more minimal, more energy, more sophisticated)"));
-    songButton.setButtonText (tr ("SONG"));
+    songButton.setButtonText (tr ("FULL SONG..."));
+    rollTab.setButtonText (tr ("PIANO ROLL"));
+    gridTab.setButtonText (tr ("EDIT GRID"));
+    rollTab.setTooltip (tr ("Every note the plug-in plays: chords, bass and fills, with the chord names"));
+    gridTab.setTooltip (tr ("The rhythm grid: click the steps to write your own groove"));
+    playBothButton.setButtonText (tr ("BOTH"));
+    bassButton.setButtonText (tr ("PIANO"));
+    soloBassButton.setButtonText (tr ("BASS"));
+    playBothButton.setTooltip (tr ("Hear the piano and the bass"));
     morphButton.setButtonText (tr ("MORPH"));
-    songButton.setTooltip (tr ("Song arrangement: bars of each section, a new variation for one section, one .mid per section"));
+    songButton.setTooltip (tr ("The whole song: arrange the sections, then drag or save it as one .mid, or one .mid per section"));
     morphButton.setTooltip (tr ("Morph the groove step by step towards another one (locked parts stay)"));
     coachButton.setTooltip (tr ("Voicing Coach: compare two voicings of your progression"));
     translateHostWindow();
@@ -3344,6 +3707,68 @@ void FaseGroovePianoEditor::loadPreset (int index)
 }
 
 //==============================================================================
+void FaseGroovePianoEditor::showRoll (bool roll)
+{
+    rollShown = roll;
+    rollTab.setToggleState (roll, juce::dontSendNotification);
+    gridTab.setToggleState (! roll, juce::dontSendNotification);
+    pianoRoll.setVisible (roll);
+    patternView.setVisible (! roll);
+    for (auto* list : { &segmentBoxes })
+        for (auto* c : *list) c->setVisible (! roll);
+    for (auto* list : { &segmentDice, &segmentLocks })
+        for (auto* c : *list) c->setVisible (! roll);
+    if (getWidth() > 0)
+        resized();
+}
+
+void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
+{
+    // The loop: long enough for the groove and the progression to come round together (8 bars at most).
+    const int patternBars = juce::jmax (1, sgk::GrooveEngine::patternLength (s) / 16);
+    const int progressionBars = juce::jmax (1, (s.progressionLength * s.stepsPerChord + 15) / 16);
+    int bars = std::lcm (patternBars, progressionBars);
+    if (bars > 8)
+        bars = juce::jmin (8, juce::jmax (patternBars, progressionBars));
+    rollLength = bars * 4.0;
+
+    std::vector<PianoRollView::Note> notes;
+    {
+        const auto events = sgk::GrooveEngine::renderClip (s, rollLength);
+        std::map<int, std::pair<double, int>> open;   // note -> start, velocity (per part)
+        std::map<int, sgk::Part> parts;
+        for (const auto& e : events)
+        {
+            const int id = e.note + 128 * (int) e.part;
+            if (e.isNoteOn())
+            {
+                open[id] = { e.ppq, e.velocity };
+                parts[id] = e.part;
+            }
+            else if (auto it = open.find (id); it != open.end())
+            {
+                notes.push_back ({ it->second.first, juce::jmax (0.02, e.ppq - it->second.first), e.note, it->second.second, e.part });
+                open.erase (it);
+            }
+        }
+        for (const auto& [id, on] : open)
+            notes.push_back ({ on.first, juce::jmax (0.05, rollLength - on.first), id % 128, on.second, parts[id] });
+    }
+
+    std::vector<PianoRollView::ChordSpan> chordSpans;
+    const double chordBeats = s.stepsPerChord / 4.0;
+    for (int k = 0; k * chordBeats < rollLength - 1.0e-6; ++k)
+    {
+        const int slot = sgk::GrooveEngine::slotForStep ((long long) (k * s.stepsPerChord), s);
+        chordSpans.push_back ({ k * chordBeats, juce::jmin (chordBeats, rollLength - k * chordBeats),
+                                sgk::chordName (sgk::GrooveEngine::chordForSlot (s, slot)) });
+    }
+
+    pianoRoll.setContent (std::move (notes), std::move (chordSpans), rollLength, processor.chordsMuted.load());
+    const double ppq = processor.uiPpq.load();
+    pianoRoll.setPlayhead (ppq < 0.0 ? -1.0 : std::fmod (ppq, rollLength));
+}
+
 void FaseGroovePianoEditor::timerCallback()
 {
     if (miniMode)
@@ -3433,15 +3858,24 @@ void FaseGroovePianoEditor::timerCallback()
     const bool bassOn = processor.isBassOn();
     patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load(), bassOn);
 
+    if (rollShown)
+        updatePianoRoll (s);
+    dragTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + clipLength.getText());
+    if (songOverlay.isVisible())
+        songOverlay.songTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("Song"));
+
     {
-        const bool soloPiano = ! bassOn, soloBass = processor.chordsMuted.load() && bassOn;
-        feelStyleButton.setButtonText (tr ("Feel") + ": " + tr (sgk::humanizeStyleName (juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::humanizeStyle)->load()))));
-        bassButton.setButtonText (tr ("SOLO PIANO"));
-        soloBassButton.setButtonText (tr ("SOLO BASS"));
-        bassButton.setColour (juce::TextButton::buttonColourId, soloPiano ? Palette::accent : Palette::background);
-        bassButton.setColour (juce::TextButton::textColourOffId, soloPiano ? Palette::background : Palette::dim);
-        soloBassButton.setColour (juce::TextButton::buttonColourId, soloBass ? Palette::accent2 : Palette::background);
-        soloBassButton.setColour (juce::TextButton::textColourOffId, soloBass ? Palette::background : Palette::dim);
+        const bool soloBass = processor.chordsMuted.load() && bassOn;
+        const int listening = ! bassOn ? 1 : soloBass ? 2 : 0;   // both, piano, bass
+        feelStyleButton.setButtonText (tr ("Feel") + ": " + tr (sgk::humanizeStyleName (juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::humanizeStyle)->load()))) + "  " + juce::String::fromUTF8 ("\xe2\x96\xbe"));
+        int index = 0;
+        for (auto* b : { &playBothButton, &bassButton, &soloBassButton })
+        {
+            const bool on = index++ == listening;
+            const auto colour = b == &soloBassButton ? Palette::accent2 : Palette::accent;
+            b->setColour (juce::TextButton::buttonColourId, on ? colour : Palette::background);
+            b->setColour (juce::TextButton::textColourOffId, on ? Palette::background : Palette::dim);
+        }
     }
 
     for (int i = 0; i < sgk::numSegments; ++i)
@@ -3527,8 +3961,20 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
     drawPanel (g, circlePanel, tr ("CIRCLE OF FIFTHS"));
     drawPanel (g, groovePanel, tr ("GROOVE"));
     drawPanel (g, soundPanel, tr ("GUIDE SOUND & MIDI OUT"));
-    drawPanel (g, gridPanel, tr ("RHYTHM GRID"));
-    drawPanel (g, clipPanel, tr ("MIDI CLIP"));
+    drawPanel (g, gridPanel, {});
+    drawPanel (g, clipPanel, tr ("EXPORT MIDI"));
+
+    // FEEL: a small heading with a line, so the knobs read as their own group.
+    {
+        auto h = feelHeader.toFloat();
+        g.setColour (Palette::accent);
+        g.setFont (font (11.0f, true));
+        const juce::String title = Localisation::upper (tr ("Feel"));
+        const float tw = juce::GlyphArrangement::getStringWidth (font (11.0f, true), title) + 8.0f;
+        g.drawText (title, h.withWidth (tw), juce::Justification::centredLeft);
+        g.setColour (Palette::panelEdge);
+        g.fillRect (h.getX() + tw, h.getCentreY() - 0.5f, juce::jmax (0.0f, (float) feelStyleButton.getX() - 8.0f - h.getX() - tw), 1.0f);
+    }
 
     auto hint = clipPanel.reduced (14, 8).removeFromBottom (16);
     g.setColour (Palette::dim);
@@ -3628,9 +4074,9 @@ void FaseGroovePianoEditor::layoutFull()
     auto mid = r.removeFromTop (340);
     harmonyPanel = mid.removeFromLeft (300);
     mid.removeFromLeft (10);
-    circlePanel = mid.removeFromLeft (240);
+    circlePanel = mid.removeFromLeft (262);
     mid.removeFromLeft (10);
-    soundPanel = mid.removeFromRight (250);
+    soundPanel = mid.removeFromRight (240);
     mid.removeFromRight (10);
     groovePanel = mid;
 
@@ -3682,26 +4128,40 @@ void FaseGroovePianoEditor::layoutFull()
         groovePrev.setBounds (arrows.removeFromLeft (20));
         grooveNext.setBounds (arrows);
         pattern.setBounds (grooveRow.withTrimmedRight (4));
-        split (row (inner, 44), section, fills, inner.getWidth() / 2 - 5);
-        split (row (inner, 44), fillStyle, playMode, inner.getWidth() / 2 - 5);
-        split (row (inner, 44), variation, grooveBars, inner.getWidth() / 2 - 5);
+        {
+            auto three = row (inner, 44);
+            const int w = (three.getWidth() - 16) / 3;
+            section.setBounds (three.removeFromLeft (w));
+            three.removeFromLeft (8);
+            grooveBars.setBounds (three.removeFromLeft (w));
+            three.removeFromLeft (8);
+            variation.setBounds (three);
+        }
+        split (row (inner, 44), fills, fillStyle, (inner.getWidth() - 10) * 2 / 5);
+
+        // FEEL: its own small header (style menu and NEW FEEL), then the five knobs.
+        feelHeader = inner.removeFromTop (20);
+        {
+            auto h = feelHeader;
+            newFeelButton.setBounds (h.removeFromRight (78));
+            h.removeFromRight (6);
+            feelStyleButton.setBounds (h.removeFromRight (130));
+        }
+        inner.removeFromTop (4);
         const int w = inner.getWidth() / 5;
         auto knobs = inner.withSizeKeepingCentre (inner.getWidth(), juce::jmin (inner.getHeight(), w + 40));
-        auto feelRow = knobs.removeFromBottom (18);
         for (auto* k : { &swing, &gate, &velocity, &humanize, &riffDensity })
             k->setBounds (knobs.removeFromLeft (w));
-        feelStyleButton.setBounds (humanize.getBounds().getCentreX() - 58, feelRow.getY(), 116, 18);
-        newFeelButton.setBounds (juce::Rectangle<int> (gate.getBounds().getCentreX() - 50, feelRow.getY(), 100, 18));
     }
 
     {
         auto inner = soundPanel.reduced (14, 8);
         inner.removeFromTop (22);
         auto toggleRow = row (inner, 28);
-        previewButton.setBounds (toggleRow.removeFromRight (96));
+        previewButton.setBounds (toggleRow.removeFromRight (82));
         soundToggle.setBounds (toggleRow);
         soundType.setBounds (row (inner, 44));
-        bassChannel.setBounds (row (inner, 44));
+        split (row (inner, 44), bassChannel, playMode, (inner.getWidth() - 10) / 2);
         const int w = inner.getWidth() / 3;
         auto top = inner.removeFromTop (inner.getHeight() / 2);
         for (auto* k : { &tone, &reverb, &volume })
@@ -3716,23 +4176,30 @@ void FaseGroovePianoEditor::layoutFull()
     r.removeFromRight (10);
     gridPanel = r;
     {
-        auto inner = gridPanel.reduced (14, 8);
+        auto inner = gridPanel.reduced (12, 8);
         {
-            auto header = inner.removeFromTop (22).withTrimmedBottom (2);
-            soloBassButton.setBounds (header.removeFromRight (92));
-            header.removeFromRight (4);
-            bassButton.setBounds (header.removeFromRight (92));
-            header.removeFromRight (12);
-            rndBassButton.setBounds (header.removeFromRight (92));
-            header.removeFromRight (6);
-            rndPianoButton.setBounds (header.removeFromRight (92));
-            header.removeFromRight (14);
-            myGroovesButton.setBounds (header.removeFromRight (120));
-            header.removeFromRight (8);
-            morphButton.setBounds (header.removeFromRight (74));
-            header.removeFromRight (6);
-            dnaButton.setBounds (header.removeFromRight (54));
+            // Left: what you look at (piano roll / grid) and what you hear; right: groove tools.
+            auto header = inner.removeFromTop (24).withTrimmedBottom (2);
+            rollTab.setBounds (header.removeFromLeft (92));
+            gridTab.setBounds (header.removeFromLeft (92));
+            header.removeFromLeft (14);
+            playBothButton.setBounds (header.removeFromLeft (64));
+            bassButton.setBounds (header.removeFromLeft (64));
+            soloBassButton.setBounds (header.removeFromLeft (58));
+
+            dnaButton.setBounds (header.removeFromRight (46));
+            header.removeFromRight (5);
+            morphButton.setBounds (header.removeFromRight (62));
+            header.removeFromRight (5);
+            myGroovesButton.setBounds (header.removeFromRight (98));
+            header.removeFromRight (10);
+            rndBassButton.setBounds (header.removeFromRight (78));
+            header.removeFromRight (5);
+            rndPianoButton.setBounds (header.removeFromRight (84));
         }
+        inner.removeFromTop (6);
+
+        pianoRoll.setBounds (inner);
 
         auto strip = inner.removeFromTop (24);
         strip.removeFromLeft ((int) PatternView::labelWidth);
@@ -3752,20 +4219,21 @@ void FaseGroovePianoEditor::layoutFull()
     }
 
     {
+        // EXPORT MIDI: what and how long, the big drag tile, then save / the whole song.
         auto inner = clipPanel.reduced (14, 8);
-        songButton.setBounds (inner.removeFromTop (22).removeFromRight (70).withTrimmedBottom (3));
-        inner.removeFromBottom (18);
+        inner.removeFromTop (24);
         auto labels = inner.removeFromTop (16);
-        clipLengthLabel.setBounds (labels.removeFromLeft (labels.getWidth() / 2));
-        clipPartLabel.setBounds (labels.withTrimmedLeft (8));
+        clipPartLabel.setBounds (labels.removeFromLeft (labels.getWidth() / 2));
+        clipLengthLabel.setBounds (labels.withTrimmedLeft (8));
         auto boxes = inner.removeFromTop (28);
-        clipLength.setBounds (boxes.removeFromLeft (boxes.getWidth() / 2 - 4));
-        clipPart.setBounds (boxes.withTrimmedLeft (8));
+        clipPart.setBounds (boxes.removeFromLeft (boxes.getWidth() / 2 - 4));
+        clipLength.setBounds (boxes.withTrimmedLeft (8));
         inner.removeFromTop (10);
-        auto buttons = inner.removeFromTop (juce::jmin (44, inner.getHeight()));
-        saveButton.setBounds (buttons.removeFromRight (96));
-        dragTile.setBounds (buttons.withTrimmedRight (8));
-        inner.removeFromTop (4);
-        shrinkToggle.setBounds (inner.removeFromTop (22));
+        inner.removeFromBottom (18);   // hint
+        auto buttons = inner.removeFromBottom (30);
+        saveButton.setBounds (buttons.removeFromLeft (buttons.getWidth() / 2 - 4));
+        songButton.setBounds (buttons.withTrimmedLeft (8));
+        inner.removeFromBottom (8);
+        dragTile.setBounds (inner);
     }
 }

@@ -39,19 +39,20 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - ↗️ **Accordi di passaggio:** lo slide gospel di mezzo tono verso ogni cambio d'accordo (da sopra o da sotto).
 - 🔁 **Progressioni:** 1–8 accordi, 54 preset in un menu diviso per stile (tra cui le progressioni sul circolo delle quinte e quelle cromatiche con accordi presi in prestito)
   e **DICE** per progressioni casuali ma musicali.
-- ⭕ **Circolo delle quinte** interattivo: gli accordi della scala coi numeri romani, la progressione con punti numerati e frecce, trascina i punti per cambiare gli accordi (anche fuori scala).
+- ⭕ **Circolo delle quinte** interattivo: gli accordi della scala coi numeri romani, la progressione con punti numerati uniti da curve morbide, trascina i punti per cambiare gli accordi (anche fuori scala).
 - 🌈 **Colori dell'armonia:** accordi e passaggi colorati in base a quanto suonano bene insieme (verde = benissimo, grigio = stride).
 - 🎚️ **STILE:** impostazioni pronte per genere con un clic (deep, soulful, gospel, jackin', piano anni '90, garage, afro, neo soul…) e **RESET** per ripartire da zero.
-- 🥁 **142 groove** a due mani in 13 generi (loop di **piano house**, soulful, deep, gospel, **jackin' house**, **piano jackin'**, garage, afro, funky e disco, piano house anni '90, neo soul, chill, stab dance), con accordi che si muovono di rivolto dentro la battuta come un vero riff di piano
+- 🥁 **142 groove** a due mani in 13 generi (loop di **piano house**, soulful, deep, gospel, **jackin' house**, **piano jackin'**, garage, afro, funky e disco, piano house anni '90, neo soul, chill, stab dance), suonati nel classico stile piano house: una nota in alto condivisa (**Pedale house**), il basso sotto ogni stab
   più **NEW RIFF**, che genera riff funky casuali sul momento, e fill opzionali (11 stili, dalle scale gospel ai glissati di piano).
 - 🎚️ **Strum** (accordi arpeggiati come un pianista vero) e **Top +8va** (nota alta raddoppiata all'ottava).
+- 🎼 **Piano roll** di tutte le note che suonano (accordi, basso, fill) coi nomi degli accordi e la testina, e **TUTTI / PIANO / BASSO** per scegliere cosa ascolti.
 - ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,
-  randomizzare (RND) e bloccare (LOCK), e **BASS ON/OFF** al volo.
+  randomizzare (RND) e bloccare (LOCK).
 - 🔍 **Interfaccia ridimensionabile** e finestra mini durante il trascinamento della clip.
 - 🌍 **Interfaccia in 6 lingue:** English, Italiano, Español, Français, Deutsch, Português
   (**OPZIONI → IMPOSTAZIONI**).
-- 🎬 **Sezioni del brano:** Intro, Main, Break, Build-up, Drop, Outro, automatizzabili, ed
-  esportazione di un **arrangiamento completo di 60 battute** con i marker.
+- 🎬 **Sezioni del brano:** Intro, Main, Break, Build-up, Drop, Outro, automatizzabili, e una
+  **finestra del brano** (timeline delle sezioni, variazione e fill per sezione) per trascinare o salvare il **brano intero** coi marker, o un `.mid` per sezione.
 - ⏱️ **Tempo:** agganciato alla DAW o impostato a mano.
 - 📤 **MIDI:** trascina la clip nella DAW (completa, solo accordi, solo basso), salvala in
   `.mid` oppure usa il MIDI in tempo reale (basso su un canale separato, se vuoi).

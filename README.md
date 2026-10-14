@@ -40,19 +40,19 @@ Rhodes or synth.
 - ↗️ **Approach chords:** the gospel half-step slide into every chord change (from above or below).
 - 🔁 **Progressions:** 1–8 chords, 54 presets in a menu grouped by style (including circle-of-fifths and chromatic, borrowed-chord progressions) and
   **DICE** for random but musical progressions.
-- ⭕ Interactive **circle of fifths**: the chords of the scale with their numerals, your progression as numbered dots and arrows, drag the dots to change chords (even outside the scale).
+- ⭕ Interactive **circle of fifths**: the chords of the scale with their numerals, your progression as numbered dots joined by soft curves, drag the dots to change chords (even outside the scale).
 - 🌈 **Harmony colours:** chords and chord changes coloured by how well they sound together (green = great, grey = clashes).
 - 🎚️ **STYLE:** one-click setups by genre (deep, soulful, gospel, jackin', '90s piano, garage, afro, neo soul…) and **RESET** to start over.
-- 🥁 **142 two-hand grooves** in 13 genres (**piano house** loops, soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill, dance stabs), with chords that move by inversions inside the bar like a real piano riff
+- 🥁 **142 two-hand grooves** in 13 genres (**piano house** loops, soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill, dance stabs), played in the classic house piano style: one shared top note (**House pedal**), the bass under every stab
   plus **NEW RIFF**, a random funky riff generator, and optional fills (11 styles, from gospel runs to piano glissandos).
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
+- 🎼 **Piano roll** of every note that plays (chords, bass, fills) with the chord names and the playhead, and **BOTH / PIANO / BASS** to choose what you hear.
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and
-  lock (LOCK), plus a quick **BASS ON/OFF**.
+  lock (LOCK).
 - 🔍 **Resizable UI** and a mini window while you drag a clip.
 - 🌍 **Interface in 6 languages:** English, Italiano, Español, Français, Deutsch, Português
   (**OPTIONS → SETTINGS**).
-- 🎬 **Song sections:** Intro, Main, Break, Build-up, Drop, Outro (automatable), plus a **full
-  60-bar arrangement** export with markers.
+- 🎬 **Song sections:** Intro, Main, Break, Build-up, Drop, Outro (automatable), plus a **song window** (timeline of the sections, own variation and fill per section) to drag or save the **whole song** with markers, or one `.mid` per section.
 - ⏱️ **Tempo:** synced to the DAW or set by hand.
 - 📤 **MIDI:** drag the clip into your DAW (full, chords only, bass only), save it as `.mid`, or
   use live MIDI out (bass on its own channel if you like).

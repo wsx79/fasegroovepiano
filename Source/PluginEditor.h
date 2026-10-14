@@ -157,12 +157,59 @@ private:
     bool hoverBass = false;
 };
 
+/** Piano roll of what the plug-in plays: every chord and bass note of the loop on a keyboard,
+    the chord names above, and the playhead. Read-only (the rhythm grid is where you edit). */
+class PianoRollView : public juce::Component, public juce::SettableTooltipClient
+{
+public:
+    struct Note
+    {
+        double start, length;   // in beats
+        int note, velocity;
+        sgk::Part part;
+        bool operator== (const Note& o) const
+        {
+            return juce::approximatelyEqual (start, o.start) && juce::approximatelyEqual (length, o.length)
+                   && note == o.note && velocity == o.velocity && part == o.part;
+        }
+    };
+    struct ChordSpan
+    {
+        double start, length;
+        juce::String name;
+        bool operator== (const ChordSpan& o) const
+        {
+            return juce::approximatelyEqual (start, o.start) && juce::approximatelyEqual (length, o.length) && name == o.name;
+        }
+    };
+
+    /** The loop to show; repaints only when something changed. */
+    void setContent (std::vector<Note> notes, std::vector<ChordSpan> chords, double lengthInBeats, bool chordsMuted);
+    /** Playhead in beats from the start of the loop, or -1 when stopped. */
+    void setPlayhead (double beat);
+
+    void paint (juce::Graphics&) override;
+
+    static constexpr float keyboardWidth = 34.0f, chordLaneHeight = 20.0f;
+
+private:
+    juce::Rectangle<float> noteArea() const;
+    float xOf (double beat) const;
+
+    std::vector<Note> notes;
+    std::vector<ChordSpan> chords;
+    double length = 8.0, playhead = -1.0;
+    bool mutedChords = false;
+    int lowNote = 36, highNote = 84;
+};
+
 /** Drag this tile into the DAW to drop the current groove as a MIDI clip. */
 class MidiDragTile : public juce::Component, public juce::SettableTooltipClient
 {
 public:
     std::function<juce::File()> createFile;
     std::function<void()> onDragStart, onDragEnd;
+    void setSubtitle (const juce::String& text)  { if (text != subtitle) { subtitle = text; repaint(); } }
 
     void paint (juce::Graphics&) override;
     void mouseEnter (const juce::MouseEvent&) override { hover = true; repaint(); }
@@ -172,6 +219,7 @@ public:
 
 private:
     bool hover = false, dragStarted = false;
+    juce::String subtitle;
 };
 
 /** OPTIONS page with two tabs: SETTINGS (language, interface size, mini window)
@@ -219,6 +267,9 @@ public:
 
     enum class Mode { grooves, progressions };
     void show (Mode = Mode::grooves, int currentPreset = -1);
+    /** Pick mode (the MORPH target): the same browser, but a click hands the groove to `picked`
+        and closes, without changing what plays. */
+    void pickGroove (int current, std::function<void (int pattern)> picked);
     std::function<void (int)> onProgressionChosen;
     std::function<void()> onImportMidi;   // progressions: "Import a MIDI file..."
     void refreshText();
@@ -227,6 +278,7 @@ public:
     void resized() override;
     void mouseUp (const juce::MouseEvent&) override;
     bool keyPressed (const juce::KeyPress&) override;
+    void visibilityChanged() override;
 
     /** Grooves in menu order (genre by genre), for the previous / next arrows. */
     static std::vector<int> menuOrder();
@@ -281,6 +333,8 @@ private:
     int genre = firstCategory, currentPreset = -1;
     Mode mode = Mode::grooves;
     bool quiet = false;   // selecting without playing (when the browser opens)
+    std::function<void (int)> onPicked;   // pick mode
+    int pickCurrent = -1;
 };
 
 /** Voicing Coach: two voicings of your progression side by side (the notes of every chord, the
@@ -318,22 +372,24 @@ public:
 
     void show();
     void refreshText();
-    std::function<void()> onSaveSections;
+    std::function<void()> onSaveSections, onSaveSong;
+    MidiDragTile songTile;   // the whole song as one clip (set up by the editor)
 
     void paint (juce::Graphics&) override;
     void resized() override;
     void mouseUp (const juce::MouseEvent&) override;
 
 private:
-    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (940.0f, 560.0f); }
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (960.0f, 640.0f); }
     juce::Rectangle<int> rowArea (int part) const;
+    juce::Rectangle<float> timelineArea() const;
     void refresh();
 
     FaseGroovePianoProcessor& processor;
     juce::OwnedArray<juce::ComboBox> barBoxes;
     juce::OwnedArray<juce::TextButton> newButtons, originalButtons;
     juce::OwnedArray<juce::ComboBox> fillBoxes;
-    juce::TextButton saveButton, closeButton;
+    juce::TextButton saveButton, saveSongButton, closeButton;
 };
 
 /** Groove morphing: from the groove you have towards another one, step by step, with a slider. */
@@ -343,6 +399,8 @@ public:
     explicit MorphOverlay (FaseGroovePianoProcessor&);
 
     void show();
+    /** Opens the groove browser to choose the target (set by the editor). */
+    std::function<void (int current, std::function<void (int)> picked)> onChooseTarget;
     void refreshText();
 
     void paint (juce::Graphics&) override;
@@ -354,7 +412,10 @@ private:
     void apply();
 
     FaseGroovePianoProcessor& processor;
-    juce::ComboBox target;
+    juce::TextButton targetButton;
+    juce::ArrowButton targetPrev { "previous target", 0.5f, Palette::accent }, targetNext { "next target", 0.0f, Palette::accent };
+    int targetPattern = -1;
+    void setTarget (int pattern);
     juce::Slider amount;
     juce::TextButton keepButton, cancelButton;
     juce::String before, fromName;
@@ -534,14 +595,20 @@ private:
     Knob tone, reverb, volume, chorus, pump;
 
     PatternView patternView;
-    juce::TextButton bassButton { "SOLO PIANO" }, soloBassButton { "SOLO BASS" };
+    PianoRollView pianoRoll;
+    juce::TextButton rollTab { "PIANO ROLL" }, gridTab { "EDIT GRID" };
+    void showRoll (bool);
+    bool rollShown = true;
+    double rollLength = 8.0;
+    void updatePianoRoll (const sgk::GrooveSettings&);
+    juce::TextButton playBothButton { "PIANO + BASS" }, bassButton { "PIANO" }, soloBassButton { "BASS" };
     juce::TextButton rndPianoButton { "RND PIANO" }, rndBassButton { "RND BASS" }, myGroovesButton { "MY GROOVES" };
     juce::OwnedArray<juce::ComboBox> segmentBoxes;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ComboBoxAttachment> segmentAttachments;
     juce::OwnedArray<juce::TextButton> segmentDice, segmentLocks;
 
     // Scaling (the whole UI is laid out at base size, then scaled) and mini mode.
-    static constexpr int baseWidth = 1180, baseHeight = 780;
+    static constexpr int baseWidth = 1180, baseHeight = 860;
     static constexpr int miniWidth = 320, miniHeight = 96;
     float uiScale = 1.0f;
     bool miniMode = false;
@@ -569,7 +636,7 @@ private:
     void saveClip();
 
     juce::Rectangle<int> headerArea, tempoArea, chordDisplayArea, progressionPanel, harmonyPanel, circlePanel, groovePanel,
-                         soundPanel, gridPanel, clipPanel;
+                         soundPanel, gridPanel, clipPanel, feelHeader;
 
     juce::String currentChord { "-" }, currentRoman, currentKey;
     bool showingHold = false;

@@ -6,6 +6,40 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.25.0] - 2026-10-14
+
+### Modificato
+- **Groove di piano nel classico stile piano house.** Gli accordi ora condividono
+  **una sola nota in alto** (nuova linea in alto *Pedale house*, il default: la loro quinta,
+  settima o terza, spostandosi solo sulla nota dell'accordo più vicina quando un accordo non ce
+  l'ha), così il riff non sembra più fatto di note buttate a caso che saltano dentro la battuta. I
+  colpi ▲/▼ sono diventati **note vicine** sulla sola voce in alto (l'accordo sotto resta); con la
+  linea in alto a pedale i colpi ▲/▼ normali tengono ferma la nota in alto.
+- **Basso in ogni stab, niente flam:** *Stab di piano (basso in ogni accordo)* è il basso di
+  default; il basso non suona più un sedicesimo prima o dopo un accordo (sembravano due mani che
+  non si trovavano).
+- **NUOVO RIFF / RND PIANO** costruiscono i riff dalle figure classiche dei loop di piano house
+  (la famiglia di crome puntate 3-3-3-3-2-2 e le sue parenti), ripetono la battuta come un loop
+  house e hanno un tocco regolare (niente accenti o ghost note a caso).
+- Gli stili house (menu STILE) usano la linea in alto a pedale.
+- **Nuova disposizione della parte bassa della finestra** (un po' più alta):
+  - **PIANO ROLL** (vista di default): tutte le note che suonano (accordi, basso, fill) su una
+    tastiera, i nomi degli accordi sopra e la testina; **GRIGLIA** passa alla griglia ritmica.
+  - **TUTTI / PIANO / BASSO** al posto dei due pulsanti SOLO.
+  - Pannello **ESPORTA MIDI**: note e lunghezza, un riquadro da trascinare chiaro che mostra cosa
+    contiene, **SALVA .MID…** e **BRANO INTERO…** (l'opzione della finestra mini è in OPZIONI →
+    IMPOSTAZIONI).
+- **Finestra del brano:** una timeline delle sezioni, i nomi delle colonne, la durata in minuti e
+  l'esportazione del brano intero in un solo posto: trascinalo, **SALVA BRANO .MID…** o **UN .MID
+  PER SEZIONE…**.
+- **Circolo delle quinte** ridisegnato: più grande, piatto e pulito; gli accordi della scala
+  risaltano, gli altri restano tenui; gli accordi che usi sono tinti col loro colore
+  dell'armonia; la progressione è unita da curve morbide sotto i nomi invece che da frecce sopra.
+- **MORPH:** il groove di arrivo si sceglie nel browser dei groove (generi, ricerca, preferiti) o
+  con ◀ ▶, invece che da un elenco infinito.
+- **FEEL:** una sua intestazione sopra le manopole, col menu **Feel ▾** e **NUOVO FEEL**.
+- *Modalità play* spostata accanto a *Uscita MIDI*.
+
 ## [1.24.1] - 2026-10-14
 
 ### Corretto

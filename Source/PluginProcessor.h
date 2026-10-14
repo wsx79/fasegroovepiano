@@ -242,6 +242,7 @@ public:
     // Read by the editor for display.
     std::atomic<int> uiStep { -1 };      // current 16th within the pattern, -1 = stopped
     std::atomic<int> uiSlot { -1 };      // current chord slot, -1 = stopped
+    std::atomic<double> uiPpq { -1.0 };  // playing position in beats, -1 = stopped (for the piano roll)
     std::atomic<int> uiHeldRoot { -1 };  // root picked by a held key (hold mode)
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
