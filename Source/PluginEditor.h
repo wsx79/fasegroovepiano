@@ -402,6 +402,14 @@ private:
     bool mini = false;
 };
 
+/** Round play / stop button (next to PREVIEW): a triangle when stopped, a square while playing. */
+class PlayButton : public juce::Button
+{
+public:
+    PlayButton() : juce::Button ("play") {}
+    void paintButton (juce::Graphics&, bool highlighted, bool down) override;
+};
+
 /** A tool button with a small drawn icon (pencil, arrow, eraser) and a caption. */
 class ToolButton : public juce::Button
 {
@@ -698,6 +706,7 @@ private:
     // Sound & MIDI
     juce::ToggleButton soundToggle { "Guide sound" };
     juce::TextButton previewButton { "PREVIEW" };
+    PlayButton playButton;
     Choice bassChannel, soundType;
     juce::AudioProcessorValueTreeState::ButtonAttachment soundAttachment;
     Knob tone, reverb, volume, chorus, pump;

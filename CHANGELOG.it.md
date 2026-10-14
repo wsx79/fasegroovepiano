@@ -6,6 +6,21 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.27.0] - 2026-10-14
+
+### Aggiunto
+- **Strumenti dell'editor del piano roll**, ognuno col suo cursore: MATITA, SPOSTA (freccia),
+  GOMMA (clic o trascina sopra le note).
+- **Spostamento libero** delle note di default; **SNAP** per agganciarle alla griglia (Alt fa il
+  contrario) e **QUANTIZZA**.
+- **DISEGNA PIANO / BASSO** coi colori delle note, **MOSTRA TUTTO / PIANO / BASSO**, **SEGUI** (la
+  vista segue la testina).
+- La **barra spaziatrice** avvia / ferma l'ascolto, e un pulsante tondo **▶ / ■** accanto ad ASCOLTA.
+
+### Corretto
+- **ASCOLTA** in VARIANTI (e nel coach dei voicing) non faceva niente con la DAW ferma e l'ascolto
+  spento: ora avvia l'ascolto, e lo ferma di nuovo quando chiudi la finestra.
+
 ## [1.26.0] - 2026-10-14
 
 ### Aggiunto

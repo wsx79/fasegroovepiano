@@ -723,6 +723,7 @@ namespace
         { "Show only the bass: the piano is greyed out and can't be touched", "Mostra solo il basso: il piano è grigio e non si può toccare", "Muestra solo el bajo: el piano queda en gris y no se puede tocar", "Afficher seulement la basse : le piano est grisé et intouchable", "Nur Bass zeigen: das Klavier ist grau und gesperrt", "Mostrar só o baixo: o piano fica cinza e não pode ser tocado" },
         { "Show", "Mostra", "Mostrar", "Afficher", "Zeigen", "Mostrar" },
         { "Draws", "Disegna", "Dibuja", "Dessine", "Zeichnet", "Desenha" },
+        { "Play / stop the preview (space bar)", "Avvia / ferma l'ascolto (barra spaziatrice)", "Reproducir / parar la escucha (barra espaciadora)", "Lecture / arrêt de l'écoute (barre d'espace)", "Vorhören starten / stoppen (Leertaste)", "Tocar / parar a escuta (barra de espaço)" },
     };
     // clang-format on
 

@@ -220,13 +220,20 @@ The big panel at the bottom has two views (tabs at the top left):
 **EDIT NOTES** (next to the tabs, or double-click the piano roll) opens the piano roll **big**, to
 edit the **notes one by one**:
 
+- **Tools** (each with its own mouse cursor): **DRAW** (pencil: click to add a note, drag to make
+  it longer; you can still drag a note to move it), **MOVE** (arrow: drag a note to move it, its
+  **right edge** to change its length) and **ERASE** (eraser: click a note, or drag over several,
+  to delete them). Double-click or right-click also deletes a note.
+- **DRAWS PIANO / BASS** (orange / pink, the colours of the notes): which part the pencil draws.
+- **SHOW ALL / PIANO / BASS**: see only the piano or only the bass; the other part is greyed out and
+  can't be touched.
+- Notes move **freely** (no jumps). **SNAP** sticks them to the **Grid** (1/8, 1/16 or 1/32; Alt
+  while dragging does the opposite) and **QUANTIZE** puts the selected note (or every note shown)
+  on the grid.
 - **Zoom** with **- / +**, **FIT** (the whole loop) or Ctrl + mouse wheel; the mouse wheel and the
-  bar at the bottom scroll.
-- **Click** an empty spot to add a note (as long as the grid step: **Grid** 1/8, 1/16 or 1/32;
-  **New notes** says whether it is piano or bass); **drag** a note to move it (time and pitch),
-  drag its **right edge** to make it longer or shorter; **double-click** or **right-click** removes
-  it. The arrows move the selected note (up / down a semitone, Shift an octave; left / right one
-  grid step), Delete removes it.
+  bar at the bottom scroll. **FOLLOW** (on by default) turns the page with the playhead.
+- The arrows move the selected note (up / down a semitone, Shift an octave; left / right one grid
+  step), Delete removes it. The **space bar** plays / stops the preview.
 - The **lane at the bottom** is the **velocity**: drag on it to set how hard a stab plays (the
   notes of a chord move together; Shift: only the selected note).
 - The chord names stay on top and the playhead runs while the loop plays.
@@ -297,7 +304,7 @@ kept. With a bass line from the library, **RND BASS** picks another line. Press 
 |---|---|
 | **Guide sound** | Turns the built-in sound on/off. Turn it off if you only use the MIDI. |
 | **Sound** | *Rhodes (FM)* electric piano, *Soulful Grand* acoustic piano, *House Piano (M1 style)* – the bright '90s house piano – *House Organ* for jackin' organ stabs, *Wurlitzer* (reedy, a little driven), *Gospel Organ (Leslie)* (full drawbars through a rotating speaker) or *Warm Pad* (soft detuned pad for breaks). |
-| **PREVIEW** | Plays the groove even with the DAW stopped. |
+| **PREVIEW** | Plays the groove even with the DAW stopped. The round **▶** button next to it does the same (■ while it plays), and so does the **space bar** when the plug-in window is active (a plug-in can't start the DAW's own transport). **HEAR** in VARIANTS and in the voicing coach starts it by itself when nothing is playing. |
 | **MIDI out** | *All on channel 1* or *Bass on channel 2* (to send the bass to a different instrument). |
 | **Play mode** (in the Groove panel) | *Host transport*: plays with the DAW's Play. *Hold a key*: plays while you hold a MIDI key, and **that key sets the key** (great for live jamming and in the Standalone app). |
 | **Tone / Reverb / Volume** | Brightness (or drawbars for the organ), reverb and volume of the guide sound (they don't affect the MIDI). |

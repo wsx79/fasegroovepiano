@@ -6,6 +6,21 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.27.0] - 2026-10-14
+
+### Added
+- **Piano roll editor tools**, each with its own cursor: DRAW (pencil), MOVE (arrow), ERASE
+  (eraser: click or drag over notes).
+- **Free movement** of the notes by default; **SNAP** to stick them to the grid (Alt inverts) and
+  **QUANTIZE**.
+- **DRAWS PIANO / BASS** in the notes' colours, **SHOW ALL / PIANO / BASS**, **FOLLOW** (the view
+  follows the playhead).
+- **Space bar** plays / stops the preview, and a round **▶ / ■** button next to PREVIEW.
+
+### Fixed
+- **HEAR** in VARIANTS (and in the voicing coach) did nothing with the DAW stopped and the preview
+  off: it now starts the preview, and stops it again when the window closes.
+
 ## [1.26.0] - 2026-10-14
 
 ### Added

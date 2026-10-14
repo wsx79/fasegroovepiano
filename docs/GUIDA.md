@@ -225,13 +225,21 @@ Il pannello grande in basso ha due viste (schede in alto a sinistra):
 **MODIFICA NOTE** (accanto alle schede, o doppio clic sul piano roll) apre il piano roll **in
 grande**, per modificare le **note una per una**:
 
+- **Strumenti** (ognuno col suo cursore): **MATITA** (clic per aggiungere una nota, trascina per
+  allungarla; puoi comunque trascinare una nota per spostarla), **SPOSTA** (freccia: trascina una
+  nota per spostarla, il suo **bordo destro** per cambiarne la durata) e **GOMMA** (clicca una
+  nota, o trascina sopra più note, per cancellarle). Anche doppio clic o clic destro eliminano una
+  nota.
+- **DISEGNA PIANO / BASSO** (arancione / rosa, i colori delle note): quale parte disegna la matita.
+- **MOSTRA TUTTO / PIANO / BASSO**: vedi solo il piano o solo il basso; l'altra parte diventa grigia
+  e non si può toccare.
+- Le note si spostano **liberamente** (senza scatti). **SNAP** le aggancia alla **Griglia** (1/8,
+  1/16 o 1/32; Alt mentre trascini fa il contrario) e **QUANTIZZA** porta sulla griglia la nota scelta
+  (o tutte quelle visibili).
 - **Zoom** con **- / +**, **ADATTA** (tutto il loop) o Ctrl + rotella; la rotella e la barra in
-  basso scorrono.
-- **Clic** in un punto vuoto per aggiungere una nota (lunga un passo della griglia: **Griglia**
-  1/8, 1/16 o 1/32; **Nuove note** dice se è piano o basso); **trascina** una nota per spostarla
-  (tempo e altezza), trascina il suo **bordo destro** per allungarla o accorciarla; **doppio clic**
-  o **clic destro** la elimina. Le frecce spostano la nota scelta (su / giù di un semitono, Shift
-  un'ottava; destra / sinistra di un passo), Canc la elimina.
+  basso scorrono. **SEGUI** (acceso di default) gira pagina seguendo la testina.
+- Le frecce spostano la nota scelta (su / giù di un semitono, Shift un'ottava; destra / sinistra di
+  un passo), Canc la elimina. La **barra spaziatrice** avvia / ferma l'ascolto.
 - La **corsia in basso** è la **dinamica** (velocity): trascina per decidere quanto forte suona
   uno stab (le note di un accordo si muovono insieme; Shift: solo la nota scelta).
 - I nomi degli accordi restano in alto e la testina scorre mentre il loop suona.
@@ -303,7 +311,7 @@ restano. Con una linea di basso della libreria, **RND BASSO** sceglie un'altra l
 |---|---|
 | **Guide sound** | Accende/spegne il suono interno. Spegnilo se usi solo il MIDI. |
 | **Sound** | *Rhodes (FM)* (piano elettrico), *Soulful Grand* (pianoforte acustico), *House Piano (M1 style)* (il piano brillante della house anni '90) *House Organ* (organo per gli stab jackin'), *Wurlitzer* (ancioso, un po' saturato), *Gospel Organ (Leslie)* (tiranti pieni con altoparlante rotante) o *Warm Pad* (pad morbido e detunato per i break). |
-| **PREVIEW** | Fa suonare il groove anche a DAW ferma. |
+| **PREVIEW** | Fa suonare il groove anche a DAW ferma. Il pulsante tondo **▶** accanto fa lo stesso (■ mentre suona), e così la **barra spaziatrice** quando la finestra del plug-in è attiva (un plug-in non può avviare il Play della DAW). **ASCOLTA** in VARIANTI e nel coach dei voicing lo avvia da solo quando non suona niente. |
 | **MIDI out** | *All on channel 1* oppure *Bass on channel 2* (per mandare il basso a uno strumento diverso). |
 | **Play mode** (nel riquadro Groove) | *Host transport*: suona col Play della DAW. *Hold a key*: suona mentre tieni premuto un tasto MIDI, e **il tasto sceglie la tonalità** (ottimo per jam dal vivo e nello Standalone). |
 | **Tone / Reverb / Volume** | Brillantezza (per l'organo: i tiranti), riverbero e volume del suono guida (non influiscono sul MIDI). |

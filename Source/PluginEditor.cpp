@@ -2060,6 +2060,27 @@ void SongOverlay::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+void PlayButton::paintButton (juce::Graphics& g, bool highlighted, bool)
+{
+    auto r = getLocalBounds().toFloat().reduced (1.0f);
+    r = r.withSizeKeepingCentre (juce::jmin (r.getWidth(), r.getHeight()), juce::jmin (r.getWidth(), r.getHeight()));
+    const bool playing = getToggleState();
+    g.setColour (playing ? Palette::accent2 : (highlighted ? Palette::accent.brighter (0.15f) : Palette::accent));
+    g.fillEllipse (r);
+    g.setColour (Palette::background);
+    const auto c = r.getCentre();
+    const float s = r.getWidth() * 0.22f;
+    if (playing)
+        g.fillRect (juce::Rectangle<float> (s * 1.8f, s * 1.8f).withCentre (c));
+    else
+    {
+        juce::Path triangle;
+        triangle.addTriangle (c.x - s * 0.8f, c.y - s, c.x - s * 0.8f, c.y + s, c.x + s * 1.1f, c.y);
+        g.fillPath (triangle);
+    }
+}
+
+//==============================================================================
 void ToolButton::drawIcon (juce::Graphics& g, Icon icon, juce::Rectangle<float> r, juce::Colour colour)
 {
     const float s = juce::jmin (r.getWidth(), r.getHeight());
@@ -3770,6 +3791,9 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     previewButton.setColour (juce::TextButton::textColourOnId, Palette::background);
     previewButton.setTooltip ("Play the groove with the guide sound without starting the DAW");
     previewButton.onClick = [this] { processor.previewOn = previewButton.getToggleState(); };
+    playButton.onClick = [this] { processor.previewOn = ! processor.previewOn.load(); };
+    playButton.setTooltip ("Play / stop the preview (space bar)");
+    addAndMakeVisible (playButton);
 
     styleCaption (clipLengthLabel, "Clip length");
     styleCaption (clipPartLabel, "Notes");
@@ -4499,6 +4523,7 @@ void FaseGroovePianoEditor::applyLanguage()
     syncButton.setTooltip (tr ("On: follow the DAW tempo. Off: set your own BPM."));
     tempoSlider.setTooltip (tr ("Drag, or double-click to type the BPM"));
     previewButton.setTooltip (tr ("Play the groove with the guide sound without starting the DAW"));
+    playButton.setTooltip (tr ("Play / stop the preview (space bar)"));
     shrinkToggle.setTooltip (tr ("Shrink the plug-in window while you drag a clip, so you can see your DAW"));
     patternView.setTooltip (tr ("Click a step: hit > accent > ghost > rest.  Right-click: more options"));
     bassButton.setTooltip (tr ("Piano only: the bass is switched off"));
@@ -4933,6 +4958,7 @@ void FaseGroovePianoEditor::timerCallback()
     }
     circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), tr (sgk::scaleName (s.scale)), marks, moves, playingSlot, diatonic);
     previewButton.setToggleState (processor.previewOn.load(), juce::dontSendNotification);
+    playButton.setToggleState (processor.previewOn.load(), juce::dontSendNotification);
 
     const bool synced = syncButton.getToggleState();
     tempoSlider.setVisible (! synced);
@@ -5116,7 +5142,7 @@ void FaseGroovePianoEditor::layoutFull()
     mid.removeFromLeft (10);
     circlePanel = mid.removeFromLeft (262);
     mid.removeFromLeft (10);
-    soundPanel = mid.removeFromRight (240);
+    soundPanel = mid.removeFromRight (252);
     mid.removeFromRight (10);
     groovePanel = mid;
 
@@ -5198,7 +5224,10 @@ void FaseGroovePianoEditor::layoutFull()
         auto inner = soundPanel.reduced (14, 8);
         inner.removeFromTop (22);
         auto toggleRow = row (inner, 28);
-        previewButton.setBounds (toggleRow.removeFromRight (82));
+        previewButton.setBounds (toggleRow.removeFromRight (70));
+        toggleRow.removeFromRight (3);
+        playButton.setBounds (toggleRow.removeFromRight (26));
+        toggleRow.removeFromRight (4);
         soundToggle.setBounds (toggleRow);
         soundType.setBounds (row (inner, 44));
         split (row (inner, 44), bassChannel, playMode, (inner.getWidth() - 10) / 2);
