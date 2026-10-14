@@ -4,6 +4,7 @@
 // Unit tests for the music engine (no JUCE needed).
 
 #include "../Source/engine/GrooveEngine.h"
+#include "../Source/engine/HarmonyAnalyzer.h"
 #include "../Source/engine/Theory.h"
 
 #include <algorithm>
@@ -841,6 +842,92 @@ static void testDancePack()
     CHECK (stabs == 8);
 }
 
+static void testHarmonyAnalyzer()
+{
+    // Chords as a pianist plays them: bass note + voicing, one per bar (or half bar), looped.
+    auto addChord = [] (std::vector<AnalyzedNote>& notes, double start, double length, int bass, std::vector<int> upper)
+    {
+        notes.push_back ({ start, start + length * 0.9, bass });
+        for (int n : upper) notes.push_back ({ start + 0.5, start + 0.5 + length * 0.35, n });   // offbeat stabs
+        for (int n : upper) notes.push_back ({ start + 2.5, start + 2.5 + std::min (1.0, length * 0.3), n });
+    };
+    auto rootOf = [] (const HarmonyAnalysis& a, int i) { return (a.keyRoot + a.chordCodes[(size_t) i] % 12) % 12; };
+    auto kindOf = [] (const HarmonyAnalysis& a, int i) { return a.chordCodes[(size_t) i] / 12; };
+
+    {
+        // Am9 - Fmaj9 - Cmaj7 - G, one bar each, played twice: rootless-ish voicings over the bass.
+        std::vector<AnalyzedNote> notes;
+        for (int rep = 0; rep < 2; ++rep)
+        {
+            const double t = rep * 16.0;
+            addChord (notes, t + 0.0,  4.0, 45, { 60, 64, 67, 71 });   // Am9: C E G B over A
+            addChord (notes, t + 4.0,  4.0, 41, { 57, 60, 64, 67 });   // Fmaj9: A C E G over F
+            addChord (notes, t + 8.0,  4.0, 48, { 55, 59, 64, 67 });   // Cmaj7: G B E G over C
+            addChord (notes, t + 12.0, 4.0, 43, { 55, 59, 62, 67 });   // G: G B D G over G
+        }
+        const auto a = analyzeHarmony (notes);
+        CHECK (a.ok);
+        CHECK (a.chordCodes.size() == 4);
+        CHECK (a.chordLengthChoice == 1);
+        if (a.chordCodes.size() == 4)
+        {
+            CHECK (rootOf (a, 0) == 9 && kindOf (a, 0) == 1);   // A minor
+            CHECK (rootOf (a, 1) == 5 && kindOf (a, 1) == 0);   // F major
+            CHECK (rootOf (a, 2) == 0 && kindOf (a, 2) == 0);   // C major
+            CHECK (rootOf (a, 3) == 7 && kindOf (a, 3) != 1);   // G (major)
+        }
+        CHECK (a.outOfScale < 0.05);
+        CHECK ((a.keyRoot == 0 && a.scale == 0) || (a.keyRoot == 9 && a.scale == 2));
+        CHECK (a.slots.size() == 4);
+        for (const auto& slot : a.slots) CHECK (slot.freeCode == noFreeChord);   // all in the scale
+    }
+    {
+        // ii-V: Dm7 - G7 every half bar, four bars.
+        std::vector<AnalyzedNote> notes;
+        for (int bar = 0; bar < 4; ++bar)
+        {
+            const double t = bar * 4.0;
+            notes.push_back ({ t, t + 1.8, 38 });
+            for (int n : { 60, 65, 69, 72 }) notes.push_back ({ t + 0.5, t + 1.5, n });   // Dm7: C F A C
+            notes.push_back ({ t + 2.0, t + 3.8, 43 });
+            for (int n : { 59, 65, 67, 71 }) notes.push_back ({ t + 2.5, t + 3.5, n });   // G7: B F G B
+        }
+        const auto a = analyzeHarmony (notes);
+        CHECK (a.ok && a.chordCodes.size() == 2 && a.chordLengthChoice == 0);
+        if (a.chordCodes.size() == 2)
+        {
+            CHECK (rootOf (a, 0) == 2 && kindOf (a, 0) == 1);   // D minor
+            CHECK (rootOf (a, 1) == 7 && kindOf (a, 1) == 2);   // G dominant
+        }
+    }
+    {
+        // Dorian vamp: Am7 - D (with F#), two bars each.
+        std::vector<AnalyzedNote> notes;
+        for (int rep = 0; rep < 2; ++rep)
+        {
+            const double t = rep * 16.0;
+            addChord (notes, t + 0.0, 8.0, 45, { 60, 64, 67, 69 });   // Am7
+            addChord (notes, t + 4.0, 4.0, 45, { 60, 64, 67, 69 });
+            addChord (notes, t + 8.0, 8.0, 38, { 57, 62, 66, 69 });   // D: A D F# A
+            addChord (notes, t + 12.0, 4.0, 38, { 57, 62, 66, 69 });
+        }
+        const auto a = analyzeHarmony (notes);
+        CHECK (a.ok && a.chordCodes.size() == 2 && a.chordLengthChoice == 2);
+        CHECK (a.keyRoot == 9 && a.scale == 1);   // A Dorian
+    }
+    {
+        // Out-of-scale notes are reported; an empty part is not analysed.
+        CHECK (! analyzeHarmony ({}).ok);
+        std::vector<AnalyzedNote> notes;
+        addChord (notes, 0.0, 4.0, 48, { 60, 64, 67 });
+        addChord (notes, 4.0, 4.0, 44, { 60, 63, 68 });   // Ab major: borrowed bVI
+        const auto a = analyzeHarmony (notes);
+        CHECK (a.ok && a.chordCodes.size() == 2);
+        if (a.chordCodes.size() == 2 && a.keyRoot == 0 && a.scale == 0)
+            CHECK (a.slots[1].freeCode != noFreeChord);
+    }
+}
+
 int main()
 {
     testChordNames();
@@ -864,6 +951,7 @@ int main()
     testStrum();
     testPatternsWellFormed();
     testDancePack();
+    testHarmonyAnalyzer();
 
     if (failures == 0)
         std::printf ("All engine tests passed.\n");

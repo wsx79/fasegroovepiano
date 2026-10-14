@@ -220,6 +220,7 @@ public:
     enum class Mode { grooves, progressions };
     void show (Mode = Mode::grooves, int currentPreset = -1);
     std::function<void (int)> onProgressionChosen;
+    std::function<void()> onImportMidi;   // progressions: "Import a MIDI file..."
     void refreshText();
 
     void paint (juce::Graphics&) override;
@@ -239,8 +240,13 @@ private:
         std::string right, left;   // for the rhythm picture
         int preset = -1;           // progression preset index
         juce::String chords;       // the progression in the current key
+        juce::String key;          // name used for favourites and recents
     };
+
+    // Left column: Favourites, Recent, then the genres (grooves: + My grooves, Generate).
+    static constexpr int favourites = 0, recent = 1, firstCategory = 2;
     int numGenres() const;
+    const std::vector<const char*>& categories() const;
 
     juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (920.0f, 640.0f); }
     void selectGenre (int);
@@ -248,19 +254,31 @@ private:
     void choose (int row);
     int genreOfCurrent() const;
 
+    // Favourites and recents are saved for all projects, by name.
+    juce::StringArray loadList (const char* what) const;
+    void saveList (const char* what, const juce::StringArray&) const;
+    const char* favouritesKey() const { return mode == Mode::progressions ? "favProgressions" : "favGrooves"; }
+    const char* recentKey() const     { return mode == Mode::progressions ? "recentProgressions" : "recentGrooves"; }
+    bool isFavourite (const Entry&) const;
+    void toggleFavourite (int row);
+
     int getNumRows() override;
     void paintListBoxItem (int row, juce::Graphics&, int width, int height, bool selected) override;
     void selectedRowsChanged (int lastRowSelected) override;
+    void listBoxItemClicked (int row, const juce::MouseEvent&) override;
     void listBoxItemDoubleClicked (int row, const juce::MouseEvent&) override;
     void returnKeyPressed (int lastRowSelected) override;
+
+    static constexpr int starWidth = 30;
 
     FaseGroovePianoProcessor& processor;
     juce::OwnedArray<juce::TextButton> genreButtons;
     juce::TextEditor search;
-    juce::TextButton closeButton;
+    juce::TextButton closeButton, importButton;
     juce::ListBox list;
     std::vector<Entry> entries;
-    int genre = 0, currentPreset = -1;
+    juce::StringArray favouriteNames;
+    int genre = firstCategory, currentPreset = -1;
     Mode mode = Mode::grooves;
     bool quiet = false;   // selecting without playing (when the browser opens)
 };
@@ -286,7 +304,7 @@ private:
 };
 
 //==============================================================================
-class FaseGroovePianoEditor : public juce::AudioProcessorEditor, public juce::Timer
+class FaseGroovePianoEditor : public juce::AudioProcessorEditor, public juce::Timer, public juce::FileDragAndDropTarget
 {
 public:
     explicit FaseGroovePianoEditor (FaseGroovePianoProcessor&);
@@ -322,6 +340,12 @@ private:
     void savePresetAs();
     void showGrooveMenu();
     void saveGrooveAs();
+
+    // MIDI harmony analyzer: drop a .mid on the window, or "Import a MIDI file..." in the browser.
+    bool isInterestedInFileDrag (const juce::StringArray&) override;
+    void filesDropped (const juce::StringArray&, int, int) override;
+    void chooseMidiToImport();
+    void importMidi (const juce::File&);
     void showSaveMenu();
     void saveAllParts();
     void undo();

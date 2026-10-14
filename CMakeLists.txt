@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(FaseGroovePiano VERSION 1.18.2 LANGUAGES C CXX)
+project(FaseGroovePiano VERSION 1.19.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,7 +19,8 @@ option(SGK_BUILD_TESTS  "Build the engine unit tests" ON)
 add_library(sgk_engine STATIC
     Source/engine/Theory.cpp
     Source/engine/GrooveEngine.cpp
-    Source/engine/Generators.cpp)
+    Source/engine/Generators.cpp
+    Source/engine/HarmonyAnalyzer.cpp)
 target_include_directories(sgk_engine PUBLIC Source/engine)
 set_target_properties(sgk_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

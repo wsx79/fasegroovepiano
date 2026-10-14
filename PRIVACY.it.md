@@ -25,7 +25,7 @@ Fase Groove Piano rispetta la tua privacy nel modo più semplice: **non raccogli
 | I tuoi preset (`.fgp`) | `Documenti/Fase Groove Piano/Presets/` | Solo quando ne salvi uno, per caricarlo in altri progetti. |
 | I tuoi groove (`.fgg`) | `Documenti/Fase Groove Piano/Grooves/` | Solo quando ne salvi uno con I MIEI GROOVE. |
 | Aggiornamenti scaricati | `Download/Fase Groove Piano updates/` (o `Documenti/` se non c'è la cartella Download) | Solo quando trova una versione più nuova. Puoi cancellarli quando vuoi. |
-| Lingua dell'interfaccia | `Fase Groove Piano.settings` nella cartella impostazioni utente del sistema | Per avere la tua lingua in tutti i progetti. |
+| Lingua dell'interfaccia, preferiti e groove / progressioni recenti | `Fase Groove Piano.settings` nella cartella impostazioni utente del sistema | Per avere la tua lingua e le tue liste in tutti i progetti. |
 | Impostazioni audio/MIDI della versione Standalone | Cartella impostazioni utente del sistema | Le gestisce il framework JUCE per ricordare la scheda audio scelta. |
 
 Nessuno di questi file lascia il tuo computer.

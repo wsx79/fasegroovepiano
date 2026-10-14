@@ -504,6 +504,60 @@ void FaseGroovePianoProcessor::applyProgressionPreset (int index)
     }
 }
 
+sgk::HarmonyAnalysis FaseGroovePianoProcessor::analyzeMidiFile (const juce::File& file)
+{
+    juce::MidiFile midi;
+    juce::FileInputStream in (file);
+    if (! in.openedOk() || ! midi.readFrom (in) || midi.getTimeFormat() <= 0)
+        return {};
+
+    const double ticksPerBeat = midi.getTimeFormat();
+    int beatsPerBar = 4;
+    std::vector<sgk::AnalyzedNote> notes;
+
+    for (int t = 0; t < midi.getNumTracks(); ++t)
+    {
+        juce::MidiMessageSequence track (*midi.getTrack (t));
+        track.updateMatchedPairs();
+        for (auto* ev : track)
+        {
+            const auto& m = ev->message;
+            if (m.isTimeSignatureMetaEvent() && m.getTimeStamp() <= 0.0)
+            {
+                int numerator = 4, denominator = 4;
+                m.getTimeSignatureInfo (numerator, denominator);
+                if (denominator > 0)
+                    beatsPerBar = juce::jlimit (2, 12, juce::roundToInt (numerator * 4.0 / denominator));
+            }
+            if (! m.isNoteOn() || m.getChannel() == 10)   // channel 10: drums
+                continue;
+            const double start = m.getTimeStamp() / ticksPerBeat;
+            const double end = ev->noteOffObject != nullptr ? ev->noteOffObject->message.getTimeStamp() / ticksPerBeat : start + 0.25;
+            notes.push_back ({ start, juce::jmax (start + 0.05, end), m.getNoteNumber() });
+            if (notes.size() > 20000)
+                return {};   // not a loop
+        }
+    }
+    return sgk::analyzeHarmony (notes, beatsPerBar);
+}
+
+void FaseGroovePianoProcessor::applyAnalysis (const sgk::HarmonyAnalysis& a)
+{
+    if (! a.ok || a.slots.empty())
+        return;
+
+    clearFreeChords();
+    setParameterFromUI (ParamIDs::key, (float) a.keyRoot);
+    setParameterFromUI (ParamIDs::scale, (float) a.scale);
+    setParameterFromUI (ParamIDs::chordLength, (float) juce::jlimit (0, 3, a.chordLengthChoice));
+    setParameterFromUI (ParamIDs::progLength, (float) juce::jmin ((int) a.slots.size(), sgk::maxProgressionLength));
+    for (int i = 0; i < (int) a.slots.size() && i < sgk::maxProgressionLength; ++i)
+    {
+        setParameterFromUI (ParamIDs::slot (i), (float) a.slots[(size_t) i].degree);
+        setFreeChord (i, a.slots[(size_t) i].freeCode);
+    }
+}
+
 void FaseGroovePianoProcessor::applyStyle (int index)
 {
     if (! juce::isPositiveAndBelow (index, (int) std::size (styles)))

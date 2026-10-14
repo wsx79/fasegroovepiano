@@ -61,6 +61,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 🎵 **Linea in alto** (la melodia delle note alte: morbida, ferma, in salita, in discesa, ad
   arco) e **rivolti ▲▼** su ogni accordo.
 - 🎹 **IMPARA:** suona gli accordi sulla tastiera MIDI e diventano la progressione.
+- 🔎 **Analizzatore MIDI:** trascina un file .mid e stima tonalità, accordi e durata degli accordi, poi li carica come progressione.
 - 🔄 **Variazioni** ogni 4 o 8 battute, groove da 1, 2 o 4 battute, basso **walking** e a
   **ottave sincopate**, e crescendo automatico nel build-up.
 - 💾 **Preset personali**, **annulla / ripeti** (Ctrl+Z) e **salva tutte le parti** (loop e brano

@@ -786,15 +786,15 @@ GrooveBrowser::GrooveBrowser (FaseGroovePianoProcessor& p) : processor (p)
 {
     setWantsKeyboardFocus (true);
 
-    const int buttons = juce::jmax ((int) sgk::grooveCategories().size() + 2,   // + My grooves, Generate
-                                    (int) sgk::progressionCategories().size());
+    const int buttons = firstCategory + juce::jmax ((int) sgk::grooveCategories().size() + 2,   // + My grooves, Generate
+                                                    (int) sgk::progressionCategories().size());
     for (int i = 0; i < buttons; ++i)
     {
         auto* b = genreButtons.add (new juce::TextButton());
         b->setClickingTogglesState (false);
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
         b->setColour (juce::TextButton::buttonOnColourId, Palette::accent);
-        b->setColour (juce::TextButton::textColourOffId, Palette::text);
+        b->setColour (juce::TextButton::textColourOffId, i < firstCategory ? Palette::accent : Palette::text);
         b->setColour (juce::TextButton::textColourOnId, Palette::background);
         b->onClick = [this, i]
         {
@@ -817,6 +817,16 @@ GrooveBrowser::GrooveBrowser (FaseGroovePianoProcessor& p) : processor (p)
     closeButton.onClick = [this] { setVisible (false); };
     addAndMakeVisible (closeButton);
 
+    importButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    importButton.setColour (juce::TextButton::textColourOffId, Palette::accent2.brighter (0.3f));
+    importButton.onClick = [this]
+    {
+        setVisible (false);
+        if (onImportMidi != nullptr)
+            onImportMidi();
+    };
+    addChildComponent (importButton);
+
     list.setModel (this);
     list.setRowHeight (34);
     list.setColour (juce::ListBox::backgroundColourId, Palette::background);
@@ -838,69 +848,114 @@ std::vector<int> GrooveBrowser::menuOrder()
     return order;
 }
 
+const std::vector<const char*>& GrooveBrowser::categories() const
+{
+    return mode == Mode::progressions ? sgk::progressionCategories() : sgk::grooveCategories();
+}
+
 int GrooveBrowser::numGenres() const
 {
-    return mode == Mode::progressions ? (int) sgk::progressionCategories().size()
-                                      : (int) sgk::grooveCategories().size() + 2;
+    return firstCategory + (int) categories().size() + (mode == Mode::grooves ? 2 : 0);
+}
+
+juce::StringArray GrooveBrowser::loadList (const char* what) const
+{
+    return juce::StringArray::fromTokens (Localisation::setting (what), "|", {});
+}
+
+void GrooveBrowser::saveList (const char* what, const juce::StringArray& names) const
+{
+    Localisation::setSetting (what, names.joinIntoString ("|"));
+}
+
+bool GrooveBrowser::isFavourite (const Entry& e) const
+{
+    return e.key.isNotEmpty() && favouriteNames.contains (e.key);
+}
+
+void GrooveBrowser::toggleFavourite (int row)
+{
+    if (! juce::isPositiveAndBelow (row, (int) entries.size()) || entries[(size_t) row].key.isEmpty())
+        return;
+
+    const auto& key = entries[(size_t) row].key;
+    if (favouriteNames.contains (key)) favouriteNames.removeString (key);
+    else                               favouriteNames.add (key);
+    saveList (favouritesKey(), favouriteNames);
+
+    if (genre == favourites && search.isEmpty())
+        rebuildList();
+    else
+        list.repaintRow (row);
 }
 
 void GrooveBrowser::refreshText()
 {
     search.setTextToShowWhenEmpty (tr (mode == Mode::progressions ? "Search a progression..." : "Search a groove..."), Palette::dim);
     closeButton.setButtonText (tr ("CLOSE"));
+    importButton.setButtonText (tr ("Import a MIDI file..."));
+    importButton.setVisible (mode == Mode::progressions);
+    favouriteNames = loadList (favouritesKey());
+
+    const auto& cats = categories();
     for (int i = 0; i < genreButtons.size(); ++i)
-        genreButtons[i]->setVisible (i < numGenres());
-
-    if (mode == Mode::progressions)
     {
-        const auto& categories = sgk::progressionCategories();
-        for (int i = 0; i < (int) categories.size() && i < genreButtons.size(); ++i)
+        auto* b = genreButtons[i];
+        b->setVisible (i < numGenres());
+        if (i >= numGenres())
+            continue;
+
+        juce::String name;
+        int count = -1;
+        if (i == favourites)
         {
-            int count = 0;
-            for (const auto& p : sgk::progressionPresets())
-                count += juce::String (p.category) == categories[(size_t) i] ? 1 : 0;
-            genreButtons[i]->setButtonText (tr (categories[(size_t) i]) + "  (" + juce::String (count) + ")");
+            name = juce::String::fromUTF8 ("\xe2\x98\x85 ") + tr ("Favourites");
+            count = favouriteNames.size();
         }
-        repaint();
-        return;
-    }
-
-    const auto& genres = sgk::grooveCategories();
-    for (int i = 0; i < numGenres(); ++i)
-    {
-        const juce::String name = i < (int) genres.size() ? tr (genres[(size_t) i])
-                                : i == (int) genres.size() ? tr ("MY GROOVES") : tr ("Generate");
-        int count = 0;
-        if (i < (int) genres.size())
-            for (const auto& p : sgk::groovePatterns())
-                count += p.category == genres[(size_t) i] ? 1 : 0;
-        genreButtons[i]->setButtonText (count > 0 ? name + "  (" + juce::String (count) + ")" : name);
+        else if (i == recent)
+        {
+            name = tr ("Recent");
+        }
+        else if (i - firstCategory < (int) cats.size())
+        {
+            const auto* category = cats[(size_t) (i - firstCategory)];
+            name = tr (category);
+            count = 0;
+            if (mode == Mode::progressions)
+                for (const auto& p : sgk::progressionPresets()) count += juce::String (p.category) == category ? 1 : 0;
+            else
+                for (const auto& p : sgk::groovePatterns()) count += p.category == category ? 1 : 0;
+        }
+        else
+        {
+            name = i - firstCategory == (int) cats.size() ? tr ("MY GROOVES") : tr ("Generate");
+        }
+        b->setButtonText (count >= 0 ? name + "  (" + juce::String (count) + ")" : name);
     }
     repaint();
 }
 
 int GrooveBrowser::genreOfCurrent() const
 {
+    const auto& cats = categories();
     if (mode == Mode::progressions)
     {
         const auto& presets = sgk::progressionPresets();
-        const auto& categories = sgk::progressionCategories();
         if (juce::isPositiveAndBelow (currentPreset, (int) presets.size()))
-            for (size_t c = 0; c < categories.size(); ++c)
-                if (juce::String (presets[(size_t) currentPreset].category) == categories[c])
-                    return (int) c;
-        return 0;
+            for (size_t c = 0; c < cats.size(); ++c)
+                if (juce::String (presets[(size_t) currentPreset].category) == cats[c])
+                    return firstCategory + (int) c;
+        return firstCategory;
     }
 
     const int current = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pattern)->load());
     const auto& patterns = sgk::groovePatterns();
-    const auto& genres = sgk::grooveCategories();
     if (current >= (int) patterns.size())
-        return (int) genres.size() + 1;   // Generate
-    for (size_t g = 0; g < genres.size(); ++g)
-        if (patterns[(size_t) current].category == genres[g])
-            return (int) g;
-    return 0;
+        return firstCategory + (int) cats.size() + 1;   // Generate
+    for (size_t g = 0; g < cats.size(); ++g)
+        if (patterns[(size_t) current].category == cats[g])
+            return firstCategory + (int) g;
+    return firstCategory;
 }
 
 void GrooveBrowser::show (Mode newMode, int preset)
@@ -909,6 +964,7 @@ void GrooveBrowser::show (Mode newMode, int preset)
     currentPreset = preset;
     search.clear();
     refreshText();
+    resized();
     selectGenre (genreOfCurrent());
     setVisible (true);
     toFront (true);
@@ -918,97 +974,144 @@ void GrooveBrowser::show (Mode newMode, int preset)
 void GrooveBrowser::selectGenre (int g)
 {
     genre = juce::jlimit (0, numGenres() - 1, g);
-    for (int i = 0; i < genreButtons.size(); ++i)
-        genreButtons[i]->setToggleState (i == genre && search.isEmpty(), juce::dontSendNotification);
     rebuildList();
 }
 
 void GrooveBrowser::rebuildList()
 {
     entries.clear();
-    const auto& patterns = sgk::groovePatterns();
-    const auto& genres = sgk::grooveCategories();
     const auto query = search.getText().trim();
+    const auto& cats = categories();
+    const auto recentNames = loadList (recentKey());
 
-    auto addPattern = [this, &patterns] (int i)
-    {
-        const auto& p = patterns[(size_t) i];
-        entries.push_back ({ p.name, tr (p.category), i, {}, p.rightHand, p.leftHand });
-    };
+    // Which names to list for Favourites / Recent (in that order).
+    const juce::StringArray* byName = query.isEmpty() && genre == favourites ? &favouriteNames
+                                    : query.isEmpty() && genre == recent ? &recentNames : nullptr;
+    const auto* category = query.isEmpty() && genre >= firstCategory && genre - firstCategory < (int) cats.size()
+                               ? cats[(size_t) (genre - firstCategory)] : nullptr;
 
     if (mode == Mode::progressions)
     {
         const auto& presets = sgk::progressionPresets();
-        const auto& categories = sgk::progressionCategories();
-        auto settings = processor.currentSettings();
-        for (int i = 0; i < (int) presets.size(); ++i)
+        const auto settings = processor.currentSettings();
+        auto makeEntry = [&] (int i)
         {
             const auto& p = presets[(size_t) i];
             const juce::String name (p.name);
-            const bool match = query.isNotEmpty() ? name.containsIgnoreCase (query) || tr (p.category).containsIgnoreCase (query)
-                                                  : juce::String (p.category) == categories[(size_t) juce::jlimit (0, (int) categories.size() - 1, genre)];
-            if (! match)
-                continue;
 
             // The chords in the key you are using.
             auto s = settings;
             s.scale = p.scale;
             const auto slots = sgk::presetSlots (p);
             s.progressionLength = (int) slots.size();
-            juce::StringArray names;
             for (int k = 0; k < (int) slots.size() && k < sgk::maxProgressionLength; ++k)
             {
                 s.progression[(size_t) k] = slots[(size_t) k].degree;
                 s.freeChords[(size_t) k] = slots[(size_t) k].freeCode;
             }
+            juce::StringArray names;
             for (int k = 0; k < s.progressionLength; ++k)
                 names.add (sgk::chordName (sgk::GrooveEngine::chordForSlot (s, k)));
 
-            Entry e { name.upToFirstOccurrenceOf ("  ", false, false),
-                      name.fromFirstOccurrenceOf ("  ", false, false).trim() + "   " + tr (sgk::scaleName (p.scale)),
-                      -1, {}, {}, {}, i, names.joinIntoString ("  ") };
+            Entry e;
+            e.name = name.upToFirstOccurrenceOf ("  ", false, false);
+            e.detail = name.fromFirstOccurrenceOf ("  ", false, false).trim() + "   " + tr (sgk::scaleName (p.scale));
+            e.preset = i;
+            e.chords = names.joinIntoString ("  ");
+            e.key = name;
             entries.push_back (e);
-        }
-    }
-    else if (query.isNotEmpty())
-    {
-        for (int i : menuOrder())
-            if (juce::String (patterns[(size_t) i].name).containsIgnoreCase (query)
-                || tr (patterns[(size_t) i].category).containsIgnoreCase (query))
-                addPattern (i);
-    }
-    else if (genre < (int) genres.size())
-    {
-        for (int i = 0; i < (int) patterns.size(); ++i)
-            if (patterns[(size_t) i].category == genres[(size_t) genre])
-                addPattern (i);
-    }
-    else if (genre == (int) genres.size())
-    {
-        for (const auto& f : FaseGroovePianoProcessor::grooveFiles())
+        };
+
+        if (byName != nullptr)
         {
-            Entry e { f.getFileNameWithoutExtension(), tr ("Saved groove"), -1, f, {}, {} };
-            if (auto xml = juce::XmlDocument::parse (f))
+            for (const auto& wanted : *byName)
+                for (int i = 0; i < (int) presets.size(); ++i)
+                    if (juce::String (presets[(size_t) i].name) == wanted)
+                        makeEntry (i);
+        }
+        else
+        {
+            for (int i = 0; i < (int) presets.size(); ++i)
             {
-                e.right = xml->getStringAttribute ("chords").toStdString();
-                e.left = xml->getStringAttribute ("bass").toStdString();
+                const auto& p = presets[(size_t) i];
+                const bool match = query.isNotEmpty() ? juce::String (p.name).containsIgnoreCase (query) || tr (p.category).containsIgnoreCase (query)
+                                                      : category != nullptr && juce::String (p.category) == category;
+                if (match)
+                    makeEntry (i);
             }
-            entries.push_back (e);
         }
     }
     else
     {
-        entries.push_back ({ tr ("* Random riff *"), tr ("NEW RIFF makes a new one"), sgk::randomPatternIndex(), {}, {}, {} });
-        entries.push_back ({ tr ("* User pattern *"), tr ("Your edited grid"), sgk::userPatternIndex(), {}, {}, {} });
+        const auto& patterns = sgk::groovePatterns();
+        auto addPattern = [this, &patterns] (int i)
+        {
+            const auto& p = patterns[(size_t) i];
+            Entry e;
+            e.name = p.name;
+            e.detail = tr (p.category);
+            e.pattern = i;
+            e.right = p.rightHand;
+            e.left = p.leftHand;
+            e.key = p.name;
+            entries.push_back (e);
+        };
+
+        if (byName != nullptr)
+        {
+            for (const auto& wanted : *byName)
+                for (int i = 0; i < (int) patterns.size(); ++i)
+                    if (juce::String (patterns[(size_t) i].name) == wanted)
+                        addPattern (i);
+        }
+        else if (query.isNotEmpty())
+        {
+            for (int i : menuOrder())
+                if (juce::String (patterns[(size_t) i].name).containsIgnoreCase (query)
+                    || tr (patterns[(size_t) i].category).containsIgnoreCase (query))
+                    addPattern (i);
+        }
+        else if (category != nullptr)
+        {
+            for (int i = 0; i < (int) patterns.size(); ++i)
+                if (patterns[(size_t) i].category == category)
+                    addPattern (i);
+        }
+        else if (genre - firstCategory == (int) cats.size())
+        {
+            for (const auto& f : FaseGroovePianoProcessor::grooveFiles())
+            {
+                Entry e;
+                e.name = f.getFileNameWithoutExtension();
+                e.detail = tr ("Saved groove");
+                e.file = f;
+                if (auto xml = juce::XmlDocument::parse (f))
+                {
+                    e.right = xml->getStringAttribute ("chords").toStdString();
+                    e.left = xml->getStringAttribute ("bass").toStdString();
+                }
+                entries.push_back (e);
+            }
+        }
+        else
+        {
+            Entry random, user;
+            random.name = tr ("* Random riff *");  random.detail = tr ("NEW RIFF makes a new one"); random.pattern = sgk::randomPatternIndex();
+            user.name = tr ("* User pattern *");   user.detail = tr ("Your edited grid");           user.pattern = sgk::userPatternIndex();
+            entries.push_back (random);
+            entries.push_back (user);
+        }
     }
 
     for (int i = 0; i < genreButtons.size(); ++i)
         genreButtons[i]->setToggleState (i == genre && query.isEmpty(), juce::dontSendNotification);
+    genreButtons[favourites]->setButtonText (juce::String::fromUTF8 ("\xe2\x98\x85 ") + tr ("Favourites")
+                                             + "  (" + juce::String (favouriteNames.size()) + ")");
 
     list.updateContent();
     list.repaint();
 
-    // Show the groove that is playing now.
+    // Show the groove (or progression) that is playing now.
     const int current = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pattern)->load());
     quiet = true;
     list.deselectAllRows();
@@ -1028,7 +1131,7 @@ void GrooveBrowser::choose (int row)
     if (quiet || ! juce::isPositiveAndBelow (row, (int) entries.size()))
         return;
 
-    const auto& e = entries[(size_t) row];
+    const auto e = entries[(size_t) row];
     if (e.preset >= 0)
     {
         processor.applyProgressionPreset (e.preset);
@@ -1040,6 +1143,17 @@ void GrooveBrowser::choose (int row)
         processor.loadGroove (e.file);
     else if (e.pattern >= 0)
         processor.setParameterFromUI (ParamIDs::pattern, (float) e.pattern);
+
+    // Recent: newest first, twelve at most.
+    if (e.key.isNotEmpty())
+    {
+        auto names = loadList (recentKey());
+        names.removeString (e.key);
+        names.insert (0, e.key);
+        while (names.size() > 12)
+            names.remove (names.size() - 1);
+        saveList (recentKey(), names);
+    }
 }
 
 int GrooveBrowser::getNumRows()
@@ -1062,7 +1176,17 @@ void GrooveBrowser::paintListBoxItem (int row, juce::Graphics& g, int width, int
         g.drawRoundedRectangle (r, 5.0f, 1.2f);
     }
 
-    auto text = r.reduced (10.0f, 0.0f);
+    // The star: click it to add or remove a favourite.
+    auto star = r.removeFromLeft ((float) starWidth - 4.0f);
+    if (e.key.isNotEmpty())
+    {
+        const bool fav = isFavourite (e);
+        g.setColour (fav ? Palette::accent : Palette::dim.withAlpha (0.5f));
+        g.setFont (font (17.0f, true));
+        g.drawText (juce::String::fromUTF8 (fav ? "\xe2\x98\x85" : "\xe2\x98\x86"), star, juce::Justification::centred);
+    }
+
+    auto text = r.reduced (6.0f, 0.0f);
     auto picture = text.removeFromRight (juce::jmin (330.0f, text.getWidth() * 0.5f));
     g.setColour (selected ? Palette::accent : Palette::text);
     g.setFont (font (15.0f, selected));
@@ -1070,6 +1194,14 @@ void GrooveBrowser::paintListBoxItem (int row, juce::Graphics& g, int width, int
     g.setColour (Palette::dim);
     g.setFont (font (11.0f));
     g.drawText (e.detail, text, juce::Justification::topLeft);
+
+    if (e.chords.isNotEmpty())
+    {
+        g.setColour (selected ? Palette::text : Palette::accent);
+        g.setFont (font (14.0f, true));
+        g.drawText (e.chords, picture, juce::Justification::centredRight);
+        return;
+    }
 
     // The rhythm at a glance: chords on top, bass below, one cell per 16th.
     auto drawLine = [&g] (const std::string& line, juce::Rectangle<float> area, juce::Colour colour)
@@ -1090,14 +1222,6 @@ void GrooveBrowser::paintListBoxItem (int row, juce::Graphics& g, int width, int
             g.fillRect (cell);
         }
     };
-    if (e.chords.isNotEmpty())
-    {
-        g.setColour (selected ? Palette::text : Palette::accent);
-        g.setFont (font (14.0f, true));
-        g.drawText (e.chords, picture, juce::Justification::centredRight);
-        return;
-    }
-
     picture = picture.reduced (0.0f, 7.0f);
     drawLine (e.right, picture.removeFromTop (picture.getHeight() * 0.5f).reduced (0.0f, 1.0f), Palette::accent);
     drawLine (e.left, picture.reduced (0.0f, 1.0f), Palette::accent2.brighter (0.2f));
@@ -1105,11 +1229,24 @@ void GrooveBrowser::paintListBoxItem (int row, juce::Graphics& g, int width, int
 
 void GrooveBrowser::selectedRowsChanged (int lastRowSelected)
 {
-    choose (lastRowSelected);
+    // Clicks are handled in listBoxItemClicked (a click on the star must not play the item);
+    // here only the arrow keys.
+    if (! juce::ModifierKeys::currentModifiers.isAnyMouseButtonDown())
+        choose (lastRowSelected);
 }
 
-void GrooveBrowser::listBoxItemDoubleClicked (int row, const juce::MouseEvent&)
+void GrooveBrowser::listBoxItemClicked (int row, const juce::MouseEvent& e)
 {
+    if (e.x < starWidth)
+        toggleFavourite (row);
+    else
+        choose (row);
+}
+
+void GrooveBrowser::listBoxItemDoubleClicked (int row, const juce::MouseEvent& e)
+{
+    if (e.x < starWidth)
+        return;
     choose (row);
     setVisible (false);
 }
@@ -1146,9 +1283,19 @@ void GrooveBrowser::resized()
 
     auto left = inner.removeFromLeft (230);
     inner.removeFromLeft (14);
-    const int h = juce::jmin (34, left.getHeight() / juce::jmax (1, genreButtons.size()));
-    for (auto* b : genreButtons)
-        b->setBounds (left.removeFromTop (h).reduced (0, 2));   // hidden ones keep their place
+    if (mode == Mode::progressions)
+    {
+        importButton.setBounds (left.removeFromBottom (34).reduced (0, 2));
+        left.removeFromBottom (8);
+    }
+    const int visible = juce::jmax (1, numGenres());
+    const int h = juce::jmin (34, left.getHeight() / visible);
+    for (int i = 0; i < genreButtons.size(); ++i)
+    {
+        genreButtons[i]->setBounds (left.removeFromTop (h).reduced (0, 2));
+        if (i == recent)
+            left.removeFromTop (6);   // a little gap after Favourites / Recent
+    }
     list.setBounds (inner);
 }
 
@@ -1169,8 +1316,9 @@ void GrooveBrowser::paint (juce::Graphics& g)
     g.drawText (Localisation::upper (tr (progressions ? "Progressions" : "Groove")), top.removeFromTop (26.0f), juce::Justification::centredLeft);
     g.setColour (Palette::dim);
     g.setFont (font (12.0f));
-    g.drawText (tr (progressions ? "Click a progression to hear it, double-click or Enter to close"
-                                 : "Click a groove to hear it, double-click or Enter to close"), top, juce::Justification::centredLeft);
+    g.drawText (tr (progressions ? "Click a progression to hear it, double-click or Enter to close. The star keeps it in your favourites."
+                                 : "Click a groove to hear it, double-click or Enter to close. The star keeps it in your favourites."),
+                top, juce::Justification::centredLeft);
 }
 
 //==============================================================================
@@ -1333,6 +1481,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     presetBox.onChange = [this] { loadPreset (presetBox.getSelectedId() - 1); };
     presetBox.onPopup = [this] { grooveBrowser.show (GrooveBrowser::Mode::progressions, presetBox.getSelectedId() - 1); };
     grooveBrowser.onProgressionChosen = [this] (int preset) { presetBox.setSelectedId (preset + 1, juce::dontSendNotification); };
+    grooveBrowser.onImportMidi = [this] { chooseMidiToImport(); };
     addAndMakeVisible (presetBox);
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
@@ -1883,6 +2032,72 @@ void FaseGroovePianoEditor::stepGroove (int direction)
     int index = it == order.end() ? (direction > 0 ? -1 : 0) : (int) (it - order.begin());
     index = (index + direction + (int) order.size()) % (int) order.size();
     processor.setParameterFromUI (ParamIDs::pattern, (float) order[(size_t) index]);
+}
+
+bool FaseGroovePianoEditor::isInterestedInFileDrag (const juce::StringArray& files)
+{
+    for (const auto& f : files)
+        if (juce::File (f).hasFileExtension ("mid;midi"))
+            return true;
+    return false;
+}
+
+void FaseGroovePianoEditor::filesDropped (const juce::StringArray& files, int, int)
+{
+    for (const auto& f : files)
+        if (juce::File (f).hasFileExtension ("mid;midi"))
+        {
+            importMidi (juce::File (f));
+            return;
+        }
+}
+
+void FaseGroovePianoEditor::chooseMidiToImport()
+{
+    fileChooser = std::make_unique<juce::FileChooser> (tr ("Import a MIDI file..."),
+                                                       juce::File::getSpecialLocation (juce::File::userDocumentsDirectory), "*.mid;*.midi");
+    fileChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                              [this] (const juce::FileChooser& chooser)
+                              {
+                                  if (chooser.getResult().existsAsFile())
+                                      importMidi (chooser.getResult());
+                              });
+}
+
+void FaseGroovePianoEditor::importMidi (const juce::File& file)
+{
+    const auto analysis = FaseGroovePianoProcessor::analyzeMidiFile (file);
+    if (! analysis.ok)
+    {
+        juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Fase Groove Piano",
+                                                tr ("No chords found in this MIDI file."));
+        return;
+    }
+
+    processor.applyAnalysis (analysis);
+    presetBox.setSelectedId (0, juce::dontSendNotification);
+
+    // What was found, in words (it is an estimate).
+    const auto s = processor.currentSettings();
+    juce::StringArray chords;
+    for (int i = 0; i < s.progressionLength; ++i)
+        chords.add (sgk::chordName (sgk::GrooveEngine::chordForSlot (s, i)));
+
+    static const char* const lengths[] { "1/2 bar", "1 bar", "2 bars", "4 bars" };
+    juce::String text;
+    text << tr ("Key") << ": " << sgk::noteName (analysis.keyRoot) << " " << tr (sgk::scaleName (analysis.scale)) << "\n"
+         << tr ("Chords") << ": " << chords.joinIntoString ("  ") << "\n"
+         << tr ("Each chord") << ": " << tr (lengths[juce::jlimit (0, 3, analysis.chordLengthChoice)]) << "\n"
+         << tr ("Notes outside the scale") << ": " << juce::roundToInt (analysis.outOfScale * 100.0) << "%";
+    juce::StringArray outside;
+    for (int pc = 0; pc < 12; ++pc)
+        if (analysis.outsideNotes[(size_t) pc])
+            outside.add (sgk::noteName (pc));
+    if (! outside.isEmpty())
+        text << " (" << outside.joinIntoString (", ") << ")";
+    text << "\n\n" << tr ("This is an estimate: inversions and passing notes can mislead it. Fix any chord on the circle, or undo with the arrow.");
+
+    juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, file.getFileNameWithoutExtension(), text);
 }
 
 void FaseGroovePianoEditor::showGrooveMenu()

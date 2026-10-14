@@ -4,6 +4,7 @@
 #pragma once
 
 #include "engine/GrooveEngine.h"
+#include "engine/HarmonyAnalyzer.h"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
@@ -137,6 +138,11 @@ public:
     void applyStyle (int index);
     /** Loads progressionPresets()[index]: scale, length, degrees and any borrowed chords. */
     void applyProgressionPreset (int index);
+
+    /** Reads a MIDI file (all tracks but drums) and estimates key, chords and chord length. */
+    static sgk::HarmonyAnalysis analyzeMidiFile (const juce::File&);
+    /** Sets key, scale, progression and chord length from an analysis. */
+    void applyAnalysis (const sgk::HarmonyAnalysis&);
     /** Index in progressionPresets() that a style loads, or -1. */
     static int stylePreset (int index);
 

@@ -7,10 +7,13 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Prossima release
 
-- In attesa dei test sulla musicalità della v1.8/1.9.
+- Libreria di linee di basso: linee disco, funky e house con note di passaggio controllate.
+- Voicing Coach: confronto A/B di due voicing dello stesso accordo, tessitura e salti a colpo d'occhio.
+- Morphing dal groove A al groove B (le parti bloccate restano), poi rigenerazione per sezione.
 
 ## Fatto
 
+- v1.19.0: analizzatore MIDI (trascina un .mid), preferiti e recenti nei browser.
 - v1.18.0: browser di groove e progressioni, SOLO PIANO / SOLO BASSO, aggiornamenti più furbi (setup o portable).
 - v1.17.0: I MIEI GROOVE, cartella Documenti/Fase Groove Piano, parametri di automazione raggruppati.
 - v1.16.0: piano più vivo (durate, velocity), basso a stab, RND PIANO / RND BASSO.

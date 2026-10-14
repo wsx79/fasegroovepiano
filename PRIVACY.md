@@ -25,7 +25,7 @@ Fase Groove Piano respects your privacy in the simplest possible way: **it colle
 | Your presets (`.fgp`) | `Documents/Fase Groove Piano/Presets/` | Only when you save one, to load it in other projects. |
 | Your grooves (`.fgg`) | `Documents/Fase Groove Piano/Grooves/` | Only when you save one with MY GROOVES. |
 | Downloaded updates | `Downloads/Fase Groove Piano updates/` (or `Documents/` if there is no Downloads folder) | Only when a newer version is found. You can delete them at any time. |
-| Interface language | `Fase Groove Piano.settings` in your system's user settings folder | So the plug-in speaks your language in every project. |
+| Interface language, favourites and recent grooves / progressions | `Fase Groove Piano.settings` in your system's user settings folder | So the plug-in keeps your language and your lists in every project. |
 | Audio/MIDI settings of the Standalone app | Your system's user settings folder | Handled by the JUCE framework to remember your audio interface. |
 
 None of these files ever leaves your computer.

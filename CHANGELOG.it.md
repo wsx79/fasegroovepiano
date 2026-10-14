@@ -6,6 +6,17 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.19.0] - 2026-10-14
+
+### Aggiunto
+- **Analizzatore MIDI:** trascina un file .mid sulla finestra (o *Importa un file MIDI…* nel
+  browser delle progressioni). Stima tonalità (maggiore, dorica o minore), accordi e quanto dura
+  ognuno, trova il loop e lo carica come progressione, mostrandoti le note fuori scala. È una
+  stima: controlla gli accordi e correggili sul circolo, o annulla.
+- **Preferiti e Recenti** nei browser di groove e progressioni: clicca la stella ☆ per tenere un
+  groove o una progressione; Recenti elenca gli ultimi dodici che hai provato. Valgono per tutti i
+  progetti.
+
 ## [1.18.2] - 2026-10-14
 
 ### Corretto

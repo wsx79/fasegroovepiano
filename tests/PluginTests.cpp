@@ -277,6 +277,55 @@ namespace
     }
 
     //==============================================================================
+    void testMidiImport()
+    {
+        // A chord loop as a DAW would save it: Am7 - Fmaj7 - C - G, one bar each, played twice.
+        juce::MidiMessageSequence seq;
+        const int chords[4][5] { { 45, 57, 60, 64, 67 }, { 41, 57, 60, 64, 65 }, { 48, 55, 60, 64, 67 }, { 43, 55, 59, 62, 67 } };
+        for (int bar = 0; bar < 8; ++bar)
+            for (int n : chords[bar % 4])
+            {
+                const double t = bar * 4 * 960.0;
+                seq.addEvent (juce::MidiMessage::noteOn (1, n, (juce::uint8) 100), t);
+                seq.addEvent (juce::MidiMessage::noteOff (1, n), t + 3.5 * 960.0);
+            }
+        seq.addEvent (juce::MidiMessage::noteOn (10, 36, (juce::uint8) 100), 0.0);   // drums: ignored
+        seq.addEvent (juce::MidiMessage::noteOff (10, 36), 100.0);
+        seq.updateMatchedPairs();
+
+        juce::MidiFile mf;
+        mf.setTicksPerQuarterNote (960);
+        mf.addTrack (seq);
+        const auto file = juce::File::createTempFile (".mid");
+        {
+            juce::FileOutputStream out (file);
+            CHECK (mf.writeTo (out));
+        }
+
+        const auto analysis = FaseGroovePianoProcessor::analyzeMidiFile (file);
+        CHECK (analysis.ok);
+        FaseGroovePianoProcessor p;
+        p.applyAnalysis (analysis);
+        const auto s = p.currentSettings();
+        CHECK (s.progressionLength == 4);
+        CHECK (s.stepsPerChord == 16);   // one bar per chord
+        if (s.progressionLength == 4)
+        {
+            CHECK (sgk::GrooveEngine::chordForSlot (s, 0).rootPc == 9);
+            CHECK (sgk::GrooveEngine::chordForSlot (s, 1).rootPc == 5);
+            CHECK (sgk::GrooveEngine::chordForSlot (s, 2).rootPc == 0);
+            CHECK (sgk::GrooveEngine::chordForSlot (s, 3).rootPc == 7);
+        }
+
+        // Not a MIDI file: nothing happens.
+        const auto junk = juce::File::createTempFile (".mid");
+        junk.replaceWithText ("hello");
+        CHECK (! FaseGroovePianoProcessor::analyzeMidiFile (junk).ok);
+        file.deleteFile();
+        junk.deleteFile();
+    }
+
+    //==============================================================================
     void testUpdateSwap()
     {
         CHECK (Updater::isNewer ("v1.18.1", "1.18.0"));
@@ -350,6 +399,7 @@ int main()
     testOldAndBrokenStates();
     testMidiExport();
     testTransport();
+    testMidiImport();
     testUpdateSwap();
 
     if (failures == 0)

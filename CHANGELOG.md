@@ -6,6 +6,16 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.19.0] - 2026-10-14
+
+### Added
+- **MIDI analyzer:** drop a .mid file on the window (or *Import a MIDI file…* in the progression
+  browser). It estimates key (major, Dorian or minor), chords and how long each lasts, finds the
+  loop and loads it as the progression, showing the notes outside the scale. It is an estimate:
+  check the chords and fix them on the circle, or undo.
+- **Favourites and Recent** in the groove and progression browsers: click the ☆ star to keep
+  a groove or a progression; Recent lists the last twelve you tried. Saved for all projects.
+
 ## [1.18.2] - 2026-10-14
 
 ### Fixed
