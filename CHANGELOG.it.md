@@ -6,6 +6,19 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.24.1] - 2026-10-14
+
+### Corretto
+- **Tempo dei file MIDI esportati:** un tempo appena impostato (con la sync della DAW spenta) non
+  finiva nel file finché l'audio non era partito; ora il file ha sempre il tempo impostato in quel
+  momento (o quello della DAW).
+- **Tracce separate:** il basso segue l'impostazione *Uscita MIDI* come gli altri export (canale 2
+  solo se è scelto *Basso sul canale 2*).
+
+### Aggiunto
+- Test: tempo esportato (manuale e DAW), canale del basso in ogni export, e un brano intero con un
+  fill diverso su ogni sezione (nessuna nota appesa o doppia ai cambi).
+
 ## [1.24.0] - 2026-10-14
 
 ### Aggiunto
@@ -17,7 +30,7 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
   (si salva nel progetto).
 - **Un fill per ogni sezione** in **BRANO**: come impostato, nessuno, o uno stile a scelta
   sull'ultima battuta della sezione; lo senti mentre quella sezione gira.
-- **Tracce separate** in *Note*: un solo file MIDI con tracce Piano, Bass (canale 2) e Fills, tempo
+- **Tracce separate** in *Note*: un solo file MIDI con tracce Piano, Bass e Fills, tempo
   e marker delle sezioni.
 
 ### Corretto

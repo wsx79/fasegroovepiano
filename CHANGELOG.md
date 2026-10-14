@@ -6,6 +6,18 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.24.1] - 2026-10-14
+
+### Fixed
+- **Tempo of exported MIDI files:** a tempo just typed in (with the DAW sync off) was not in the
+  file until the audio had run; the file now always has the tempo set now (or the DAW's).
+- **Separate tracks:** the bass follows the *MIDI out* setting like the other exports (channel 2
+  only when *Bass on channel 2* is chosen).
+
+### Added
+- Tests: exported tempo (manual and DAW), bass channel in every export, and a whole song with a
+  different fill on every section (no hanging or doubled notes at the changes).
+
 ## [1.24.0] - 2026-10-14
 
 ### Added
@@ -17,7 +29,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   the project).
 - **A fill per song section** in **SONG**: as set, none, or any fill style on the section's last
   bar; you hear it while that section loops.
-- **Separate tracks** in *Notes*: one MIDI file with Piano, Bass (channel 2) and Fills tracks,
+- **Separate tracks** in *Notes*: one MIDI file with Piano, Bass and Fills tracks,
   tempo and section markers.
 
 ### Fixed

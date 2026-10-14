@@ -235,6 +235,8 @@ public:
 
     std::atomic<bool> previewOn { false };   // play the groove without the host transport
     std::atomic<double> lastBpm { 120.0 };   // tempo in use (DAW or manual)
+    /** The tempo exported files use: the manual BPM as set now, or the DAW's (as last reported). */
+    double exportBpm() const;
     std::atomic<double> hostBpm { 120.0 };   // what the DAW reports
 
     // Read by the editor for display.

@@ -369,7 +369,7 @@ In the **MIDI CLIP** panel:
      (computed automatically, e.g. 4 one-bar chords with fills every 8 bars → 8 bars).
    - *1–32 bars*: a fixed length.
    - *Song: intro > drop > outro*: a full 60-bar arrangement (see chapter 6).
-2. **Notes**: *Chords + bass*, *Chords only*, *Bass only* or **Separate tracks** (one MIDI file with a Piano track, a Bass track on channel 2 and, if there are fills, a Fills track, plus tempo and section markers: most DAWs open it as separate tracks).
+2. **Notes**: *Chords + bass*, *Chords only*, *Bass only* or **Separate tracks** (one MIDI file with a Piano track, a Bass track (on channel 2 when *MIDI out* is set to *Bass on channel 2*) and, if there are fills, a Fills track, plus tempo and section markers: most DAWs open it as separate tracks).
 3. **Drag** the **DRAG MIDI TO DAW** tile onto a track or the DAW timeline.
    Or use **Save .mid…**: *Save this clip as .mid…* saves the file wherever you want, and
    **Save all parts to a folder…** writes six files at once: the loop and the whole song, each as

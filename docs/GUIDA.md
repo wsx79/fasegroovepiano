@@ -378,7 +378,7 @@ Nel riquadro **MIDI CLIP**:
      (calcolata in automatico, es. 4 accordi da 1 battuta con fill ogni 8 battute → 8 battute).
    - *1–32 bars*: lunghezza fissa.
    - *Song: intro > drop > outro*: un arrangiamento completo di 60 battute (vedi capitolo 6).
-2. **Notes**: *Chords + bass*, *Chords only*, *Bass only* o **Tracce separate** (un solo file MIDI con una traccia Piano, una traccia Bass sul canale 2 e, se ci sono fill, una traccia Fills, più tempo e marker delle sezioni: quasi tutte le DAW lo aprono come tracce separate).
+2. **Notes**: *Chords + bass*, *Chords only*, *Bass only* o **Tracce separate** (un solo file MIDI con una traccia Piano, una traccia Bass (sul canale 2 se *Uscita MIDI* è su *Basso sul canale 2*) e, se ci sono fill, una traccia Fills, più tempo e marker delle sezioni: quasi tutte le DAW lo aprono come tracce separate).
 3. **Trascina** il riquadro **DRAG MIDI TO DAW** sulla traccia o sulla timeline della DAW.
    In alternativa **Save .mid…**: *Salva questa clip come .mid…* salva il file dove vuoi, e
    **Salva tutte le parti in una cartella…** scrive sei file in un colpo: il loop e il brano intero,

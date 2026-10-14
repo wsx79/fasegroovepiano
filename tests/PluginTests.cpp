@@ -522,7 +522,8 @@ namespace
         q.setParameterFromUI (ParamIDs::fills, 2.0f);
         CHECK (q.currentSettings().fillEveryBars == 0);
 
-        // Separate tracks: one file, a conductor track, then Piano (ch 1), Bass (ch 2) and Fills.
+        // Separate tracks (with "Bass on channel 2"): a conductor track, then Piano (ch 1), Bass (ch 2) and Fills.
+        q.setParameterFromUI (ParamIDs::bassChannel, 1.0f);
         q.setParameterFromUI (ParamIDs::section, (float) sgk::Section::drop);
         q.setParameterFromUI (ParamIDs::fills, 1.0f);
         const auto file = q.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::tracks);
@@ -550,8 +551,81 @@ namespace
         CHECK (bassName == "Bass" && b2 > 0 && b1 == 0);
         CHECK (fillName == "Fills" && f1 > 0);
         // The parts add up to the single-track clip.
-        const auto all = readClip (q.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::all), false);
+        const auto all = readClip (q.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::all), true);
         CHECK (all.noteOns == a1 + b2 + f1);
+    }
+
+    //==============================================================================
+    double exportedBpm (const juce::File& file)
+    {
+        juce::FileInputStream in (file);
+        juce::MidiFile mf;
+        if (! in.openedOk() || ! mf.readFrom (in))
+            return 0.0;
+        for (int t = 0; t < mf.getNumTracks(); ++t)
+            for (auto* ev : *mf.getTrack (t))
+                if (ev->message.isTempoMetaEvent())
+                    return 60.0 / ev->message.getTempoSecondsPerQuarterNote();
+        return 0.0;
+    }
+
+    void testExportTempoAndChannels()
+    {
+        // The tempo in the file is the one set now, even with nothing played since.
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::tempoSync, 0.0f);
+        p.setParameterFromUI (ParamIDs::tempo, 124.0f);
+        CHECK (std::abs (exportedBpm (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::all)) - 124.0) < 0.05);
+        p.setParameterFromUI (ParamIDs::tempo, 128.0f);
+        CHECK (std::abs (exportedBpm (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::all)) - 128.0) < 0.05);
+        CHECK (std::abs (exportedBpm (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::tracks)) - 128.0) < 0.05);
+
+        // Synced to the DAW: its tempo, as last reported by the host.
+        PlayHead head;
+        head.bpm = 97.0;
+        head.playing = false;
+        p.setParameterFromUI (ParamIDs::tempoSync, 1.0f);
+        p.setPlayHead (&head);
+        p.prepareToPlay (44100.0, 256);
+        juce::AudioBuffer<float> buffer (2, 256);
+        juce::MidiBuffer midi;
+        p.processBlock (buffer, midi);   // a stopped host still calls processBlock
+        CHECK (std::abs (exportedBpm (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::all)) - 97.0) < 0.05);
+        p.setPlayHead (nullptr);
+
+        // Separate tracks follow the bass-channel setting like the other exports.
+        p.setParameterFromUI (ParamIDs::bassChannel, 0.0f);
+        {
+            juce::FileInputStream in (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::tracks));
+            juce::MidiFile mf;
+            CHECK (mf.readFrom (in));
+            for (int t = 0; t < mf.getNumTracks(); ++t)
+                for (auto* ev : *mf.getTrack (t))
+                    if (ev->message.isNoteOn()) CHECK (ev->message.getChannel() == 1);
+        }
+    }
+
+    void testSectionFillsNoStuckNotes()
+    {
+        // A song where every section closes with a different fill: no note left hanging or
+        // struck twice at the section changes.
+        FaseGroovePianoProcessor p;
+        p.applyStyle (0);
+        for (int i = 0; i < FaseGroovePianoProcessor::numSongParts; ++i)
+            p.setSongFill (i, i % sgk::numFillStyles);
+        p.setParameterFromUI (ParamIDs::fills, 1.0f);
+        const auto events = sgk::GrooveEngine::renderArrangement (p.currentSettings(), p.songArrangementParts());
+        int sounding[128] {};
+        bool valid = true;
+        int fillNotes = 0;
+        for (const auto& e : events)
+        {
+            if (e.isNoteOn()) { if (sounding[e.note]) valid = false; sounding[e.note] = 1; fillNotes += e.part == sgk::Part::fill ? 1 : 0; }
+            else              { if (! sounding[e.note]) valid = false; sounding[e.note] = 0; }
+        }
+        CHECK (valid);
+        CHECK (fillNotes > 0);
+        for (int n : sounding) CHECK (n == 0);
     }
 
     //==============================================================================
@@ -634,6 +708,8 @@ int main()
     testMorphAndSong();
     testMusicalDna();
     testV124();
+    testExportTempoAndChannels();
+    testSectionFillsNoStuckNotes();
     testUpdateSwap();
 
     if (failures == 0)

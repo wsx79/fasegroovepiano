@@ -1315,6 +1315,13 @@ int FaseGroovePianoProcessor::clipLengthInBars (int bars) const
     return juce::jmax (1, sgk::GrooveEngine::loopLengthInSteps (currentSettings()) / 16);
 }
 
+double FaseGroovePianoProcessor::exportBpm() const
+{
+    // Not lastBpm: that is only updated while audio runs, so a tempo just typed in would be missed.
+    const bool synced = raw (ParamIDs::tempoSync) > 0.5f;
+    return juce::jlimit (20.0, 400.0, synced ? hostBpm.load() : (double) raw (ParamIDs::tempo));
+}
+
 juce::MidiFile FaseGroovePianoProcessor::createMidiClip (int bars, ClipPart part) const
 {
     const auto settings = currentSettings();
@@ -1340,7 +1347,7 @@ juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::
     // Track 1 (or the conductor track of a multitrack file): name, tempo, metre and the markers.
     juce::MidiMessageSequence header;
     header.addEvent (juce::MidiMessage::textMetaEvent (3, name), 0.0);
-    header.addEvent (juce::MidiMessage::tempoMetaEvent (juce::roundToInt (60000000.0 / lastBpm.load())), 0.0);
+    header.addEvent (juce::MidiMessage::tempoMetaEvent (juce::roundToInt (60000000.0 / exportBpm())), 0.0);
     header.addEvent (juce::MidiMessage::timeSignatureMetaEvent (4, 4), 0.0);
     if (markers != nullptr)
         for (const auto& m : *markers)
@@ -1378,7 +1385,7 @@ juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::
                 continue;
             juce::MidiMessageSequence track;
             track.addEvent (juce::MidiMessage::textMetaEvent (3, lane.name), 0.0);
-            notesOf (track, [&lane] (sgk::Part p) { return p == lane.part; }, true);
+            notesOf (track, [&lane] (sgk::Part p) { return p == lane.part; }, bassOnChannel2);   // same channel rule as the other exports
             file.addTrack (track);
         }
         return file;
@@ -1410,7 +1417,7 @@ juce::String FaseGroovePianoProcessor::clipFileName (int bars, ClipPart part) co
     const juce::String partName = part == ClipPart::chords ? " chords" : part == ClipPart::bass ? " bass" : part == ClipPart::tracks ? " tracks" : "";
     const juce::String length = bars == songArrangement ? juce::String ("Song ") : juce::String();
     const auto name = chords.joinIntoString ("-") + " " + juce::String (pattern.name) + partName + " " + length
-                    + juce::String (clipLengthInBars (bars)) + "bars " + juce::String (juce::roundToInt (lastBpm.load())) + "bpm";
+                    + juce::String (clipLengthInBars (bars)) + "bars " + juce::String (juce::roundToInt (exportBpm())) + "bpm";
 
     return juce::File::createLegalFileName (name) + ".mid";
 }
