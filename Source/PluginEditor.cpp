@@ -617,6 +617,16 @@ void PianoRollView::paint (juce::Graphics& g)
         g.drawRoundedRectangle (r, juce::jmin (2.5f, rowH * 0.4f), 0.6f);
     }
 
+    if (edited)
+    {
+        auto tag = juce::Rectangle<float> (bounds.getRight() - 128.0f, area.getY() + 4.0f, 122.0f, 16.0f);
+        g.setColour (Palette::accent2);
+        g.fillRoundedRectangle (tag, 4.0f);
+        g.setColour (Palette::background);
+        g.setFont (font (10.0f, true));
+        g.drawText (Localisation::upper (tr ("Edited notes")), tag, juce::Justification::centred);
+    }
+
     // Playhead.
     if (playhead >= 0.0)
     {
@@ -1870,8 +1880,24 @@ juce::Rectangle<int> SongOverlay::rowArea (int part) const
     return inner.removeFromTop (46 * (part + 1)).removeFromBottom (46).reduced (0, 4);
 }
 
+void SongOverlay::setMini (bool shouldBeMini)
+{
+    mini = shouldBeMini;
+    for (auto* c : getChildren())
+        if (c != &songTile)
+            c->setVisible (! mini);
+    resized();
+    repaint();
+}
+
 void SongOverlay::resized()
 {
+    if (mini)
+    {
+        songTile.setBounds (getLocalBounds().reduced (10).withTrimmedBottom (14));
+        return;
+    }
+
     for (int i = 0; i < barBoxes.size(); ++i)
     {
         auto row = rowArea (i);
@@ -1897,6 +1923,15 @@ void SongOverlay::resized()
 
 void SongOverlay::paint (juce::Graphics& g)
 {
+    if (mini)
+    {
+        g.fillAll (Palette::background);
+        g.setColour (Palette::dim);
+        g.setFont (font (11.0f));
+        g.drawText (tr ("Drop the clip on a track in your DAW"), getLocalBounds().removeFromBottom (22), juce::Justification::centred);
+        return;
+    }
+
     g.fillAll (juce::Colours::black.withAlpha (0.78f));
     auto c = card();
     g.setColour (Palette::panel);
@@ -1985,6 +2020,616 @@ void SongOverlay::paint (juce::Graphics& g)
     g.setFont (font (11.5f));
     g.drawText (juce::String (seconds / 60) + ":" + juce::String (seconds % 60).paddedLeft ('0', 2) + "  @ " + juce::String (bpm, 1) + " BPM",
                 info, juce::Justification::topLeft);
+}
+
+//==============================================================================
+PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
+{
+    setWantsKeyboardFocus (true);
+    for (auto* b : { &zoomOut, &zoomIn, &fitButton, &snapButton, &partButton, &generatedButton, &closeButton })
+    {
+        b->setColour (juce::TextButton::buttonColourId, Palette::background);
+        b->setColour (juce::TextButton::textColourOffId, Palette::text);
+        b->setWantsKeyboardFocus (false);
+        addAndMakeVisible (b);
+    }
+    closeButton.setColour (juce::TextButton::buttonColourId, Palette::accent);
+    closeButton.setColour (juce::TextButton::textColourOffId, Palette::background);
+    generatedButton.setColour (juce::TextButton::textColourOffId, Palette::accent2);
+
+    zoomOut.onClick = [this] { setZoom (pixelsPerBeat / 1.5, gridArea().getCentreX()); };
+    zoomIn.onClick  = [this] { setZoom (pixelsPerBeat * 1.5, gridArea().getCentreX()); };
+    fitButton.onClick = [this] { setZoom (gridArea().getWidth() / length, gridArea().getX()); };
+    snapButton.onClick = [this]
+    {
+        snap = snap > 0.2 ? 0.125 : snap > 0.1 ? 0.5 : 0.25;
+        refreshText();
+    };
+    partButton.onClick = [this]
+    {
+        drawPart = drawPart == sgk::Part::bass ? sgk::Part::chords : sgk::Part::bass;
+        refreshText();
+    };
+    generatedButton.onClick = [this]
+    {
+        processor.clearEditedLoop();
+        lastLoop = nullptr;
+        notes = processor.generatedLoop (length);
+        selected = -1;
+        changed = false;
+        updateStatus();
+        repaint();
+    };
+    closeButton.onClick = [this] { setVisible (false); };
+
+    scrollBar.addListener (this);
+    scrollBar.setAutoHide (false);
+    scrollBar.setColour (juce::ScrollBar::thumbColourId, Palette::accent.withAlpha (0.6f));
+    addAndMakeVisible (scrollBar);
+    refreshText();
+}
+
+PianoRollEditor::~PianoRollEditor()
+{
+    scrollBar.removeListener (this);
+}
+
+void PianoRollEditor::refreshText()
+{
+    fitButton.setButtonText (tr ("FIT"));
+    snapButton.setButtonText (tr ("Grid") + ": " + (snap > 0.4 ? "1/8" : snap > 0.2 ? "1/16" : "1/32"));
+    partButton.setButtonText (tr ("New notes") + ": " + tr (drawPart == sgk::Part::bass ? "BASS" : "PIANO"));
+    generatedButton.setButtonText (tr ("BACK TO GENERATED"));
+    closeButton.setButtonText (tr ("CLOSE"));
+    zoomOut.setTooltip (tr ("Zoom out (Ctrl + mouse wheel)"));
+    zoomIn.setTooltip (tr ("Zoom in (Ctrl + mouse wheel)"));
+    generatedButton.setTooltip (tr ("Forget your edits: the plug-in plays the generated notes again"));
+    partButton.setTooltip (tr ("Whether the notes you add are piano or bass (exported on their own track)"));
+    repaint();
+}
+
+void PianoRollEditor::show (double generatedLength)
+{
+    if (processor.hasEditedLoop())
+    {
+        notes = *processor.editedLoop();
+        length = processor.editedLoopLength();
+    }
+    else
+    {
+        length = juce::jmax (4.0, generatedLength);
+        notes = processor.generatedLoop (length);
+    }
+    selected = -1;
+    changed = false;
+    lastLoop = processor.editedLoop();
+    lowNote = 127; highNote = 0;
+    fitRange();
+    if (chordSpans != nullptr)
+        chords = chordSpans (length);
+    setVisible (true);
+    toFront (true);
+    resized();
+    setZoom (gridArea().getWidth() / length, gridArea().getX());
+    grabKeyboardFocus();
+    startTimerHz (30);
+    updateStatus();
+}
+
+void PianoRollEditor::fitRange()
+{
+    // The keyboard covers the notes with some room, at least three octaves; it only grows while you edit.
+    int low = 127, high = 0;
+    for (const auto& n : notes)
+    {
+        low = juce::jmin (low, n.note);
+        high = juce::jmax (high, n.note);
+    }
+    if (low > high) { low = 40; high = 76; }
+    low = juce::jmin (lowNote, low - 6);
+    high = juce::jmax (highNote, high + 6);
+    while (high - low < 36) { --low; ++high; }
+    lowNote = juce::jlimit (0, 120, low);
+    highNote = juce::jlimit (lowNote + 7, 127, high);
+}
+
+juce::Rectangle<float> PianoRollEditor::keyboardArea() const
+{
+    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (52.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
+    return r.withWidth (44.0f);
+}
+
+juce::Rectangle<float> PianoRollEditor::gridArea() const
+{
+    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (52.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
+    return r.withTrimmedLeft (44.0f);
+}
+
+juce::Rectangle<float> PianoRollEditor::velocityArea() const
+{
+    const auto g = gridArea();
+    return { g.getX(), g.getBottom() + 6.0f, g.getWidth(), 62.0f };
+}
+
+float PianoRollEditor::rowHeight() const
+{
+    return gridArea().getHeight() / (float) (highNote - lowNote + 1);
+}
+
+float PianoRollEditor::xOf (double beat) const
+{
+    return gridArea().getX() + (float) (beat * pixelsPerBeat - scroll);
+}
+
+double PianoRollEditor::beatAt (float x) const
+{
+    return (x - gridArea().getX() + scroll) / pixelsPerBeat;
+}
+
+float PianoRollEditor::yOf (int note) const
+{
+    return gridArea().getBottom() - (float) (note - lowNote + 1) * rowHeight();
+}
+
+int PianoRollEditor::noteAt (float y) const
+{
+    return juce::jlimit (lowNote, highNote, lowNote + (int) std::floor ((gridArea().getBottom() - y) / rowHeight()));
+}
+
+double PianoRollEditor::snapped (double beat) const
+{
+    return juce::jlimit (0.0, length - snap, std::floor (beat / snap + 1.0e-6) * snap);
+}
+
+void PianoRollEditor::setZoom (double ppb, float anchorX)
+{
+    const double minimum = gridArea().getWidth() / length;   // the whole loop fits
+    const double anchorBeat = beatAt (anchorX);
+    pixelsPerBeat = juce::jlimit (minimum, 600.0, ppb);
+    scroll = anchorBeat * pixelsPerBeat - (anchorX - gridArea().getX());
+    updateScrollBar();
+    repaint();
+}
+
+void PianoRollEditor::updateScrollBar()
+{
+    const double total = length * pixelsPerBeat, visible = gridArea().getWidth();
+    scroll = juce::jlimit (0.0, juce::jmax (0.0, total - visible), scroll);
+    scrollBar.setRangeLimits (0.0, total);
+    scrollBar.setCurrentRange (scroll, visible, juce::dontSendNotification);
+}
+
+void PianoRollEditor::scrollBarMoved (juce::ScrollBar*, double newStart)
+{
+    scroll = newStart;
+    repaint();
+}
+
+void PianoRollEditor::resized()
+{
+    auto top = card().reduced (16.0f, 12.0f).toNearestInt().removeFromTop (30);
+    closeButton.setBounds (top.removeFromRight (90));
+    top.removeFromRight (8);
+    generatedButton.setBounds (top.removeFromRight (190));
+    top.removeFromRight (16);
+    partButton.setBounds (top.removeFromRight (170));
+    top.removeFromRight (6);
+    snapButton.setBounds (top.removeFromRight (100));
+    top.removeFromRight (16);
+    fitButton.setBounds (top.removeFromRight (74));
+    top.removeFromRight (4);
+    zoomIn.setBounds (top.removeFromRight (30));
+    top.removeFromRight (4);
+    zoomOut.setBounds (top.removeFromRight (30));
+
+    const auto g = gridArea();
+    scrollBar.setBounds (juce::Rectangle<float> (g.getX(), velocityArea().getBottom() + 4.0f, g.getWidth(), 12.0f).toNearestInt());
+    updateScrollBar();
+}
+
+int PianoRollEditor::hitNote (juce::Point<float> p, bool& onRightEdge) const
+{
+    onRightEdge = false;
+    for (int i = (int) notes.size(); --i >= 0;)
+    {
+        const auto& n = notes[(size_t) i];
+        const auto r = juce::Rectangle<float> (xOf (n.start), yOf (n.note), juce::jmax (4.0f, (float) (n.length * pixelsPerBeat)), rowHeight());
+        if (r.contains (p))
+        {
+            onRightEdge = p.x > r.getRight() - juce::jmin (7.0f, r.getWidth() * 0.4f);
+            return i;
+        }
+    }
+    return -1;
+}
+
+void PianoRollEditor::commit()
+{
+    changed = true;
+    processor.setEditedLoop (notes, length);
+    lastLoop = processor.editedLoop();
+    // Keep the selection on the same note after the processor sorted them.
+    updateStatus();
+    repaint();
+}
+
+void PianoRollEditor::updateStatus()
+{
+    auto text = processor.hasEditedLoop() ? tr ("Edited notes") : tr ("Generated notes (edit one to start)");
+    if (juce::isPositiveAndBelow (selected, (int) notes.size()))
+    {
+        const auto& n = notes[(size_t) selected];
+        text << "   |   " << sgk::noteName (n.note) << (n.note / 12 - 1) << "  " << tr ("Velocity") << " " << n.velocity
+             << "  " << tr (n.part == sgk::Part::bass ? "BASS" : "PIANO");
+    }
+    status = text;
+    repaint();
+}
+
+void PianoRollEditor::mouseDown (const juce::MouseEvent& e)
+{
+    grabKeyboardFocus();
+    const auto p = e.position;
+    drag = Drag::none;
+
+    if (! card().contains (p))
+    {
+        setVisible (false);
+        return;
+    }
+
+    if (velocityArea().contains (p))
+    {
+        drag = Drag::velocity;
+        mouseDrag (e);
+        return;
+    }
+
+    if (! gridArea().contains (p))
+        return;
+
+    bool edge = false;
+    const int hit = hitNote (p, edge);
+    if (hit >= 0 && (e.mods.isPopupMenu()))
+    {
+        notes.erase (notes.begin() + hit);
+        selected = -1;
+        commit();
+        return;
+    }
+
+    if (hit >= 0)
+    {
+        selected = hit;
+        drag = edge ? Drag::resize : Drag::move;
+    }
+    else
+    {
+        // A new note on the grid, as long as the grid step (or the last length you used).
+        sgk::LoopNote n;
+        n.start = snapped (beatAt (p.x));
+        n.length = snap;
+        n.note = noteAt (p.y);
+        n.velocity = 100;
+        n.part = drawPart;
+        notes.push_back (n);
+        selected = (int) notes.size() - 1;
+        drag = Drag::resize;
+        commit();
+    }
+
+    const auto& n = notes[(size_t) selected];
+    dragStartBeat = beatAt (p.x);
+    dragStartNote = noteAt (p.y);
+    noteStartBeat = n.start;
+    noteStartLength = n.length;
+    noteStartPitch = n.note;
+    updateStatus();
+}
+
+void PianoRollEditor::mouseDrag (const juce::MouseEvent& e)
+{
+    const auto p = e.position;
+    if (drag == Drag::velocity)
+    {
+        // The note nearest to the mouse (the selected one first) takes the height as velocity.
+        const auto lane = velocityArea();
+        const int velocity = juce::jlimit (1, 127, juce::roundToInt ((lane.getBottom() - p.y) / lane.getHeight() * 127.0f));
+        int best = -1;
+        float bestDistance = 8.0f;
+        for (int i = 0; i < (int) notes.size(); ++i)
+        {
+            const float d = std::abs (xOf (notes[(size_t) i].start) - p.x) - (i == selected ? 3.0f : 0.0f);
+            if (d < bestDistance) { bestDistance = d; best = i; }
+        }
+        if (best >= 0)
+        {
+            // Notes struck together (a chord) move together, unless a single one is selected there.
+            const double start = notes[(size_t) best].start;
+            const bool onlySelected = best == selected && e.mods.isShiftDown();
+            for (auto& n : notes)
+                if (std::abs (n.start - start) < 1.0e-4 && n.part == notes[(size_t) best].part && (! onlySelected || &n == &notes[(size_t) best]))
+                    n.velocity = velocity;
+            commit();
+        }
+        return;
+    }
+
+    if (! juce::isPositiveAndBelow (selected, (int) notes.size()) || drag == Drag::none)
+        return;
+
+    auto& n = notes[(size_t) selected];
+    if (drag == Drag::move)
+    {
+        const double delta = beatAt (p.x) - dragStartBeat;
+        n.start = juce::jlimit (0.0, length - snap, std::round ((noteStartBeat + delta) / snap) * snap);
+        n.note = juce::jlimit (lowNote, highNote, noteStartPitch + (noteAt (p.y) - dragStartNote));
+    }
+    else if (drag == Drag::resize)
+    {
+        const double end = std::round (beatAt (p.x) / snap) * snap;
+        n.length = juce::jlimit (snap * 0.5, length - n.start, juce::jmax (snap * 0.5, end - n.start));
+    }
+    repaint();
+    updateStatus();
+}
+
+void PianoRollEditor::mouseUp (const juce::MouseEvent&)
+{
+    if (drag == Drag::move || drag == Drag::resize)
+    {
+        // Sorting in the processor would move the selection: keep it on the same note.
+        const auto keep = juce::isPositiveAndBelow (selected, (int) notes.size()) ? notes[(size_t) selected] : sgk::LoopNote {};
+        std::sort (notes.begin(), notes.end(), [] (const sgk::LoopNote& a, const sgk::LoopNote& b) { return a.start < b.start; });
+        for (int i = 0; i < (int) notes.size(); ++i)
+            if (juce::approximatelyEqual (notes[(size_t) i].start, keep.start) && notes[(size_t) i].note == keep.note && notes[(size_t) i].part == keep.part)
+                selected = i;
+        fitRange();
+        commit();
+    }
+    drag = Drag::none;
+}
+
+void PianoRollEditor::mouseMove (const juce::MouseEvent& e)
+{
+    bool edge = false;
+    const int hit = gridArea().contains (e.position) ? hitNote (e.position, edge) : -1;
+    setMouseCursor (hit >= 0 ? (edge ? juce::MouseCursor::LeftRightResizeCursor : juce::MouseCursor::DraggingHandCursor)
+                             : velocityArea().contains (e.position) ? juce::MouseCursor::UpDownResizeCursor
+                                                                    : juce::MouseCursor::NormalCursor);
+}
+
+void PianoRollEditor::mouseDoubleClick (const juce::MouseEvent& e)
+{
+    bool edge = false;
+    const int hit = gridArea().contains (e.position) ? hitNote (e.position, edge) : -1;
+    if (hit >= 0)
+    {
+        notes.erase (notes.begin() + hit);
+        selected = -1;
+        commit();
+    }
+}
+
+void PianoRollEditor::mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel)
+{
+    if (e.mods.isCommandDown() || e.mods.isCtrlDown())
+        setZoom (pixelsPerBeat * (wheel.deltaY > 0 ? 1.2 : 1.0 / 1.2), e.position.x);
+    else
+    {
+        scroll -= (std::abs (wheel.deltaX) > 1.0e-6f ? wheel.deltaX : wheel.deltaY) * 300.0;
+        updateScrollBar();
+        repaint();
+    }
+}
+
+bool PianoRollEditor::keyPressed (const juce::KeyPress& key)
+{
+    if (key == juce::KeyPress::escapeKey)
+    {
+        setVisible (false);
+        return true;
+    }
+    if (! juce::isPositiveAndBelow (selected, (int) notes.size()))
+        return false;
+
+    auto& n = notes[(size_t) selected];
+    if (key == juce::KeyPress::deleteKey || key == juce::KeyPress::backspaceKey)
+    {
+        notes.erase (notes.begin() + selected);
+        selected = -1;
+    }
+    else if (key.getKeyCode() == juce::KeyPress::upKey)    n.note = juce::jmin (127, n.note + (key.getModifiers().isShiftDown() ? 12 : 1));
+    else if (key.getKeyCode() == juce::KeyPress::downKey)  n.note = juce::jmax (0, n.note - (key.getModifiers().isShiftDown() ? 12 : 1));
+    else if (key.getKeyCode() == juce::KeyPress::rightKey) n.start = juce::jmin (length - snap, n.start + snap);
+    else if (key.getKeyCode() == juce::KeyPress::leftKey)  n.start = juce::jmax (0.0, n.start - snap);
+    else
+        return false;
+
+    fitRange();
+    commit();
+    return true;
+}
+
+void PianoRollEditor::timerCallback()
+{
+    if (! isVisible())
+    {
+        stopTimer();
+        return;
+    }
+    // Undo, a preset or BACK TO GENERATED from outside: show what plays now.
+    if (drag == Drag::none && processor.editedLoop() != lastLoop)
+    {
+        lastLoop = processor.editedLoop();
+        if (lastLoop != nullptr)
+        {
+            notes = *lastLoop;
+            length = processor.editedLoopLength();
+        }
+        else
+            notes = processor.generatedLoop (length);
+        selected = -1;
+        updateScrollBar();
+        updateStatus();
+    }
+
+    const double ppq = processor.uiPpq.load();
+    const double now = ppq < 0.0 ? -1.0 : std::fmod (ppq, length);
+    if (std::abs (now - playhead) > 1.0e-4)
+    {
+        playhead = now;
+        repaint (gridArea().withTrimmedTop (-PianoRollView::chordLaneHeight).toNearestInt().expanded (2));
+    }
+}
+
+void PianoRollEditor::paint (juce::Graphics& g)
+{
+    g.fillAll (juce::Colours::black.withAlpha (0.8f));
+    const auto c = card();
+    g.setColour (Palette::panel);
+    g.fillRoundedRectangle (c, 14.0f);
+    g.setColour (Palette::accent.withAlpha (0.6f));
+    g.drawRoundedRectangle (c, 14.0f, 1.5f);
+
+    auto head = c.reduced (16.0f, 12.0f);
+    g.setColour (Palette::accent);
+    g.setFont (font (18.0f, true));
+    g.drawText (Localisation::upper (tr ("Piano roll")), head.removeFromTop (30.0f).withWidth (200.0f), juce::Justification::centredLeft);
+    g.setColour (processor.hasEditedLoop() ? Palette::accent2 : Palette::dim);
+    g.setFont (font (11.5f));
+    g.drawText (status, head.removeFromTop (20.0f), juce::Justification::centredLeft);
+
+    const auto grid = gridArea();
+    const auto keys = keyboardArea();
+    const float rowH = rowHeight();
+    auto isBlack = [] (int note) { const int pc = note % 12; return pc == 1 || pc == 3 || pc == 6 || pc == 8 || pc == 10; };
+
+    g.setColour (Palette::background);
+    g.fillRect (grid);
+
+    {
+        juce::Graphics::ScopedSaveState clip (g);
+        g.reduceClipRegion (grid.withTrimmedTop (-PianoRollView::chordLaneHeight).toNearestInt());
+
+        for (int note = lowNote; note <= highNote; ++note)
+        {
+            const auto row = juce::Rectangle<float> (grid.getX(), yOf (note), grid.getWidth(), rowH);
+            if (isBlack (note))
+            {
+                g.setColour (juce::Colours::black.withAlpha (0.25f));
+                g.fillRect (row);
+            }
+            if (note % 12 == 0)
+            {
+                g.setColour (Palette::panelEdge);
+                g.fillRect (row.getX(), row.getBottom() - 0.5f, row.getWidth(), 1.0f);
+            }
+        }
+
+        // Grid lines: bars, beats, and the snap step when zoomed in enough.
+        const double step = pixelsPerBeat * snap >= 8.0 ? snap : 0.25;
+        for (int i = 0; i * step <= length + 1.0e-6; ++i)
+        {
+            const double beat = i * step;
+            const float x = xOf (beat);
+            if (x < grid.getX() - 1.0f || x > grid.getRight() + 1.0f)
+                continue;
+            const bool bar = std::fmod (beat, 4.0) < 1.0e-6, isBeat = std::fmod (beat, 1.0) < 1.0e-6;
+            g.setColour (bar ? Palette::accent.withAlpha (0.4f) : isBeat ? Palette::panelEdge : Palette::panelEdge.withAlpha (0.35f));
+            g.fillRect (x - (bar ? 0.75f : 0.5f), grid.getY(), bar ? 1.5f : 1.0f, grid.getHeight());
+            if (bar)
+            {
+                g.setColour (Palette::dim);
+                g.setFont (font (10.0f, true));
+                g.drawText (juce::String ((int) (beat / 4.0) + 1), juce::Rectangle<float> (x + 3.0f, grid.getY() + 2.0f, 30.0f, 12.0f), juce::Justification::centredLeft);
+            }
+        }
+
+        // Chord lane.
+        for (size_t i = 0; i < chords.size(); ++i)
+        {
+            const auto& ch = chords[i];
+            auto block = juce::Rectangle<float> (xOf (ch.start), grid.getY() - PianoRollView::chordLaneHeight,
+                                                 (float) (ch.length * pixelsPerBeat), PianoRollView::chordLaneHeight).reduced (1.0f, 2.0f);
+            const bool now = playhead >= ch.start && playhead < ch.start + ch.length;
+            g.setColour (now ? Palette::accent : (i % 2 == 0 ? Palette::panelEdge : Palette::panelEdge.darker (0.25f)));
+            g.fillRoundedRectangle (block, 4.0f);
+            g.setColour (now ? Palette::background : Palette::text);
+            g.setFont (font (12.0f, true));
+            g.drawFittedText (ch.name, block.reduced (6.0f, 0.0f).toNearestInt(), juce::Justification::centredLeft, 1, 0.6f);
+        }
+
+        // Notes.
+        const juce::Colour fillColour (0xff7fc4f2);
+        for (int i = 0; i < (int) notes.size(); ++i)
+        {
+            const auto& n = notes[(size_t) i];
+            if (n.note < lowNote || n.note > highNote)
+                continue;
+            auto r = juce::Rectangle<float> (xOf (n.start), yOf (n.note), juce::jmax (3.0f, (float) (n.length * pixelsPerBeat)), rowH).reduced (0.5f, 1.0f);
+            const auto colour = n.part == sgk::Part::bass ? Palette::accent2 : n.part == sgk::Part::fill ? fillColour : Palette::accent;
+            const bool sounding = playhead >= n.start && playhead < n.start + n.length;
+            g.setColour ((sounding ? colour.brighter (0.4f) : colour).withAlpha (0.5f + 0.5f * (float) n.velocity / 127.0f));
+            g.fillRoundedRectangle (r, 3.0f);
+            g.setColour (i == selected ? Palette::text : juce::Colours::black.withAlpha (0.4f));
+            g.drawRoundedRectangle (r, 3.0f, i == selected ? 2.0f : 0.8f);
+            if (r.getWidth() > 34.0f && rowH >= 10.0f)
+            {
+                g.setColour (Palette::background);
+                g.setFont (font (juce::jmin (10.0f, rowH - 1.0f), true));
+                g.drawText (juce::String (sgk::noteName (n.note)) + juce::String (n.note / 12 - 1), r.reduced (3.0f, 0.0f), juce::Justification::centredLeft);
+            }
+        }
+
+        if (playhead >= 0.0)
+        {
+            g.setColour (Palette::text);
+            g.fillRect (xOf (playhead) - 0.75f, grid.getY() - PianoRollView::chordLaneHeight, 1.5f, grid.getHeight() + PianoRollView::chordLaneHeight);
+        }
+    }
+
+    // Keyboard.
+    for (int note = lowNote; note <= highNote; ++note)
+    {
+        const auto key = juce::Rectangle<float> (keys.getX(), yOf (note), keys.getWidth() - 2.0f, rowH);
+        g.setColour (isBlack (note) ? Palette::panel.darker (0.5f) : Palette::text.withAlpha (0.85f));
+        g.fillRect (key.reduced (0.0f, 0.3f));
+        if (note % 12 == 0)
+        {
+            g.setColour (Palette::background);
+            g.setFont (font (juce::jlimit (8.0f, 11.0f, rowH * 1.4f), true));
+            g.drawText ("C" + juce::String (note / 12 - 1), key.withTrimmedRight (3.0f).expanded (0.0f, 3.0f), juce::Justification::centredRight);
+        }
+    }
+
+    // Velocity lane.
+    {
+        const auto lane = velocityArea();
+        g.setColour (Palette::background);
+        g.fillRect (lane);
+        g.setColour (Palette::dim);
+        g.setFont (font (10.0f, true));
+        g.drawFittedText (Localisation::upper (tr ("Velocity")), juce::Rectangle<float> (keys.getX(), lane.getY(), keys.getWidth() - 4.0f, lane.getHeight()).toNearestInt(),
+                          juce::Justification::centredRight, 2, 0.6f);
+        juce::Graphics::ScopedSaveState clip (g);
+        g.reduceClipRegion (lane.toNearestInt());
+        for (int i = 0; i < (int) notes.size(); ++i)
+        {
+            const auto& n = notes[(size_t) i];
+            const float x = xOf (n.start);
+            const float h = lane.getHeight() * (float) n.velocity / 127.0f;
+            const auto colour = n.part == sgk::Part::bass ? Palette::accent2 : Palette::accent;
+            g.setColour (i == selected ? Palette::text : colour.withAlpha (0.8f));
+            g.fillRect (x - 1.0f, lane.getBottom() - h, 3.0f, h);
+            g.fillEllipse (x - 3.0f, lane.getBottom() - h - 3.0f, 7.0f, 7.0f);
+        }
+    }
+
+    g.setColour (Palette::dim);
+    g.setFont (font (10.5f));
+    g.drawText (tr ("Click: add a note  |  drag: move  |  drag the right edge: length  |  double-click or right-click: delete  |  arrows: move the selected note (Shift: octave)  |  bottom lane: velocity"),
+                juce::Rectangle<float> (c.getX() + 16.0f, c.getBottom() - 22.0f, c.getWidth() - 32.0f, 16.0f), juce::Justification::centredLeft);
 }
 
 //==============================================================================
@@ -2556,6 +3201,19 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     newFeelButton.onClick = [this] { processor.newFeel(); };
     // The whole song: drag it, or save it as one .mid (the parts chosen under EXPORT MIDI).
     songOverlay.songTile.createFile = [this] { return processor.writeMidiClip (FaseGroovePianoProcessor::songArrangement, selectedClipPart()); };
+    songOverlay.songTile.onDragStart = [this]
+    {
+        if (processor.shrinkWhileDragging)
+        {
+            juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+            juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->enterMiniMode (&safe->songOverlay); });
+        }
+    };
+    songOverlay.songTile.onDragEnd = [this]
+    {
+        juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+        juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->exitMiniMode(); });
+    };
     songOverlay.onSaveSong = [this]
     {
         const auto part = selectedClipPart();
@@ -2875,6 +3533,31 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (b);
     }
     addAndMakeVisible (pianoRoll);
+
+    // The big piano roll, to edit the notes one by one.
+    auto openRollEditor = [this]
+    {
+        auto s = processor.currentSettings();
+        s.editedLoop = nullptr;
+        updatePianoRoll (processor.currentSettings());
+        const int patternBars = juce::jmax (1, sgk::GrooveEngine::patternLength (s) / 16);
+        const int progressionBars = juce::jmax (1, (s.progressionLength * s.stepsPerChord + 15) / 16);
+        int bars = std::lcm (patternBars, progressionBars);
+        if (bars > 8)
+            bars = juce::jmin (8, juce::jmax (patternBars, progressionBars));
+        rollEditor.show (bars * 4.0);
+    };
+    expandRollButton.onClick = openRollEditor;
+    pianoRoll.onDoubleClick = openRollEditor;
+    rollEditor.chordSpans = [this] (double length) { return chordSpansFor (processor.currentSettings(), length); };
+    addChildComponent (rollEditor);
+    generatedButton.onClick = [this] { processor.clearEditedLoop(); };
+    for (auto* b : { &expandRollButton, &generatedButton })
+    {
+        b->setColour (juce::TextButton::buttonColourId, Palette::background);
+        b->setColour (juce::TextButton::textColourOffId, b == &generatedButton ? Palette::accent2 : Palette::accent);
+        addAndMakeVisible (b);
+    }
     for (auto* b : { &rndPianoButton, &rndBassButton })
     {
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -3518,6 +4201,11 @@ void FaseGroovePianoEditor::applyLanguage()
     dnaButton.setTooltip (tr ("Musical DNA: variations by intention (more soulful, funkier, more minimal, more energy, more sophisticated)"));
     songButton.setButtonText (tr ("FULL SONG..."));
     rollTab.setButtonText (tr ("PIANO ROLL"));
+    expandRollButton.setButtonText (tr ("EDIT NOTES"));
+    expandRollButton.setTooltip (tr ("Open the piano roll big, zoom in and edit the notes one by one (or double-click the piano roll)"));
+    generatedButton.setButtonText (tr ("BACK TO GENERATED"));
+    generatedButton.setTooltip (tr ("Forget your edits: the plug-in plays the generated notes again"));
+    rollEditor.refreshText();
     gridTab.setButtonText (tr ("EDIT GRID"));
     rollTab.setTooltip (tr ("Every note the plug-in plays: chords, bass and fills, with the chord names"));
     gridTab.setTooltip (tr ("The rhythm grid: click the steps to write your own groove"));
@@ -3659,19 +4347,22 @@ void FaseGroovePianoEditor::cellClicked (bool bassRow, int step, const juce::Mou
     processor.editStep (bassRow, step, next);
 }
 
-void FaseGroovePianoEditor::enterMiniMode()
+void FaseGroovePianoEditor::enterMiniMode (juce::Component* keep)
 {
     if (miniMode)
         return;
 
     miniMode = true;
+    miniKeep = keep != nullptr ? keep : &dragTile;
+    if (miniKeep == &songOverlay)
+        songOverlay.setMini (true);
     fullSize = { getWidth(), getHeight() };
     miniStartedAt = juce::Time::getMillisecondCounter();
 
     hiddenForMini.clear();
     for (auto* c : getChildren())
     {
-        if (c == &dragTile || ! c->isVisible()
+        if (c == miniKeep || ! c->isVisible()
             || dynamic_cast<juce::ResizableCornerComponent*> (c) != nullptr
             || dynamic_cast<juce::TooltipWindow*> (c) != nullptr)
             continue;
@@ -3691,6 +4382,9 @@ void FaseGroovePianoEditor::exitMiniMode()
         return;
 
     miniMode = false;
+    if (miniKeep == &songOverlay)
+        songOverlay.setMini (false);
+    miniKeep = nullptr;
     for (auto& c : hiddenForMini)
         if (c != nullptr)
             c->setVisible (true);
@@ -3713,6 +4407,7 @@ void FaseGroovePianoEditor::showRoll (bool roll)
     rollTab.setToggleState (roll, juce::dontSendNotification);
     gridTab.setToggleState (! roll, juce::dontSendNotification);
     pianoRoll.setVisible (roll);
+    expandRollButton.setVisible (roll);
     patternView.setVisible (! roll);
     for (auto* list : { &segmentBoxes })
         for (auto* c : *list) c->setVisible (! roll);
@@ -3720,6 +4415,19 @@ void FaseGroovePianoEditor::showRoll (bool roll)
         for (auto* c : *list) c->setVisible (! roll);
     if (getWidth() > 0)
         resized();
+}
+
+std::vector<PianoRollView::ChordSpan> FaseGroovePianoEditor::chordSpansFor (const sgk::GrooveSettings& s, double length) const
+{
+    std::vector<PianoRollView::ChordSpan> spans;
+    const double chordBeats = s.stepsPerChord / 4.0;
+    for (int k = 0; k * chordBeats < length - 1.0e-6; ++k)
+    {
+        const int slot = sgk::GrooveEngine::slotForStep ((long long) (k * s.stepsPerChord), s);
+        spans.push_back ({ k * chordBeats, juce::jmin (chordBeats, length - k * chordBeats),
+                           sgk::chordName (sgk::GrooveEngine::chordForSlot (s, slot)) });
+    }
+    return spans;
 }
 
 void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
@@ -3730,7 +4438,7 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
     int bars = std::lcm (patternBars, progressionBars);
     if (bars > 8)
         bars = juce::jmin (8, juce::jmax (patternBars, progressionBars));
-    rollLength = bars * 4.0;
+    rollLength = s.playsEditedLoop() ? s.editedLoopLength : bars * 4.0;
 
     std::vector<PianoRollView::Note> notes;
     {
@@ -3755,16 +4463,9 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
             notes.push_back ({ on.first, juce::jmax (0.05, rollLength - on.first), id % 128, on.second, parts[id] });
     }
 
-    std::vector<PianoRollView::ChordSpan> chordSpans;
-    const double chordBeats = s.stepsPerChord / 4.0;
-    for (int k = 0; k * chordBeats < rollLength - 1.0e-6; ++k)
-    {
-        const int slot = sgk::GrooveEngine::slotForStep ((long long) (k * s.stepsPerChord), s);
-        chordSpans.push_back ({ k * chordBeats, juce::jmin (chordBeats, rollLength - k * chordBeats),
-                                sgk::chordName (sgk::GrooveEngine::chordForSlot (s, slot)) });
-    }
-
+    auto chordSpans = chordSpansFor (s, rollLength);
     pianoRoll.setContent (std::move (notes), std::move (chordSpans), rollLength, processor.chordsMuted.load());
+    pianoRoll.setEdited (s.playsEditedLoop());
     const double ppq = processor.uiPpq.load();
     pianoRoll.setPlayhead (ppq < 0.0 ? -1.0 : std::fmod (ppq, rollLength));
 }
@@ -3860,6 +4561,7 @@ void FaseGroovePianoEditor::timerCallback()
 
     if (rollShown)
         updatePianoRoll (s);
+    generatedButton.setVisible (rollShown && s.playsEditedLoop());
     dragTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + clipLength.getText());
     if (songOverlay.isVisible())
         songOverlay.songTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("Song"));
@@ -4004,7 +4706,10 @@ void FaseGroovePianoEditor::resized()
 
 void FaseGroovePianoEditor::layoutMini()
 {
-    dragTile.setBounds (juce::Rectangle<int> (0, 0, miniWidth, miniHeight).reduced (10).withTrimmedBottom (14));
+    if (miniKeep == &songOverlay)
+        songOverlay.setBounds (0, 0, miniWidth, miniHeight);
+    else
+        dragTile.setBounds (juce::Rectangle<int> (0, 0, miniWidth, miniHeight).reduced (10).withTrimmedBottom (14));
 }
 
 void FaseGroovePianoEditor::layoutFull()
@@ -4032,6 +4737,7 @@ void FaseGroovePianoEditor::layoutFull()
     updateOverlay.setBounds (0, 0, baseWidth, baseHeight);
     grooveBrowser.setBounds (0, 0, baseWidth, baseHeight);
     voicingCoach.setBounds (0, 0, baseWidth, baseHeight);
+    rollEditor.setBounds (0, 0, baseWidth, baseHeight);
     songOverlay.setBounds (0, 0, baseWidth, baseHeight);
     morphOverlay.setBounds (0, 0, baseWidth, baseHeight);
     dnaOverlay.setBounds (0, 0, baseWidth, baseHeight);
@@ -4180,26 +4886,29 @@ void FaseGroovePianoEditor::layoutFull()
         {
             // Left: what you look at (piano roll / grid) and what you hear; right: groove tools.
             auto header = inner.removeFromTop (24).withTrimmedBottom (2);
-            rollTab.setBounds (header.removeFromLeft (92));
-            gridTab.setBounds (header.removeFromLeft (92));
-            header.removeFromLeft (14);
-            playBothButton.setBounds (header.removeFromLeft (64));
-            bassButton.setBounds (header.removeFromLeft (64));
-            soloBassButton.setBounds (header.removeFromLeft (58));
+            rollTab.setBounds (header.removeFromLeft (80));
+            gridTab.setBounds (header.removeFromLeft (70));
+            header.removeFromLeft (6);
+            expandRollButton.setBounds (header.removeFromLeft (96));
+            header.removeFromLeft (10);
+            playBothButton.setBounds (header.removeFromLeft (60));
+            bassButton.setBounds (header.removeFromLeft (56));
+            soloBassButton.setBounds (header.removeFromLeft (52));
 
-            dnaButton.setBounds (header.removeFromRight (46));
+            dnaButton.setBounds (header.removeFromRight (44));
             header.removeFromRight (5);
-            morphButton.setBounds (header.removeFromRight (62));
+            morphButton.setBounds (header.removeFromRight (60));
             header.removeFromRight (5);
-            myGroovesButton.setBounds (header.removeFromRight (98));
-            header.removeFromRight (10);
-            rndBassButton.setBounds (header.removeFromRight (78));
+            myGroovesButton.setBounds (header.removeFromRight (92));
+            header.removeFromRight (8);
+            rndBassButton.setBounds (header.removeFromRight (72));
             header.removeFromRight (5);
-            rndPianoButton.setBounds (header.removeFromRight (84));
+            rndPianoButton.setBounds (header.removeFromRight (78));
         }
         inner.removeFromTop (6);
 
         pianoRoll.setBounds (inner);
+        generatedButton.setBounds (inner.getRight() - 300, inner.getY() + 24, 160, 18);
 
         auto strip = inner.removeFromTop (24);
         strip.removeFromLeft ((int) PatternView::labelWidth);

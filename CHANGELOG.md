@@ -6,6 +6,23 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.26.0] - 2026-10-14
+
+### Added
+- **Piano roll editor:** **EDIT NOTES** (or a double-click on the piano roll) opens it big, with
+  zoom, to edit the notes one by one: add, move, lengthen or shorten, delete, transpose with the
+  arrows, and a **velocity lane**. Your notes play and are exported instead of the generated ones
+  (main groove and drop) until **BACK TO GENERATED**; they are saved with the project and undone
+  with ◀.
+- **Hook** in the house pedal top line: every second bar the last stab steps to the next note of
+  the scale and comes back, the classic piano house hook.
+- **Left-hand octaves:** with the piano-stab bass the accented stab and the push play the root
+  and its octave.
+
+### Fixed
+- **Dragging the whole song** from the song window: the window now shrinks to the mini tile like
+  the normal clip, so you can drop it in the DAW (before, the plug-in covered the DAW).
+
 ## [1.25.0] - 2026-10-14
 
 ### Changed

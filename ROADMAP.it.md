@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v1.26.0: editor del piano roll (note una per una, corsia della dinamica), gancio nella linea a pedale, ottave della mano sinistra, trascinamento del brano intero corretto.
 - v1.25.0: groove di piano nel classico stile house (linea in alto a pedale, basso in ogni stab), piano roll, nuovo pannello di export e finestra del brano, nuovo circolo delle quinte, arrivo del morph dal browser.
 - v1.24.0: Chord Variation Lab, humanize per voce, un fill per sezione, export MIDI su tracce separate.
 - v1.23.0: Musical DNA (variazioni per intenzione).

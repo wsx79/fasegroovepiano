@@ -187,6 +187,10 @@ public:
     void setContent (std::vector<Note> notes, std::vector<ChordSpan> chords, double lengthInBeats, bool chordsMuted);
     /** Playhead in beats from the start of the loop, or -1 when stopped. */
     void setPlayhead (double beat);
+    /** The notes were edited by hand (a tag in the corner). */
+    void setEdited (bool e)  { if (e != edited) { edited = e; repaint(); } }
+    std::function<void()> onDoubleClick;
+    void mouseDoubleClick (const juce::MouseEvent&) override  { if (onDoubleClick != nullptr) onDoubleClick(); }
 
     void paint (juce::Graphics&) override;
 
@@ -199,7 +203,7 @@ private:
     std::vector<Note> notes;
     std::vector<ChordSpan> chords;
     double length = 8.0, playhead = -1.0;
-    bool mutedChords = false;
+    bool mutedChords = false, edited = false;
     int lowNote = 36, highNote = 84;
 };
 
@@ -374,6 +378,8 @@ public:
     void refreshText();
     std::function<void()> onSaveSections, onSaveSong;
     MidiDragTile songTile;   // the whole song as one clip (set up by the editor)
+    /** While the song is dragged the window shrinks: only the tile is shown. */
+    void setMini (bool);
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -390,6 +396,73 @@ private:
     juce::OwnedArray<juce::TextButton> newButtons, originalButtons;
     juce::OwnedArray<juce::ComboBox> fillBoxes;
     juce::TextButton saveButton, saveSongButton, closeButton;
+    bool mini = false;
+};
+
+/** The big piano roll: every note of the loop, zoomable, to edit one by one. Click an empty
+    spot to add a note, drag a note to move it, drag its right edge to make it longer or
+    shorter, double-click (or right-click, or Delete) to remove it; the lane at the bottom sets
+    the velocity. Edited notes replace the generated ones until BACK TO GENERATED. */
+class PianoRollEditor : public juce::Component, private juce::Timer, private juce::ScrollBar::Listener
+{
+public:
+    explicit PianoRollEditor (FaseGroovePianoProcessor&);
+    ~PianoRollEditor() override;
+
+    /** Opens it on the loop as it plays (`generatedLength`: the loop length when nothing is edited yet). */
+    void show (double generatedLength);
+    void refreshText();
+    std::function<std::vector<PianoRollView::ChordSpan> (double length)> chordSpans;
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseDown (const juce::MouseEvent&) override;
+    void mouseDrag (const juce::MouseEvent&) override;
+    void mouseUp (const juce::MouseEvent&) override;
+    void mouseMove (const juce::MouseEvent&) override;
+    void mouseDoubleClick (const juce::MouseEvent&) override;
+    void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
+    bool keyPressed (const juce::KeyPress&) override;
+
+private:
+    void timerCallback() override;
+    void scrollBarMoved (juce::ScrollBar*, double) override;
+
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().reduced (14.0f); }
+    juce::Rectangle<float> gridArea() const;       // notes (under the chord lane)
+    juce::Rectangle<float> velocityArea() const;
+    juce::Rectangle<float> keyboardArea() const;
+    float xOf (double beat) const;
+    double beatAt (float x) const;
+    float yOf (int note) const;
+    int noteAt (float y) const;
+    float rowHeight() const;
+    int hitNote (juce::Point<float>, bool& onRightEdge) const;
+    double snapped (double beat) const;
+    void setZoom (double pixelsPerBeat, float anchorX);
+    void updateScrollBar();
+    void fitRange();
+    void commit();                                 // sends the notes to the processor
+    void updateStatus();
+
+    FaseGroovePianoProcessor& processor;
+    std::vector<sgk::LoopNote> notes;
+    std::vector<PianoRollView::ChordSpan> chords;
+    double length = 8.0, pixelsPerBeat = 100.0, scroll = 0.0, snap = 0.25, playhead = -1.0;
+    int lowNote = 36, highNote = 84;
+    int selected = -1;
+    sgk::Part drawPart = sgk::Part::chords;
+
+    enum class Drag { none, move, resize, velocity };
+    Drag drag = Drag::none;
+    double dragStartBeat = 0.0, noteStartBeat = 0.0, noteStartLength = 0.0;
+    int dragStartNote = 0, noteStartPitch = 0;
+    bool changed = false;
+
+    FaseGroovePianoProcessor::EditedLoop lastLoop;   // to notice an undo / a preset while open
+    juce::ScrollBar scrollBar { false };
+    juce::TextButton zoomOut { "-" }, zoomIn { "+" }, fitButton, snapButton, partButton, generatedButton, closeButton;
+    juce::String status;
 };
 
 /** Groove morphing: from the groove you have towards another one, step by step, with a slider. */
@@ -503,7 +576,7 @@ public:
     void resized() override;
 
     /** Mini window shown while a clip is being dragged to the DAW. */
-    void enterMiniMode();
+    void enterMiniMode (juce::Component* keep = nullptr);   // keep: the component being dragged from (default: the clip tile)
     void exitMiniMode();
 
 private:
@@ -596,7 +669,9 @@ private:
 
     PatternView patternView;
     PianoRollView pianoRoll;
-    juce::TextButton rollTab { "PIANO ROLL" }, gridTab { "EDIT GRID" };
+    PianoRollEditor rollEditor { processor };
+    juce::TextButton rollTab { "PIANO ROLL" }, gridTab { "EDIT GRID" }, expandRollButton, generatedButton;
+    std::vector<PianoRollView::ChordSpan> chordSpansFor (const sgk::GrooveSettings&, double length) const;
     void showRoll (bool);
     bool rollShown = true;
     double rollLength = 8.0;
@@ -613,6 +688,7 @@ private:
     float uiScale = 1.0f;
     bool miniMode = false;
     juce::Point<int> fullSize;
+    juce::Component* miniKeep = nullptr;
     std::vector<juce::Component::SafePointer<juce::Component>> hiddenForMini;
     juce::uint32 miniStartedAt = 0;
 

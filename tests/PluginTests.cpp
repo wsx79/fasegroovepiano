@@ -692,6 +692,52 @@ namespace
 
         root.deleteRecursively();
     }
+    //==============================================================================
+    void testEditedNotes()
+    {
+        // Notes edited in the piano roll: saved with the project, undone, exported, cleared.
+        FaseGroovePianoProcessor a;
+        auto loop = a.generatedLoop (8.0);
+        CHECK (! loop.empty());
+        const auto generatedCount = loop.size();
+        loop.erase (loop.begin());
+        loop.push_back ({ 7.5, 0.5, 84, 77, sgk::Part::chords });
+        a.setEditedLoop (loop, 8.0);
+        CHECK (a.hasEditedLoop() && a.editedLoop()->size() == generatedCount);
+
+        juce::MemoryBlock data;
+        a.getStateInformation (data);
+        FaseGroovePianoProcessor b;
+        b.setStateInformation (data.getData(), (int) data.getSize());
+        CHECK (b.hasEditedLoop() && b.editedLoop()->size() == generatedCount);
+        CHECK (std::abs (b.editedLoopLength() - 8.0) < 1.0e-9);
+        CHECK (stateXml (a) == stateXml (b));
+
+        // The full-loop export is the edited loop: two bars, exactly its notes.
+        const auto clip = readClip (b.writeMidiClip (0, FaseGroovePianoProcessor::ClipPart::all), false);
+        CHECK (clip.noteOns == (int) generatedCount && clip.unmatched == 0);
+
+        // Undo to before the edit, and back to the generated notes.
+        const auto edited = a.snapshot();
+        a.clearEditedLoop();
+        CHECK (! a.hasEditedLoop());
+        const auto plain = a.snapshot();
+        a.restoreSnapshot (edited);
+        CHECK (a.hasEditedLoop());
+        a.restoreSnapshot (plain);
+        CHECK (! a.hasEditedLoop());
+
+        // A broken note list is ignored, not loaded half way.
+        auto xml = juce::AudioProcessor::getXmlFromBinary (data.getData(), (int) data.getSize());
+        xml->setAttribute ("editedNotes", "x y z;0 0.5 300 100 0");
+        juce::MemoryBlock broken;
+        juce::AudioProcessor::copyXmlToBinary (*xml, broken);
+        FaseGroovePianoProcessor c;
+        c.setStateInformation (broken.getData(), (int) broken.getSize());
+        CHECK (! c.hasEditedLoop());
+    }
+
+    //==============================================================================
 }
 
 int main()
@@ -711,6 +757,7 @@ int main()
     testExportTempoAndChannels();
     testSectionFillsNoStuckNotes();
     testUpdateSwap();
+    testEditedNotes();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

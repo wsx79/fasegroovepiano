@@ -45,7 +45,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 🥁 **142 groove** a due mani in 13 generi (loop di **piano house**, soulful, deep, gospel, **jackin' house**, **piano jackin'**, garage, afro, funky e disco, piano house anni '90, neo soul, chill, stab dance), suonati nel classico stile piano house: una nota in alto condivisa (**Pedale house**), il basso sotto ogni stab
   più **NEW RIFF**, che genera riff funky casuali sul momento, e fill opzionali (11 stili, dalle scale gospel ai glissati di piano).
 - 🎚️ **Strum** (accordi arpeggiati come un pianista vero) e **Top +8va** (nota alta raddoppiata all'ottava).
-- 🎼 **Piano roll** di tutte le note che suonano (accordi, basso, fill) coi nomi degli accordi e la testina, e **TUTTI / PIANO / BASSO** per scegliere cosa ascolti.
+- 🎼 **Piano roll** di tutte le note che suonano (accordi, basso, fill) coi nomi degli accordi e la testina, che si apre in grande per **modificare le note una per una** (zoom, corsia della dinamica), e **TUTTI / PIANO / BASSO** per scegliere cosa ascolti.
 - ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,
   randomizzare (RND) e bloccare (LOCK).
 - 🔍 **Interfaccia ridimensionabile** e finestra mini durante il trascinamento della clip.

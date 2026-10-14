@@ -6,6 +6,23 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.26.0] - 2026-10-14
+
+### Aggiunto
+- **Editor del piano roll:** **MODIFICA NOTE** (o doppio clic sul piano roll) lo apre in grande,
+  con lo zoom, per modificare le note una per una: aggiungi, sposta, allunga o accorcia, elimina,
+  trasponi con le frecce, e una **corsia della dinamica**. Le tue note suonano e vengono esportate
+  al posto di quelle generate (groove principale e drop) fino a **TORNA AL GENERATO**; si salvano nel
+  progetto e si annullano con ◀.
+- **Gancio** nella linea in alto a pedale: ogni due battute l'ultimo stab passa alla nota vicina
+  della scala e torna: il classico gancio del piano house.
+- **Ottave della mano sinistra:** col basso a stab di piano lo stab accentato e l'anticipo
+  suonano la fondamentale e la sua ottava.
+
+### Corretto
+- **Trascinare il brano intero** dalla finestra del brano: ora la finestra si riduce al riquadro
+  mini come per la clip normale, così puoi rilasciarlo nella DAW (prima il plug-in copriva la DAW).
+
 ## [1.25.0] - 2026-10-14
 
 ### Modificato

@@ -759,6 +759,9 @@ bool GrooveEngine::anyNoteSounding() const noexcept
 
 int GrooveEngine::loopLengthInSteps (const GrooveSettings& s) noexcept
 {
+    if (s.playsEditedLoop())
+        return std::clamp ((int) std::lround (s.editedLoopLength * 4.0 / 16.0) * 16, 16, 64 * 16);
+
     const int patternLength = GrooveEngine::patternLength (s);
     const int progression = std::clamp (s.progressionLength, 1, maxProgressionLength) * std::max (1, s.stepsPerChord);
 
@@ -1315,8 +1318,24 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             // loops: only the accented moves (U / D) still step away from it.
             auto v = voiced[(size_t) slotFor (symbol)];
             const bool pedal = s.topLine == TopLine::pedal;
-            const bool moveUp = symbol == 'U' || (symbol == 'u' && ! pedal);
-            const bool moveDown = symbol == 'D' || (symbol == 'd' && ! pedal);
+
+            // The hook of a pedal loop: every second bar, its last stab (late in the bar) steps up
+            // (or down) to the next note of the scale, then the next bar comes back to the pedal note. Where
+            // house piano moves its top note, it is mostly there, and by a step.
+            bool hook = false;
+            if (pedal && (symbol == 'x' || symbol == 'X' || symbol == 'u' || symbol == 'd') && mod (bar, 2) == 1 && pos % 16 >= 8
+                && (s.section == Section::main || s.section == Section::drop) && ! isTiedFromPush (pattern.rightHand, pos))
+            {
+                hook = true;
+                const int barEnd = (pos / 16 + 1) * 16;
+                for (int i = pos + 1; i < barEnd && i < (int) pattern.rightHand.size(); ++i)
+                    if (isHit (pattern.rightHand[(size_t) i]) && pattern.rightHand[(size_t) i] != 'g' && pattern.rightHand[(size_t) i] != '>')
+                        hook = false;   // (a push plays the next chord: the hook goes on the stab before it)
+            }
+
+            // (a 'd' written on that stab makes the hook step down instead)
+            const bool moveUp = symbol == 'U' || (symbol == 'u' && ! pedal) || (hook && symbol != 'd');
+            const bool moveDown = symbol == 'D' || (symbol == 'd' && (! pedal || hook));
             if ((moveUp || moveDown) && v.rightHand.size > 0)
             {
                 // A neighbour note, the house piano way: only the top voice steps to the
@@ -1436,9 +1455,17 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
                     line[(size_t) i] = '.';
             }
             const char symbol = line[(size_t) pos];
-            const int root = 36 + chords[(size_t) slotFor (pattern.rightHand[(size_t) pos] == '>' ? '>' : symbol)].rootPc;
-            pending.push_back ({ (hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02), root, hitVelocity (symbol, 0.92, 91, human * hv.bassVel), durationFor (line),
-                                 isTiedFromPush (line, pos), Part::bass });
+            const char rh = pattern.rightHand[(size_t) pos];
+            const int root = 36 + chords[(size_t) slotFor (rh == '>' ? '>' : symbol)].rootPc;
+            const double t = hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02;
+            const double len = durationFor (line);
+            const bool tie = isTiedFromPush (line, pos);
+            pending.push_back ({ t, root, hitVelocity (symbol, 0.92, 91, human * hv.bassVel), len, tie, Part::bass });
+
+            // The left hand plays octaves on the strong stabs (the accented one and the push),
+            // a single root on the others, like a pianist's left hand.
+            if (symbol == 'X' || symbol == 'U' || symbol == 'D' || rh == '>')
+                pending.push_back ({ t, root + 12, hitVelocity (symbol, 0.85, 92, human * hv.bassVel), len, tie, Part::bass });
         }
     }
     else if (bassMode != BassMode::off)
@@ -1771,9 +1798,24 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
     const auto firstStep = (long long) std::floor (startPpq / stepLength) - 2;
     const auto lastStep  = (long long) std::floor (endPpq / stepLength);
 
-    const auto& pattern = patternFor (s);
-    for (auto step = firstStep; step <= lastStep; ++step)
-        collectStep (step, s, pattern, cachedVariation, chords, voiced);
+    if (s.playsEditedLoop())
+    {
+        // The loop edited in the piano roll, repeated (velocity follows the Velocity control
+        // and the section, like the generated notes).
+        const double length = s.editedLoopLength;
+        const double scale = s.velocity / 118.0 * sectionVelocityScale (s.section);
+        for (auto k = (long long) std::floor (startPpq / length) - 1; k <= (long long) std::floor (endPpq / length); ++k)
+            for (const auto& n : *s.editedLoop)
+                pending.push_back ({ (double) k * length + n.start, n.note,
+                                     std::clamp ((int) std::lround (n.velocity * scale), 1, 127),
+                                     std::max (0.02, n.length), false, n.part });
+    }
+    else
+    {
+        const auto& pattern = patternFor (s);
+        for (auto step = firstStep; step <= lastStep; ++step)
+            collectStep (step, s, pattern, cachedVariation, chords, voiced);
+    }
 
     pending.erase (std::remove_if (pending.begin(), pending.end(),
                                    [&] (const PendingOn& p) { return p.ppq < startPpq || p.ppq >= endPpq

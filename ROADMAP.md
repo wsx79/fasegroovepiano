@@ -11,6 +11,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Done
 
+- v1.26.0: piano roll editor (notes one by one, velocity lane), hook in the pedal top line, left-hand octaves, whole-song drag fixed.
 - v1.25.0: piano grooves in the classic house style (house pedal top line, bass in every stab), piano roll, new export panel and song window, new circle of fifths, morph target from the browser.
 - v1.24.0: Chord Variation Lab, humanize per voice, a fill per song section, separate-track MIDI export.
 - v1.23.0: Musical DNA (variations by intention).

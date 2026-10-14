@@ -749,12 +749,50 @@ static void testHousePedalAndStabBass()
             topsPerBar[step / 16].insert (*std::max_element (notes.begin(), notes.end()));
             CHECK (bassHits.count (step) == 1);
         }
+        bool hooked = false;
         for (const auto& [bar, tops] : topsPerBar)
-            CHECK (tops.size() <= 2);   // one top note (a push can bring the next chord's)
+        {
+            CHECK (tops.size() <= 3);   // the pedal, the hook step, a push bringing the next chord's
+            if (bar % 2 == 1 && tops.size() >= 2) hooked = true;
+        }
+        CHECK (hooked);
+        if (pattern == 1) CHECK (bassHits.count (0) == 1 && bassHits[0].size() == 2 && bassHits[0][1] - bassHits[0][0] == 12);   // octave on the accented stab
         for (const auto& [step, notes] : bassHits)
             if (chordHits.count (step) == 0)
                 CHECK (chordHits.count (step - 1) == 0 && chordHits.count (step + 1) == 0);
     }
+}
+
+static void testEditedLoop()
+{
+    // Notes edited in the piano roll replace the groove in the main section and loop at their length.
+    GrooveSettings s;
+    s.humanize = 0.0f; s.swing = 0.0f; s.velocity = 118;
+    auto loop = std::make_shared<std::vector<LoopNote>>();
+    loop->push_back ({ 0.0, 0.5, 60, 100, Part::chords });
+    loop->push_back ({ 1.5, 0.25, 40, 90, Part::bass });
+    s.editedLoop = loop;
+    s.editedLoopLength = 4.0;
+
+    CHECK (GrooveEngine::loopLengthInSteps (s) == 16);
+    std::vector<double> ons;
+    int bass = 0;
+    for (const auto& e : GrooveEngine::renderClip (s, 8.0))
+        if (e.isNoteOn())
+        {
+            ons.push_back (e.ppq);
+            if (e.part == Part::bass) { ++bass; CHECK (e.note == 40 && e.velocity == 90); }
+            else                      CHECK (e.note == 60 && e.velocity == 100);
+        }
+    CHECK (ons.size() == 4 && bass == 2);
+    CHECK (std::abs (ons[2] - 4.0) < 1.0e-9);
+
+    // The other song sections are still generated.
+    s.section = Section::breakdown;
+    bool other = false;
+    for (const auto& e : GrooveEngine::renderClip (s, 8.0))
+        if (e.isNoteOn() && e.note != 60 && e.note != 40) other = true;
+    CHECK (other);
 }
 
 static void testAutoMovement()
@@ -1289,6 +1327,7 @@ int main()
     testV19Features();
     testVoicingMovement();
     testHousePedalAndStabBass();
+    testEditedLoop();
     testAutoMovement();
     testStrum();
     testPatternsWellFormed();

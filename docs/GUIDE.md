@@ -121,8 +121,8 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Scale / mode** | Major (Ionian), **Dorian** (the deep house classic), Minor (Aeolian), Mixolydian, Lydian, Phrygian, Harmonic Minor, Melodic Minor, plus (v1.5) **Locrian**, **Harmonic Major** (gospel minor iv), **Lydian Dominant** (funky I7#11), **Mixolydian b6** (soulful borrowed iv) and **Phrygian Dominant** (dark, exotic deep house). |
 | **Extensions** | Triads, 7ths, 9ths, 11ths/13ths, plus (v1.5): **6/9** (the warm soulful tonic chord, no 7th), **Add 9** (pop/house triad with a 9th), **Sus (9sus4)** (the open, floating deep house chord) and **9ths + altered V** (every chord a 9th, and degree V becomes a gospel **13(b9)**, or **7(b9,b13)** in minor keys). Clashing tensions are handled automatically: a b9 on a non-dominant chord is dropped, an 11th on a major chord becomes a 13th, a 6th that would be a b6 becomes a 7th, and sus4 is used only where the 4th is perfect. |
 | **Voicing** | *Close* (tight position), *Drop 2* (more open, jazz-keyboard style), *Rootless* (no root, great with a separate bass), *Wide* (two hands: root + 7th in the left hand), *Quartal* (chords built in fourths, a modern deep sound), *Shell (3-7-top)* (just 3rd, 7th and the top colour note: light and jazzy, leaves room for the bass and vocals), *Drop 2+4* (open, spread pianist voicing, great for pads and breaks), *Octave triads (disco)* (a plain triad doubled an octave up, R 3 5 R 3 5: the bright disco and nu disco piano; best with *Triads*). Fast repeated hits use a lighter voicing (the top three notes) and ghost notes only the top two, like a pianist's touch; steady 8th-note bass lines bounce between root and octave. Every voicing follows the rules a pianist uses: no semitone rubs between neighbouring notes, no muddy small intervals in the low register, the 9th above the 3rd, and the voice that moves the least (the top note sings a smooth line). **A/B** (next to the *Voicing* caption) opens the **Voicing Coach**: two voicings of your progression side by side, every chord drawn as notes on a pitch grid with the **top line** joined, plus the **range**, how much the **voices move** at each chord change, the **biggest top-note leap**, **muddy low notes** and **semitone rubs** (circled). Press **HEAR A** or **HEAR B** while the loop plays to switch between them: only the voicing changes, the chords stay. A short verdict tells you which is smoother or more compact. |
-| **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th, **Walking** (root, 5th, octave on the beats and a chromatic step into the next chord) **Syncopated octaves** (the offbeats jump up an octave: the pumping house bass) or **Piano stabs (bass in every chord)** (the default): the root plays with every chord hit, low and full, plus the bass's own hits in between, but never a 16th before or after a chord (that would sound like a flam). It is how house piano loops are played: one big stab, bass included. The menu also has a **library of bass lines** (each with its own rhythm and notes, following your chords): *Disco* (Disco Octave Gallop, Disco Octave Push, Philly Walk, Boogie Line), *Funky* (Funk Sixteenths, Slap & Pop, Dead Note Groove: with dead notes), *House* (Deep House Root, Offbeat House, Garage Skip) and *Soulful* (Soulful Walk, Gospel Walk). They use 3rds, 5ths, 6ths, 7ths, octaves and **approach notes** that lead by a semitone into the next chord, like a bass player. The grid shows the line's rhythm; editing a bass cell turns it into your own rhythm on the roots. |
-| **Top line** | The melody drawn by the top notes of the chords. **House pedal** (the default) is the classic house piano way: the chords share **one top note** (their 5th, 7th or 3rd) and step only to the nearest chord tone when a chord doesn't have it; the top note doesn't jump around inside the bar. *Smooth (auto)* moves as little as possible, *Steady* aims for one height, *Rising*, *Falling* or *Arch* shape it across the progression. |
+| **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th, **Walking** (root, 5th, octave on the beats and a chromatic step into the next chord) **Syncopated octaves** (the offbeats jump up an octave: the pumping house bass) or **Piano stabs (bass in every chord)** (the default): the root plays with every chord hit, low and full, plus the bass's own hits in between, but never a 16th before or after a chord (that would sound like a flam). The accented stab and the push get the **octave** (root + root an octave up), the others a single root, like a pianist's left hand. It is how house piano loops are played: one big stab, bass included. The menu also has a **library of bass lines** (each with its own rhythm and notes, following your chords): *Disco* (Disco Octave Gallop, Disco Octave Push, Philly Walk, Boogie Line), *Funky* (Funk Sixteenths, Slap & Pop, Dead Note Groove: with dead notes), *House* (Deep House Root, Offbeat House, Garage Skip) and *Soulful* (Soulful Walk, Gospel Walk). They use 3rds, 5ths, 6ths, 7ths, octaves and **approach notes** that lead by a semitone into the next chord, like a bass player. The grid shows the line's rhythm; editing a bass cell turns it into your own rhythm on the roots. |
+| **Top line** | The melody drawn by the top notes of the chords. **House pedal** (the default) is the classic house piano way: the chords share **one top note** (their 5th, 7th or 3rd) and step only to the nearest chord tone when a chord doesn't have it; the top note doesn't jump around inside the bar. Every second bar, the last stab before the end of the bar makes the **hook**: the top note steps to the next note of the scale (down when that stab is written as ▼) and comes back on the next bar. *Smooth (auto)* moves as little as possible, *Steady* aims for one height, *Rising*, *Falling* or *Arch* shape it across the progression. |
 | **Movement** | **Voicing movement** for every groove: *Off* repeats the same chord on every hit, *Subtle* (default) moves the answer half-bars an inversion up, *Lively* makes every half-bar dance (chord, up, chord, down, mirrored in the answer). Grooves that already move keep their own figure; the break stays still. |
 | **Approach chord** | The gospel **slide**: on the last 16th before each chord change the next chord (and its bass note) is played a half step **from above** or **from below**, then resolves. Only where the hand is already playing, so a muted bass stays muted. |
 | **Top +8va** | Doubles the top note of every chord an octave higher: the bright, ringing classic house piano sound. |
@@ -216,6 +216,26 @@ The big panel at the bottom has two views (tabs at the top left):
   the loop (the playing one lit), and the white playhead. It shows the whole loop (until the groove
   and the progression come round together, up to 8 bars) exactly as it will be exported.
 - **EDIT GRID**: the rhythm in 16th notes over 2 bars, to edit by hand (below).
+
+**EDIT NOTES** (next to the tabs, or double-click the piano roll) opens the piano roll **big**, to
+edit the **notes one by one**:
+
+- **Zoom** with **- / +**, **FIT** (the whole loop) or Ctrl + mouse wheel; the mouse wheel and the
+  bar at the bottom scroll.
+- **Click** an empty spot to add a note (as long as the grid step: **Grid** 1/8, 1/16 or 1/32;
+  **New notes** says whether it is piano or bass); **drag** a note to move it (time and pitch),
+  drag its **right edge** to make it longer or shorter; **double-click** or **right-click** removes
+  it. The arrows move the selected note (up / down a semitone, Shift an octave; left / right one
+  grid step), Delete removes it.
+- The **lane at the bottom** is the **velocity**: drag on it to set how hard a stab plays (the
+  notes of a chord move together; Shift: only the selected note).
+- The chord names stay on top and the playhead runs while the loop plays.
+
+From the first edit **your notes play and are exported instead of the generated ones** (in the
+main groove and the drop; the other song sections keep being generated), and the small piano roll
+shows **EDITED NOTES**. The *Velocity* knob still scales them. Changing the groove or the chords
+doesn't touch them: **BACK TO GENERATED** forgets the edits. They are saved with the project and
+undone with ◀.
 
 Next to the tabs, **BOTH / PIANO / BASS** choose what you hear: **PIANO** switches the bass off
 (it remembers the bass mode you had chosen), **BASS** keeps the chords silent so you hear only the
@@ -388,7 +408,7 @@ In the **EXPORT MIDI** panel:
 
 4. **FULL SONG…** opens the song window (chapter 6): there you drag or save the **whole song**.
 
-With **Mini window while dragging** on (in **OPTIONS → SETTINGS**), the plug-in window shrinks to a small tile while you drag,
+With **Mini window while dragging** on (in **OPTIONS → SETTINGS**; it works for the whole song too), the plug-in window shrinks to a small tile while you drag,
 so you can see the DAW and drop the clip where you want. It comes back when you release. If your
 DAW doesn't handle plug-in resizing well, turn this option off.
 

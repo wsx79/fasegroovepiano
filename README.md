@@ -46,7 +46,7 @@ Rhodes or synth.
 - 🥁 **142 two-hand grooves** in 13 genres (**piano house** loops, soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill, dance stabs), played in the classic house piano style: one shared top note (**House pedal**), the bass under every stab
   plus **NEW RIFF**, a random funky riff generator, and optional fills (11 styles, from gospel runs to piano glissandos).
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
-- 🎼 **Piano roll** of every note that plays (chords, bass, fills) with the chord names and the playhead, and **BOTH / PIANO / BASS** to choose what you hear.
+- 🎼 **Piano roll** of every note that plays (chords, bass, fills) with the chord names and the playhead, which opens big to **edit the notes one by one** (zoom, velocity lane), and **BOTH / PIANO / BASS** to choose what you hear.
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and
   lock (LOCK).
 - 🔍 **Resizable UI** and a mini window while you drag a clip.

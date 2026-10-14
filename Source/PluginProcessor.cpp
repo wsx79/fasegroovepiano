@@ -5,6 +5,7 @@
 #include "GuideVoice.h"
 #include "PluginEditor.h"
 
+#include <map>
 #include <mutex>
 
 namespace
@@ -654,6 +655,8 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
     s.riffDensity = raw (ParamIDs::riffDensity);
+    s.editedLoop = editedLoop();
+    s.editedLoopLength = editedLength.load();
 
     for (int i = 0; i < sgk::numSegments; ++i)
         s.segmentOrder[(size_t) i] = juce::jlimit (0, sgk::numSegments - 1, juce::roundToInt (segmentParams[(size_t) i]->load()));
@@ -1319,6 +1322,52 @@ int FaseGroovePianoProcessor::clipLengthInBars (int bars) const
     return juce::jmax (1, sgk::GrooveEngine::loopLengthInSteps (currentSettings()) / 16);
 }
 
+void FaseGroovePianoProcessor::setEditedLoop (std::vector<sgk::LoopNote> notes, double lengthInBeats)
+{
+    // Times kept to 1/10000 of a beat (as saved), in a fixed order: a saved project loads back identical.
+    for (auto& n : notes)
+    {
+        n.start = std::round (n.start * 10000.0) / 10000.0;
+        n.length = juce::jmax (0.001, std::round (n.length * 10000.0) / 10000.0);
+    }
+    std::sort (notes.begin(), notes.end(), [] (const sgk::LoopNote& a, const sgk::LoopNote& b)
+    {
+        return std::tie (a.start, a.note, a.part) < std::tie (b.start, b.note, b.part);
+    });
+    editedLength = juce::jlimit (4.0, 64.0 * 4.0, lengthInBeats);
+    std::atomic_store (&editedNotes, EditedLoop (std::make_shared<const std::vector<sgk::LoopNote>> (std::move (notes))));
+}
+
+void FaseGroovePianoProcessor::clearEditedLoop()
+{
+    std::atomic_store (&editedNotes, EditedLoop());
+    editedLength = 0.0;
+}
+
+std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengthInBeats) const
+{
+    auto s = currentSettings();
+    s.editedLoop = nullptr;
+    s.section = sgk::Section::main;
+    const double toRelative = 118.0 / juce::jmax (1, s.velocity);
+
+    std::vector<sgk::LoopNote> notes;
+    std::map<int, std::pair<double, int>> open;   // note + part -> start, velocity
+    for (const auto& e : sgk::GrooveEngine::renderClip (s, lengthInBeats))
+    {
+        const int id = e.note + 128 * (int) e.part;
+        if (e.isNoteOn())
+            open[id] = { e.ppq, e.velocity };
+        else if (auto it = open.find (id); it != open.end())
+        {
+            notes.push_back ({ it->second.first, juce::jmax (0.02, e.ppq - it->second.first), e.note,
+                               juce::jlimit (1, 127, juce::roundToInt (it->second.second * toRelative)), e.part });
+            open.erase (it);
+        }
+    }
+    return notes;
+}
+
 double FaseGroovePianoProcessor::exportBpm() const
 {
     // Not lastBpm: that is only updated while audio runs, so a tempo just typed in would be missed.
@@ -1488,6 +1537,22 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("freeChords", free.joinIntoString (","), nullptr);
     state.setProperty ("freeCircle", freeCircle, nullptr);
 
+    // The notes edited in the piano roll: "start length note velocity part" per note.
+    if (const auto loop = editedLoop(); loop != nullptr && ! loop->empty())
+    {
+        juce::StringArray notes;
+        for (const auto& n : *loop)
+            notes.add (juce::String (n.start, 4) + " " + juce::String (n.length, 4) + " " + juce::String (n.note) + " "
+                       + juce::String (n.velocity) + " " + juce::String ((int) n.part));
+        state.setProperty ("editedNotes", notes.joinIntoString (";"), nullptr);
+        state.setProperty ("editedLength", editedLength.load(), nullptr);
+    }
+    else
+    {
+        state.removeProperty ("editedNotes", nullptr);
+        state.removeProperty ("editedLength", nullptr);
+    }
+
     if (auto xml = state.createXml())
         copyXmlToBinary (*xml, destData);
 }
@@ -1545,6 +1610,30 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         setFreeChord (i, i < free.size() ? free[i].getIntValue() : sgk::noFreeChord);
     freeCircle = (bool) state.getProperty ("freeCircle", false);
+
+    {
+        std::vector<sgk::LoopNote> notes;
+        const double length = (double) state.getProperty ("editedLength", 0.0);
+        for (const auto& item : juce::StringArray::fromTokens (state.getProperty ("editedNotes").toString(), ";", {}))
+        {
+            const auto f = juce::StringArray::fromTokens (item, " ", {});
+            if (f.size() != 5)
+                continue;
+            sgk::LoopNote n;
+            n.start = f[0].getDoubleValue();
+            n.length = f[1].getDoubleValue();
+            n.note = f[2].getIntValue();
+            n.velocity = f[3].getIntValue();
+            n.part = (sgk::Part) juce::jlimit (0, 2, f[4].getIntValue());
+            if (n.start >= 0.0 && n.start < length && n.length > 0.0 && juce::isPositiveAndBelow (n.note, 128)
+                && juce::isPositiveAndBelow (n.velocity, 128) && n.velocity > 0)
+                notes.push_back (n);
+        }
+        if (! notes.empty() && length > 0.0)
+            setEditedLoop (std::move (notes), length);
+        else
+            clearEditedLoop();
+    }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

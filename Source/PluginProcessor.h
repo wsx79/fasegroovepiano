@@ -153,6 +153,17 @@ public:
     std::atomic<bool> learnMode { false };
     /** SOLO BASS: the chords stay silent (MIDI out and guide sound); the exported clips are not affected. */
     std::atomic<bool> chordsMuted { false };
+
+    // Notes edited one by one in the big piano roll. While set, they play (and are exported)
+    // instead of the generated notes in the main groove and the drop.
+    using EditedLoop = std::shared_ptr<const std::vector<sgk::LoopNote>>;
+    EditedLoop editedLoop() const              { return std::atomic_load (&editedNotes); }
+    double editedLoopLength() const            { return editedLength.load(); }
+    bool hasEditedLoop() const                 { auto l = editedLoop(); return l != nullptr && ! l->empty(); }
+    void setEditedLoop (std::vector<sgk::LoopNote> notes, double lengthInBeats);
+    void clearEditedLoop();
+    /** The loop as it plays now (generated), ready to be edited: velocities relative to the Velocity control. */
+    std::vector<sgk::LoopNote> generatedLoop (double lengthInBeats) const;
     std::atomic<int> learnedCount { 0 };       // bumps every time a chord is heard
     std::atomic<int> learnedMask { 0 };        // pitch classes of the last chord (bit per pc)
     std::atomic<int> learnedBass { 0 };        // its lowest note's pitch class
@@ -248,6 +259,8 @@ public:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
 
 private:
+    EditedLoop editedNotes;
+    std::atomic<double> editedLength { 0.0 };
     float raw (const char* id) const;
 
     std::array<std::atomic<float>*, sgk::maxProgressionLength> slotParams {};
