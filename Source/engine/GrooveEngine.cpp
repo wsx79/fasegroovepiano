@@ -699,6 +699,23 @@ const char* topLineName (int line) noexcept
     return names[mod (line, numTopLines)];
 }
 
+const char* humanizeStyleName (int style) noexcept
+{
+    static const char* const names[numHumanizeStyles] { "Even", "Pianist", "Laid-back bass", "Tight bass" };
+    return names[mod (style, numHumanizeStyles)];
+}
+
+GrooveEngine::HumanizeVoices GrooveEngine::humanizeVoices (int style) noexcept
+{
+    switch (mod (style, numHumanizeStyles))
+    {
+        case 1:  return { 1.0, 1.25, 1.0, 0.08, 0.5, 0.7, 0.0 };   // pianist: dynamic chords, singing top note, steady bass
+        case 2:  return { 0.8, 0.9, 0.0, 0.0, 1.7, 1.5, 0.6 };     // laid-back bass: behind the beat, looser
+        case 3:  return { 1.3, 1.2, 0.0, 0.0, 0.2, 0.4, 0.0 };     // tight bass, loose chords
+        default: return { 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0 };    // even
+    }
+}
+
 const std::vector<BassLine>& bassLines()
 {
     // Classic bass-player figures (two bars), written as chord functions so they follow any progression.
@@ -877,6 +894,11 @@ std::vector<NoteEvent> GrooveEngine::renderArrangement (const GrooveSettings& s,
         auto partSettings = s;
         partSettings.section = part.section;
         partSettings.sectionVariation = part.variation;
+        if (part.endFill != -1)
+        {
+            partSettings.forcedFillBar = (long long) std::llround (start / 4.0) + part.bars - 1;
+            partSettings.forcedFillStyle = part.endFill;
+        }
 
         if (markers != nullptr)
             markers->push_back ({ start, sectionName ((int) part.section) });
@@ -1024,16 +1046,19 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     const double swingDelay = (step % 2 != 0) ? std::clamp (s.swing, 0.0f, 1.0f) * stepLength / 3.0 : 0.0;
     const double baseTime = (double) step * stepLength + swingDelay;
     const double human = std::clamp (s.humanize, 0.0f, 1.0f);
+    const int seedSalt = (int) (s.humanizeSeed % 100003u) * 7919;
+    const auto hv = humanizeVoices (s.humanizeStyle);
 
-    auto hitTime = [&] (int salt) { return baseTime + human * 0.03 * noise (step, salt); };
+    auto hitTime = [&] (int salt, double amount) { return baseTime + amount * 0.03 * noise (step, seedSalt + salt); };
 
-    auto hitVelocity = [&] (char symbol, double scale, int salt)
+    auto hitVelocity = [&] (char symbol, double scale, int salt, double amount = -1.0)
     {
+        if (amount < 0.0) amount = human * hv.chordVel;
         double v = s.velocity * scale * sectionVelocityScale (s.section)
                    * (symbol == 'X' || symbol == 'U' || symbol == 'D' ? 1.0 : symbol == '>' ? 0.97 : symbol == 'g' ? 0.55 : 0.9);
         if (s.section == Section::buildup)   // crescendo through the build-up
             v *= 0.72 + 0.4 * (double) pos / (double) std::max (1, pattern.length() - 1);
-        v += human * 18.0 * (noise (step, salt + 7) - 0.5) * 2.0;
+        v += amount * 18.0 * (noise (step, seedSalt + salt + 7) - 0.5) * 2.0;
         return std::clamp ((int) std::lround (v), 1, 127);
     };
 
@@ -1070,10 +1095,18 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     // Fill: the end of every N bars becomes a pick-up into the next chord.
     const long long bar = floorDiv (step, 16);
     const int stepInBar = mod (step, 16);
-    const auto fillStyle = effectiveFillStyle (s.fillStyle, bar);
+    auto fillStyle = effectiveFillStyle (s.fillStyle, bar);
+    bool fillBar = s.fillEveryBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1;
+    if (s.forcedFillBar >= 0)
+    {
+        // A song section with its own fill: only on its last bar.
+        fillBar = bar == s.forcedFillBar && s.forcedFillStyle >= 0;
+        if (fillBar)
+            fillStyle = effectiveFillStyle ((FillStyle) std::clamp (s.forcedFillStyle, 0, numFillStyles - 1), bar);
+    }
     const int fillStart = fillStartStep (fillStyle);
-    const bool inFill = s.fillEveryBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1
-                     && stepInBar >= fillStart;
+    const bool inFill = fillBar && stepInBar >= fillStart;
+    const size_t pendingBeforeFill = pending.size();
 
     // Approach ("slide"): the last 16th before a real chord change.
     const int slotNow = slotForStep (step, s);
@@ -1112,7 +1145,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         const auto& scale = scaleIntervals (s.scale);
         const auto scaleRun = notesOf (s.keyRoot, scale.data(), 7, target - 26, target + 14);
         const int iTarget = indexAtOrBelow (scaleRun, target);
-        const double t = hitTime (31);
+        const double t = hitTime (31, human * hv.chordTime);
 
         // Top notes of a chord, as a lighter voicing for fast hits.
         auto topNotes = [] (const NoteSet& chord, int count, auto&& add)
@@ -1208,14 +1241,22 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
                         iTop = i;
 
                 const int idx = fillStyle == FillStyle::pentatonicDown ? iTop + 2 - k : iTop - 2 + k;
-                pending.push_back ({ hitTime (31), run[std::clamp (idx, 0, run.size - 1)], vel, len });
+                pending.push_back ({ hitTime (31, human * hv.chordTime), run[std::clamp (idx, 0, run.size - 1)], vel, len });
             }
         }
+    }
+    if (inFill)
+        for (size_t k = pendingBeforeFill; k < pending.size(); ++k)
+            pending[k].part = Part::fill;
+
+    if (inFill)
+    {
+        // the fill replaces the right hand on this step
     }
     else if (approachHere && canApproach (pattern.rightHand))
     {
         const auto& next = voiced[(size_t) slotNext];
-        const double t = hitTime (1);
+        const double t = hitTime (1, human * hv.chordTime);
         const double roll = std::min (std::clamp (s.strum, 0.0f, 1.0f) * 0.05 * std::max (30.0, s.bpm) / 60.0, approachLength * 0.4)
                           / std::max (1, next.rightHand.size - 1);
         for (int i = 0; i < next.rightHand.size; ++i)
@@ -1242,7 +1283,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
                 v.leftHand = {};
             }
             const double len = durationFor (pattern.rightHand);
-            const double t = hitTime (1);
+            const double t = hitTime (1, human * hv.chordTime);
             const bool tie = isTiedFromPush (pattern.rightHand, pos);
 
             // Strum: roll the chord upwards, up to ~1/32 note between the notes.
@@ -1267,8 +1308,15 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             };
 
             for (int i = firstNote; i < v.rightHand.size; ++i)
-                pending.push_back ({ t + 0.004 * human * noise (step, 50 + i) + rollOffset (i - firstNote), v.rightHand[i],
-                                     hitVelocity (symbol, 1.0 - 0.03 * (v.rightHand.size - 1 - i), 60 + i), len, tie });
+            {
+                // Pianist: the top note sings, a hair early and a little louder.
+                const bool top = i == v.rightHand.size - 1;
+                pending.push_back ({ t + 0.004 * human * hv.chordTime * noise (step, seedSalt + 50 + i) + rollOffset (i - firstNote)
+                                         - (top ? human * hv.topLead * 0.02 : 0.0),
+                                     v.rightHand[i],
+                                     hitVelocity (symbol, (1.0 - 0.03 * (v.rightHand.size - 1 - i)) * (top ? 1.0 + hv.topAccent : 1.0), 60 + i),
+                                     len, tie });
+            }
 
             if (s.octaveTop && v.rightHand.size > 0 && v.rightHand.highest() + 12 <= 108)
                 pending.push_back ({ t + (rollDown ? 0.0 : rollBeats), v.rightHand.highest() + 12,
@@ -1299,7 +1347,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     if (bassMode != BassMode::off && approachHere && canApproach (pattern.leftHand))
     {
         const int target = 36 + chords[(size_t) slotNext].rootPc;
-        pending.push_back ({ hitTime (90), target + approachShift, hitVelocity ('x', 0.8, 91), approachLength, false, Part::bass });
+        pending.push_back ({ (hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02), target + approachShift, hitVelocity ('x', 0.8, 91, human * hv.bassVel), approachLength, false, Part::bass });
     }
     else if (bassMode == BassMode::withChords)
     {
@@ -1322,7 +1370,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             }
             const char symbol = isHit (lhSymbol) ? lhSymbol : rhSymbol;
             const int root = 36 + chords[(size_t) slotFor (symbol)].rootPc;
-            pending.push_back ({ hitTime (90), root, hitVelocity (symbol, 0.92, 91), durationFor (line),
+            pending.push_back ({ (hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02), root, hitVelocity (symbol, 0.92, 91, human * hv.bassVel), durationFor (line),
                                  isTiedFromPush (line, pos), Part::bass });
         }
     }
@@ -1333,8 +1381,8 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         {
             const int root = 36 + chords[(size_t) slotFor (symbol)].rootPc;
             const double len = durationFor (pattern.leftHand);
-            const double t = hitTime (90);
-            const int vel = hitVelocity (symbol, 0.9, 91);
+            const double t = (hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02);
+            const int vel = hitVelocity (symbol, 0.9, 91, human * hv.bassVel);
             const bool tie = isTiedFromPush (pattern.leftHand, pos);
 
             // Steady 8ths (x.x.) bounce between root and octave, like a disco / house bass player.
@@ -1389,7 +1437,10 @@ void GrooveEngine::collectBassLine (long long step, const GrooveSettings& s, con
 
     const double swingDelay = (step % 2 != 0) ? std::clamp (s.swing, 0.0f, 1.0f) * stepLength / 3.0 : 0.0;
     const double human = std::clamp (s.humanize, 0.0f, 1.0f);
-    const double t = (double) step * stepLength + swingDelay + human * 0.03 * noise (step, 90);
+    const int seedSalt = (int) (s.humanizeSeed % 100003u) * 7919;
+    const auto hv = humanizeVoices (s.humanizeStyle);
+    const double t = (double) step * stepLength + swingDelay + human * hv.bassTime * 0.03 * noise (step, seedSalt + 90)
+                   + human * hv.bassLate * 0.02;
 
     const auto& chord = chords[(size_t) slotForStep (step, s)];
     const int root = 36 + chord.rootPc;
@@ -1431,7 +1482,7 @@ void GrooveEngine::collectBassLine (long long step, const GrooveSettings& s, con
 
     // A bass player's touch: strong on the beat, softer in between, dead notes very soft.
     double v = s.velocity * sectionVelocityScale (s.section) * (symbol == 'G' ? 0.45 : pos % 4 == 0 ? 0.95 : 0.82);
-    v += human * 18.0 * (noise (step, 97) - 0.5) * 2.0;
+    v += human * hv.bassVel * 18.0 * (noise (step, seedSalt + 97) - 0.5) * 2.0;
     pending.push_back ({ t, note, std::clamp ((int) std::lround (v), 1, 127), len, false, Part::bass });
 }
 
@@ -1489,6 +1540,124 @@ GrooveEngine::VoicingReport GrooveEngine::voicingReport (const GrooveSettings& s
         r.averageMove = voices > 0 ? total / voices : 0.0;
     }
     return r;
+}
+
+std::vector<int> GrooveEngine::progressionCodes (const GrooveSettings& s)
+{
+    std::vector<int> codes;
+    const int len = std::clamp (s.progressionLength, 1, maxProgressionLength);
+    for (int i = 0; i < len; ++i)
+    {
+        const auto c = chordForSlot (s, i);
+        const int kind = c.third == 3 ? 1 : c.seventh == 10 ? 2 : 0;
+        codes.push_back (mod (c.rootPc - s.keyRoot, 12) + 12 * kind);
+    }
+    return codes;
+}
+
+std::vector<GrooveEngine::ProgressionVariant> GrooveEngine::progressionVariants (const GrooveSettings& s)
+{
+    const auto original = progressionCodes (s);
+    const int n = (int) original.size();
+    auto root = [] (int code) { return code % 12; };
+    auto kind = [] (int code) { return code / 12; };
+    auto make = [] (int r, int k) { return mod (r, 12) + 12 * k; };
+    auto next = [&] (const std::vector<int>& c, int i) { return c[(size_t) ((i + 1) % n)]; };
+
+    std::vector<ProgressionVariant> out;
+    auto add = [&] (const char* name, std::vector<int> codes)
+    {
+        if (codes != original)
+            out.push_back ({ name, std::move (codes) });
+    };
+
+    // More soulful: ii before V, a secondary dominant into a minor chord, V7 in minor keys.
+    {
+        auto c = original;
+        bool secondary = false;
+        for (int i = 0; i < n; ++i)
+        {
+            const int x = original[(size_t) i], nx = next (original, i);
+            if (kind (x) == 0 && root (x) == 5 && root (nx) == 7)                         c[(size_t) i] = make (2, 1);   // IV -> ii (ii - V)
+            else if (! secondary && i > 0 && kind (nx) == 1 && root (nx) == mod (root (x) + 5, 12) && kind (x) != 2)
+            {
+                c[(size_t) i] = make (root (nx) + 7, 2);                                                               // V7 of the minor chord next
+                secondary = true;
+            }
+            else if (kind (x) == 1 && root (x) == 7)                                    c[(size_t) i] = make (7, 2);   // minor v -> V7
+        }
+        if (c == original && n > 1)
+            c[(size_t) (n - 1)] = make (root (original[0]) + 7, 2);   // turnaround: V7 of the first chord
+        add ("More soulful", c);
+    }
+
+    // Gospel: the borrowed iv, dominant sevenths, I7 into IV.
+    {
+        auto c = original;
+        bool borrowed = false;
+        for (int i = 0; i < n; ++i)
+        {
+            const int x = original[(size_t) i], nx = next (original, i);
+            if (! borrowed && i > 0 && kind (x) == 0 && root (x) == 5 && (root (nx) == 0 || root (nx) == 7 || i == n - 1))
+            {
+                c[(size_t) i] = make (5, 1);   // IV -> iv
+                borrowed = true;
+            }
+            else if (root (x) == 7 && kind (x) == 0)                                     c[(size_t) i] = make (7, 2);   // V -> V7
+            else if (root (x) == 0 && kind (x) == 0 && root (nx) == 5 && i != n - 1)     c[(size_t) i] = make (0, 2);   // I -> I7 into IV
+            else if (root (x) == 9 && kind (x) == 1 && root (nx) == 2)                   c[(size_t) i] = make (9, 2);   // vi -> VI7 into ii
+            else if (root (x) == 5 && kind (x) == 1)                                     c[(size_t) i] = make (5, 2);   // minor key: iv -> IV7 (Dorian)
+        }
+        if (c == original && n > 1)
+            c[(size_t) (n - 1)] = make (5, 1);
+        add ("Gospel", c);
+    }
+
+    // Deep: minor colours. v instead of V, vi instead of a returning I, bVII to close.
+    {
+        auto c = original;
+        for (int i = 0; i < n; ++i)
+        {
+            const int x = original[(size_t) i];
+            if (root (x) == 7 && kind (x) != 1)                         c[(size_t) i] = make (7, 1);   // V -> v
+            else if (i > 0 && root (x) == 0 && kind (x) == 0)           c[(size_t) i] = make (9, 1);   // I -> vi
+            else if (root (x) == 4 && kind (x) == 0)                    c[(size_t) i] = make (4, 1);   // III -> iii
+        }
+        if (c == original && n > 1)
+            c[(size_t) (n - 1)] = make (10, 0);
+        add ("Deep", c);
+    }
+
+    // Chromatic: tritone substitution, bVI for IV, the Neapolitan in minor keys.
+    {
+        auto c = original;
+        bool tritone = false, flatSix = false;
+        for (int i = 0; i < n; ++i)
+        {
+            const int x = original[(size_t) i], nx = next (original, i);
+            if (! tritone && root (x) == 7 && kind (x) != 1 && root (nx) == 0)
+            {
+                c[(size_t) i] = make (1, 2);   // V -> bII7
+                tritone = true;
+            }
+            else if (! flatSix && i > 0 && root (x) == 5 && kind (x) == 0)
+            {
+                c[(size_t) i] = make (8, 0);   // IV -> bVI
+                flatSix = true;
+            }
+            else if (root (x) == 8 && kind (x) == 0 && root (nx) == 7)   c[(size_t) i] = make (1, 0);   // minor key: VI -> bII before V
+        }
+        for (int i = 1; i < n && ! flatSix; ++i)
+            if (root (original[(size_t) i]) == 9 && kind (original[(size_t) i]) == 1)
+            {
+                c[(size_t) i] = make (8, 0);   // no IV: vi -> bVI
+                flatSix = true;
+            }
+        if (c == original && n > 1)
+            c[(size_t) (n - 1)] = make (root (original[0]) + 1, 2);
+        add ("Chromatic", c);
+    }
+    return out;
 }
 
 void GrooveEngine::flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out)

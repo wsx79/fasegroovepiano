@@ -106,6 +106,7 @@ Con *Play mode → Hold a key* mostra anche "HOLD" e la tonalità scelta col tas
 |---|---|
 | **Load a progression…** | 54 progressioni pronte in un **browser**: stili a sinistra, a destra le progressioni di quello stile con i loro **accordi nella tua tonalità**, e una casella di ricerca. Clicca una progressione per sentirla subito, doppio clic (o Invio) per chiudere. Clicca la **stella ☆** per tenerla nei **★ Preferiti**; **Recenti** elenca le ultime che hai provato. Stili: *Soulful e gospel*, *Circolo delle quinte*, *Deep house*, *Modali ed esotiche*, *Jackin' e funky*, *Cromatiche e prestiti*. Caricarne una imposta anche la scala consigliata. Le **Cromatiche e prestiti** usano accordi fuori scala come fanno i produttori dance (accordi maj9 che scivolano di un tono, la iv minore presa in prestito, bIII / bVI / bVII, dominanti come III7 o bVII7): si caricano come accordi liberi sul circolo, così li vedi e li puoi spostare. |
 | **DICE** | Progressione casuale ma musicale, coi movimenti tipici della soulful house (ii–V, IV–iii–ii, quinte discendenti). Mantiene la lunghezza attuale. |
+| **VARIANTI** (accanto al titolo del pannello) | Il **Chord Variation Lab**: alternative della tua progressione nella stessa tonalità e con lo stesso numero di accordi, così il ritmo resta: **Più soulful** (ii prima del V, una dominante secondaria), **Gospel** (la iv presa in prestito, settime di dominante), **Deep** (v minore, vi al posto del I che ritorna) e **Cromatica** (sostituzione di tritono bII7, bVI). **ASCOLTA** passa a una variante mentre il loop suona; **TIENI** o **ANNULLA**. |
 | **LEARN** (IMPARA) | Suona gli accordi sulla **tastiera MIDI**: ogni accordo che suoni (e rilasci) riempie lo slot successivo, partendo dallo slot 1, e la progressione cresce con lui. Gli accordi della scala diventano gradi, gli altri accordi liberi. Premi di nuovo per fermare. |
 | **Importa un file MIDI** | Trascina un file **.mid** in un punto qualsiasi della finestra (oppure usa *Importa un file MIDI…* in fondo al browser delle progressioni): il plug-in **stima la tonalità** (maggiore, dorica o minore), **gli accordi** e **quanto dura ognuno**, trova il loop (fino a 8 accordi) e lo carica come progressione. Una finestra ti mostra cosa ha trovato, le note fuori scala e l'**affidabilità** (alta, media, bassa). La batteria (canale 10) viene ignorata. È una **stima**: rivolti, fondamentali mancanti e note di passaggio possono ingannarla, quindi controlla gli accordi e correggili sul circolo, o annulla con ◀. |
 | **Length** | Quanti accordi (1–8). Quelli oltre la lunghezza appaiono spenti. |
@@ -186,7 +187,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 | **Swing** | 0% = dritto, 100% = shuffle terzinato. 15–35% è il classico feel house. |
 | **Gate** | Quanta parte dello spazio prima del colpo successivo riempie ogni nota, come la mano di un pianista: basso = stab corti, alto = quasi legato. Col valore di default (65%) uno stab che sta tre sedicesimi prima del successivo suona per circa due sedicesimi. Le note tenute con *=* nella griglia mantengono la loro durata. |
 | **Velocity** | Dinamica generale (default 118: un piano suonato piano suona spento). Gli accenti suonano a questo valore, i colpi normali poco sotto, le ghost note circa a metà. |
-| **Humanize** | Piccole variazioni di tempo e dinamica, per un feel suonato a mano. |
+| **Humanize** | Piccole variazioni di tempo e dinamica, per un feel suonato a mano. Sotto la manopola, **Feel** la divide tra le voci: *Uniforme*, *Pianista* (la nota in alto canta, appena in anticipo e più forte; basso fermo), *Basso rilassato* (il basso un filo dietro il tempo) o *Basso stretto* (basso preciso, accordi più liberi). **NUOVO FEEL** (sotto Gate) dà un'altra umanizzazione dello stesso groove; è ripetibile e si salva nel progetto. |
 | **Density** | Solo per i Random riff: da stab radi a chop di sedicesimi fitti. |
 
 **I groove: 142, divisi per genere.** Se inizi ora parti da **Piano house**: i classici loop di piano house (accordi senza fondamentale sui controtempi sincopati, sopra un basso in ottava). Il menu *Groove* si apre a colonne con un titolo per ogni
@@ -377,7 +378,7 @@ Nel riquadro **MIDI CLIP**:
      (calcolata in automatico, es. 4 accordi da 1 battuta con fill ogni 8 battute → 8 battute).
    - *1–32 bars*: lunghezza fissa.
    - *Song: intro > drop > outro*: un arrangiamento completo di 60 battute (vedi capitolo 6).
-2. **Notes**: *Chords + bass*, *Chords only* o *Bass only*.
+2. **Notes**: *Chords + bass*, *Chords only*, *Bass only* o **Tracce separate** (un solo file MIDI con una traccia Piano, una traccia Bass sul canale 2 e, se ci sono fill, una traccia Fills, più tempo e marker delle sezioni: quasi tutte le DAW lo aprono come tracce separate).
 3. **Trascina** il riquadro **DRAG MIDI TO DAW** sulla traccia o sulla timeline della DAW.
    In alternativa **Save .mid…**: *Salva questa clip come .mid…* salva il file dove vuoi, e
    **Salva tutte le parti in una cartella…** scrive sei file in un colpo: il loop e il brano intero,
@@ -432,8 +433,9 @@ Due modi di usarla:
   sezioni, visibili nella timeline della maggior parte delle DAW.
 - **BRANO** (in alto a destra nel pannello MIDI clip) apre l'**arrangiamento del brano**: le
   battute di ogni sezione (da 2 a 32, o **-** per toglierla), **NUOVA VARIAZIONE** per rigenerare
-  il groove di **una sola sezione** (per esempio un Drop diverso) mentre le altre restano, e
-  **ORIGINALE** per tornare indietro. L'arrangiamento vale per *Lunghezza clip → Brano*, per la
+  il groove di **una sola sezione** (per esempio un Drop diverso) mentre le altre restano,
+  **ORIGINALE** per tornare indietro, e il **fill** che chiude ogni sezione (come impostato nel
+  pannello Groove, nessuno, o uno stile a scelta: lo senti mentre quella *Sezione del brano* gira). L'arrangiamento vale per *Lunghezza clip → Brano*, per la
   *Sezione del brano* mentre suoni e per **SALVA OGNI SEZIONE IN .MID…**, che scrive un file MIDI
   per sezione (con la parte scelta in *Note*) da mettere su clip separate. Si salva nel progetto.
 - **Automazione:** ogni manopola, menu e interruttore è un parametro della DAW, quindi puoi

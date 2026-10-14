@@ -11,6 +11,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Done
 
+- v1.24.0: Chord Variation Lab, humanize per voice, a fill per song section, separate-track MIDI export.
 - v1.23.0: Musical DNA (variations by intention).
 - v1.22.0: groove morph, song arrangement with per-section variations and one .mid per section.
 - v1.21.0: Voicing Coach (A/B comparison of two voicings).

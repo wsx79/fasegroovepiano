@@ -77,6 +77,7 @@ struct ArrangementPart
     Section section;
     int bars;
     std::uint32_t variation = 0;   // regenerated on its own (0: the groove as it is)
+    int endFill = -1;              // fill on its last bar: -1 as set in the Groove panel, -2 none, else a fill style
 };
 
 /** Intro 8 | Main 16 | Break 8 | Build-up 4 | Drop 16 | Outro 8 */

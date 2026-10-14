@@ -6,6 +6,24 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.24.0] - 2026-10-14
+
+### Added
+- **Chord Variation Lab** (**VARIANTS** in the Progression panel): more soulful, gospel, deep
+  and chromatic versions of your progression, same key and length (the rhythm stays); HEAR each
+  while the loop plays, KEEP or CANCEL.
+- **Humanize per voice:** *Feel* under the Humanize knob (Even, Pianist with a singing top note,
+  Laid-back bass, Tight bass) and **NEW FEEL** for another repeatable humanization (saved with
+  the project).
+- **A fill per song section** in **SONG**: as set, none, or any fill style on the section's last
+  bar; you hear it while that section loops.
+- **Separate tracks** in *Notes*: one MIDI file with Piano, Bass (channel 2) and Fills tracks,
+  tempo and section markers.
+
+### Fixed
+- Some texts of the windows added since v1.18 (browsers, Voicing Coach, SONG, MORPH, DNA) stayed
+  in English after changing the language.
+
 ## [1.23.1] - 2026-10-14
 
 ### Fixed

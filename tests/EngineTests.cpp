@@ -1170,6 +1170,73 @@ static void testHarmonyAnalyzerEdgeCases()
       CHECK (a.confidence > 0.8); }
 }
 
+static void testVariationsHumanizeFills()
+{
+    // Chord Variation Lab on I - vi - IV - V in C.
+    GrooveSettings s;
+    s.keyRoot = 0; s.scale = 0; s.extension = Extension::triad;
+    s.progressionLength = 4;
+    s.progression = { 0, 5, 3, 4, 0, 0, 0, 0 };
+    CHECK ((GrooveEngine::progressionCodes (s) == std::vector<int> { 0, 21, 5, 7 }));
+    const auto variants = GrooveEngine::progressionVariants (s);
+    CHECK (variants.size() == 4);
+    auto find = [&] (const std::string& name)
+    {
+        for (const auto& v : variants) if (name == v.name) return v.codes;
+        return std::vector<int> {};
+    };
+    CHECK ((find ("More soulful") == std::vector<int> { 0, 21, 14, 7 }));   // I vi ii V
+    CHECK ((find ("Gospel") == std::vector<int> { 0, 21, 17, 31 }));        // I vi iv V7
+    CHECK ((find ("Deep") == std::vector<int> { 0, 21, 5, 19 }));           // I vi IV v
+    CHECK ((find ("Chromatic") == std::vector<int> { 0, 21, 8, 25 }));      // I vi bVI bII7
+    for (const auto& v : variants) CHECK (v.codes.size() == 4);             // same length: the rhythm stays
+
+    // Minor key and a one-chord vamp still give alternatives.
+    s.scale = 2; s.progression = { 0, 5, 2, 6, 0, 0, 0, 0 };
+    CHECK (GrooveEngine::progressionVariants (s).size() >= 3);
+    s.progressionLength = 1;
+    for (const auto& v : GrooveEngine::progressionVariants (s)) CHECK (v.codes.size() == 1);
+
+    // Humanize per voice: Even keeps the old timing; Pianist plays the top note early;
+    // a new seed gives another (repeatable) feel.
+    auto render = [] (const GrooveSettings& g)
+    {
+        GrooveEngine e;
+        std::vector<NoteEvent> ev;
+        e.render (0.0, 16.0, g, ev);
+        e.allNotesOff (16.0, ev);
+        return ev;
+    };
+    GrooveSettings h;
+    h.pattern = 3; h.humanize = 0.6f; h.bass = BassMode::root;
+    const auto even = render (h), evenAgain = render (h);
+    CHECK (even.size() == evenAgain.size());
+    for (size_t i = 0; i < std::min (even.size(), evenAgain.size()); ++i) CHECK (even[i].ppq == evenAgain[i].ppq);
+    h.humanizeSeed = 77;
+    const auto other = render (h);
+    bool differs = false;
+    for (size_t i = 0; i < std::min (even.size(), other.size()); ++i) differs = differs || even[i].ppq != other[i].ppq;
+    CHECK (differs);
+    h.humanizeSeed = 0; h.humanizeStyle = 3;   // tight bass
+    double bassJitterTight = 0.0, bassJitterEven = 0.0;
+    for (const auto& e : render (h)) if (e.isNoteOn() && e.part == Part::bass) bassJitterTight += std::abs (e.ppq * 4.0 - std::round (e.ppq * 4.0));
+    for (const auto& e : even)       if (e.isNoteOn() && e.part == Part::bass) bassJitterEven  += std::abs (e.ppq * 4.0 - std::round (e.ppq * 4.0));
+    CHECK (bassJitterTight < bassJitterEven);
+
+    // Fills are marked, and a song section can have its own fill on its last bar only.
+    GrooveSettings f;
+    f.pattern = 3; f.fillEveryBars = 2; f.humanize = 0.0f;
+    int fillNotes = 0;
+    for (const auto& e : render (f)) if (e.isNoteOn() && e.part == Part::fill) ++fillNotes;
+    CHECK (fillNotes > 0);
+    f.fillEveryBars = 0;
+    std::vector<ArrangementPart> parts { { Section::main, 4, 0, (int) FillStyle::chordRoll }, { Section::drop, 4, 0, -2 } };
+    double firstFill = 1.0e9, lastFill = -1.0;
+    for (const auto& e : GrooveEngine::renderArrangement (f, parts))
+        if (e.isNoteOn() && e.part == Part::fill) { firstFill = std::min (firstFill, e.ppq); lastFill = std::max (lastFill, e.ppq); }
+    CHECK (firstFill >= 12.0 && lastFill < 16.0);   // only in bar 4 of the first section, none in the drop
+}
+
 int main()
 {
     testChordNames();
@@ -1199,6 +1266,7 @@ int main()
     testVoicingCoach();
     testMorphAndSections();
     testMusicalDna();
+    testVariationsHumanizeFills();
 
     if (failures == 0)
         std::printf ("All engine tests passed.\n");

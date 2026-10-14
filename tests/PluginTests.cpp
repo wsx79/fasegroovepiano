@@ -481,6 +481,80 @@ namespace
     }
 
     //==============================================================================
+    void testV124()
+    {
+        // Chord Variation Lab: a variant replaces the chords, not the length or the key.
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::key, 0.0f);
+        p.setParameterFromUI (ParamIDs::scale, 0.0f);
+        p.setParameterFromUI (ParamIDs::progLength, 4.0f);
+        for (int i = 0; i < 4; ++i)
+            p.setParameterFromUI (ParamIDs::slot (i), (float) (std::array<int, 4> { 0, 5, 3, 4 }[(size_t) i]));
+        const auto variants = sgk::GrooveEngine::progressionVariants (p.currentSettings());
+        CHECK (! variants.empty());
+        for (const auto& v : variants)
+        {
+            p.applyProgressionCodes (v.codes);
+            const auto s = p.currentSettings();
+            CHECK (s.progressionLength == 4 && s.keyRoot == 0 && s.scale == 0);
+            CHECK (sgk::GrooveEngine::progressionCodes (s) == v.codes);   // exactly the chords of the variant
+        }
+
+        // Humanize style and NEW FEEL are parameters (saved, automatable).
+        const float seed = value (p, ParamIDs::humanizeSeed);
+        p.newFeel();
+        CHECK (value (p, ParamIDs::humanizeSeed) != seed);
+        p.setParameterFromUI (ParamIDs::humanizeStyle, 1.0f);
+        CHECK (p.currentSettings().humanizeStyle == 1);
+
+        // A section's own fill: saved, and heard while that section plays.
+        p.setSongFill (4, (int) sgk::FillStyle::chordRoll);   // Drop
+        p.setSongFill (1, -2);                                // Main: no fill
+        juce::MemoryBlock data;
+        p.getStateInformation (data);
+        FaseGroovePianoProcessor q;
+        q.setStateInformation (data.getData(), (int) data.getSize());
+        CHECK (q.songArrangementParts()[4].endFill == (int) sgk::FillStyle::chordRoll);
+        CHECK (q.songArrangementParts()[1].endFill == -2);
+        q.setParameterFromUI (ParamIDs::section, (float) sgk::Section::drop);
+        CHECK (q.currentSettings().fillStyle == sgk::FillStyle::chordRoll && q.currentSettings().fillEveryBars > 0);
+        q.setParameterFromUI (ParamIDs::section, (float) sgk::Section::main);
+        q.setParameterFromUI (ParamIDs::fills, 2.0f);
+        CHECK (q.currentSettings().fillEveryBars == 0);
+
+        // Separate tracks: one file, a conductor track, then Piano (ch 1), Bass (ch 2) and Fills.
+        q.setParameterFromUI (ParamIDs::section, (float) sgk::Section::drop);
+        q.setParameterFromUI (ParamIDs::fills, 1.0f);
+        const auto file = q.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::tracks);
+        juce::FileInputStream in (file);
+        juce::MidiFile mf;
+        CHECK (in.openedOk() && mf.readFrom (in));
+        CHECK (mf.getNumTracks() == 4);
+        auto channelsOf = [&mf] (int track, int& ch1, int& ch2, juce::String& name)
+        {
+            ch1 = ch2 = 0;
+            for (auto* ev : *mf.getTrack (track))
+            {
+                if (ev->message.isTrackNameEvent()) name = ev->message.getTextFromTextMetaEvent();
+                if (ev->message.isNoteOn()) (ev->message.getChannel() == 2 ? ch2 : ch1)++;
+            }
+        };
+        int a1, a2, b1, b2, f1, f2, h1, h2;
+        juce::String pianoName, bassName, fillName, headName;
+        channelsOf (0, h1, h2, headName);
+        channelsOf (1, a1, a2, pianoName);
+        channelsOf (2, b1, b2, bassName);
+        if (mf.getNumTracks() == 4) channelsOf (3, f1, f2, fillName);
+        CHECK (h1 + h2 == 0);
+        CHECK (pianoName == "Piano" && a1 > 0 && a2 == 0);
+        CHECK (bassName == "Bass" && b2 > 0 && b1 == 0);
+        CHECK (fillName == "Fills" && f1 > 0);
+        // The parts add up to the single-track clip.
+        const auto all = readClip (q.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::all), false);
+        CHECK (all.noteOns == a1 + b2 + f1);
+    }
+
+    //==============================================================================
     void testUpdateSwap()
     {
         CHECK (Updater::isNewer ("v1.18.1", "1.18.0"));
@@ -559,6 +633,7 @@ int main()
     testBassLineControls();
     testMorphAndSong();
     testMusicalDna();
+    testV124();
     testUpdateSwap();
 
     if (failures == 0)

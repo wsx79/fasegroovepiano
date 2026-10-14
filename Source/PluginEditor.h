@@ -325,13 +325,14 @@ public:
     void mouseUp (const juce::MouseEvent&) override;
 
 private:
-    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (760.0f, 560.0f); }
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (940.0f, 560.0f); }
     juce::Rectangle<int> rowArea (int part) const;
     void refresh();
 
     FaseGroovePianoProcessor& processor;
     juce::OwnedArray<juce::ComboBox> barBoxes;
     juce::OwnedArray<juce::TextButton> newButtons, originalButtons;
+    juce::OwnedArray<juce::ComboBox> fillBoxes;
     juce::TextButton saveButton, closeButton;
 };
 
@@ -357,6 +358,34 @@ private:
     juce::Slider amount;
     juce::TextButton keepButton, cancelButton;
     juce::String before, fromName;
+};
+
+/** Chord Variation Lab: alternatives of your progression (same length, so the rhythm stays) to
+    hear one after the other while the loop plays; KEEP the one you like or CANCEL. */
+class ChordLab : public juce::Component
+{
+public:
+    explicit ChordLab (FaseGroovePianoProcessor&);
+
+    void show();
+    void refreshText();
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
+
+private:
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (820.0f, 430.0f).withY (110.0f); }
+    juce::Rectangle<int> rowArea (int row) const;
+    juce::String namesOf (const std::vector<int>& codes) const;
+    void hear (int row);
+
+    FaseGroovePianoProcessor& processor;
+    std::vector<std::pair<juce::String, std::vector<int>>> rows;   // Original first
+    juce::OwnedArray<juce::TextButton> hearButtons;
+    juce::TextButton keepButton, cancelButton;
+    juce::String before;
+    int playing = 0;
 };
 
 /** Musical DNA: one click = one step towards an intention (more soulful, funkier...). */
@@ -463,7 +492,9 @@ private:
     SongOverlay songOverlay { processor };
     MorphOverlay morphOverlay { processor };
     DnaOverlay dnaOverlay { processor };
-    juce::TextButton songButton { "SONG" }, morphButton { "MORPH" }, dnaButton { "DNA" };
+    ChordLab chordLab { processor };
+    juce::TextButton songButton { "SONG" }, morphButton { "MORPH" }, dnaButton { "DNA" }, variantsButton { "VARIANTS" };
+    juce::TextButton feelStyleButton, newFeelButton;
     juce::TextButton coachButton { "A/B" };
     juce::ArrowButton groovePrev { "previous groove", 0.5f, Palette::accent }, grooveNext { "next groove", 0.0f, Palette::accent };
     void stepGroove (int direction);

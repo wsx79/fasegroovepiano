@@ -44,6 +44,8 @@ namespace ParamIDs
     inline constexpr const char* grooveBars  = "grooveBars";
     inline constexpr const char* movement    = "movement";
     inline constexpr const char* strumDir    = "strumDir";
+    inline constexpr const char* humanizeStyle = "humanizeStyle";
+    inline constexpr const char* humanizeSeed  = "humanizeSeed";
     inline constexpr const char* chorus      = "chorus";
     inline constexpr const char* pump        = "pump";
     inline constexpr const char* riffSeed    = "riffSeed";
@@ -190,7 +192,7 @@ public:
     bool freeCircle = false;                         // circle of fifths accepts any chord (saved with the project)
 
     //==============================================================================
-    enum class ClipPart { all = 0, chords, bass };
+    enum class ClipPart { all = 0, chords, bass, tracks };   // tracks: one MIDI file, piano / bass / fills on separate tracks
 
     /** Pass as `bars` to export the whole song: intro, main, break, build-up, drop, outro. */
     static constexpr int songArrangement = -1;
@@ -203,6 +205,7 @@ public:
     static constexpr int numSongParts = 6;
     std::vector<sgk::ArrangementPart> songArrangementParts() const;
     void setSongBars (int part, int bars);
+    void setSongFill (int part, int fill);   // -1 as the Groove panel, -2 none, else a fill style (last bar of the section)
     void regenerateSongPart (int part);   // this section plays a new variation of the groove
     void resetSongPart (int part);        // back to the groove as it is
     void resetSong();
@@ -213,6 +216,12 @@ public:
     /** Musical DNA: one step towards an intention. The grid (with its feel) and the harmony can each
         be kept; locked parts always stay. */
     void applyIntention (int intention, bool keepRhythm, bool keepHarmony);
+
+    /** Chord Variation Lab: sets the progression to these chords (codes relative to the key, as
+        sgk::GrooveEngine::progressionCodes), keeping key, scale, length and rhythm. */
+    void applyProgressionCodes (const std::vector<int>& codes);
+    /** NEW FEEL: another humanization (repeatable: it is saved with the project). */
+    void newFeel();
 
     void beginMorph();
     void setMorph (int targetPattern, float amount);
@@ -249,6 +258,7 @@ private:
     std::array<bool, sgk::numSegments> segmentLocked {};
     std::array<std::atomic<int>, 6> songBars;                 // per song section (0 = left out)
     std::array<std::atomic<std::uint32_t>, 6> songVariation;  // 0 = the groove as it is
+    std::array<std::atomic<int>, 6> songFill;                 // see setSongFill
     sgk::GroovePattern morphSource;
     std::uint32_t morphSeed = 1;
     juce::MidiFile midiFromEvents (const std::vector<sgk::NoteEvent>&, double beats, const std::vector<sgk::GrooveEngine::Marker>*,

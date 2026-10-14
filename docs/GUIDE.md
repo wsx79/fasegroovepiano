@@ -104,6 +104,7 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 |---|---|
 | **Load a progression…** | 54 ready-made progressions in a **browser**: styles on the left, the progressions of that style on the right with their **chords in your key**, and a search box. Click one to hear it at once, double-click (or Enter) to close. Click the **☆ star** to keep it in **★ Favourites**; **Recent** lists the last ones you tried. Styles: *Soulful & Gospel*, *Circle of 5ths*, *Deep house*, *Modal & exotic*, *Jackin' & funky*, *Chromatic & borrowed*. Loading one also sets the recommended scale. The **Chromatic & borrowed** ones use chords from outside the scale, the way dance producers do (maj9 chords sliding by a tone, the borrowed minor iv, bIII / bVI / bVII, dominant chords like III7 or bVII7): they load as free chords on the circle, so you can see and move them. |
 | **DICE** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
+| **VARIANTS** (next to the panel title) | The **Chord Variation Lab**: alternatives of your progression in the same key and with the same number of chords, so the rhythm stays: **More soulful** (ii before V, a secondary dominant), **Gospel** (the borrowed iv, dominant 7ths), **Deep** (minor v, vi instead of a returning I) and **Chromatic** (tritone substitution bII7, bVI). **HEAR** switches to one while the loop plays; **KEEP** or **CANCEL**. |
 | **LEARN** | Play chords on your **MIDI keyboard**: each chord you play (and release) fills the next slot, starting from slot 1, and the progression grows with it. Chords of the scale become degrees, the others free chords. Press LEARN again to stop. |
 | **Import a MIDI file** | Drop a **.mid** file anywhere on the window (or use *Import a MIDI file…* at the bottom of the progression browser): the plug-in **estimates the key** (major, Dorian or minor), **the chords** and **how long each lasts**, finds the loop (up to 8 chords) and loads it as your progression. A window shows what it found, the notes outside the scale and a **reliability** (high, medium, low). Drums (channel 10) are ignored. It is an **estimate**: inversions, missing roots and passing notes can mislead it, so check the chords and fix them on the circle, or undo with ◀. |
 | **Length** | How many chords (1–8). Slots beyond the length are greyed out. |
@@ -181,7 +182,7 @@ Outer ring = major keys, inner ring = relative minors.
 | **Swing** | 0% = straight, 100% = triplet shuffle. 15–35% is the classic house feel. |
 | **Gate** | How much of the space before the next hit each note fills, like a pianist's hand: low = short stabs, high = almost legato. At the default 65% a stab three 16ths before the next one rings about two 16ths. Notes held with *=* in the grid keep their length. |
 | **Velocity** | Overall dynamics (default 118: a piano played softly sounds dull). Accents play at this value, normal hits just below, ghost notes about half. |
-| **Humanize** | Small timing and velocity variations for a hand-played feel. |
+| **Humanize** | Small timing and velocity variations for a hand-played feel. Under the knob, **Feel** shares it between the voices: *Even*, *Pianist* (the top note sings, a hair early and louder; steady bass), *Laid-back bass* (the bass a little behind the beat) or *Tight bass* (bass locked, chords looser). **NEW FEEL** (under Gate) gives another humanization of the same groove; it is repeatable and saved with the project. |
 | **Density** | Random riffs only: from sparse stabs to busy 16th-note chops. |
 
 **The grooves: 142, by genre.** New users: start from **Piano House**, the classic house piano loops (rootless chords on syncopated offbeats over an octave bass). The *Groove* menu opens in columns with one heading per genre;
@@ -368,7 +369,7 @@ In the **MIDI CLIP** panel:
      (computed automatically, e.g. 4 one-bar chords with fills every 8 bars → 8 bars).
    - *1–32 bars*: a fixed length.
    - *Song: intro > drop > outro*: a full 60-bar arrangement (see chapter 6).
-2. **Notes**: *Chords + bass*, *Chords only* or *Bass only*.
+2. **Notes**: *Chords + bass*, *Chords only*, *Bass only* or **Separate tracks** (one MIDI file with a Piano track, a Bass track on channel 2 and, if there are fills, a Fills track, plus tempo and section markers: most DAWs open it as separate tracks).
 3. **Drag** the **DRAG MIDI TO DAW** tile onto a track or the DAW timeline.
    Or use **Save .mid…**: *Save this clip as .mid…* saves the file wherever you want, and
    **Save all parts to a folder…** writes six files at once: the loop and the whole song, each as
@@ -422,7 +423,9 @@ Two ways to use it:
   visible in the timeline of most DAWs.
 - **SONG** (top right of the MIDI clip panel) opens the **song arrangement**: the bars of each
   section (2 to 32, or **-** to leave it out), **NEW VARIATION** to regenerate the groove of **one
-  section only** (for example a different Drop) while the others stay, and **ORIGINAL** to go back.
+  section only** (for example a different Drop) while the others stay, **ORIGINAL** to go back,
+  and the **fill** that closes each section (as set in the Groove panel, none, or any fill style:
+  you hear it while that *Song section* loops).
   The arrangement is used by *Clip length → Song*, by *Song section* while you play, and by
   **SAVE EACH SECTION AS .MID…**, which writes one MIDI file per section (with the *Notes* part you
   chose) to drop on separate clips. It is saved with the project.

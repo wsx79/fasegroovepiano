@@ -125,6 +125,10 @@ constexpr int numApproachStyles = 3;
 const char* approachStyleName (int style) noexcept;
 const char* bassModeName (int mode) noexcept;
 
+/** Humanize per voice: Even, Pianist (top note sings, a hair early), Laid-back bass, Tight bass. */
+constexpr int numHumanizeStyles = 4;
+const char* humanizeStyleName (int) noexcept;
+
 struct GrooveSettings
 {
     int keyRoot = 9;                       // A
@@ -165,13 +169,17 @@ struct GrooveSettings
 
     std::array<int, numSegments> segmentOrder { 0, 1, 2, 3 };   // A B C D
     std::uint32_t sectionVariation = 0;    // a song section regenerated on its own (0: the groove as it is)
+    int humanizeStyle = 0;                 // how Humanize is shared between the voices (see humanizeStyleName)
+    std::uint32_t humanizeSeed = 0;        // NEW FEEL: another, repeatable humanization
+    long long forcedFillBar = -1;          // a song section's own fill, on its last bar...
+    int forcedFillStyle = -1;              // ...in this style (-2: no fill there)
 
     // Used when pattern == userPatternIndex(): the hand-edited grid.
     std::array<char, userPatternLength> userRight {};
     std::array<char, userPatternLength> userLeft {};
 };
 
-enum class Part { chords = 0, bass = 1 };
+enum class Part { chords = 0, bass = 1, fill = 2 };   // fill: the right hand during a fill (exported on its own track)
 
 struct NoteEvent
 {
@@ -248,6 +256,17 @@ public:
         std::vector<std::string> names;
     };
     static VoicingReport voicingReport (const GrooveSettings& s);
+
+    /** How much of Humanize each voice gets (timing, velocity), and the pianist's singing top note. */
+    struct HumanizeVoices { double chordTime, chordVel, topLead, topAccent, bassTime, bassVel, bassLate; };
+    static HumanizeVoices humanizeVoices (int style) noexcept;
+
+    /** Chord Variation Lab: the progression as free-chord codes (relative to the key), and
+        alternatives of it with the same number of chords (so the rhythm stays): more soulful,
+        gospel, deep, chromatic. */
+    struct ProgressionVariant { const char* name; std::vector<int> codes; };
+    static std::vector<int> progressionCodes (const GrooveSettings& s);
+    static std::vector<ProgressionVariant> progressionVariants (const GrooveSettings& s);
 
     /** Chord (and its voicing) for every slot of the progression, voice-led in order. */
     static void voiceProgression (const GrooveSettings& s,

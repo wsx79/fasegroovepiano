@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v1.24.0: Chord Variation Lab, humanize per voce, un fill per sezione, export MIDI su tracce separate.
 - v1.23.0: Musical DNA (variazioni per intenzione).
 - v1.22.0: morphing del groove, arrangiamento con variazioni per sezione e un .mid per sezione.
 - v1.21.0: Voicing Coach (confronto A/B di due voicing).
