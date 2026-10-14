@@ -1322,6 +1322,231 @@ void GrooveBrowser::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+VoicingCoach::VoicingCoach (FaseGroovePianoProcessor& p) : processor (p)
+{
+    for (auto* box : { &boxA, &boxB })
+    {
+        for (int i = 0; i < sgk::numVoicings; ++i)
+            box->addItem (sgk::voicingName (i), i + 1);
+        box->onChange = [this] { update(); };
+        addAndMakeVisible (box);
+    }
+
+    for (auto* b : { &hearA, &hearB })
+    {
+        b->setClickingTogglesState (false);
+        b->setColour (juce::TextButton::buttonColourId, Palette::background);
+        b->setColour (juce::TextButton::buttonOnColourId, Palette::accent);
+        b->setColour (juce::TextButton::textColourOffId, Palette::text);
+        b->setColour (juce::TextButton::textColourOnId, Palette::background);
+        addAndMakeVisible (b);
+    }
+    hearA.onClick = [this] { hear (0); };
+    hearB.onClick = [this] { hear (1); };
+
+    closeButton.onClick = [this] { setVisible (false); };
+    addAndMakeVisible (closeButton);
+    refreshText();
+}
+
+void VoicingCoach::refreshText()
+{
+    for (auto* box : { &boxA, &boxB })
+    {
+        const int selected = box->getSelectedId();
+        for (int i = 0; i < sgk::numVoicings; ++i)
+            box->changeItemText (i + 1, tr (sgk::voicingName (i)));
+        box->setSelectedId (selected, juce::dontSendNotification);
+    }
+    hearA.setButtonText (tr ("HEAR A"));
+    hearB.setButtonText (tr ("HEAR B"));
+    closeButton.setButtonText (tr ("CLOSE"));
+    repaint();
+}
+
+void VoicingCoach::show()
+{
+    // A = the voicing you use now, B = a different one worth comparing.
+    const int current = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::voicing)->load());
+    const int other = current == (int) sgk::Voicing::rootless ? (int) sgk::Voicing::drop2 : (int) sgk::Voicing::rootless;
+    boxA.setSelectedId (current + 1, juce::dontSendNotification);
+    boxB.setSelectedId (other + 1, juce::dontSendNotification);
+    refreshText();
+    update();
+    setVisible (true);
+    toFront (true);
+}
+
+void VoicingCoach::update()
+{
+    auto s = processor.currentSettings();
+    s.voicing = (sgk::Voicing) juce::jlimit (0, sgk::numVoicings - 1, boxA.getSelectedId() - 1);
+    reportA = sgk::GrooveEngine::voicingReport (s);
+    s.voicing = (sgk::Voicing) juce::jlimit (0, sgk::numVoicings - 1, boxB.getSelectedId() - 1);
+    reportB = sgk::GrooveEngine::voicingReport (s);
+
+    const int current = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::voicing)->load());
+    hearA.setToggleState (current == boxA.getSelectedId() - 1, juce::dontSendNotification);
+    hearB.setToggleState (current == boxB.getSelectedId() - 1 && ! hearA.getToggleState(), juce::dontSendNotification);
+    repaint();
+}
+
+void VoicingCoach::hear (int side)
+{
+    const int voicing = (side == 0 ? boxA : boxB).getSelectedId() - 1;
+    if (voicing >= 0)
+        processor.setParameterFromUI (ParamIDs::voicing, (float) voicing);   // only the voicing: the chords stay
+    update();
+}
+
+void VoicingCoach::mouseUp (const juce::MouseEvent& e)
+{
+    if (! card().contains (e.position))
+        setVisible (false);
+}
+
+juce::Rectangle<float> VoicingCoach::sideArea (int side) const
+{
+    auto inner = card().reduced (24.0f, 18.0f);
+    inner.removeFromTop (54.0f);    // title
+    inner.removeFromBottom (44.0f); // verdict
+    const float w = (inner.getWidth() - 20.0f) / 2.0f;
+    return side == 0 ? inner.removeFromLeft (w) : inner.removeFromRight (w);
+}
+
+void VoicingCoach::resized()
+{
+    auto inner = card().toNearestInt().reduced (24, 18);
+    closeButton.setBounds (inner.removeFromTop (44).removeFromRight (100).withSizeKeepingCentre (100, 30));
+
+    for (int side = 0; side < 2; ++side)
+    {
+        auto top = sideArea (side).toNearestInt().removeFromTop (32);
+        auto& box = side == 0 ? boxA : boxB;
+        auto& button = side == 0 ? hearA : hearB;
+        top.removeFromLeft (28);   // the "A" / "B" letter
+        button.setBounds (top.removeFromRight (110).reduced (0, 1));
+        top.removeFromRight (8);
+        box.setBounds (top.reduced (0, 1));
+    }
+}
+
+void VoicingCoach::paintSide (juce::Graphics& g, int side, const sgk::GrooveEngine::VoicingReport& r, int low, int high)
+{
+    auto area = sideArea (side);
+    const auto colour = side == 0 ? Palette::accent : Palette::accent2.brighter (0.25f);
+
+    g.setColour (colour);
+    g.setFont (font (22.0f, true));
+    g.drawText (side == 0 ? "A" : "B", area.removeFromTop (32.0f).removeFromLeft (24.0f), juce::Justification::centredLeft);
+    area.removeFromTop (8.0f);
+
+    auto stats = area.removeFromBottom (78.0f);
+    auto names = area.removeFromBottom (22.0f);
+    auto roll = area.reduced (0.0f, 4.0f);
+
+    g.setColour (Palette::background);
+    g.fillRoundedRectangle (roll, 8.0f);
+
+    // Pitch grid: a line on every C, labelled.
+    auto yOf = [&] (int note) { return roll.getBottom() - 8.0f - (roll.getHeight() - 16.0f) * (float) (note - low) / (float) juce::jmax (1, high - low); };
+    g.setFont (font (10.0f));
+    for (int n = low; n <= high; ++n)
+        if (n % 12 == 0)
+        {
+            g.setColour (Palette::panelEdge);
+            g.drawHorizontalLine (juce::roundToInt (yOf (n)), roll.getX() + 26.0f, roll.getRight() - 6.0f);
+            g.setColour (Palette::dim);
+            g.drawText ("C" + juce::String (n / 12 - 1), juce::Rectangle<float> (roll.getX() + 3.0f, yOf (n) - 7.0f, 24.0f, 14.0f), juce::Justification::centredLeft);
+        }
+
+    const int count = (int) r.chordNotes.size();
+    if (count == 0)
+        return;
+    const float colW = (roll.getWidth() - 34.0f) / (float) count;
+    juce::Path topLine;
+    for (int i = 0; i < count; ++i)
+    {
+        const float x = roll.getX() + 30.0f + colW * ((float) i + 0.5f);
+        const auto& notes = r.chordNotes[(size_t) i];
+        for (int k = 0; k < notes.size; ++k)
+        {
+            const bool top = k == notes.size - 1;
+            const float y = yOf (notes[k]);
+            g.setColour (top ? colour : colour.withAlpha (0.6f));
+            g.fillRoundedRectangle (juce::Rectangle<float> (x - colW * 0.28f, y - 3.5f, colW * 0.56f, 7.0f), 3.0f);
+            if (k > 0 && notes[k] - notes[k - 1] == 1)   // a semitone rub between neighbours
+            {
+                g.setColour (Palette::accent2);
+                g.drawRoundedRectangle (juce::Rectangle<float> (x - colW * 0.32f, y - 4.5f, colW * 0.64f, yOf (notes[k - 1]) - y + 9.0f), 3.0f, 1.2f);
+            }
+        }
+        if (notes.size > 0)
+        {
+            const juce::Point<float> p (x, yOf (notes.highest()));
+            if (i == 0) topLine.startNewSubPath (p); else topLine.lineTo (p);
+        }
+        g.setColour (Palette::text);
+        g.setFont (font (12.0f, true));
+        g.drawText (r.names[(size_t) i], juce::Rectangle<float> (x - colW * 0.5f, names.getY(), colW, names.getHeight()), juce::Justification::centred);
+    }
+    g.setColour (colour.withAlpha (0.8f));
+    g.strokePath (topLine, juce::PathStrokeType (1.6f));
+
+    auto noteName = [] (int n) { return juce::String (sgk::noteName (n)) + juce::String (n / 12 - 1); };
+    g.setColour (Palette::text);
+    g.setFont (font (13.0f));
+    auto line = [&] (const juce::String& text) { g.drawText (text, stats.removeFromTop (19.0f), juce::Justification::centredLeft); };
+    line (tr ("Range") + ": " + noteName (r.lowest) + " - " + noteName (r.highest) + "  (" + juce::String (r.highest - r.lowest) + " " + tr ("semitones") + ")");
+    line (tr ("Voices move") + ": " + juce::String (r.averageMove, 1) + " " + tr ("semitones per chord change"));
+    line (tr ("Biggest top-note leap") + ": " + juce::String (r.biggestTopLeap));
+    g.setColour (r.muddy > 0 || r.clashes > 0 ? Palette::accent2 : Palette::dim);
+    line (tr ("Muddy low notes") + ": " + juce::String (r.muddy) + "   " + tr ("Semitone rubs") + ": " + juce::String (r.clashes));
+}
+
+void VoicingCoach::paint (juce::Graphics& g)
+{
+    g.fillAll (juce::Colours::black.withAlpha (0.78f));
+
+    auto c = card();
+    g.setColour (Palette::panel);
+    g.fillRoundedRectangle (c, 16.0f);
+    g.setColour (Palette::accent.withAlpha (0.6f));
+    g.drawRoundedRectangle (c, 16.0f, 1.5f);
+
+    auto inner = c.reduced (24.0f, 18.0f);
+    auto title = inner.removeFromTop (44.0f);
+    g.setColour (Palette::accent);
+    g.setFont (font (20.0f, true));
+    g.drawText (Localisation::upper (tr ("Voicing Coach")), title.removeFromTop (26.0f), juce::Justification::centredLeft);
+    g.setColour (Palette::dim);
+    g.setFont (font (12.0f));
+    g.drawText (tr ("Two voicings of your progression: same chords, different notes. Press HEAR A or HEAR B while the loop plays."),
+                title, juce::Justification::centredLeft);
+
+    int low = juce::jmin (reportA.lowest, reportB.lowest) - 2, high = juce::jmax (reportA.highest, reportB.highest) + 2;
+    if (high - low < 24) { low -= (24 - (high - low)) / 2; high = low + 24; }
+    paintSide (g, 0, reportA, low, high);
+    paintSide (g, 1, reportB, low, high);
+
+    // The verdict, in words.
+    juce::StringArray verdict;
+    const double diff = reportA.averageMove - reportB.averageMove;
+    if (std::abs (diff) >= 0.4)
+        verdict.add ((diff > 0 ? juce::String ("B") : juce::String ("A")) + " " + tr ("is smoother: its voices move less."));
+    else
+        verdict.add (tr ("Both lead the voices about the same: choose by ear."));
+    if (reportA.muddy != reportB.muddy)
+        verdict.add ((reportA.muddy > reportB.muddy ? juce::String ("A") : juce::String ("B")) + " " + tr ("is muddier in the low register: raise the Register."));
+    const int spanA = reportA.highest - reportA.lowest, spanB = reportB.highest - reportB.lowest;
+    if (std::abs (spanA - spanB) >= 7)
+        verdict.add ((spanA < spanB ? juce::String ("A") : juce::String ("B")) + " " + tr ("is more compact (leaves room for vocals and bass)."));
+    g.setColour (Palette::text);
+    g.setFont (font (14.0f, true));
+    g.drawFittedText (verdict.joinIntoString ("   "), inner.removeFromBottom (36.0f).toNearestInt(), juce::Justification::centredLeft, 2);
+}
+
+//==============================================================================
 UpdateOverlay::UpdateOverlay()
 {
     notes.setMultiLine (true, true);
@@ -1482,6 +1707,11 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     presetBox.onPopup = [this] { grooveBrowser.show (GrooveBrowser::Mode::progressions, presetBox.getSelectedId() - 1); };
     grooveBrowser.onProgressionChosen = [this] (int preset) { presetBox.setSelectedId (preset + 1, juce::dontSendNotification); };
     grooveBrowser.onImportMidi = [this] { chooseMidiToImport(); };
+    addChildComponent (voicingCoach);
+    coachButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    coachButton.setColour (juce::TextButton::textColourOffId, Palette::accent);
+    coachButton.onClick = [this] { voicingCoach.show(); };
+    addAndMakeVisible (coachButton);
     addAndMakeVisible (presetBox);
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
@@ -1657,6 +1887,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         options.refreshText();
     updateOverlay.refreshText();
     grooveBrowser.refreshText();
+    voicingCoach.refreshText();
+    coachButton.setTooltip (tr ("Voicing Coach: compare two voicings of your progression"));
 
         if (result.status == Updater::Result::Status::ready)
         {
@@ -2775,6 +3007,7 @@ void FaseGroovePianoEditor::layoutFull()
     options.setBounds (0, 0, baseWidth, baseHeight);
     updateOverlay.setBounds (0, 0, baseWidth, baseHeight);
     grooveBrowser.setBounds (0, 0, baseWidth, baseHeight);
+    voicingCoach.setBounds (0, 0, baseWidth, baseHeight);
     {
         auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
         auto controls = inner.withSizeKeepingCentre (inner.getWidth(), 32);
@@ -2830,6 +3063,7 @@ void FaseGroovePianoEditor::layoutFull()
         inner.removeFromTop (22);
         split (row (inner, 44), key, scale, 80);
         split (row (inner, 44), extension, voicing, 125);
+        coachButton.setBounds (voicing.getRight() - 34, voicing.getY(), 34, 15);
         auto last = inner;
         auto leftCol = last.removeFromLeft (124);
         bass.setBounds (leftCol.removeFromTop (44));

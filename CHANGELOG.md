@@ -6,6 +6,15 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.21.0] - 2026-10-14
+
+### Added
+- **Voicing Coach** (the **A/B** button next to *Voicing*): two voicings of your progression side
+  by side, drawn note by note with the top line, plus range, voice movement per chord change,
+  biggest top-note leap, muddy low notes and semitone rubs. **HEAR A / HEAR B** switch between
+  them while the loop plays (the chords never change), and a short verdict says which is smoother
+  or more compact.
+
 ## [1.20.0] - 2026-10-14
 
 ### Added

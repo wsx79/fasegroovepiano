@@ -1427,6 +1427,62 @@ void GrooveEngine::collectBassLine (long long step, const GrooveSettings& s, con
     pending.push_back ({ t, note, std::clamp ((int) std::lround (v), 1, 127), len, false, Part::bass });
 }
 
+GrooveEngine::VoicingReport GrooveEngine::voicingReport (const GrooveSettings& s)
+{
+    VoicingReport r;
+    std::array<Chord, maxProgressionLength> chords;
+    std::array<VoicedChord, maxProgressionLength> voiced;
+    voiceProgression (s, chords, voiced);
+
+    const int len = std::clamp (s.progressionLength, 1, maxProgressionLength);
+    r.lowest = 127;
+    for (int i = 0; i < len; ++i)
+    {
+        NoteSet all;
+        for (int k = 0; k < voiced[(size_t) i].leftHand.size; ++k)  all.add (voiced[(size_t) i].leftHand[k]);
+        for (int k = 0; k < voiced[(size_t) i].rightHand.size; ++k) all.add (voiced[(size_t) i].rightHand[k]);
+        all.sort();
+        r.chordNotes.push_back (all);
+        r.names.push_back (chordName (chords[(size_t) i]));
+        if (all.size > 0)
+        {
+            r.lowest = std::min (r.lowest, all.lowest());
+            r.highest = std::max (r.highest, all.highest());
+        }
+        for (int k = 1; k < all.size; ++k)
+        {
+            const int gap = all[k] - all[k - 1];
+            if (gap == 1) ++r.clashes;
+            if (all[k] < 52 && gap < 5) ++r.muddy;
+        }
+    }
+    if (r.lowest > r.highest)
+        r.lowest = r.highest = 0;
+
+    // Voice movement: every note of the next chord goes to the nearest note of this one.
+    if (len > 1)
+    {
+        double total = 0.0;
+        int voices = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            const auto& a = voiced[(size_t) i].rightHand;
+            const auto& b = voiced[(size_t) ((i + 1) % len)].rightHand;
+            for (int k = 0; k < b.size; ++k)
+            {
+                int nearest = 128;
+                for (int j = 0; j < a.size; ++j)
+                    nearest = std::min (nearest, std::abs (b[k] - a[j]));
+                if (nearest < 128) { total += nearest; ++voices; }
+            }
+            if (a.size > 0 && b.size > 0)
+                r.biggestTopLeap = std::max (r.biggestTopLeap, std::abs (b.highest() - a.highest()));
+        }
+        r.averageMove = voices > 0 ? total / voices : 0.0;
+    }
+    return r;
+}
+
 void GrooveEngine::flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out)
 {
     scratch.clear();

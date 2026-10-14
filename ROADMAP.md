@@ -7,11 +7,11 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Next release
 
-- Voicing Coach: A/B comparison of two voicings of the same chord, range and leaps at a glance.
 - Groove morphing from groove A to groove B (locked parts stay), then per-section regeneration.
 
 ## Done
 
+- v1.21.0: Voicing Coach (A/B comparison of two voicings).
 - v1.20.0: bass line library (disco, funky, house, soulful).
 - v1.19.0: MIDI analyzer (drop a .mid), favourites and recent in the browsers.
 - v1.18.0: groove and progression browsers, SOLO PIANO / SOLO BASS, smarter updates (setup or portable).

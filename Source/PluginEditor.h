@@ -283,6 +283,33 @@ private:
     bool quiet = false;   // selecting without playing (when the browser opens)
 };
 
+/** Voicing Coach: two voicings of your progression side by side (the notes of every chord, the
+    top line, range and how much the voices move), and HEAR A / HEAR B to switch while it plays. */
+class VoicingCoach : public juce::Component
+{
+public:
+    explicit VoicingCoach (FaseGroovePianoProcessor&);
+
+    void show();
+    void refreshText();
+    void update();   // recompute (the progression or the register may have changed)
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
+
+private:
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (980.0f, 640.0f); }
+    juce::Rectangle<float> sideArea (int side) const;
+    void hear (int side);
+    void paintSide (juce::Graphics&, int side, const sgk::GrooveEngine::VoicingReport&, int low, int high);
+
+    FaseGroovePianoProcessor& processor;
+    juce::ComboBox boxA, boxB;
+    juce::TextButton hearA, hearB, closeButton;
+    sgk::GrooveEngine::VoicingReport reportA, reportB;
+};
+
 /** "A new version is ready": what's new (the changelog) and the user confirms the install. */
 class UpdateOverlay : public juce::Component
 {
@@ -360,6 +387,8 @@ private:
     void afterReset();
     OptionsOverlay options;
     GrooveBrowser grooveBrowser { processor };
+    VoicingCoach voicingCoach { processor };
+    juce::TextButton coachButton { "A/B" };
     juce::ArrowButton groovePrev { "previous groove", 0.5f, Palette::accent }, grooveNext { "next groove", 0.0f, Palette::accent };
     void stepGroove (int direction);
     UpdateOverlay updateOverlay;

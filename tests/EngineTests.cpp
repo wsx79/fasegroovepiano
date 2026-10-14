@@ -985,6 +985,32 @@ static void testBassLines()
     }
 }
 
+static void testVoicingCoach()
+{
+    GrooveSettings s;
+    s.progressionLength = 4;
+    s.progression = { 5, 3, 0, 4, 0, 0, 0, 0 };
+    s.extension = Extension::ninth;
+
+    s.voicing = Voicing::close;
+    const auto close = GrooveEngine::voicingReport (s);
+    s.voicing = Voicing::wide;
+    const auto wide = GrooveEngine::voicingReport (s);
+    s.voicing = Voicing::rootless;
+    const auto rootless = GrooveEngine::voicingReport (s);
+
+    CHECK (close.chordNotes.size() == 4 && close.names.size() == 4);
+    CHECK (close.highest - close.lowest < wide.highest - wide.lowest);   // two hands span more
+    CHECK (rootless.muddy == 0);
+    CHECK (close.averageMove >= 0.0 && close.averageMove < 6.0);
+    CHECK (rootless.biggestTopLeap <= 7);   // the top line stays smooth
+    for (const auto& notes : wide.chordNotes)
+        CHECK (notes.size >= 4);
+
+    // Only the voicing changes, never the chords.
+    CHECK (close.names == wide.names);
+}
+
 int main()
 {
     testChordNames();
@@ -1010,6 +1036,7 @@ int main()
     testDancePack();
     testHarmonyAnalyzer();
     testBassLines();
+    testVoicingCoach();
 
     if (failures == 0)
         std::printf ("All engine tests passed.\n");

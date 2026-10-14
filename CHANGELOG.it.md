@@ -6,6 +6,15 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.21.0] - 2026-10-14
+
+### Aggiunto
+- **Voicing Coach** (il pulsante **A/B** accanto a *Voicing*): due voicing della tua progressione
+  affiancati, disegnati nota per nota con la linea in alto, più estensione, movimento delle voci a
+  ogni cambio d'accordo, salto più grande della nota in alto, note basse impastate e semitoni
+  stridenti. **ASCOLTA A / ASCOLTA B** passano dall'uno all'altro mentre il loop suona (gli accordi
+  non cambiano mai), e un breve giudizio dice quale è più morbido o più compatto.
+
 ## [1.20.0] - 2026-10-14
 
 ### Aggiunto

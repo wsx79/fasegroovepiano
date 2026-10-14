@@ -235,6 +235,19 @@ public:
                                         const std::array<Chord, maxProgressionLength>& chords,
                                         const std::array<VoicedChord, maxProgressionLength>& voiced) noexcept;
 
+    /** Voicing Coach: how a voicing behaves over the whole progression. */
+    struct VoicingReport
+    {
+        int lowest = 0, highest = 0;      // the range used (both hands)
+        double averageMove = 0.0;         // semitones each voice moves from chord to chord (loop included)
+        int biggestTopLeap = 0;           // the largest jump of the top note (the melody you hear)
+        int muddy = 0;                    // close intervals (under a 4th) below E3: they sound muddy
+        int clashes = 0;                  // semitones between neighbouring voices
+        std::vector<NoteSet> chordNotes;  // per chord, both hands, sorted
+        std::vector<std::string> names;
+    };
+    static VoicingReport voicingReport (const GrooveSettings& s);
+
     /** Chord (and its voicing) for every slot of the progression, voice-led in order. */
     static void voiceProgression (const GrooveSettings& s,
                                   std::array<Chord, maxProgressionLength>& chords,
