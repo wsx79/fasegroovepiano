@@ -6,6 +6,19 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.23.1] - 2026-10-14
+
+### Corretto
+- **Preset danneggiati:** un file di preset danneggiato o che non è di Fase Groove Piano non viene
+  più dato per caricato; non cambia niente e un messaggio lo dice.
+- **Analizzatore MIDI:** ora legge bene una nota di pickup prima del loop, i rivolti (F/A è F, non
+  Am), gli stab corti sopra un basso tenuto, gli accordi sus4 e gli stab fondamentale + terza. La
+  finestra del risultato mostra l'**affidabilità** (alta, media, bassa).
+
+### Aggiunto
+- Test: file di preset danneggiati / estranei / vuoti, accordi sul canale 1 e basso sul canale 2
+  nel MIDI esportato, e dieci casi difficili per l'analizzatore MIDI.
+
 ## [1.23.0] - 2026-10-14
 
 ### Aggiunto

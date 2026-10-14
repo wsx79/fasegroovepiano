@@ -2667,7 +2667,12 @@ void FaseGroovePianoEditor::showPresetMenu()
             files[result - 1000].deleteFile();
         else if (result >= 100 && result - 100 < files.size())
         {
-            safe->processor.loadPreset (files[result - 100]);
+            if (! safe->processor.loadPreset (files[result - 100]))
+            {
+                juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Fase Groove Piano",
+                                                        tr ("This preset file is damaged or is not a Fase Groove Piano preset: nothing was changed."));
+                return;
+            }
             safe->afterRestore();
         }
     });
@@ -2744,6 +2749,8 @@ void FaseGroovePianoEditor::importMidi (const juce::File& file)
             outside.add (sgk::noteName (pc));
     if (! outside.isEmpty())
         text << " (" << outside.joinIntoString (", ") << ")";
+    text << "\n" << tr ("Reliability") << ": "
+         << (analysis.confidence >= 0.8 ? tr ("high") : analysis.confidence >= 0.6 ? tr ("medium") : tr ("low: check the chords"));
     text << "\n\n" << tr ("This is an estimate: inversions and passing notes can mislead it. Fix any chord on the circle, or undo with the arrow.");
 
     juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, file.getFileNameWithoutExtension(), text);

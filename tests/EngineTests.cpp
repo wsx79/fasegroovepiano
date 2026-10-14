@@ -1102,6 +1102,74 @@ static void testMusicalDna()
     }
 }
 
+static void testHarmonyAnalyzerEdgeCases()
+{
+    auto add = [] (std::vector<AnalyzedNote>& v, double t, double len, std::vector<int> notes)
+    {
+        for (int n : notes) v.push_back ({ t, t + len, n });
+    };
+    // Am - F - C - G (one bar each), read back as root + kind relative to the key found.
+    auto names = [] (const HarmonyAnalysis& a)
+    {
+        static const char* const pcs[12] { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" };
+        std::string out;
+        for (int c : a.chordCodes)
+            out += std::string (pcs[(a.keyRoot + c % 12) % 12]) + (c / 12 == 1 ? "m" : c / 12 == 2 ? "7" : "") + " ";
+        return out;
+    };
+    auto loop = [&] (std::vector<AnalyzedNote>& v, double offset, int reps)
+    {
+        for (int r = 0; r < reps; ++r)
+        {
+            const double t = offset + r * 16.0;
+            add (v, t, 3.5, { 45, 57, 60, 64 });  add (v, t + 4, 3.5, { 41, 57, 60, 65 });
+            add (v, t + 8, 3.5, { 48, 55, 60, 64 }); add (v, t + 12, 3.5, { 43, 55, 59, 62 });
+        }
+    };
+
+    { std::vector<AnalyzedNote> v; loop (v, 8.0, 2); CHECK (names (analyzeHarmony (v)) == "Am F C G "); }        // two bars of silence first
+    { std::vector<AnalyzedNote> v; v.push_back ({ 3.5, 4.0, 67 }); loop (v, 4.0, 2);
+      CHECK (names (analyzeHarmony (v)) == "Am F C G "); }                                                       // a pick-up note
+    { std::vector<AnalyzedNote> v; loop (v, 0.0, 3); for (double t = 44; t < 48; t += 0.25) v.push_back ({ t, t + 0.2, 67 + ((int) (t * 4)) % 5 });
+      CHECK (names (analyzeHarmony (v)) == "Am F C G "); }                                                       // a fill at the end
+    { std::vector<AnalyzedNote> v;                                                                              // inversions: Am/E F/A C/E G/D
+      for (int r = 0; r < 2; ++r) { const double t = r * 16.0; add (v, t, 3.5, { 52, 57, 60, 64 }); add (v, t + 4, 3.5, { 45, 53, 57, 60 });
+                                    add (v, t + 8, 3.5, { 52, 55, 60, 64 }); add (v, t + 12, 3.5, { 50, 55, 59, 62 }); }
+      CHECK (names (analyzeHarmony (v)) == "Am F C G "); }
+    { std::vector<AnalyzedNote> v;                                                                              // rootless stabs over a held bass
+      for (int r = 0; r < 2; ++r) { const double t = r * 16.0;
+          add (v, t, 3.5, { 45 });      add (v, t + 0.5, 1, { 60, 64, 67, 71 });
+          add (v, t + 4, 3.5, { 38 });  add (v, t + 4.5, 1, { 60, 64, 65, 69 });
+          add (v, t + 8, 3.5, { 43 });  add (v, t + 8.5, 1, { 59, 62, 65, 69 });
+          add (v, t + 12, 3.5, { 36 }); add (v, t + 12.5, 1, { 59, 62, 64, 67 }); }
+      CHECK (names (analyzeHarmony (v)) == "Am Dm G7 C "); }
+    { std::vector<AnalyzedNote> v;                                                                              // the bass moves an 8th early
+      for (int r = 0; r < 2; ++r) { const double t = r * 16.0;
+          add (v, t, 3, { 57, 60, 64 }); v.push_back ({ t, t + 3.5, 45 });
+          add (v, t + 4, 3.5, { 57, 60, 65 }); v.push_back ({ t + 3.5, t + 7.5, 41 });
+          add (v, t + 8, 3.5, { 55, 60, 64 }); v.push_back ({ t + 7.5, t + 11.5, 48 });
+          add (v, t + 12, 3.5, { 55, 59, 62 }); v.push_back ({ t + 11.5, t + 15.5, 43 }); }
+      CHECK (names (analyzeHarmony (v)) == "Am F C G "); }
+    { std::vector<AnalyzedNote> v;                                                                              // ii - V7(b9 #5) - I
+      for (int r = 0; r < 2; ++r) { const double t = r * 16.0;
+          add (v, t, 3.5, { 50, 60, 65, 69 }); add (v, t + 4, 3.5, { 43, 59, 63, 65, 68 }); add (v, t + 8, 7.5, { 48, 60, 64, 67, 71 }); }
+      const auto a = analyzeHarmony (v);
+      CHECK (names (a).rfind ("Dm G7 C", 0) == 0); }
+    { std::vector<AnalyzedNote> v;                                                                              // Gsus4 resolving: read as G, not Gm
+      for (int r = 0; r < 2; ++r) { const double t = r * 16.0;
+          add (v, t, 3.5, { 43, 55, 60, 62 }); add (v, t + 4, 3.5, { 43, 55, 59, 62 }); add (v, t + 8, 3.5, { 41, 57, 60, 65 }); add (v, t + 12, 3.5, { 48, 55, 60, 64 }); }
+      CHECK (names (analyzeHarmony (v)) == "G G F C "); }
+    { std::vector<AnalyzedNote> v;                                                                              // root + 3rd stabs (house dyads)
+      for (int r = 0; r < 4; ++r) add (v, r * 4.0, 1.0, { 38, 50, 62, 65 });
+      CHECK (names (analyzeHarmony (v)) == "Dm "); }
+    { std::vector<AnalyzedNote> v;                                                                              // chromatic: I bIII bVI bVII
+      for (int r = 0; r < 2; ++r) { const double t = r * 16.0;
+          add (v, t, 3.5, { 48, 60, 64, 67 }); add (v, t + 4, 3.5, { 51, 63, 67, 70 }); add (v, t + 8, 3.5, { 44, 60, 63, 68 }); add (v, t + 12, 3.5, { 46, 62, 65, 70 }); }
+      const auto a = analyzeHarmony (v);
+      CHECK (names (a) == "C Eb Ab Bb ");
+      CHECK (a.confidence > 0.8); }
+}
+
 int main()
 {
     testChordNames();
@@ -1126,6 +1194,7 @@ int main()
     testPatternsWellFormed();
     testDancePack();
     testHarmonyAnalyzer();
+    testHarmonyAnalyzerEdgeCases();
     testBassLines();
     testVoicingCoach();
     testMorphAndSections();

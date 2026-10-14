@@ -565,6 +565,17 @@ namespace
         { "Each click goes one step further. The chords never change, locked parts stay; undo with the arrow.", "Ogni clic fa un passo in più. Gli accordi non cambiano mai, le parti bloccate restano; annulla con la freccia.", "Cada clic da un paso más. Los acordes nunca cambian, las partes bloqueadas se quedan; deshaz con la flecha.", "Chaque clic va un pas plus loin. Les accords ne changent jamais, les parties verrouillées restent ; annulez avec la flèche.", "Jeder Klick geht einen Schritt weiter. Die Akkorde ändern sich nie, gesperrte Teile bleiben; rückgängig mit dem Pfeil.", "Cada clique vai um passo mais longe. Os acordes nunca mudam, as partes bloqueadas ficam; desfaça com a seta." },
         { "steps applied", "passi applicati", "pasos aplicados", "pas appliqués", "Schritte angewendet", "passos aplicados" },
         { "Musical DNA: variations by intention (more soulful, funkier, more minimal, more energy, more sophisticated)", "Musical DNA: variazioni per intenzione (più soulful, più funky, più minimale, più energia, più raffinato)", "Musical DNA: variaciones por intención (más soulful, más funky, más minimal, más energía, más sofisticado)", "Musical DNA : variations par intention (plus soulful, plus funky, plus minimal, plus d'énergie, plus raffiné)", "Musical DNA: Variationen nach Absicht (mehr Soul, funkiger, minimaler, mehr Energie, raffinierter)", "Musical DNA: variações por intenção (mais soulful, mais funky, mais minimal, mais energia, mais sofisticado)" },
+        // ---- v1.23.1 ----
+        { "This preset file is damaged or is not a Fase Groove Piano preset: nothing was changed.",
+          "Questo file di preset è danneggiato o non è un preset di Fase Groove Piano: non è stato cambiato niente.",
+          "Este archivo de preset está dañado o no es un preset de Fase Groove Piano: no se ha cambiado nada.",
+          "Ce fichier de preset est endommagé ou n'est pas un preset Fase Groove Piano : rien n'a été modifié.",
+          "Diese Preset-Datei ist beschädigt oder kein Fase-Groove-Piano-Preset: nichts wurde geändert.",
+          "Este arquivo de preset está danificado ou não é um preset do Fase Groove Piano: nada foi alterado." },
+        { "Reliability", "Affidabilità", "Fiabilidad", "Fiabilité", "Zuverlässigkeit", "Confiabilidade" },
+        { "high", "alta", "alta", "élevée", "hoch", "alta" },
+        { "medium", "media", "media", "moyenne", "mittel", "média" },
+        { "low: check the chords", "bassa: controlla gli accordi", "baja: revisa los acordes", "faible : vérifiez les accords", "niedrig: prüfe die Akkorde", "baixa: confira os acordes" },
         // ---- v1.15 updates ----
         { "Check for updates automatically (GitHub)", "Controlla gli aggiornamenti in automatico (GitHub)", "Buscar actualizaciones automáticamente (GitHub)",
           "Rechercher les mises à jour automatiquement (GitHub)", "Automatisch nach Updates suchen (GitHub)", "Procurar atualizações automaticamente (GitHub)" },

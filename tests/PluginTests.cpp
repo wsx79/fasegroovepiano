@@ -80,6 +80,44 @@ namespace
         CHECK (a.snapshot() == snap);
     }
 
+    void testPresetFiles()
+    {
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::key, 5.0f);
+        const auto before = stateXml (p);
+        const auto folder = juce::File::createTempFile ("fgp-presets");
+        folder.createDirectory();
+
+        // Damaged, foreign, empty: loadPreset says no and nothing changes.
+        const auto damaged = folder.getChildFile ("damaged.fgp");
+        damaged.replaceWithText ("VC2!garbage that is not a state");
+        const auto foreign = folder.getChildFile ("foreign.fgp");
+        {
+            juce::XmlElement other ("SomeOtherPlugin");
+            juce::MemoryBlock data;
+            juce::AudioProcessor::copyXmlToBinary (other, data);
+            foreign.replaceWithData (data.getData(), data.getSize());
+        }
+        const auto empty = folder.getChildFile ("empty.fgp");
+        empty.create();
+        for (const auto& f : { damaged, foreign, empty, folder.getChildFile ("missing.fgp") })
+        {
+            CHECK (! p.loadPreset (f));
+            CHECK (stateXml (p) == before);
+        }
+
+        // A good preset loads and reports it.
+        FaseGroovePianoProcessor other;
+        other.setParameterFromUI (ParamIDs::key, 2.0f);
+        juce::MemoryBlock data;
+        other.getStateInformation (data);
+        const auto good = folder.getChildFile ("good.fgp");
+        good.replaceWithData (data.getData(), data.getSize());
+        CHECK (p.loadPreset (good));
+        CHECK (juce::roundToInt (value (p, ParamIDs::key)) == 2);
+        folder.deleteRecursively();
+    }
+
     void testOldAndBrokenStates()
     {
         // A preset from an old version: only a few parameters, none of the newer properties.
@@ -131,7 +169,7 @@ namespace
     }
 
     //==============================================================================
-    struct ClipCheck { int noteOns = 0, unmatched = 0, markers = 0; double lastTick = 0.0; bool ordered = true, channelsOk = true; };
+    struct ClipCheck { int noteOns = 0, unmatched = 0, markers = 0, onChannel1 = 0, onChannel2 = 0; double lastTick = 0.0; bool ordered = true, channelsOk = true; };
 
     ClipCheck readClip (const juce::File& file, bool bassOnChannel2)
     {
@@ -157,6 +195,9 @@ namespace
             {
                 ++c.noteOns;
                 ++open[m.getChannel() * 128 + m.getNoteNumber()];
+                if (m.getChannel() == 1) ++c.onChannel1;
+                if (m.getChannel() == 2) ++c.onChannel2;
+                if (m.getChannel() > 2) c.channelsOk = false;
                 if (! bassOnChannel2 && m.getChannel() != 1) c.channelsOk = false;
             }
             else if (m.isNoteOff())
@@ -199,10 +240,21 @@ namespace
         CHECK (song.markers == 6);
         CHECK (song.lastTick <= 60.0 * ticksPerBar + 1.0);
 
-        // Bass on channel 2.
+        // Bass on channel 2: the chords are all on channel 1, the bass all on channel 2.
+        const auto chordsOnly = readClip (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::chords), false);
+        const auto bassOnly = readClip (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::bass), false);
+        CHECK (chordsOnly.noteOns > 0 && bassOnly.noteOns > 0);
+        CHECK (chordsOnly.onChannel1 == chordsOnly.noteOns && bassOnly.onChannel1 == bassOnly.noteOns);   // all on 1 by default
         p.setParameterFromUI (ParamIDs::bassChannel, 1.0f);
         const auto split = readClip (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::all), true);
-        CHECK (split.unmatched == 0);
+        CHECK (split.unmatched == 0 && split.channelsOk);
+        CHECK (split.onChannel1 == chordsOnly.noteOns);
+        CHECK (split.onChannel2 == bassOnly.noteOns);
+        const auto bassSplit = readClip (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::bass), true);
+        CHECK (bassSplit.onChannel2 == bassSplit.noteOns && bassSplit.onChannel1 == 0);
+        const auto chordSplit = readClip (p.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::chords), true);
+        CHECK (chordSplit.onChannel1 == chordSplit.noteOns && chordSplit.onChannel2 == 0);
+        p.setParameterFromUI (ParamIDs::bassChannel, 0.0f);
     }
 
     //==============================================================================
@@ -500,6 +552,7 @@ int main()
 
     testStateRoundTrip();
     testOldAndBrokenStates();
+    testPresetFiles();
     testMidiExport();
     testTransport();
     testMidiImport();

@@ -440,6 +440,11 @@ bool FaseGroovePianoProcessor::loadPreset (const juce::File& file)
     if (! file.loadFileAsData (data) || data.getSize() == 0)
         return false;
 
+    // Only a real Fase Groove Piano state counts: a damaged or foreign file changes nothing.
+    const auto xml = getXmlFromBinary (data.getData(), (int) data.getSize());
+    if (xml == nullptr || ! xml->hasTagName (apvts.state.getType()))
+        return false;
+
     // A preset is music, not window layout: keep the current size.
     const auto scale = editorScale;
     const auto shrink = shrinkWhileDragging;

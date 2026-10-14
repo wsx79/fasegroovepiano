@@ -48,6 +48,8 @@ namespace
                 }
                 for (int c : kind.colours)
                     used[(root + c) % 12] = true;
+                if (k == 0 && w[(size_t) ((root + 4) % 12)] <= 1.0e-9)
+                    used[(root + 5) % 12] = used[(root + 2) % 12] = true;   // sus4 / sus2: a major chord, suspended
 
                 for (int pc = 0; pc < 12; ++pc)
                     if (! used[pc])
@@ -55,12 +57,16 @@ namespace
 
                 if (k == 2 && w[(size_t) ((root + 10) % 12)] < 0.35 * w[(size_t) ((root + 4) % 12)])
                     score -= 0.3 * total;   // a dominant needs its b7
-                if (w[(size_t) ((root + kind.tones[1]) % 12)] <= 1.0e-9)
-                    score -= 0.5 * total;   // ... and every chord its 3rd (major or minor decides the chord)
+                const bool hasThird = w[(size_t) ((root + kind.tones[1]) % 12)] > 1.0e-9;
+                const bool hasFifth = w[(size_t) ((root + 7) % 12)] > 1.0e-9;
+                if (! hasThird)
+                    score -= (k == 1 ? 0.55 : 0.5) * total;   // every chord needs its 3rd; without it (sus) read it as major
                 if (w[(size_t) root] <= 1.0e-9)
                     score -= 0.4 * total;   // rootless shapes are possible, but rarer
+                if (w[(size_t) root] > 1.0e-9 && hasThird && hasFifth)
+                    score += 0.1 * total;   // a complete triad beats a half one over the same bass (F/A is F, not Am)
                 if (root == bassPc)
-                    score += 0.35 * total;  // the bass usually plays the root
+                    score += 0.25 * total;  // the bass usually plays the root
 
                 if (score > bestScore)
                 {
@@ -123,8 +129,30 @@ HarmonyAnalysis analyzeHarmony (const std::vector<AnalyzedNote>& notes, int beat
     if (notes.empty() || end <= 0.0)
         return result;
 
-    // Start on the first bar line that has notes (a clip may begin with silence).
-    const double origin = std::floor (std::max (0.0, start) / beatsPerBar) * beatsPerBar;
+    auto weightBetween = [&notes] (double a, double b)
+    {
+        double weight = 0.0;
+        for (const auto& n : notes)
+            if (const double overlap = std::min (b, n.end) - std::max (a, n.start); overlap > 0.0)
+                weight += std::sqrt (overlap);
+        return weight;
+    };
+
+    // Start on the first bar line that has notes (a clip may begin with silence), and skip a
+    // bar that only holds a pick-up (a few notes leading into the loop).
+    double origin = std::floor (std::max (0.0, start) / beatsPerBar) * beatsPerBar;
+    {
+        std::vector<double> bars;
+        for (double t = origin; t < end; t += beatsPerBar)
+            bars.push_back (weightBetween (t, t + beatsPerBar));
+        auto sorted = bars;
+        std::sort (sorted.begin(), sorted.end());
+        const double median = sorted.empty() ? 0.0 : sorted[sorted.size() / 2];
+        size_t skip = 0;
+        while (skip + 1 < bars.size() && bars[skip] < 0.25 * median)
+            ++skip;
+        origin += (double) skip * beatsPerBar;
+    }
     const double window = beatsPerBar / 2.0;   // half a bar
     const int numWindows = std::max (1, (int) std::ceil ((end - origin) / window - 1.0e-6));
     if (numWindows > 512)
@@ -169,7 +197,14 @@ HarmonyAnalysis analyzeHarmony (const std::vector<AnalyzedNote>& notes, int beat
             }
         for (int pc = 0; pc < 12; ++pc)
             totalChroma[(size_t) pc] += chroma[(size_t) pc];
-        chords[(size_t) i] = bestChord (chroma, bassNote < 128 ? pcOf (bassNote) : -1);
+
+        // Too little to name a chord (only a held bass or a single note): it goes on with the
+        // chord before it, like silence. Two notes (root + 3rd, a common house stab) are enough.
+        double windowTotal = 0.0;
+        for (double x : chroma) windowTotal += x;
+        int distinct = 0;
+        for (double x : chroma) distinct += x > 0.04 * windowTotal ? 1 : 0;
+        chords[(size_t) i] = distinct >= 2 ? bestChord (chroma, bassNote < 128 ? pcOf (bassNote) : -1) : WindowChord {};
     }
 
     // Silent half bars keep the chord before them.

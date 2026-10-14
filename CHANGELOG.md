@@ -6,6 +6,19 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.23.1] - 2026-10-14
+
+### Fixed
+- **Damaged presets:** a preset file that is damaged or not a Fase Groove Piano preset is no
+  longer reported as loaded; nothing changes and a message says so.
+- **MIDI analyzer:** a pick-up note before the loop, inversions (F/A is F, not Am), short stabs
+  over a held bass, sus4 chords and root + 3rd stabs are now read correctly. The result window
+  shows a **reliability** (high, medium, low).
+
+### Added
+- Tests: damaged / foreign / empty preset files, chords on channel 1 and bass on channel 2 in the
+  exported MIDI, and ten tricky cases for the MIDI analyzer.
+
 ## [1.23.0] - 2026-10-14
 
 ### Added
