@@ -1594,6 +1594,23 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         pattern.setGroups (std::move (groups));
     }
     pattern.box.onPopup = [this] { grooveBrowser.show(); };
+
+    // Bass menu: the modes that follow the groove's rhythm, then the bass lines by genre.
+    {
+        std::vector<Choice::Group> groups;
+        Choice::Group rhythm { "Follow the groove", {}, true };
+        for (int i = 0; i < sgk::numBassPatternModes; ++i)
+            rhythm.items.push_back (i);
+        groups.push_back (rhythm);
+        for (int i = 0; i < sgk::numBassLines; ++i)
+        {
+            const juce::String genre (sgk::bassLines()[(size_t) i].genre);
+            if (groups.back().heading != "Bass lines: " + genre)
+                groups.push_back ({ "Bass lines: " + genre, {}, false });
+            groups.back().items.push_back (sgk::numBassPatternModes + i);
+        }
+        bass.setGroups (std::move (groups));
+    }
     addChildComponent (grooveBrowser);
     for (auto* arrow : { &groovePrev, &grooveNext })
         addAndMakeVisible (arrow);

@@ -6,6 +6,21 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.20.0] - 2026-10-14
+
+### Aggiunto
+- **Libreria di linee di basso** nel menu *Basso mano sinistra* (ora diviso in gruppi): 12
+  linee di basso che seguono i tuoi accordi, ognuna col suo ritmo: *Disco* (Disco Octave Gallop,
+  Disco Octave Push, Philly Walk, Boogie Line), *Funky* (Funk Sixteenths, Slap & Pop, Dead Note
+  Groove), *House* (Deep House Root, Offbeat House, Garage Skip), *Soulful* (Soulful Walk, Gospel
+  Walk). Usano terze, quinte, seste, settime, ottave, note stoppate e note di passaggio verso
+  l'accordo successivo.
+- La griglia mostra il ritmo della linea; **RND BASSO** sceglie un'altra linea; modificando una
+  casella del basso il ritmo della linea diventa tuo.
+
+### Modificato
+- Gli stili *Nu Disco*, *Funky Disco*, *Gospel House* e *Disco Piano* ora usano una linea di basso.
+
 ## [1.19.0] - 2026-10-14
 
 ### Aggiunto

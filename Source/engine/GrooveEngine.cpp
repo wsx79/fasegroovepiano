@@ -699,11 +699,32 @@ const char* topLineName (int line) noexcept
     return names[mod (line, numTopLines)];
 }
 
+const std::vector<BassLine>& bassLines()
+{
+    // Classic bass-player figures (two bars), written as chord functions so they follow any progression.
+    static const std::vector<BassLine> lines {
+        { "Disco Octave Gallop", "Disco",  compact ("R.O. R.O. R.O. R.O. R.O. R.O. R.O. 5.OA") },
+        { "Disco Octave Push",   "Disco",  compact ("R.O. R.OR .O.R O.RO R.O. R.OR .O.R O.5A") },
+        { "Philly Walk",         "Disco",  compact ("R.R. O.5. R.R. O.7. R.R. O.5. 3.5. 6.A.") },
+        { "Boogie Line",         "Disco",  compact ("R..3 5..6 7..6 5..3 R..3 5..6 7..6 5.SA") },
+        { "Funk Sixteenths",     "Funky",  compact ("R..R ..O. GR.5 ..7. R..R ..O. GR.b 5.SA") },
+        { "Slap & Pop",          "Funky",  compact ("R.GO .GR. O.GR 5.O. R.GO .GR. O.G7 O.SA") },
+        { "Dead Note Groove",    "Funky",  compact ("RG.R G.O. GRG5 .O.A RG.R G.O. GRG5 .7.A") },
+        { "Deep House Root",     "House",  compact ("R=.. ..R. ..R. .... R=.. ..R. ..5. ...A") },
+        { "Offbeat House",       "House",  compact ("..R. ..R. ..R. ..O. ..R. ..R. ..R. .5.A") },
+        { "Garage Skip",         "House",  compact ("R..R ...O ..R. .5.. R..R ...O ..R. 7.A.") },
+        { "Soulful Walk",        "Soulful", compact ("R... 3... 5... A... R... 3... 5... 6.A.") },
+        { "Gospel Walk",         "Soulful", compact ("R..5 O..5 3..R 6..A R..5 O..5 7..6 5.SA") },
+    };
+    return lines;
+}
+
 const char* bassModeName (int m) noexcept
 {
-    static const char* const names[numBassModes] { "Off", "Root", "Octaves", "Root + 5th", "Walking", "Syncopated octaves",
-                                                   "Piano stabs (bass in every chord)" };
-    return names[mod (m, numBassModes)];
+    static const char* const names[numBassPatternModes] { "Off", "Root", "Octaves", "Root + 5th", "Walking", "Syncopated octaves",
+                                                          "Piano stabs (bass in every chord)" };
+    m = mod (m, numBassModes);
+    return m < numBassPatternModes ? names[m] : bassLines()[(size_t) (m - numBassPatternModes)].name;
 }
 
 //==============================================================================
@@ -763,10 +784,26 @@ GroovePattern GrooveEngine::basePattern (const GrooveSettings& s)
     return patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)];
 }
 
+std::string bassLineRhythm (int lineIndex, int length)
+{
+    const auto& line = bassLines()[(size_t) std::clamp (lineIndex, 0, numBassLines - 1)].line;
+    std::string rhythm ((size_t) std::max (0, length), '.');
+    for (int i = 0; i < length; ++i)
+    {
+        const char c = line[(size_t) (i % (int) line.size())];
+        rhythm[(size_t) i] = c == '.' ? '.' : c == '=' ? '=' : c == 'G' ? 'g' : (i % 4 == 0 ? 'X' : 'x');
+    }
+    return rhythm;
+}
+
 GroovePattern GrooveEngine::resolvePattern (const GrooveSettings& s)
 {
     auto p = addVoicingMovement (applySection (applySegmentOrder (basePattern (s), s.segmentOrder), s.section),
                                  s.section == Section::breakdown ? 0 : s.movement);
+
+    // A bass line from the library has its own rhythm: show that one in the grid.
+    if (isBassLine (s.bass) && (s.section == Section::main || s.section == Section::drop))
+        p.leftHand = bassLineRhythm ((int) s.bass - numBassPatternModes, p.length());
 
     if (s.grooveBars == 1 && p.length() > 16)
     {
@@ -1237,6 +1274,17 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
 
     // ---- left hand (bass) ----
     auto bassMode = s.bass;
+    if (isBassLine (bassMode))
+    {
+        // Lines play in the main groove and the drop; the build-up pumps roots like the groove's
+        // bass, and intro, outro and breakdown have no bass anyway.
+        if (s.section == Section::main || s.section == Section::drop)
+        {
+            collectBassLine (step, s, chords, bassLines()[(size_t) std::clamp ((int) bassMode - numBassPatternModes, 0, numBassLines - 1)].line);
+            return;
+        }
+        bassMode = BassMode::root;
+    }
     if (s.section == Section::drop && bassMode == BassMode::root)
         bassMode = BassMode::octaves;    // the drop hits harder
 
@@ -1320,6 +1368,63 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             if (bassMode == BassMode::rootFifth)  pending.push_back ({ t, root + 7,  (int) (vel * 0.85), len, tie, Part::bass });
         }
     }
+}
+
+void GrooveEngine::collectBassLine (long long step, const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,
+                                    const std::string& line)
+{
+    const int n = (int) line.size();
+    const int pos = mod (step, n);
+    const char symbol = line[(size_t) pos];
+    if (symbol == '.' || symbol == '=')
+        return;
+
+    const double swingDelay = (step % 2 != 0) ? std::clamp (s.swing, 0.0f, 1.0f) * stepLength / 3.0 : 0.0;
+    const double human = std::clamp (s.humanize, 0.0f, 1.0f);
+    const double t = (double) step * stepLength + swingDelay + human * 0.03 * noise (step, 90);
+
+    const auto& chord = chords[(size_t) slotForStep (step, s)];
+    const int root = 36 + chord.rootPc;
+
+    // The next chord's root, in the octave closest to this one.
+    const int inChord = (int) (((step % s.stepsPerChord) + s.stepsPerChord) % s.stepsPerChord);
+    int target = 36 + chords[(size_t) slotForStep (step + (s.stepsPerChord - inChord), s)].rootPc;
+    if (target - root > 6)  target -= 12;
+    if (root - target > 6)  target += 12;
+
+    int note = root;
+    switch (symbol)
+    {
+        case 'O': note = root + 12; break;
+        case '5': note = root + 7; break;
+        case 'L': note = root - 5 >= 28 ? root - 5 : root + 7; break;
+        case '3': note = root + (chord.third >= 0 ? chord.third : 4); break;
+        case '7': note = root + (chord.seventh >= 0 ? chord.seventh : 10); break;
+        case '6': note = root + 9; break;
+        case 'b': note = root + 3; break;
+        case 'A': note = target - 1; break;   // chromatic step into the next root
+        case 'S': note = target - 2; break;   // a whole step below it
+        default: break;                        // R, G
+    }
+    note = std::clamp (note, 24, 64);
+
+    // Length: like the groove's notes, a share (Gate) of the space before the next note.
+    int hold = 0;
+    while (hold < n - 1 && line[(size_t) ((pos + 1 + hold) % n)] == '=')
+        ++hold;
+    int gap = 1;
+    while (gap < n && (line[(size_t) ((pos + gap) % n)] == '.' || line[(size_t) ((pos + gap) % n)] == '='))
+        ++gap;
+    const double gate = (double) std::clamp (s.gate, 0.05f, 1.0f);
+    const double steps = symbol == 'G' ? 0.3
+                       : hold > 0      ? hold + gate
+                                       : std::max (std::min ({ gate * gap, 4.0, gap - 0.08 }), std::min (gate, 0.9));
+    const double len = std::max (0.04, steps * stepLength);
+
+    // A bass player's touch: strong on the beat, softer in between, dead notes very soft.
+    double v = s.velocity * sectionVelocityScale (s.section) * (symbol == 'G' ? 0.45 : pos % 4 == 0 ? 0.95 : 0.82);
+    v += human * 18.0 * (noise (step, 97) - 0.5) * 2.0;
+    pending.push_back ({ t, note, std::clamp ((int) std::lround (v), 1, 127), len, false, Part::bass });
 }
 
 void GrooveEngine::flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out)

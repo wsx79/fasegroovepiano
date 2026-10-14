@@ -62,6 +62,7 @@ Rhodes or synth.
 - 🎵 **Top line** (the melody of the top notes: smooth, steady, rising, falling, arch) and
   **▲▼ inversions** on every chord.
 - 🎹 **LEARN:** play chords on your MIDI keyboard and they become the progression.
+- 🎸 **Bass line library:** disco, funky, house and soulful lines with approach notes and dead notes, following your chords.
 - 🔎 **MIDI analyzer:** drop a .mid file and it estimates key, chords and chord length, then loads them as the progression.
 - 🔄 **Variations** every 4 or 8 bars, grooves of 1, 2 or 4 bars, **walking** and
   **syncopated-octave** bass, and an automatic crescendo in the build-up.

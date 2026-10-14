@@ -96,7 +96,22 @@ constexpr int numFillStyles = 11;
 /** First 16th (in the bar) a fill style takes over: most use the last beat, the gospel run two. */
 int fillStartStep (FillStyle style) noexcept;
 const char* fillStyleName (int style) noexcept;
-constexpr int numBassModes = 7;
+/** The first 7 bass modes follow the groove's left-hand rhythm; after them come the bass lines
+    of the library (each one its own rhythm and notes). */
+constexpr int numBassPatternModes = 7;
+constexpr int numBassLines = 12;
+constexpr int numBassModes = numBassPatternModes + numBassLines;
+constexpr bool isBassLine (BassMode m) noexcept { return (int) m >= numBassPatternModes; }
+
+/** A bass line over two bars, one symbol per 16th, relative to the chord playing:
+    R root, O octave up, 5 fifth, L fifth below, 3 the chord's 3rd, 7 its 7th, 6 sixth,
+    b minor 3rd (blue note), G dead note (short, soft), A chromatic approach into the next chord's
+    root, S a whole step below it, = hold, . rest. */
+struct BassLine { const char* name; const char* genre; std::string line; };
+const std::vector<BassLine>& bassLines();
+
+/** The rhythm of a bass line as grid symbols (x on the hits, g dead notes), for the display. */
+std::string bassLineRhythm (int lineIndex, int length);
 
 /** Shape of the top note of the chords across the progression (the melody you hear). */
 enum class TopLine { automatic = 0, steady, rising, falling, arch };
@@ -233,6 +248,8 @@ private:
     void collectStep (long long step, const GrooveSettings& s, const GroovePattern& normalPattern, const GroovePattern& variation,
                       const std::array<Chord, maxProgressionLength>& chords,
                       const std::array<VoicedChord, maxProgressionLength>& voiced);
+    void collectBassLine (long long step, const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,
+                          const std::string& line);
     void flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out);
 
     std::array<double, 128> offTime {};    // < 0 when the note is not sounding

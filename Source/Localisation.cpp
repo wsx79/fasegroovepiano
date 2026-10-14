@@ -492,6 +492,12 @@ namespace
           "C'est une estimation : renversements et notes de passage peuvent la tromper. Corrigez les accords sur le cercle ou annulez avec la flèche.",
           "Das ist eine Schätzung: Umkehrungen und Durchgangstöne können täuschen. Korrigiere Akkorde am Kreis oder mache es mit dem Pfeil rückgängig.",
           "É uma estimativa: inversões e notas de passagem podem enganá-la. Corrija os acordes no círculo ou desfaça com a seta." },
+        // ---- v1.20 bass lines ----
+        { "Follow the groove", "Seguono il groove", "Siguen el groove", "Suivent le groove", "Folgen dem Groove", "Seguem o groove" },
+        { "Bass lines: Disco", "Linee di basso: Disco", "Líneas de bajo: Disco", "Lignes de basse : Disco", "Basslinien: Disco", "Linhas de baixo: Disco" },
+        { "Bass lines: Funky", "Linee di basso: Funky", "Líneas de bajo: Funky", "Lignes de basse : Funky", "Basslinien: Funky", "Linhas de baixo: Funky" },
+        { "Bass lines: House", "Linee di basso: House", "Líneas de bajo: House", "Lignes de basse : House", "Basslinien: House", "Linhas de baixo: House" },
+        { "Bass lines: Soulful", "Linee di basso: Soulful", "Líneas de bajo: Soulful", "Lignes de basse : Soulful", "Basslinien: Soulful", "Linhas de baixo: Soulful" },
         // ---- v1.15 updates ----
         { "Check for updates automatically (GitHub)", "Controlla gli aggiornamenti in automatico (GitHub)", "Buscar actualizaciones automáticamente (GitHub)",
           "Rechercher les mises à jour automatiquement (GitHub)", "Automatisch nach Updates suchen (GitHub)", "Procurar atualizações automaticamente (GitHub)" },

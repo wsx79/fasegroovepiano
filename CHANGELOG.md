@@ -6,6 +6,20 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.20.0] - 2026-10-14
+
+### Added
+- **Bass line library** in the *Left-hand bass* menu (now grouped): 12 bass lines that
+  follow your chords, each with its own rhythm: *Disco* (Disco Octave Gallop, Disco Octave Push,
+  Philly Walk, Boogie Line), *Funky* (Funk Sixteenths, Slap & Pop, Dead Note Groove), *House*
+  (Deep House Root, Offbeat House, Garage Skip), *Soulful* (Soulful Walk, Gospel Walk). They use
+  3rds, 5ths, 6ths, 7ths, octaves, dead notes and approach notes into the next chord.
+- The grid shows the line's rhythm; **RND BASS** picks another line; editing a bass cell turns
+  the line's rhythm into your own.
+
+### Changed
+- Styles *Nu Disco*, *Funky Disco*, *Gospel House* and *Disco Piano* now use a bass line.
+
 ## [1.19.0] - 2026-10-14
 
 ### Added

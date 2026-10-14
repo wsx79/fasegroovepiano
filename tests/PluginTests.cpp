@@ -326,6 +326,28 @@ namespace
     }
 
     //==============================================================================
+    void testBassLineControls()
+    {
+        FaseGroovePianoProcessor p;
+        const float firstLine = (float) sgk::numBassPatternModes;
+        p.setParameterFromUI (ParamIDs::bass, firstLine);
+
+        // RND BASS with a library line picks another line.
+        p.rerollHand (true);
+        const int now = juce::roundToInt (value (p, ParamIDs::bass));
+        CHECK (now >= sgk::numBassPatternModes && now < sgk::numBassModes && now != (int) firstLine);
+
+        // Editing the bass row keeps the line's rhythm as your own, played on the roots.
+        const auto shown = sgk::GrooveEngine::resolvePattern (p.currentSettings()).leftHand;
+        p.editStep (true, 1, 'x');
+        CHECK (juce::roundToInt (value (p, ParamIDs::bass)) == (int) sgk::BassMode::root);
+        auto edited = sgk::GrooveEngine::basePattern (p.currentSettings()).leftHand;
+        auto expected = shown.substr (0, (size_t) sgk::userPatternLength);
+        expected[1] = 'x';
+        CHECK (edited == expected);
+    }
+
+    //==============================================================================
     void testUpdateSwap()
     {
         CHECK (Updater::isNewer ("v1.18.1", "1.18.0"));
@@ -400,6 +422,7 @@ int main()
     testMidiExport();
     testTransport();
     testMidiImport();
+    testBassLineControls();
     testUpdateSwap();
 
     if (failures == 0)

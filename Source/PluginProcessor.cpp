@@ -224,25 +224,26 @@ namespace
 
     // extension: 0 triads 1 7ths 2 9ths 3 11ths 4 6/9 5 add9 6 sus 7 9ths+altered V
     // voicing: 0 close 1 drop2 2 rootless 3 wide 4 quartal 5 shell 6 drop2+4 7 octave triads
-    // bass: 0 off 1 root 2 octaves 3 root+5th 4 walking 5 syncopated 6 piano stabs (bass in every chord)   approach: 0 off 1 above 2 below
+    // bass: 0 off 1 root 2 octaves 3 root+5th 4 walking 5 syncopated 6 piano stabs (bass in every chord)
+    //       7.. bass lines: 7 Disco Octave Gallop 8 Disco Octave Push 11 Funk Sixteenths 18 Gospel Walk (see sgk::bassLines)   approach: 0 off 1 above 2 below
     // sound: 0 Rhodes 1 Soulful Grand 2 House Piano 3 House Organ
     const Style styles[] {
         { "House Piano Loop",     "Minor Flow  i - VI - III - VII",    "Dotted House Stabs",   2, 2, 6, 0, 2, 61, 0.25f, 0.65f, 0.15f, 0.00f, false, 0, 0 },
         { "Classic Deep House",   "Dorian Vamp  i - IV",               "Deep Chords",          2, 2, 1, 0, 0, 62, 0.20f, 0.60f, 0.25f, 0.10f, false },
         { "Soulful House",        "Turnaround  I - vi - ii - V",       "Soulful Sunday",       7, 1, 1, 1, 1, 64, 0.25f, 0.55f, 0.30f, 0.20f, false, 3, 7 },
-        { "Gospel House",         "Gospel Lift  IV - V - vi - I",      "Gospel Shout",         7, 0, 2, 1, 1, 64, 0.30f, 0.50f, 0.30f, 0.15f, true, 2, 3 },
+        { "Gospel House",         "Gospel Lift  IV - V - vi - I",      "Gospel Shout",         7, 0, 18, 1, 1, 64, 0.30f, 0.50f, 0.30f, 0.15f, true, 2, 3 },
         { "Jackin' House",        "Jackin' Minor  i - iv",             "Jackin' Stabs",        1, 0, 2, 0, 2, 64, 0.45f, 0.35f, 0.20f, 0.00f, true, 2, 5 },
         { "'90s Piano House",     "Deep House Classic  vi - IV - I - V", "Italo Piano Anthem", 1, 0, 6, 0, 2, 66, 0.10f, 0.45f, 0.15f, 0.00f, true, 3, 8 },
         { "Organ Jack",           "Deep Dorian  i - ii - IV - i",      "M1 Organ Stabs",       1, 0, 1, 0, 3, 62, 0.35f, 0.40f, 0.20f, 0.00f, false, 2, 6 },
-        { "Nu Disco",             "Disco Jack  ii - V - I - vi",       "Nu Disco Keys",        1, 1, 2, 0, 0, 64, 0.15f, 0.40f, 0.20f, 0.00f, false, 3, 4 },
-        { "Funky Disco",          "Funky Dominant  I7 - IV7",          "Funky Clavinet 16ths", 2, 5, 2, 0, 2, 64, 0.20f, 0.30f, 0.20f, 0.00f, false, 2, 9 },
+        { "Nu Disco",             "Disco Jack  ii - V - I - vi",       "Nu Disco Keys",        1, 1, 8, 0, 0, 64, 0.15f, 0.40f, 0.20f, 0.00f, false, 3, 4 },
+        { "Funky Disco",          "Funky Dominant  I7 - IV7",          "Funky Clavinet 16ths", 2, 5, 11, 0, 2, 64, 0.20f, 0.30f, 0.20f, 0.00f, false, 2, 9 },
         { "UK Garage",            "Minor Flow  i - VI - III - VII",    "UK Garage 2-Step",     2, 2, 1, 0, 0, 64, 0.50f, 0.45f, 0.25f, 0.10f, false },
         { "Afro House",           "Deep Minor  i - v",                 "Afro House Keys",      2, 4, 1, 0, 0, 62, 0.15f, 0.50f, 0.30f, 0.00f, false },
         { "Neo Soul",             "Neo Soul  ii - iii - IV - V",       "Neo Soul Ghosts",      3, 6, 1, 2, 0, 62, 0.45f, 0.60f, 0.40f, 0.30f, false, 3, 7 },
         { "Jackin' Piano",        "Jack Swing  i - v - VII - IV",      "Chicago Piano Bounce", 1, 0, 1, 0, 2, 66, 0.55f, 0.30f, 0.20f, 0.00f, true, 2, 5 },
         { "Chill Lounge",         "Lydian Float  I - II",              "Lounge Keys",          2, 3, 1, 0, 0, 64, 0.20f, 0.80f, 0.30f, 0.35f, false },
         { "Future House",         "Maj9 Drift  I - bIII - bVI - bVII", "Future Stab 3-3-2",    2, 2, 6, 0, 2, 62, 0.05f, 0.30f, 0.10f, 0.00f, false, 2, 6 },
-        { "Disco Piano",          "Minor Glide  i - bVII - bVI - V7",  "Disco Octave Pump",    0, 7, 2, 0, 1, 64, 0.10f, 0.40f, 0.15f, 0.00f, false, 3, 8 },
+        { "Disco Piano",          "Minor Glide  i - bVII - bVI - V7",  "Disco Octave Pump",    0, 7, 7, 0, 1, 64, 0.10f, 0.40f, 0.15f, 0.00f, false, 3, 8 },
     };
 
     int indexOfGroove (const char* name)
@@ -692,6 +693,16 @@ void FaseGroovePianoProcessor::rollNewRiff()
 void FaseGroovePianoProcessor::rerollHand (bool bass)
 {
     const auto s = currentSettings();
+
+    // With a bass line from the library, RND BASS picks another line.
+    if (bass && sgk::isBassLine (s.bass))
+    {
+        const int current = (int) s.bass - sgk::numBassPatternModes;
+        const int next = (current + 1 + juce::Random::getSystemRandom().nextInt (sgk::numBassLines - 1)) % sgk::numBassLines;
+        setParameterFromUI (ParamIDs::bass, (float) (sgk::numBassPatternModes + next));
+        return;
+    }
+
     auto current = sgk::GrooveEngine::basePattern (s);
     if (current.length() != sgk::userPatternLength)
         return;
@@ -764,6 +775,14 @@ void FaseGroovePianoProcessor::editStep (bool bassRow, int displayedStep, char s
     // Map the displayed step back through the segment order.
     const int segLength = sgk::userPatternLength / sgk::numSegments;
     const int index = segmentAtStep (displayedStep) * segLength + displayedStep % segLength;
+
+    // Editing the bass of a library line: the line's rhythm becomes yours, played on the roots.
+    if (bassRow && sgk::isBassLine (currentSettings().bass))
+    {
+        const auto s = currentSettings();
+        current.leftHand = sgk::bassLineRhythm ((int) s.bass - sgk::numBassPatternModes, sgk::userPatternLength);
+        setParameterFromUI (ParamIDs::bass, (float) sgk::BassMode::root);
+    }
 
     auto& line = bassRow ? current.leftHand : current.rightHand;
     line[(size_t) index] = symbol;

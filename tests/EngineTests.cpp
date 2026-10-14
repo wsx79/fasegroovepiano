@@ -928,6 +928,63 @@ static void testHarmonyAnalyzer()
     }
 }
 
+static void testBassLines()
+{
+    CHECK ((int) bassLines().size() == numBassLines);
+    for (const auto& l : bassLines())
+    {
+        CHECK (l.line.size() == 32);
+        CHECK (l.line.find_first_not_of ("ROL5376bGAS=.") == std::string::npos);
+        CHECK (l.line[0] != '.' || l.line.find ('R') != std::string::npos);
+    }
+
+    for (int i = 0; i < numBassLines; ++i)
+    {
+        GrooveSettings s;
+        s.pattern = 1;
+        s.bass = (BassMode) (numBassPatternModes + i);
+        s.humanize = 0.0f;
+        s.swing = 0.0f;
+        s.fillEveryBars = 2;
+        s.progressionLength = 4;
+        s.progression = { 5, 3, 0, 4, 0, 0, 0, 0 };   // vi IV I V in C
+
+        GrooveEngine engine;
+        std::vector<NoteEvent> events;
+        for (double t = 0.0; t < 32.0; t += 0.37)
+            engine.render (t, t + 0.37, s, events);
+        engine.allNotesOff (32.0, events);
+
+        int sounding[128] {}, bassOns = 0;
+        bool valid = true, inRange = true;
+        for (const auto& e : events)
+        {
+            if (e.isNoteOn()) { if (sounding[e.note]) valid = false; sounding[e.note] = 1; }
+            else              { if (! sounding[e.note]) valid = false; sounding[e.note] = 0; }
+            if (e.isNoteOn() && e.part == Part::bass)
+            {
+                ++bassOns;
+                inRange = inRange && e.note >= 24 && e.note <= 64;
+            }
+        }
+        CHECK (valid);
+        CHECK (inRange);
+        CHECK (bassOns >= 8);
+
+        // Approach notes lead into the next chord's root by a semitone.
+        const auto& line = bassLines()[(size_t) i].line;
+        for (int step = 0; step < 32; ++step)
+        {
+            if (line[(size_t) step] != 'A' || step % 16 < 12)
+                continue;   // only the ones right before a chord change
+            const int nextRoot = GrooveEngine::chordForSlot (s, GrooveEngine::slotForStep (step + 16 - step % 16, s)).rootPc;
+            for (const auto& e : events)
+                if (e.isNoteOn() && e.part == Part::bass && std::abs (e.ppq - step * 0.25) < 0.01)
+                    CHECK ((e.note + 1) % 12 == nextRoot);
+        }
+    }
+}
+
 int main()
 {
     testChordNames();
@@ -952,6 +1009,7 @@ int main()
     testPatternsWellFormed();
     testDancePack();
     testHarmonyAnalyzer();
+    testBassLines();
 
     if (failures == 0)
         std::printf ("All engine tests passed.\n");
