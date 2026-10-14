@@ -310,6 +310,55 @@ private:
     sgk::GrooveEngine::VoicingReport reportA, reportB;
 };
 
+/** The song arrangement: length of each section, and a NEW VARIATION per section (the rest stays). */
+class SongOverlay : public juce::Component
+{
+public:
+    explicit SongOverlay (FaseGroovePianoProcessor&);
+
+    void show();
+    void refreshText();
+    std::function<void()> onSaveSections;
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
+
+private:
+    juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (760.0f, 560.0f); }
+    juce::Rectangle<int> rowArea (int part) const;
+    void refresh();
+
+    FaseGroovePianoProcessor& processor;
+    juce::OwnedArray<juce::ComboBox> barBoxes;
+    juce::OwnedArray<juce::TextButton> newButtons, originalButtons;
+    juce::TextButton saveButton, closeButton;
+};
+
+/** Groove morphing: from the groove you have towards another one, step by step, with a slider. */
+class MorphOverlay : public juce::Component
+{
+public:
+    explicit MorphOverlay (FaseGroovePianoProcessor&);
+
+    void show();
+    void refreshText();
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void mouseUp (const juce::MouseEvent&) override;
+
+private:
+    juce::Rectangle<float> card() const;
+    void apply();
+
+    FaseGroovePianoProcessor& processor;
+    juce::ComboBox target;
+    juce::Slider amount;
+    juce::TextButton keepButton, cancelButton;
+    juce::String before, fromName;
+};
+
 /** "A new version is ready": what's new (the changelog) and the user confirms the install. */
 class UpdateOverlay : public juce::Component
 {
@@ -388,6 +437,9 @@ private:
     OptionsOverlay options;
     GrooveBrowser grooveBrowser { processor };
     VoicingCoach voicingCoach { processor };
+    SongOverlay songOverlay { processor };
+    MorphOverlay morphOverlay { processor };
+    juce::TextButton songButton { "SONG" }, morphButton { "MORPH" };
     juce::TextButton coachButton { "A/B" };
     juce::ArrowButton groovePrev { "previous groove", 0.5f, Palette::accent }, grooveNext { "next groove", 0.0f, Palette::accent };
     void stepGroove (int direction);

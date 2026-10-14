@@ -164,6 +164,7 @@ struct GrooveSettings
     float riffDensity = 0.5f;
 
     std::array<int, numSegments> segmentOrder { 0, 1, 2, 3 };   // A B C D
+    std::uint32_t sectionVariation = 0;    // a song section regenerated on its own (0: the groove as it is)
 
     // Used when pattern == userPatternIndex(): the hand-edited grid.
     std::array<char, userPatternLength> userRight {};
@@ -295,6 +296,7 @@ private:
     std::uint32_t cachedSeed = 0;
     float cachedDensity = -1.0f;
     Section cachedSection = Section::main;
+    std::uint32_t cachedSectionVariation = 0;
     std::array<int, numSegments> cachedOrder {};
     std::array<char, userPatternLength> cachedUserRight {}, cachedUserLeft {};
 };

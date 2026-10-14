@@ -6,6 +6,17 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.22.0] - 2026-10-14
+
+### Aggiunto
+- **Morphing del groove** (**MORPH** sopra la griglia): trasforma il tuo groove in un altro passo
+  dopo passo con lo slider *Quantità*, dal vivo nella griglia; le parti bloccate restano; TIENI o
+  ANNULLA.
+- **Arrangiamento del brano** (**BRANO** nel pannello MIDI clip): battute di ogni sezione (o
+  toglierla), **NUOVA VARIAZIONE** per una sola sezione (per esempio un Drop diverso), ritorno
+  all'ORIGINALE e **SALVA OGNI SEZIONE IN .MID…** (un file per sezione). Vale per la clip *Brano* e
+  per la *Sezione del brano* mentre suona; si salva nel progetto.
+
 ## [1.21.0] - 2026-10-14
 
 ### Aggiunto

@@ -7,10 +7,11 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Next release
 
-- Groove morphing from groove A to groove B (locked parts stay), then per-section regeneration.
+- Musical DNA: variations guided by an intention (more soulful, funkier, more minimal, more energetic), keeping what you lock.
 
 ## Done
 
+- v1.22.0: groove morph, song arrangement with per-section variations and one .mid per section.
 - v1.21.0: Voicing Coach (A/B comparison of two voicings).
 - v1.20.0: bass line library (disco, funky, house, soulful).
 - v1.19.0: MIDI analyzer (drop a .mid), favourites and recent in the browsers.

@@ -1547,6 +1547,275 @@ void VoicingCoach::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+namespace
+{
+    constexpr int songBarChoices[] { 0, 2, 4, 8, 16, 32 };
+}
+
+SongOverlay::SongOverlay (FaseGroovePianoProcessor& p) : processor (p)
+{
+    for (int i = 0; i < FaseGroovePianoProcessor::numSongParts; ++i)
+    {
+        auto* box = barBoxes.add (new juce::ComboBox());
+        for (int bars : songBarChoices)
+            box->addItem (bars == 0 ? "-" : juce::String (bars), bars + 1);
+        box->onChange = [this, i, box]
+        {
+            processor.setSongBars (i, box->getSelectedId() - 1);
+            refresh();
+        };
+        addAndMakeVisible (box);
+
+        auto* fresh = newButtons.add (new juce::TextButton());
+        fresh->setColour (juce::TextButton::buttonColourId, Palette::background);
+        fresh->setColour (juce::TextButton::textColourOffId, Palette::accent);
+        fresh->onClick = [this, i] { processor.regenerateSongPart (i); refresh(); };
+        addAndMakeVisible (fresh);
+
+        auto* original = originalButtons.add (new juce::TextButton());
+        original->setColour (juce::TextButton::buttonColourId, Palette::background);
+        original->setColour (juce::TextButton::textColourOffId, Palette::dim);
+        original->onClick = [this, i] { processor.resetSongPart (i); refresh(); };
+        addAndMakeVisible (original);
+    }
+
+    saveButton.setColour (juce::TextButton::buttonColourId, Palette::accent);
+    saveButton.setColour (juce::TextButton::textColourOffId, Palette::background);
+    saveButton.onClick = [this] { if (onSaveSections != nullptr) onSaveSections(); };
+    addAndMakeVisible (saveButton);
+    closeButton.onClick = [this] { setVisible (false); };
+    addAndMakeVisible (closeButton);
+    refreshText();
+}
+
+void SongOverlay::refreshText()
+{
+    for (auto* b : newButtons)      b->setButtonText (tr ("NEW VARIATION"));
+    for (auto* b : originalButtons) b->setButtonText (tr ("ORIGINAL"));
+    saveButton.setButtonText (tr ("SAVE EACH SECTION AS .MID..."));
+    closeButton.setButtonText (tr ("CLOSE"));
+    repaint();
+}
+
+void SongOverlay::show()
+{
+    refreshText();
+    refresh();
+    setVisible (true);
+    toFront (true);
+}
+
+void SongOverlay::refresh()
+{
+    const auto parts = processor.songArrangementParts();
+    for (int i = 0; i < (int) parts.size() && i < barBoxes.size(); ++i)
+    {
+        int id = 1;
+        for (int bars : songBarChoices)
+            if (bars <= parts[(size_t) i].bars) id = bars + 1;
+        barBoxes[i]->setSelectedId (id, juce::dontSendNotification);
+        // Intro, outro and breakdown are pads / no bass: a variation matters little there, but it is allowed.
+        originalButtons[i]->setEnabled (parts[(size_t) i].variation != 0);
+        newButtons[i]->setEnabled (parts[(size_t) i].bars > 0);
+    }
+    repaint();
+}
+
+void SongOverlay::mouseUp (const juce::MouseEvent& e)
+{
+    if (! card().contains (e.position))
+        setVisible (false);
+}
+
+juce::Rectangle<int> SongOverlay::rowArea (int part) const
+{
+    auto inner = card().toNearestInt().reduced (28, 20);
+    inner.removeFromTop (70);
+    return inner.removeFromTop (54 * (part + 1)).removeFromBottom (54).reduced (0, 6);
+}
+
+void SongOverlay::resized()
+{
+    for (int i = 0; i < barBoxes.size(); ++i)
+    {
+        auto row = rowArea (i);
+        row.removeFromLeft (170);   // section name
+        barBoxes[i]->setBounds (row.removeFromLeft (80));
+        row.removeFromLeft (14);
+        newButtons[i]->setBounds (row.removeFromLeft (150));
+        row.removeFromLeft (8);
+        originalButtons[i]->setBounds (row.removeFromLeft (110));
+    }
+    auto bottom = card().toNearestInt().reduced (28, 20).removeFromBottom (34);
+    closeButton.setBounds (bottom.removeFromRight (100));
+    bottom.removeFromRight (10);
+    saveButton.setBounds (bottom.removeFromRight (270));
+}
+
+void SongOverlay::paint (juce::Graphics& g)
+{
+    g.fillAll (juce::Colours::black.withAlpha (0.78f));
+    auto c = card();
+    g.setColour (Palette::panel);
+    g.fillRoundedRectangle (c, 16.0f);
+    g.setColour (Palette::accent.withAlpha (0.6f));
+    g.drawRoundedRectangle (c, 16.0f, 1.5f);
+
+    auto inner = c.reduced (28.0f, 20.0f);
+    g.setColour (Palette::accent);
+    g.setFont (font (20.0f, true));
+    g.drawText (Localisation::upper (tr ("Song arrangement")), inner.removeFromTop (28.0f), juce::Justification::centredLeft);
+    g.setColour (Palette::dim);
+    g.setFont (font (12.0f));
+    g.drawFittedText (tr ("Bars of each section (- leaves it out) and a NEW VARIATION of the groove for one section only: the others stay as they are. Used by Clip length > Song, by Song section while playing, and by SAVE EACH SECTION."),
+                      inner.removeFromTop (36.0f).toNearestInt(), juce::Justification::topLeft, 2);
+
+    const auto parts = processor.songArrangementParts();
+    int total = 0;
+    for (int i = 0; i < (int) parts.size(); ++i)
+    {
+        const auto row = rowArea (i).toFloat();
+        g.setColour (Palette::background);
+        g.fillRoundedRectangle (row.expanded (8.0f, 2.0f), 6.0f);
+        g.setColour (parts[(size_t) i].bars > 0 ? Palette::text : Palette::dim);
+        g.setFont (font (15.0f, true));
+        g.drawText (tr (sgk::sectionName ((int) parts[(size_t) i].section)), row.withWidth (160.0f), juce::Justification::centredLeft);
+        g.setFont (font (12.0f));
+        g.setColour (parts[(size_t) i].variation != 0 ? Palette::accent : Palette::dim);
+        g.drawText (parts[(size_t) i].bars <= 0 ? tr ("left out")
+                    : parts[(size_t) i].variation != 0 ? tr ("own variation") : tr ("the groove as it is"),
+                    row.withTrimmedLeft (row.getWidth() - 150.0f), juce::Justification::centredRight);
+        total += juce::jmax (0, parts[(size_t) i].bars);
+    }
+
+    g.setColour (Palette::text);
+    g.setFont (font (13.0f));
+    g.drawText (tr ("Total") + ": " + juce::String (total) + " " + tr ("bars"),
+                c.reduced (28.0f, 20.0f).removeFromBottom (34.0f).withWidth (200.0f), juce::Justification::centredLeft);
+}
+
+//==============================================================================
+MorphOverlay::MorphOverlay (FaseGroovePianoProcessor& p) : processor (p)
+{
+    target.onChange = [this] { apply(); };
+    addAndMakeVisible (target);
+
+    amount.setSliderStyle (juce::Slider::LinearHorizontal);
+    amount.setTextBoxStyle (juce::Slider::TextBoxRight, false, 60, 24);
+    amount.setRange (0.0, 100.0, 1.0);
+    amount.setTextValueSuffix (" %");
+    amount.setColour (juce::Slider::trackColourId, Palette::accent);
+    amount.setColour (juce::Slider::thumbColourId, Palette::accent);
+    amount.onValueChange = [this] { apply(); };
+    addAndMakeVisible (amount);
+
+    keepButton.setColour (juce::TextButton::buttonColourId, Palette::accent);
+    keepButton.setColour (juce::TextButton::textColourOffId, Palette::background);
+    keepButton.onClick = [this] { setVisible (false); };
+    cancelButton.onClick = [this]
+    {
+        processor.restoreSnapshot (before);
+        setVisible (false);
+    };
+    addAndMakeVisible (keepButton);
+    addAndMakeVisible (cancelButton);
+    refreshText();
+}
+
+juce::Rectangle<float> MorphOverlay::card() const
+{
+    return getLocalBounds().toFloat().withSizeKeepingCentre (700.0f, 250.0f).withY (150.0f);
+}
+
+void MorphOverlay::refreshText()
+{
+    keepButton.setButtonText (tr ("KEEP"));
+    cancelButton.setButtonText (tr ("CANCEL"));
+    repaint();
+}
+
+void MorphOverlay::show()
+{
+    before = processor.snapshot();
+    const auto s = processor.currentSettings();
+    fromName = sgk::GrooveEngine::basePattern (s).name;
+    processor.beginMorph();
+
+    // The target menu: every groove, under its genre.
+    target.clear (juce::dontSendNotification);
+    const auto& patterns = sgk::groovePatterns();
+    for (const auto* genre : sgk::grooveCategories())
+    {
+        target.addSectionHeading (tr (genre));
+        for (int i = 0; i < (int) patterns.size(); ++i)
+            if (patterns[(size_t) i].category == genre)
+                target.addItem (patterns[(size_t) i].name, i + 1);
+    }
+    const auto order = GrooveBrowser::menuOrder();
+    const auto it = std::find (order.begin(), order.end(), s.pattern);
+    const int next = it == order.end() || std::next (it) == order.end() ? order.front() : *std::next (it);
+    target.setSelectedId (next + 1, juce::dontSendNotification);
+    amount.setValue (0.0, juce::dontSendNotification);
+
+    refreshText();
+    setVisible (true);
+    toFront (true);
+}
+
+void MorphOverlay::apply()
+{
+    if (target.getSelectedId() > 0)
+        processor.setMorph (target.getSelectedId() - 1, (float) amount.getValue() / 100.0f);
+}
+
+void MorphOverlay::mouseUp (const juce::MouseEvent& e)
+{
+    if (! card().contains (e.position))
+        setVisible (false);   // keeps the blend, like KEEP
+}
+
+void MorphOverlay::resized()
+{
+    auto inner = card().toNearestInt().reduced (24, 18);
+    inner.removeFromTop (58);
+    auto row = inner.removeFromTop (30);
+    row.removeFromLeft (90);
+    target.setBounds (row.removeFromLeft (320));
+    inner.removeFromTop (14);
+    auto slider = inner.removeFromTop (34);
+    slider.removeFromLeft (90);
+    amount.setBounds (slider);
+    auto buttons = inner.removeFromBottom (32);
+    cancelButton.setBounds (buttons.removeFromRight (110));
+    buttons.removeFromRight (10);
+    keepButton.setBounds (buttons.removeFromRight (110));
+}
+
+void MorphOverlay::paint (juce::Graphics& g)
+{
+    g.fillAll (juce::Colours::black.withAlpha (0.35f));   // the grid below stays visible while you morph
+    auto c = card();
+    g.setColour (Palette::panel);
+    g.fillRoundedRectangle (c, 16.0f);
+    g.setColour (Palette::accent.withAlpha (0.6f));
+    g.drawRoundedRectangle (c, 16.0f, 1.5f);
+
+    auto inner = c.reduced (24.0f, 18.0f);
+    g.setColour (Palette::accent);
+    g.setFont (font (20.0f, true));
+    g.drawText (Localisation::upper (tr ("Groove morph")), inner.removeFromTop (26.0f), juce::Justification::centredLeft);
+    g.setColour (Palette::dim);
+    g.setFont (font (12.0f));
+    g.drawText (tr ("From") + ": " + fromName + "   " + tr ("(locked parts stay as they are)"), inner.removeFromTop (26.0f), juce::Justification::centredLeft);
+
+    g.setColour (Palette::text);
+    g.setFont (font (13.0f, true));
+    g.drawText (tr ("Towards"), inner.removeFromTop (30.0f).withWidth (90.0f), juce::Justification::centredLeft);
+    inner.removeFromTop (14.0f);
+    g.drawText (tr ("Amount"), inner.removeFromTop (34.0f).withWidth (90.0f), juce::Justification::centredLeft);
+}
+
+//==============================================================================
 UpdateOverlay::UpdateOverlay()
 {
     notes.setMultiLine (true, true);
@@ -1708,6 +1977,31 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     grooveBrowser.onProgressionChosen = [this] (int preset) { presetBox.setSelectedId (preset + 1, juce::dontSendNotification); };
     grooveBrowser.onImportMidi = [this] { chooseMidiToImport(); };
     addChildComponent (voicingCoach);
+    addChildComponent (songOverlay);
+    addChildComponent (morphOverlay);
+    for (auto* b : { &songButton, &morphButton })
+    {
+        b->setColour (juce::TextButton::buttonColourId, Palette::background);
+        b->setColour (juce::TextButton::textColourOffId, Palette::accent);
+        addAndMakeVisible (b);
+    }
+    songButton.onClick = [this] { songOverlay.show(); };
+    morphButton.onClick = [this] { morphOverlay.show(); };
+    songOverlay.onSaveSections = [this]
+    {
+        FaseGroovePianoProcessor::clipFolder().createDirectory();
+        fileChooser = std::make_unique<juce::FileChooser> (tr ("Choose a folder"), FaseGroovePianoProcessor::clipFolder());
+        fileChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+                                  [this] (const juce::FileChooser& chooser)
+                                  {
+                                      const auto folder = chooser.getResult();
+                                      if (folder == juce::File())
+                                          return;
+                                      const int n = processor.saveSongSections (folder, selectedClipPart());
+                                      juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, "Fase Groove Piano",
+                                                                              juce::String (n) + " " + tr ("MIDI files saved in") + "\n" + folder.getFullPathName());
+                                  });
+    };
     coachButton.setColour (juce::TextButton::buttonColourId, Palette::background);
     coachButton.setColour (juce::TextButton::textColourOffId, Palette::accent);
     coachButton.onClick = [this] { voicingCoach.show(); };
@@ -1888,6 +2182,12 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     updateOverlay.refreshText();
     grooveBrowser.refreshText();
     voicingCoach.refreshText();
+    songOverlay.refreshText();
+    morphOverlay.refreshText();
+    songButton.setButtonText (tr ("SONG"));
+    morphButton.setButtonText (tr ("MORPH"));
+    songButton.setTooltip (tr ("Song arrangement: bars of each section, a new variation for one section, one .mid per section"));
+    morphButton.setTooltip (tr ("Morph the groove step by step towards another one (locked parts stay)"));
     coachButton.setTooltip (tr ("Voicing Coach: compare two voicings of your progression"));
 
         if (result.status == Updater::Result::Status::ready)
@@ -3008,6 +3308,8 @@ void FaseGroovePianoEditor::layoutFull()
     updateOverlay.setBounds (0, 0, baseWidth, baseHeight);
     grooveBrowser.setBounds (0, 0, baseWidth, baseHeight);
     voicingCoach.setBounds (0, 0, baseWidth, baseHeight);
+    songOverlay.setBounds (0, 0, baseWidth, baseHeight);
+    morphOverlay.setBounds (0, 0, baseWidth, baseHeight);
     {
         auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
         auto controls = inner.withSizeKeepingCentre (inner.getWidth(), 32);
@@ -3142,6 +3444,8 @@ void FaseGroovePianoEditor::layoutFull()
             rndPianoButton.setBounds (header.removeFromRight (92));
             header.removeFromRight (14);
             myGroovesButton.setBounds (header.removeFromRight (120));
+            header.removeFromRight (8);
+            morphButton.setBounds (header.removeFromRight (80));
         }
 
         auto strip = inner.removeFromTop (24);
@@ -3163,7 +3467,7 @@ void FaseGroovePianoEditor::layoutFull()
 
     {
         auto inner = clipPanel.reduced (14, 8);
-        inner.removeFromTop (22);
+        songButton.setBounds (inner.removeFromTop (22).removeFromRight (70).withTrimmedBottom (3));
         inner.removeFromBottom (18);
         auto labels = inner.removeFromTop (16);
         clipLengthLabel.setBounds (labels.removeFromLeft (labels.getWidth() / 2));

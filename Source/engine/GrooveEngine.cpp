@@ -798,7 +798,10 @@ std::string bassLineRhythm (int lineIndex, int length)
 
 GroovePattern GrooveEngine::resolvePattern (const GrooveSettings& s)
 {
-    auto p = addVoicingMovement (applySection (applySegmentOrder (basePattern (s), s.segmentOrder), s.section),
+    auto arranged = applySegmentOrder (basePattern (s), s.segmentOrder);
+    if (s.sectionVariation != 0)
+        arranged = makeVariation (arranged, s.sectionVariation);   // this song section, regenerated
+    auto p = addVoicingMovement (applySection (arranged, s.section),
                                  s.section == Section::breakdown ? 0 : s.movement);
 
     // A bass line from the library has its own rhythm: show that one in the grid.
@@ -840,7 +843,7 @@ const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
     if (s.pattern != cachedIndex || s.riffSeed != cachedSeed || s.riffDensity != cachedDensity
         || s.section != cachedSection || s.segmentOrder != cachedOrder
         || s.userRight != cachedUserRight || s.userLeft != cachedUserLeft || s.grooveBars != cachedBars
-        || s.movement != cachedMovement || cachedPattern.rightHand.empty())
+        || s.movement != cachedMovement || s.sectionVariation != cachedSectionVariation || cachedPattern.rightHand.empty())
     {
         cachedPattern = resolvePattern (s);
         cachedVariation = makeVariation (cachedPattern, s.riffSeed * 17u + (std::uint32_t) s.pattern);
@@ -850,6 +853,7 @@ const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
         cachedSeed = s.riffSeed;
         cachedDensity = s.riffDensity;
         cachedSection = s.section;
+        cachedSectionVariation = s.sectionVariation;
         cachedOrder = s.segmentOrder;
         cachedUserRight = s.userRight;
         cachedUserLeft = s.userLeft;
@@ -867,8 +871,12 @@ std::vector<NoteEvent> GrooveEngine::renderArrangement (const GrooveSettings& s,
 
     for (const auto& part : parts)
     {
+        if (part.bars <= 0)
+            continue;   // a section left out of the song
+
         auto partSettings = s;
         partSettings.section = part.section;
+        partSettings.sectionVariation = part.variation;
 
         if (markers != nullptr)
             markers->push_back ({ start, sectionName ((int) part.section) });

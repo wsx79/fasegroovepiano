@@ -382,6 +382,37 @@ GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
     return p;
 }
 
+GroovePattern morphPatterns (const GroovePattern& a, const GroovePattern& b, double amount, std::uint32_t seed)
+{
+    GroovePattern out = a;
+    const int len = a.length();
+    if (len == 0 || b.length() == 0)
+        return out;
+    amount = std::clamp (amount, 0.0, 1.0);
+
+    // Each step switches at its own threshold; the downbeats of each beat follow the target a
+    // little earlier, so the blend keeps a clear pulse.
+    auto threshold = [seed] (int step, int salt)
+    {
+        auto x = (std::uint64_t) (step + 1) * 0x9E3779B97F4A7C15ULL ^ ((std::uint64_t) (seed + (std::uint32_t) salt) * 0xBF58476D1CE4E5B9ULL);
+        x ^= x >> 31; x *= 0x94D049BB133111EBULL; x ^= x >> 29;
+        const double r = (double) (x >> 11) * (1.0 / 9007199254740992.0);
+        return step % 4 == 0 ? r * 0.8 : 0.1 + r * 0.9;
+    };
+
+    for (int i = 0; i < len; ++i)
+    {
+        const int j = i % b.length();
+        if (amount >= 1.0 || threshold (i, 1) < amount) out.rightHand[(size_t) i] = b.rightHand[(size_t) j];
+        if (amount >= 1.0 || threshold (i, 2) < amount) out.leftHand[(size_t) i]  = b.leftHand[(size_t) j];
+    }
+    repairHolds (out.rightHand);
+    repairHolds (out.leftHand);
+    if (amount > 0.0)
+        out.name = a.name + " > " + b.name;
+    return out;
+}
+
 GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed)
 {
     Random rng (seed ^ 0x5EEDu);

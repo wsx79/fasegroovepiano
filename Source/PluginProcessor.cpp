@@ -173,6 +173,7 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
 
     clearFreeChords();
     resetUserPattern();
+    resetSong();
     events.reserve (1024);
 }
 
@@ -202,6 +203,7 @@ void FaseGroovePianoProcessor::resetToDefaults()
     segmentLocked.fill (false);
     lastBassMode = 1;
     chordsMuted = false;
+    resetSong();
     freeCircle = false;
     previewOn = false;
     editorScale = 1.0f;
@@ -645,6 +647,14 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     for (int i = 0; i < sgk::numSegments; ++i)
         s.segmentOrder[(size_t) i] = juce::jlimit (0, sgk::numSegments - 1, juce::roundToInt (segmentParams[(size_t) i]->load()));
 
+    // The section playing now uses its own variation, if it was regenerated in the song.
+    for (int i = 0; i < numSongParts; ++i)
+        if (sgk::defaultArrangement()[(size_t) i].section == s.section)
+        {
+            s.sectionVariation = songVariation[(size_t) i].load();
+            break;
+        }
+
     for (int i = 0; i < sgk::userPatternLength; ++i)
     {
         s.userRight[(size_t) i] = userRight[(size_t) i].load();
@@ -1080,6 +1090,96 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 }
 
 //==============================================================================
+std::vector<sgk::ArrangementPart> FaseGroovePianoProcessor::songArrangementParts() const
+{
+    std::vector<sgk::ArrangementPart> parts;
+    for (int i = 0; i < numSongParts; ++i)
+        parts.push_back ({ sgk::defaultArrangement()[(size_t) i].section, songBars[(size_t) i].load(), songVariation[(size_t) i].load() });
+    return parts;
+}
+
+void FaseGroovePianoProcessor::setSongBars (int part, int bars)
+{
+    if (juce::isPositiveAndBelow (part, numSongParts))
+        songBars[(size_t) part] = juce::jlimit (0, 64, bars);
+}
+
+void FaseGroovePianoProcessor::regenerateSongPart (int part)
+{
+    if (juce::isPositiveAndBelow (part, numSongParts))
+        songVariation[(size_t) part] = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 1 << 30 });
+}
+
+void FaseGroovePianoProcessor::resetSongPart (int part)
+{
+    if (juce::isPositiveAndBelow (part, numSongParts))
+        songVariation[(size_t) part] = 0;
+}
+
+void FaseGroovePianoProcessor::resetSong()
+{
+    for (int i = 0; i < numSongParts; ++i)
+    {
+        songBars[(size_t) i] = sgk::defaultArrangement()[(size_t) i].bars;
+        songVariation[(size_t) i] = 0;
+    }
+}
+
+int FaseGroovePianoProcessor::saveSongSections (const juce::File& folder, ClipPart part) const
+{
+    if (! folder.createDirectory())
+        return 0;
+
+    const auto settings = currentSettings();
+    const auto parts = songArrangementParts();
+    int written = 0;
+    for (int i = 0; i < (int) parts.size(); ++i)
+    {
+        if (parts[(size_t) i].bars <= 0)
+            continue;
+        std::vector<sgk::GrooveEngine::Marker> markers;
+        const auto events = sgk::GrooveEngine::renderArrangement (settings, { parts[(size_t) i] }, &markers);
+        const auto name = juce::String (i + 1) + " " + sgk::sectionName ((int) parts[(size_t) i].section);
+        const auto midi = midiFromEvents (events, parts[(size_t) i].bars * 4.0, &markers, part, name);
+        auto file = folder.getChildFile (juce::File::createLegalFileName (name + " - " + clipFileName (parts[(size_t) i].bars, part)));
+        file.deleteFile();
+        juce::FileOutputStream out (file);
+        if (out.openedOk() && midi.writeTo (out))
+            ++written;
+    }
+    return written;
+}
+
+void FaseGroovePianoProcessor::beginMorph()
+{
+    const auto s = currentSettings();
+    morphSource = sgk::applySegmentOrder (sgk::GrooveEngine::basePattern (s), s.segmentOrder);
+    morphSeed = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 1 << 30 });
+}
+
+void FaseGroovePianoProcessor::setMorph (int targetPattern, float amount)
+{
+    if (morphSource.length() != sgk::userPatternLength)
+        return;
+
+    auto s = currentSettings();
+    s.pattern = juce::jlimit (0, (int) sgk::groovePatterns().size() - 1, targetPattern);
+    auto target = sgk::GrooveEngine::basePattern (s);
+    auto blend = sgk::morphPatterns (morphSource, target, amount, morphSeed);
+
+    // Locked parts stay as they were (the parts are in playing order, A B C D).
+    for (int seg = 0; seg < sgk::numSegments; ++seg)
+        if (segmentLocked[(size_t) seg])
+            sgk::copySegment (blend, morphSource, seg);
+    sgk::repairHolds (blend.rightHand);
+    sgk::repairHolds (blend.leftHand);
+
+    for (int i = 0; i < sgk::numSegments; ++i)
+        if (juce::roundToInt (segmentParams[(size_t) i]->load()) != i)
+            setParameterFromUI (ParamIDs::segment (i), (float) i);
+    setUserPattern (blend);
+}
+
 int FaseGroovePianoProcessor::clipLengthInBars (int bars) const
 {
     if (bars > 0)
@@ -1088,9 +1188,9 @@ int FaseGroovePianoProcessor::clipLengthInBars (int bars) const
     if (bars == songArrangement)
     {
         int total = 0;
-        for (const auto& part : sgk::defaultArrangement())
-            total += part.bars;
-        return total;
+        for (const auto& part : songArrangementParts())
+            total += juce::jmax (0, part.bars);
+        return juce::jmax (1, total);
     }
 
     return juce::jmax (1, sgk::GrooveEngine::loopLengthInSteps (currentSettings()) / 16);
@@ -1098,29 +1198,34 @@ int FaseGroovePianoProcessor::clipLengthInBars (int bars) const
 
 juce::MidiFile FaseGroovePianoProcessor::createMidiClip (int bars, ClipPart part) const
 {
-    constexpr int ticksPerQuarter = 960;
     const auto settings = currentSettings();
     const double beats = clipLengthInBars (bars) * 4.0;
-    const bool bassOnChannel2 = juce::roundToInt (raw (ParamIDs::bassChannel)) == 1;
+    const auto name = clipFileName (bars, part).upToLastOccurrenceOf (".", false, false);
 
-    juce::MidiMessageSequence track;
-    track.addEvent (juce::MidiMessage::textMetaEvent (3, clipFileName (bars, part).upToLastOccurrenceOf (".", false, false)), 0.0);
-    track.addEvent (juce::MidiMessage::tempoMetaEvent (juce::roundToInt (60000000.0 / lastBpm.load())), 0.0);
-    track.addEvent (juce::MidiMessage::timeSignatureMetaEvent (4, 4), 0.0);
-
-    std::vector<sgk::NoteEvent> clipEvents;
     if (bars == songArrangement)
     {
         std::vector<sgk::GrooveEngine::Marker> markers;
-        clipEvents = sgk::GrooveEngine::renderArrangement (settings, sgk::defaultArrangement(), &markers);
+        const auto events = sgk::GrooveEngine::renderArrangement (settings, songArrangementParts(), &markers);
+        return midiFromEvents (events, beats, &markers, part, name);
+    }
+    return midiFromEvents (sgk::GrooveEngine::renderClip (settings, beats), beats, nullptr, part, name);
+}
 
-        for (const auto& m : markers)
+juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::NoteEvent>& clipEvents, double beats,
+                                                         const std::vector<sgk::GrooveEngine::Marker>* markers,
+                                                         ClipPart part, const juce::String& name) const
+{
+    constexpr int ticksPerQuarter = 960;
+    const bool bassOnChannel2 = juce::roundToInt (raw (ParamIDs::bassChannel)) == 1;
+
+    juce::MidiMessageSequence track;
+    track.addEvent (juce::MidiMessage::textMetaEvent (3, name), 0.0);
+    track.addEvent (juce::MidiMessage::tempoMetaEvent (juce::roundToInt (60000000.0 / lastBpm.load())), 0.0);
+    track.addEvent (juce::MidiMessage::timeSignatureMetaEvent (4, 4), 0.0);
+
+    if (markers != nullptr)
+        for (const auto& m : *markers)
             track.addEvent (juce::MidiMessage::textMetaEvent (6, m.name), m.ppq * ticksPerQuarter);   // DAW markers
-    }
-    else
-    {
-        clipEvents = sgk::GrooveEngine::renderClip (settings, beats);
-    }
 
     for (const auto& e : clipEvents)
     {
@@ -1208,6 +1313,16 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("segmentLocks", locks, nullptr);
     state.setProperty ("lastBassMode", lastBassMode, nullptr);
     state.setProperty ("soloBass", chordsMuted.load(), nullptr);
+    {
+        juce::StringArray bars, variations;
+        for (int i = 0; i < numSongParts; ++i)
+        {
+            bars.add (juce::String (songBars[(size_t) i].load()));
+            variations.add (juce::String ((juce::int64) songVariation[(size_t) i].load()));
+        }
+        state.setProperty ("songBars", bars.joinIntoString (","), nullptr);
+        state.setProperty ("songVariations", variations.joinIntoString (","), nullptr);
+    }
     state.setProperty ("editorScale", editorScale, nullptr);
     state.setProperty ("shrinkWhileDragging", shrinkWhileDragging, nullptr);
 
@@ -1252,6 +1367,18 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
 
     lastBassMode = juce::jlimit (1, sgk::numBassModes - 1, (int) state.getProperty ("lastBassMode", 1));
     chordsMuted = (bool) state.getProperty ("soloBass", false);
+    {
+        resetSong();
+        const auto bars = juce::StringArray::fromTokens (state.getProperty ("songBars").toString(), ",", {});
+        const auto variations = juce::StringArray::fromTokens (state.getProperty ("songVariations").toString(), ",", {});
+        for (int i = 0; i < numSongParts; ++i)
+        {
+            if (i < bars.size() && bars[i].containsOnly ("0123456789"))
+                setSongBars (i, bars[i].getIntValue());
+            if (i < variations.size() && variations[i].containsOnly ("0123456789"))
+                songVariation[(size_t) i] = (std::uint32_t) variations[i].getLargeIntValue();
+        }
+    }
     editorScale = juce::jlimit (0.6f, 2.0f, (float) state.getProperty ("editorScale", 1.0f));
     shrinkWhileDragging = (bool) state.getProperty ("shrinkWhileDragging", true);
 

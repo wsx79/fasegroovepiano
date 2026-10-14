@@ -6,6 +6,16 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.22.0] - 2026-10-14
+
+### Added
+- **Groove morph** (**MORPH** above the grid): turn your groove into another one step by step with
+  an *Amount* slider, live in the grid; locked parts stay; KEEP or CANCEL.
+- **Song arrangement** (**SONG** in the MIDI clip panel): bars of each section (or leave it
+  out), **NEW VARIATION** for one section only (e.g. a different Drop), back to ORIGINAL, and
+  **SAVE EACH SECTION AS .MID…** (one file per section). Used by the *Song* clip and by *Song
+  section* while playing; saved with the project.
+
 ## [1.21.0] - 2026-10-14
 
 ### Added

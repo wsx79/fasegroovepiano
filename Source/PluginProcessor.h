@@ -199,6 +199,20 @@ public:
         bars == 0 means "one full loop" (progression, groove and fills all repeat). */
     juce::MidiFile createMidiClip (int bars, ClipPart part) const;
 
+    // Song arrangement: Intro, Main, Break, Build-up, Drop, Outro (the order of sgk::defaultArrangement).
+    static constexpr int numSongParts = 6;
+    std::vector<sgk::ArrangementPart> songArrangementParts() const;
+    void setSongBars (int part, int bars);
+    void regenerateSongPart (int part);   // this section plays a new variation of the groove
+    void resetSongPart (int part);        // back to the groove as it is
+    void resetSong();
+    /** Writes every section of the song as its own .mid file; returns how many were written. */
+    int saveSongSections (const juce::File& folder, ClipPart) const;
+
+    // Groove morphing: from the current groove (kept as it is when you start) towards another one.
+    void beginMorph();
+    void setMorph (int targetPattern, float amount);
+
     /** Writes the clip into Documents/Fase Groove Piano and returns the file. */
     juce::File writeMidiClip (int bars, ClipPart part) const;
     juce::String clipFileName (int bars, ClipPart part) const;
@@ -229,6 +243,12 @@ private:
     // The user pattern, readable from the audio thread without locks.
     std::array<std::atomic<char>, sgk::userPatternLength> userRight, userLeft;
     std::array<bool, sgk::numSegments> segmentLocked {};
+    std::array<std::atomic<int>, 6> songBars;                 // per song section (0 = left out)
+    std::array<std::atomic<std::uint32_t>, 6> songVariation;  // 0 = the groove as it is
+    sgk::GroovePattern morphSource;
+    std::uint32_t morphSeed = 1;
+    juce::MidiFile midiFromEvents (const std::vector<sgk::NoteEvent>&, double beats, const std::vector<sgk::GrooveEngine::Marker>*,
+                                   ClipPart, const juce::String& name) const;
     std::array<std::atomic<int>, sgk::maxProgressionLength> freeChords;
     void resetUserPattern();
     int lastBassMode = 1;

@@ -348,6 +348,53 @@ namespace
     }
 
     //==============================================================================
+    void testMorphAndSong()
+    {
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::pattern, 3.0f);
+        const auto source = sgk::GrooveEngine::basePattern (p.currentSettings());
+        const auto target = sgk::groovePatterns()[60];
+
+        p.setSegmentLocked (1, true);   // part B stays
+        p.beginMorph();
+        p.setMorph (60, 1.0f);
+        auto now = sgk::GrooveEngine::basePattern (p.currentSettings());
+        CHECK (juce::roundToInt (value (p, ParamIDs::pattern)) == sgk::userPatternIndex());
+        CHECK (now.rightHand.substr (8, 8) == source.rightHand.substr (8, 8));    // locked part untouched
+        CHECK (now.rightHand.substr (16, 16) == target.rightHand.substr (16, 16)); // the rest is the target
+        p.setMorph (60, 0.0f);
+        now = sgk::GrooveEngine::basePattern (p.currentSettings());
+        CHECK (now.rightHand == source.rightHand && now.leftHand == source.leftHand);
+
+        // Song: bars per section, a variation for one section, saved with the project.
+        p.setSongBars (0, 0);
+        p.setSongBars (4, 32);
+        p.regenerateSongPart (4);
+        CHECK (p.clipLengthInBars (FaseGroovePianoProcessor::songArrangement) == 16 + 8 + 4 + 32 + 8);
+        juce::MemoryBlock data;
+        p.getStateInformation (data);
+        FaseGroovePianoProcessor q;
+        q.setStateInformation (data.getData(), (int) data.getSize());
+        const auto a = p.songArrangementParts(), b = q.songArrangementParts();
+        for (size_t i = 0; i < a.size(); ++i)
+            CHECK (a[i].bars == b[i].bars && a[i].variation == b[i].variation);
+        CHECK (b[4].variation != 0);
+
+        // The song clip: markers only for the sections in it, notes well paired, right length.
+        const auto song = readClip (p.writeMidiClip (FaseGroovePianoProcessor::songArrangement, FaseGroovePianoProcessor::ClipPart::all), false);
+        CHECK (song.markers == 5 && song.unmatched == 0);
+        CHECK (song.lastTick <= 68.0 * 3840.0 + 1.0);
+
+        // One file per section.
+        const auto folder = juce::File::createTempFile ("fgp-sections");
+        CHECK (p.saveSongSections (folder, FaseGroovePianoProcessor::ClipPart::all) == 5);
+        CHECK (folder.findChildFiles (juce::File::findFiles, false, "*.mid").size() == 5);
+        for (const auto& f : folder.findChildFiles (juce::File::findFiles, false, "*.mid"))
+            CHECK (readClip (f, false).unmatched == 0);
+        folder.deleteRecursively();
+    }
+
+    //==============================================================================
     void testUpdateSwap()
     {
         CHECK (Updater::isNewer ("v1.18.1", "1.18.0"));
@@ -423,6 +470,7 @@ int main()
     testTransport();
     testMidiImport();
     testBassLineControls();
+    testMorphAndSong();
     testUpdateSwap();
 
     if (failures == 0)

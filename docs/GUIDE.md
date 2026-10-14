@@ -230,6 +230,12 @@ grid). Above each part you'll find:
 both. SOLO BASS only affects what plays: dragged and saved clips still contain everything (use
 *Notes* in the MIDI clip panel to export one part).
 
+**MORPH** (top of the grid) turns your groove into another one **step by step**: choose the
+target groove and move the **Amount** slider; the grid changes as you move it, so you can stop
+anywhere in between (each step switches at its own point, so more amount only adds more of the
+target). **Locked** parts stay as they are. **KEEP** keeps the blend (as your *User pattern*),
+**CANCEL** puts everything back.
+
 **RND PIANO** and **RND BASS** (next to it) give a new random rhythm to **one hand only**: the
 piano (chords row) or the bass, while the other row stays as it is. Locked parts (**LOCK**) are
 kept. With a bass line from the library, **RND BASS** picks another line. Press them a few times until the two hands lock together.
@@ -404,6 +410,12 @@ Two ways to use it:
 - **Automatic export:** *Clip length → Song: intro > drop > outro* creates a 60-bar clip
   (Intro 8 · Main 16 · Break 8 · Build-up 4 · Drop 16 · Outro 8) with section **markers**,
   visible in the timeline of most DAWs.
+- **SONG** (top right of the MIDI clip panel) opens the **song arrangement**: the bars of each
+  section (2 to 32, or **-** to leave it out), **NEW VARIATION** to regenerate the groove of **one
+  section only** (for example a different Drop) while the others stay, and **ORIGINAL** to go back.
+  The arrangement is used by *Clip length → Song*, by *Song section* while you play, and by
+  **SAVE EACH SECTION AS .MID…**, which writes one MIDI file per section (with the *Notes* part you
+  chose) to drop on separate clips. It is saved with the project.
 - **Automation:** every knob, menu and switch is a DAW parameter, so you can automate anything:
   song section, groove, fills, gate, swing, chords of the progression, sound… In the DAW's
   automation list the parameters are grouped (*Harmony*, *Progression*, *Groove*, *Tempo & MIDI*,

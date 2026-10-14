@@ -235,6 +235,12 @@ sulla griglia). Sopra ogni parte trovi:
 entrambi. SOLO BASSO cambia solo quello che suona: le clip trascinate e salvate contengono
 sempre tutto (per esportare una parte sola usa *Note* nel pannello MIDI clip).
 
+**MORPH** (in alto sulla griglia) trasforma il tuo groove in un altro **passo dopo passo**:
+scegli il groove di arrivo e muovi lo slider **Quantità**; la griglia cambia mentre lo muovi, così
+ti puoi fermare a metà strada (ogni passo cambia in un suo punto, quindi aumentando la quantità
+si aggiunge solo altro groove di arrivo). Le parti **bloccate** restano com'erano. **TIENI** tiene
+il risultato (come *User pattern*), **ANNULLA** rimette tutto com'era.
+
 **RND PIANO** e **RND BASSO** (lì accanto) danno un nuovo ritmo casuale **a una sola mano**: il
 piano (riga accordi) o il basso, mentre l'altra riga resta com'è. Le parti bloccate (**LOCK**)
 restano. Con una linea di basso della libreria, **RND BASSO** sceglie un'altra linea. Premili qualche volta finché le due mani non si incastrano.
@@ -413,6 +419,12 @@ Due modi di usarla:
 - **Esportazione automatica:** *Clip length → Song: intro > drop > outro* crea una clip di 60
   battute (Intro 8 · Main 16 · Break 8 · Build-up 4 · Drop 16 · Outro 8) con i **marker** delle
   sezioni, visibili nella timeline della maggior parte delle DAW.
+- **BRANO** (in alto a destra nel pannello MIDI clip) apre l'**arrangiamento del brano**: le
+  battute di ogni sezione (da 2 a 32, o **-** per toglierla), **NUOVA VARIAZIONE** per rigenerare
+  il groove di **una sola sezione** (per esempio un Drop diverso) mentre le altre restano, e
+  **ORIGINALE** per tornare indietro. L'arrangiamento vale per *Lunghezza clip → Brano*, per la
+  *Sezione del brano* mentre suoni e per **SALVA OGNI SEZIONE IN .MID…**, che scrive un file MIDI
+  per sezione (con la parte scelta in *Note*) da mettere su clip separate. Si salva nel progetto.
 - **Automazione:** ogni manopola, menu e interruttore è un parametro della DAW, quindi puoi
   automatizzare tutto: sezione del brano, groove, fill, gate, swing, accordi della progressione,
   suono… Nella lista di automazione della DAW i parametri sono raggruppati (*Harmony*,

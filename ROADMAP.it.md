@@ -7,10 +7,11 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Prossima release
 
-- Morphing dal groove A al groove B (le parti bloccate restano), poi rigenerazione per sezione.
+- Musical DNA: variazioni guidate da un'intenzione (più soulful, più funky, più minimale, più energico), tenendo quello che blocchi.
 
 ## Fatto
 
+- v1.22.0: morphing del groove, arrangiamento con variazioni per sezione e un .mid per sezione.
 - v1.21.0: Voicing Coach (confronto A/B di due voicing).
 - v1.20.0: libreria di linee di basso (disco, funky, house, soulful).
 - v1.19.0: analizzatore MIDI (trascina un .mid), preferiti e recenti nei browser.

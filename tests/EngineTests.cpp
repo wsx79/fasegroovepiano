@@ -1011,6 +1011,64 @@ static void testVoicingCoach()
     CHECK (close.names == wide.names);
 }
 
+static void testMorphAndSections()
+{
+    const auto& a = groovePatterns()[3];
+    const auto& b = groovePatterns()[60];
+    CHECK (morphPatterns (a, b, 0.0, 7).rightHand == a.rightHand);
+    CHECK (morphPatterns (a, b, 1.0, 7).rightHand == b.rightHand);
+    CHECK (morphPatterns (a, b, 1.0, 7).leftHand == b.leftHand);
+
+    // The blend only grows: a step that follows b at 40% still follows b at 70%.
+    auto fromB = [&] (double amount)
+    {
+        const auto m = morphPatterns (a, b, amount, 7);
+        std::vector<bool> taken;
+        for (int i = 0; i < m.length(); ++i)
+            taken.push_back (m.rightHand[(size_t) i] == b.rightHand[(size_t) i] && a.rightHand[(size_t) i] != b.rightHand[(size_t) i]);
+        return taken;
+    };
+    const auto t40 = fromB (0.4), t70 = fromB (0.7);
+    int grew = 0;
+    for (size_t i = 0; i < t40.size(); ++i)
+    {
+        if (t40[i] && ! t70[i]) CHECK (false);
+        grew += (t70[i] ? 1 : 0) - (t40[i] ? 1 : 0);
+    }
+    CHECK (grew >= 0);
+
+    // Every blend is a valid pattern: no hold without a note before it.
+    for (double amount : { 0.1, 0.3, 0.5, 0.8 })
+    {
+        const auto m = morphPatterns (a, b, amount, 99);
+        for (const auto* line : { &m.rightHand, &m.leftHand })
+            for (size_t i = 1; i < line->size(); ++i)
+                if ((*line)[i] == '=') CHECK ((*line)[i - 1] != '.');
+    }
+
+    // Song sections: a regenerated section plays a variation; a section of 0 bars is left out.
+    GrooveSettings s;
+    s.pattern = 3;
+    s.humanize = 0.0f;
+    std::vector<ArrangementPart> parts { { Section::main, 4 }, { Section::drop, 4 } };
+    const auto plain = GrooveEngine::renderArrangement (s, parts);
+    parts[1].variation = 12345;
+    const auto varied = GrooveEngine::renderArrangement (s, parts);
+    int firstHalfSame = 0, firstHalfTotal = 0, secondDiffers = 0;
+    for (size_t i = 0; i < std::min (plain.size(), varied.size()); ++i)
+    {
+        if (plain[i].ppq < 16.0) { ++firstHalfTotal; firstHalfSame += plain[i].ppq == varied[i].ppq && plain[i].note == varied[i].note ? 1 : 0; }
+        else if (plain[i].ppq != varied[i].ppq || plain[i].note != varied[i].note) ++secondDiffers;
+    }
+    CHECK (firstHalfSame == firstHalfTotal);   // the main groove is untouched
+    CHECK (secondDiffers > 0 || plain.size() != varied.size());
+
+    parts[0].bars = 0;
+    double last = 0.0;
+    for (const auto& e : GrooveEngine::renderArrangement (s, parts)) last = std::max (last, e.ppq);
+    CHECK (last <= 16.0 + 1.0e-9);
+}
+
 int main()
 {
     testChordNames();
@@ -1037,6 +1095,7 @@ int main()
     testHarmonyAnalyzer();
     testBassLines();
     testVoicingCoach();
+    testMorphAndSections();
 
     if (failures == 0)
         std::printf ("All engine tests passed.\n");
