@@ -727,6 +727,38 @@ namespace
         a.restoreSnapshot (plain);
         CHECK (! a.hasEditedLoop());
 
+        // The edits follow a change of the settings (another key, another voicing): same notes
+        // deleted, same velocities, the rest regenerated.
+        {
+            FaseGroovePianoProcessor d;
+            d.setParameterFromUI (ParamIDs::key, 9.0f);
+            const double length = d.naturalLoopBeats();
+            auto edited = d.generatedLoop (length);
+            const auto total = edited.size();
+            const int firstNote = edited.front().note;
+            edited.erase (edited.begin());          // delete the first note
+            edited.front().velocity = 33;           // and play the next one softer
+            const int softOrigin = edited.front().origin;
+            d.setEditedLoop (edited, length);
+
+            d.setParameterFromUI (ParamIDs::key, 11.0f);   // two semitones up
+            d.refreshEditedLoop();
+            const auto playing = d.editedLoop();
+            CHECK (playing != nullptr && playing->size() == total - 1);
+            bool soft = false, deletedBack = false;
+            for (const auto& n : *playing)
+            {
+                if (n.velocity == 33) soft = true;
+                if (std::abs (n.start - 0.0) < 0.05 && n.note == firstNote + 2) deletedBack = true;
+            }
+            CHECK (soft && softOrigin >= 0);
+            CHECK (! deletedBack);
+
+            d.setParameterFromUI (ParamIDs::voicing, 0.0f);
+            d.refreshEditedLoop();
+            CHECK (d.editedLoop()->size() + 1 >= total - 1);   // still the same loop, re-voiced
+        }
+
         // A broken note list is ignored, not loaded half way.
         auto xml = juce::AudioProcessor::getXmlFromBinary (data.getData(), (int) data.getSize());
         xml->setAttribute ("editedNotes", "x y z;0 0.5 300 100 0");

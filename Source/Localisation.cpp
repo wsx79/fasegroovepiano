@@ -724,6 +724,11 @@ namespace
         { "Show", "Mostra", "Mostrar", "Afficher", "Zeigen", "Mostrar" },
         { "Draws", "Disegna", "Dibuja", "Dessine", "Zeichnet", "Desenha" },
         { "Play / stop the preview (space bar)", "Avvia / ferma l'ascolto (barra spaziatrice)", "Reproducir / parar la escucha (barra espaciadora)", "Lecture / arrêt de l'écoute (barre d'espace)", "Vorhören starten / stoppen (Leertaste)", "Tocar / parar a escuta (barra de espaço)" },
+        { "Hear", "Ascolta", "Escuchar", "Écouter", "Hören", "Ouvir" },
+        { "notes selected", "note selezionate", "notas seleccionadas", "notes sélectionnées", "Noten ausgewählt", "notas selecionadas" },
+        { "Full screen", "Schermo intero", "Pantalla completa", "Plein écran", "Vollbild", "Tela cheia" },
+        { "Exit full screen", "Esci da schermo intero", "Salir de pantalla completa", "Quitter le plein écran", "Vollbild verlassen", "Sair da tela cheia" },
+        { "Select: drag a rectangle with MOVE (or Shift + drag), Ctrl / Shift + click to add, Ctrl + A for all; then drag, arrows, Delete, QUANTIZE and the velocity lane work on all of them.", "Selezione: trascina un rettangolo con SPOSTA (o Shift + trascina), Ctrl / Shift + clic per aggiungere, Ctrl + A per tutte; poi trascina, frecce, Canc, QUANTIZZA e la corsia della dinamica lavorano su tutte.", "Selección: arrastra un rectángulo con MOVER (o Shift + arrastrar), Ctrl / Shift + clic para añadir, Ctrl + A para todas; luego arrastrar, flechas, Supr, CUANTIZAR y el carril de velocity actúan sobre todas.", "Sélection : tracez un rectangle avec DÉPLACER (ou Maj + glisser), Ctrl / Maj + clic pour ajouter, Ctrl + A pour tout ; ensuite glisser, flèches, Suppr, QUANTIFIER et la bande de vélocité agissent sur toutes.", "Auswahl: mit BEWEGEN ein Rechteck ziehen (oder Umschalt + ziehen), Strg / Umschalt + Klick zum Hinzufügen, Strg + A für alle; dann wirken Ziehen, Pfeile, Entf, QUANTISIEREN und die Velocity-Spur auf alle.", "Seleção: arraste um retângulo com MOVER (ou Shift + arrastar), Ctrl / Shift + clique para adicionar, Ctrl + A para todas; depois arrastar, setas, Delete, QUANTIZAR e a faixa de velocity agem em todas." },
     };
     // clang-format on
 

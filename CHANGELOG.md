@@ -6,6 +6,23 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.28.0] - 2026-10-14
+
+### Added
+- **Edits follow the settings:** after editing notes in the piano roll you can still change key,
+  scale, chords, voicing, Top +8va, the groove...: the notes are generated again and your edits are
+  carried over (deleted notes stay deleted, moved / lengthened / softer notes change the same way,
+  added notes follow the chord).
+- **Multiple selection** in the piano roll: rubber-band rectangle, Ctrl / Shift + click, Ctrl + A;
+  move, transpose, delete, quantize and set the velocity of all of them.
+- **HEAR BOTH / PIANO / BASS** inside the piano roll editor.
+- **Full screen** button (in a DAW the plug-in fills the screen).
+- **The standalone app restarts by itself after an update** (portable copy: replaced and reopened;
+  setup: it closes, the setup runs and opens it again).
+
+### Fixed
+- The space bar works as soon as you come back to the window, without clicking in it first.
+
 ## [1.27.0] - 2026-10-14
 
 ### Added

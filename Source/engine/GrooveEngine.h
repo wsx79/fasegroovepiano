@@ -138,7 +138,16 @@ struct LoopNote
     double start = 0.0, length = 0.25;
     int note = 60, velocity = 100;
     Part part = Part::chords;
+    int origin = -1;   // the generated note it comes from (index), -1 = added by hand
 };
+
+/** Carries the edits made by hand on a loop over to the loop generated now (other chords,
+    voicing, key, groove...): every generated note of `base` that was deleted, moved, lengthened
+    or played softer in `edited` is found again in `now` (same part, same moment, same place in
+    the chord) and changed the same way; notes added by hand follow the harmony; new generated
+    notes stay. The result's `origin`s point into `now`. */
+std::vector<LoopNote> carryEdits (const std::vector<LoopNote>& base, const std::vector<LoopNote>& edited, double baseLength,
+                                  const std::vector<LoopNote>& now, double nowLength);
 
 struct GrooveSettings
 {

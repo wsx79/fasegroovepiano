@@ -226,7 +226,11 @@ edit the **notes one by one**:
   to delete them). Double-click or right-click also deletes a note.
 - **DRAWS PIANO / BASS** (orange / pink, the colours of the notes): which part the pencil draws.
 - **SHOW ALL / PIANO / BASS**: see only the piano or only the bass; the other part is greyed out and
-  can't be touched.
+  can't be touched. **HEAR BOTH / PIANO / BASS**: listen to only one part (as under the main piano
+  roll).
+- **Select several notes**: drag a rectangle with MOVE (or Shift + drag with the pencil),
+  Ctrl / Shift + click to add or remove a note, Ctrl + A for all; Esc clears the selection. Dragging,
+  the arrows, Delete, QUANTIZE and the velocity lane then work on all of them.
 - Notes move **freely** (no jumps). **SNAP** sticks them to the **Grid** (1/8, 1/16 or 1/32; Alt
   while dragging does the opposite) and **QUANTIZE** puts the selected note (or every note shown)
   on the grid.
@@ -240,8 +244,10 @@ edit the **notes one by one**:
 
 From the first edit **your notes play and are exported instead of the generated ones** (in the
 main groove and the drop; the other song sections keep being generated), and the small piano roll
-shows **EDITED NOTES**. The *Velocity* knob still scales them. Changing the groove or the chords
-doesn't touch them: **BACK TO GENERATED** forgets the edits. They are saved with the project and
+shows **EDITED NOTES**. **Your edits follow everything else**: change the key, the scale, the
+chords, the voicing, Top +8va, the groove... and the notes are generated again with your edits
+carried over (the notes you deleted stay deleted, the ones you moved, lengthened or played softer
+change the same way, the ones you added follow the chord). **BACK TO GENERATED** forgets the edits. They are saved with the project and
 undone with ◀.
 
 Next to the tabs, **BOTH / PIANO / BASS** choose what you hear: **PIANO** switches the bass off
@@ -314,6 +320,11 @@ kept. With a bass line from the library, **RND BASS** picks another line. Press 
 
 See the next chapter.
 
+### Full screen
+
+The **corners button** (next to STYLE) puts the interface full screen; click it again to come back.
+Inside a DAW the plug-in window grows to the size of the screen (the DAW owns its window).
+
 ### Window size
 
 Drag the bottom-right corner to **enlarge or shrink** the interface (60% to 200%). The size is
@@ -380,6 +391,10 @@ to go back):
       and **replaces the files where they are** (the running one and the other copies in the usual
       plug-in folders); then restart the DAW;
     - if the files can't be written (e.g. a system folder), it shows the download to copy by hand.
+
+    In the **Standalone app** the update finishes by itself: the app closes and opens again in the
+    new version (with the setup, the setup reopens it when it is done). Inside a DAW, restart the
+    DAW: a plug-in can't restart its host.
 
     **LATER** asks again
     next time; **SKIP THIS VERSION** stops asking for that version. **CHECK NOW** checks

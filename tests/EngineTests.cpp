@@ -795,6 +795,44 @@ static void testEditedLoop()
     CHECK (other);
 }
 
+static void testCarryEdits()
+{
+    // Hand edits survive a change of the generated notes (here: everything a tone up).
+    std::vector<LoopNote> base {
+        { 0.0, 0.5, 60, 100, Part::chords, 0 }, { 0.0, 0.5, 64, 100, Part::chords, 1 }, { 0.0, 0.5, 67, 100, Part::chords, 2 },
+        { 0.0, 0.5, 36, 100, Part::bass, 3 },   { 2.0, 0.5, 60, 100, Part::chords, 4 },
+    };
+    std::vector<LoopNote> edited {
+        { 0.0, 0.5, 60, 100, Part::chords, 0 },     // untouched
+        { 0.1, 1.0, 65, 80, Part::chords, 1 },      // moved later, a semitone up, longer, softer
+        // 2 (G) deleted
+        { 0.0, 0.5, 36, 100, Part::bass, 3 },
+        { 2.0, 0.5, 60, 100, Part::chords, 4 },
+        { 3.0, 0.25, 72, 90, Part::chords, -1 },    // added by hand
+    };
+    auto now = base;
+    for (auto& n : now) n.note += 2;
+
+    const auto carried = carryEdits (base, edited, 4.0, now, 4.0);
+    auto find = [&] (double start, int note) { for (const auto& n : carried) if (std::abs (n.start - start) < 1.0e-9 && n.note == note) return &n; return (const LoopNote*) nullptr; };
+    CHECK (carried.size() == 5);
+    CHECK (find (0.0, 62) != nullptr);                      // the untouched one, a tone up
+    CHECK (find (0.0, 69) == nullptr);                      // the deleted one stays deleted
+    const auto* moved = find (0.1, 67);
+    CHECK (moved != nullptr && std::abs (moved->length - 1.0) < 1.0e-9 && moved->velocity == 80);
+    CHECK (find (3.0, 74) != nullptr);                      // the added one follows the harmony
+    CHECK (find (0.0, 38) != nullptr && find (2.0, 62) != nullptr);
+
+    // Nothing changed: the edit is returned as it is.
+    CHECK (carryEdits (base, edited, 4.0, base, 4.0).size() == edited.size());
+
+    // A longer loop now: the edits repeat in each copy of the old loop.
+    auto longer = base;
+    for (auto n : base) { n.start += 4.0; longer.push_back (n); }
+    const auto twice = carryEdits (base, edited, 4.0, longer, 8.0);
+    CHECK (twice.size() == 10);
+}
+
 static void testAutoMovement()
 {
     // Movement turns some plain hits into inversion moves; off leaves the groove untouched.
@@ -1328,6 +1366,7 @@ int main()
     testVoicingMovement();
     testHousePedalAndStabBass();
     testEditedLoop();
+    testCarryEdits();
     testAutoMovement();
     testStrum();
     testPatternsWellFormed();

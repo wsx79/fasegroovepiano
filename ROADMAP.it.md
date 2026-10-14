@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v1.28.0: le modifiche seguono le impostazioni, selezione multipla, ascolto piano / basso nell'editor, schermo intero, riavvio automatico dopo gli aggiornamenti.
 - v1.27.0: strumenti dell'editor del piano roll (matita, sposta, gomma), spostamento libero con snap / quantizza, filtro di visualizzazione, segui, barra spaziatrice.
 - v1.26.0: editor del piano roll (note una per una, corsia della dinamica), gancio nella linea a pedale, ottave della mano sinistra, trascinamento del brano intero corretto.
 - v1.25.0: groove di piano nel classico stile house (linea in alto a pedale, basso in ogni stab), piano roll, nuovo pannello di export e finestra del brano, nuovo circolo delle quinte, arrivo del morph dal browser.

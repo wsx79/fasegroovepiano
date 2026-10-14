@@ -232,7 +232,11 @@ grande**, per modificare le **note una per una**:
   nota.
 - **DISEGNA PIANO / BASSO** (arancione / rosa, i colori delle note): quale parte disegna la matita.
 - **MOSTRA TUTTO / PIANO / BASSO**: vedi solo il piano o solo il basso; l'altra parte diventa grigia
-  e non si può toccare.
+  e non si può toccare. **ASCOLTA TUTTI / PIANO / BASSO**: senti una parte sola (come sotto il piano
+  roll principale).
+- **Selezionare più note**: trascina un rettangolo con SPOSTA (o Shift + trascina con la matita),
+  Ctrl / Shift + clic per aggiungere o togliere una nota, Ctrl + A per tutte; Esc toglie la
+  selezione. Trascinare, le frecce, Canc, QUANTIZZA e la corsia della dinamica lavorano su tutte.
 - Le note si spostano **liberamente** (senza scatti). **SNAP** le aggancia alla **Griglia** (1/8,
   1/16 o 1/32; Alt mentre trascini fa il contrario) e **QUANTIZZA** porta sulla griglia la nota scelta
   (o tutte quelle visibili).
@@ -246,8 +250,11 @@ grande**, per modificare le **note una per una**:
 
 Dalla prima modifica **suonano e vengono esportate le tue note al posto di quelle generate** (nel
 groove principale e nel drop; le altre sezioni del brano restano generate), e il piano roll
-piccolo mostra **NOTE MODIFICATE**. La manopola *Dinamica* le scala comunque. Cambiare groove o
-accordi non le tocca: **TORNA AL GENERATO** dimentica le modifiche. Si salvano nel progetto e si
+piccolo mostra **NOTE MODIFICATE**. **Le tue modifiche seguono tutto il resto**: cambia tonalità,
+scala, accordi, voicing, Ottava sopra, groove... e le note vengono generate di nuovo con le tue
+modifiche riportate sopra (le note cancellate restano cancellate, quelle spostate, allungate o più
+piano cambiano allo stesso modo, quelle aggiunte seguono l'accordo). **TORNA AL GENERATO** dimentica
+le modifiche. Si salvano nel progetto e si
 annullano con ◀.
 
 Accanto alle schede, **TUTTI / PIANO / BASSO** scelgono cosa senti: **PIANO** spegne il basso
@@ -321,6 +328,12 @@ restano. Con una linea di basso della libreria, **RND BASSO** sceglie un'altra l
 
 Vedi il prossimo capitolo.
 
+### Schermo intero
+
+Il **pulsante con i quattro angoli** (accanto a STILE) mette l'interfaccia a schermo intero; riclicca
+per tornare. Dentro una DAW la finestra del plug-in diventa grande quanto lo schermo (la finestra è
+della DAW).
+
 ### Dimensione della finestra
 
 Trascina l'angolo in basso a destra per **ingrandire o rimpicciolire** l'interfaccia (dal 60% al
@@ -389,6 +402,10 @@ o su **CHIUDI** per tornare indietro):
       plug-in di solito usate); poi riavvia la DAW;
     - se i file non si possono scrivere (per esempio in una cartella di sistema), ti mostra il
       download da copiare a mano.
+
+    Nell'**app Standalone** l'aggiornamento si completa da solo: l'app si chiude e si riapre nella
+    nuova versione (col setup, è il setup a riaprirla alla fine). Dentro una DAW riavvia la DAW: un
+    plug-in non può riavviare il programma che lo ospita.
 
     **PIÙ TARDI** te lo
     richiede la prossima volta; **SALTA QUESTA VERSIONE** non te la propone più. **CONTROLLA ORA**

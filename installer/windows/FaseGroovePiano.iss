@@ -105,6 +105,14 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\Fase Groove Piano.exe"; Tasks
 
 [Run]
 Filename: "{app}\Fase Groove Piano.exe"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent; Components: standalone
+; Automatic update from the standalone app (/RELAUNCH=1): open it again when the setup is done.
+Filename: "{app}\Fase Groove Piano.exe"; Flags: nowait runasoriginaluser; Components: standalone; Check: RelaunchRequested
+
+[Code]
+function RelaunchRequested: Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
+end;
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{commoncf64}\VST3\Fase Groove Piano.vst3"

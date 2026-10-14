@@ -402,6 +402,14 @@ private:
     bool mini = false;
 };
 
+/** Full-screen button: four corners (pointing in while full screen). */
+class FullScreenButton : public juce::Button
+{
+public:
+    FullScreenButton() : juce::Button ("full screen") {}
+    void paintButton (juce::Graphics&, bool highlighted, bool down) override;
+};
+
 /** Round play / stop button (next to PREVIEW): a triangle when stopped, a square while playing. */
 class PlayButton : public juce::Button
 {
@@ -490,7 +498,22 @@ private:
     int shown = 0;                                 // 0 everything, 1 piano only, 2 bass only
     bool isShown (const sgk::LoopNote& n) const    { return shown == 0 || (shown == 2) == (n.part == sgk::Part::bass); }
 
-    enum class Drag { none, move, resize, velocity, erase };
+    // Selection: several notes at once (rubber-band rectangle, Ctrl / Shift + click, Ctrl + A).
+    std::vector<char> picked;                      // one flag per note, in the same order
+    bool isPicked (int i) const                    { return juce::isPositiveAndBelow (i, (int) picked.size()) && picked[(size_t) i] != 0; }
+    int numPicked() const;
+    void clearPicks();
+    void syncPicks()                               { picked.resize (notes.size(), 0); }
+    void eraseWhere (std::function<bool (int)>);
+    void sortNotes();
+    juce::Rectangle<float> marquee;
+    std::vector<char> marqueeBase;
+    std::vector<sgk::LoopNote> dragOrigin;
+
+    void setListening (int which);                 // 0 both, 1 piano, 2 bass (what you hear)
+    int listening() const;
+
+    enum class Drag { none, move, resize, velocity, erase, marquee };
     Drag drag = Drag::none;
     double dragStartBeat = 0.0, noteStartBeat = 0.0, noteStartLength = 0.0;
     int dragStartNote = 0, noteStartPitch = 0;
@@ -501,6 +524,7 @@ private:
     juce::TextButton zoomOut { "-" }, zoomIn { "+" }, fitButton, snapButton, snapToggle, quantizeButton, generatedButton, closeButton;
     juce::TextButton pianoPartButton, bassPartButton, followButton;
     juce::TextButton showAllButton, showPianoButton, showBassButton;
+    juce::TextButton hearAllButton, hearPianoButton, hearBassButton, helpButton;
     ToolButton drawTool { ToolButton::Icon::pencil }, selectTool { ToolButton::Icon::arrow }, eraseTool { ToolButton::Icon::eraser };
     juce::String status;
 };
@@ -730,6 +754,12 @@ private:
     static constexpr int baseWidth = 1180, baseHeight = 860;
     static constexpr int miniWidth = 320, miniHeight = 96;
     float uiScale = 1.0f;
+    juce::Point<float> uiOffset;
+    juce::AffineTransform uiTransform() const { return juce::AffineTransform::scale (uiScale).translated (uiOffset); }
+    FullScreenButton fullScreenButton;
+    bool isFullScreen() const;
+    void toggleFullScreen();
+    juce::Rectangle<int> sizeBeforeFullScreen;
     bool miniMode = false;
     juce::Point<int> fullSize;
     juce::Component* miniKeep = nullptr;

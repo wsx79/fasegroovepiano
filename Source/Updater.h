@@ -36,6 +36,7 @@ namespace Updater
     {
         bool done = false;           // false: nothing replaced, the download was shown instead
         bool installerStarted = false;
+        bool relaunching = false;    // standalone app: it must quit now, the new version opens by itself
         juce::StringArray updated;   // portable: what was replaced
     };
 
@@ -61,6 +62,9 @@ namespace Updater
         /** The portable swap, with a failure injected after N steps (-1: none). For the tests. */
         bool replaceAll (const juce::File& staged, const juce::Array<juce::File>& targets, int failAfterSteps);
     }
+
+    /** True in the standalone app (false inside a DAW). */
+    bool isStandaloneApp();
 
     /** Removes the files a portable update left behind (Windows can't delete a loaded DLL). */
     void cleanupAfterUpdate();

@@ -6,6 +6,23 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.28.0] - 2026-10-14
+
+### Aggiunto
+- **Le modifiche seguono le impostazioni:** dopo aver modificato le note nel piano roll puoi ancora
+  cambiare tonalità, scala, accordi, voicing, Ottava sopra, groove...: le note vengono generate di
+  nuovo e le tue modifiche riportate sopra (le note cancellate restano cancellate, quelle spostate /
+  allungate / più piano cambiano allo stesso modo, quelle aggiunte seguono l'accordo).
+- **Selezione multipla** nel piano roll: rettangolo di selezione, Ctrl / Shift + clic, Ctrl + A;
+  sposta, trasponi, cancella, quantizza e cambia la dinamica di tutte insieme.
+- **ASCOLTA TUTTI / PIANO / BASSO** dentro l'editor del piano roll.
+- Pulsante **schermo intero** (in una DAW il plug-in riempie lo schermo).
+- **L'app Standalone si riavvia da sola dopo un aggiornamento** (copia portable: sostituita e
+  riaperta; setup: si chiude, parte il setup e la riapre).
+
+### Corretto
+- La barra spaziatrice funziona appena torni sulla finestra, senza cliccarci dentro prima.
+
 ## [1.27.0] - 2026-10-14
 
 ### Aggiunto

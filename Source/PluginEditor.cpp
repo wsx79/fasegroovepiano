@@ -2060,6 +2060,42 @@ void SongOverlay::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+void FullScreenButton::paintButton (juce::Graphics& g, bool highlighted, bool)
+{
+    auto r = getLocalBounds().toFloat().reduced (0.5f);
+    g.setColour (highlighted ? Palette::panelEdge : Palette::background);
+    g.fillRoundedRectangle (r, 4.0f);
+    g.setColour (Palette::panelEdge);
+    g.drawRoundedRectangle (r, 4.0f, 1.0f);
+
+    // Four corners: outwards to go full screen, inwards to come back.
+    const auto box = r.withSizeKeepingCentre (12.0f, 12.0f);
+    const float a = 4.0f;
+    const bool in = getToggleState();
+    juce::Path p;
+    for (int corner = 0; corner < 4; ++corner)
+    {
+        const float x = corner % 2 == 0 ? box.getX() : box.getRight();
+        const float y = corner < 2 ? box.getY() : box.getBottom();
+        const float dx = corner % 2 == 0 ? a : -a, dy = corner < 2 ? a : -a;
+        if (! in)
+        {
+            p.startNewSubPath (x + dx, y);
+            p.lineTo (x, y);
+            p.lineTo (x, y + dy);
+        }
+        else
+        {
+            p.startNewSubPath (x + dx, y);
+            p.lineTo (x + dx, y + dy);
+            p.lineTo (x, y + dy);
+        }
+    }
+    g.setColour (Palette::accent);
+    g.strokePath (p, juce::PathStrokeType (1.6f));
+}
+
+//==============================================================================
 void PlayButton::paintButton (juce::Graphics& g, bool highlighted, bool)
 {
     auto r = getLocalBounds().toFloat().reduced (1.0f);
@@ -2162,7 +2198,8 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
 {
     setWantsKeyboardFocus (true);
     for (auto* b : { &zoomOut, &zoomIn, &fitButton, &snapButton, &snapToggle, &quantizeButton, &pianoPartButton, &bassPartButton,
-                     &followButton, &showAllButton, &showPianoButton, &showBassButton, &generatedButton, &closeButton })
+                     &followButton, &showAllButton, &showPianoButton, &showBassButton, &hearAllButton, &hearPianoButton, &hearBassButton,
+                     &helpButton, &generatedButton, &closeButton })
     {
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
         b->setColour (juce::TextButton::textColourOffId, Palette::text);
@@ -2204,10 +2241,21 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
         shown = which;
         if (juce::isPositiveAndBelow (selected, (int) notes.size()) && ! isShown (notes[(size_t) selected]))
             selected = -1;
+        syncPicks();
+        for (int i = 0; i < (int) notes.size(); ++i)
+            if (! isShown (notes[(size_t) i]))
+                picked[(size_t) i] = 0;
         if (which != 0)
             drawPart = which == 2 ? sgk::Part::bass : sgk::Part::chords;   // the pencil draws what you see
         refreshText();
     };
+    hearAllButton.setConnectedEdges (juce::Button::ConnectedOnRight);
+    hearPianoButton.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
+    hearBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+    hearAllButton.onClick   = [this] { setListening (0); };
+    hearPianoButton.onClick = [this] { setListening (1); };
+    hearBassButton.onClick  = [this] { setListening (2); };
+    helpButton.setButtonText ("?");
     showAllButton.onClick   = [showOnly] { showOnly (0); };
     showPianoButton.onClick = [showOnly] { showOnly (1); };
     showBassButton.onClick  = [showOnly] { showOnly (2); };
@@ -2227,6 +2275,7 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
         lastLoop = nullptr;
         notes = processor.generatedLoop (length);
         selected = -1;
+        clearPicks();
         changed = false;
         updateStatus();
         repaint();
@@ -2278,6 +2327,25 @@ void PianoRollEditor::refreshText()
             b->setColour (juce::TextButton::textColourOffId, on ? Palette::background : Palette::dim);
         }
     }
+    hearAllButton.setButtonText (tr ("BOTH"));
+    hearPianoButton.setButtonText (tr ("PIANO"));
+    hearBassButton.setButtonText (tr ("BASS"));
+    {
+        const int now = listening();
+        int index = 0;
+        for (auto* b : { &hearAllButton, &hearPianoButton, &hearBassButton })
+        {
+            const bool on = index++ == now;
+            const auto colour = b == &hearBassButton ? Palette::accent2 : Palette::accent;
+            b->setColour (juce::TextButton::buttonColourId, on ? colour : Palette::background);
+            b->setColour (juce::TextButton::textColourOffId, on ? Palette::background : Palette::dim);
+        }
+    }
+    hearAllButton.setTooltip (tr ("Hear the piano and the bass"));
+    hearPianoButton.setTooltip (tr ("Piano only: the bass is switched off"));
+    hearBassButton.setTooltip (tr ("Bass only: the chords are silent while you play (exported clips keep everything)"));
+    helpButton.setTooltip (tr ("Click: add a note  |  drag: move (freely, or on the grid with SNAP)  |  drag the right edge: length  |  double-click or right-click: delete  |  arrows: move the selected note (Shift: octave)  |  bottom lane: velocity")
+                           + "\n" + tr ("Select: drag a rectangle with MOVE (or Shift + drag), Ctrl / Shift + click to add, Ctrl + A for all; then drag, arrows, Delete, QUANTIZE and the velocity lane work on all of them."));
     showAllButton.setTooltip (tr ("Show all the notes"));
     showPianoButton.setTooltip (tr ("Show only the piano: the bass is greyed out and can't be touched"));
     showBassButton.setTooltip (tr ("Show only the bass: the piano is greyed out and can't be touched"));
@@ -2312,6 +2380,7 @@ void PianoRollEditor::show (double generatedLength)
         notes = processor.generatedLoop (length);
     }
     selected = -1;
+    clearPicks();
     changed = false;
     lastLoop = processor.editedLoop();
     lowNote = 127; highNote = 0;
@@ -2419,15 +2488,81 @@ bool PianoRollEditor::snapping (const juce::MouseEvent& e) const
     return snapOn != e.mods.isAltDown();
 }
 
+int PianoRollEditor::numPicked() const
+{
+    return (int) std::count_if (picked.begin(), picked.end(), [] (char c) { return c != 0; });
+}
+
+void PianoRollEditor::clearPicks()
+{
+    picked.assign (notes.size(), 0);
+}
+
+void PianoRollEditor::eraseWhere (std::function<bool (int)> shouldErase)
+{
+    syncPicks();
+    std::vector<sgk::LoopNote> keptNotes;
+    std::vector<char> keptPicks;
+    for (int i = 0; i < (int) notes.size(); ++i)
+        if (! shouldErase (i))
+        {
+            keptNotes.push_back (notes[(size_t) i]);
+            keptPicks.push_back (picked[(size_t) i]);
+        }
+    notes = std::move (keptNotes);
+    picked = std::move (keptPicks);
+    selected = -1;
+}
+
+void PianoRollEditor::sortNotes()
+{
+    // Same order as the processor keeps (time, pitch, part), with the selection following its notes.
+    syncPicks();
+    const auto primary = juce::isPositiveAndBelow (selected, (int) notes.size()) ? selected : -1;
+    std::vector<int> order ((size_t) notes.size());
+    std::iota (order.begin(), order.end(), 0);
+    std::stable_sort (order.begin(), order.end(), [this] (int a, int b)
+    {
+        const auto& x = notes[(size_t) a];
+        const auto& y = notes[(size_t) b];
+        return std::tie (x.start, x.note, x.part) < std::tie (y.start, y.note, y.part);
+    });
+    std::vector<sgk::LoopNote> sortedNotes;
+    std::vector<char> sortedPicks;
+    for (int k = 0; k < (int) order.size(); ++k)
+    {
+        sortedNotes.push_back (notes[(size_t) order[(size_t) k]]);
+        sortedPicks.push_back (picked[(size_t) order[(size_t) k]]);
+        if (order[(size_t) k] == primary)
+            selected = k;
+    }
+    notes = std::move (sortedNotes);
+    picked = std::move (sortedPicks);
+}
+
+int PianoRollEditor::listening() const
+{
+    return ! processor.isBassOn() ? 1 : processor.chordsMuted.load() ? 2 : 0;
+}
+
+void PianoRollEditor::setListening (int which)
+{
+    // The same as BOTH / PIANO / BASS under the main piano roll.
+    processor.chordsMuted = which == 2;
+    if ((which == 1) == processor.isBassOn())
+        processor.toggleBass();
+    refreshText();
+}
+
 void PianoRollEditor::quantize()
 {
     auto onGrid = [this] (double beat) { return juce::jlimit (0.0, length - snap, std::round (beat / snap) * snap); };
-    if (juce::isPositiveAndBelow (selected, (int) notes.size()))
-        notes[(size_t) selected].start = onGrid (notes[(size_t) selected].start);
-    else
-        for (auto& n : notes)
-            if (isShown (n))
-                n.start = onGrid (n.start);
+    syncPicks();
+    const bool some = numPicked() > 0;
+    for (int i = 0; i < (int) notes.size(); ++i)
+        if (some ? isPicked (i) : isShown (notes[(size_t) i]))
+            notes[(size_t) i].start = onGrid (notes[(size_t) i].start);
+    sortNotes();
     commit();
 }
 
@@ -2468,9 +2603,13 @@ void PianoRollEditor::resized()
     top.removeFromRight (8);
     generatedButton.setBounds (top.removeFromRight (190));
     top.removeFromRight (24);
-    showBassButton.setBounds (top.removeFromRight (64));
-    showPianoButton.setBounds (top.removeFromRight (64));
-    showAllButton.setBounds (top.removeFromRight (64));
+    showBassButton.setBounds (top.removeFromRight (62));
+    showPianoButton.setBounds (top.removeFromRight (62));
+    showAllButton.setBounds (top.removeFromRight (62));
+    top.removeFromRight (84);   // "SHOW" caption
+    hearBassButton.setBounds (top.removeFromRight (62));
+    hearPianoButton.setBounds (top.removeFromRight (62));
+    hearAllButton.setBounds (top.removeFromRight (70));
 
     // Toolbar: tools, the part the pencil draws, grid, zoom, follow.
     head.removeFromTop (8);
@@ -2497,6 +2636,8 @@ void PianoRollEditor::resized()
     zoomIn.setBounds (bar.removeFromRight (30));
     bar.removeFromRight (4);
     zoomOut.setBounds (bar.removeFromRight (30));
+
+    helpButton.setBounds (card().reduced (16.0f, 0.0f).toNearestInt().withTop ((int) card().getBottom() - 30).withHeight (22).removeFromRight (26));
 
     const auto g = gridArea();
     scrollBar.setBounds (juce::Rectangle<float> (g.getX(), velocityArea().getBottom() + 4.0f, g.getWidth(), 12.0f).toNearestInt());
@@ -2534,7 +2675,9 @@ void PianoRollEditor::commit()
 void PianoRollEditor::updateStatus()
 {
     auto text = processor.hasEditedLoop() ? tr ("Edited notes") : tr ("Generated notes (edit one to start)");
-    if (juce::isPositiveAndBelow (selected, (int) notes.size()))
+    if (const int count = numPicked(); count > 1)
+        text << "   |   " << count << " " << tr ("notes selected");
+    else if (juce::isPositiveAndBelow (selected, (int) notes.size()))
     {
         const auto& n = notes[(size_t) selected];
         text << "   |   " << sgk::noteName (n.note) << (n.note / 12 - 1) << "  " << tr ("Velocity") << " " << n.velocity
@@ -2547,6 +2690,7 @@ void PianoRollEditor::updateStatus()
 void PianoRollEditor::mouseDown (const juce::MouseEvent& e)
 {
     grabKeyboardFocus();
+    syncPicks();
     const auto p = e.position;
     drag = Drag::none;
 
@@ -2568,39 +2712,58 @@ void PianoRollEditor::mouseDown (const juce::MouseEvent& e)
 
     bool edge = false;
     const int hit = hitNote (p, edge);
+    const bool adding = e.mods.isCtrlDown() || e.mods.isCommandDown() || e.mods.isShiftDown();
+
     if (tool == Tool::erase)
     {
         drag = Drag::erase;
         if (hit >= 0)
         {
-            notes.erase (notes.begin() + hit);
-            selected = -1;
+            eraseWhere ([hit] (int i) { return i == hit; });
             commit();
         }
         return;
     }
-    if (hit < 0 && tool == Tool::select)
+
+    if (hit >= 0 && e.mods.isPopupMenu())
     {
-        selected = -1;
-        updateStatus();
+        // Right-click: delete it (or the whole selection, if it is part of it).
+        const bool group = isPicked (hit);
+        eraseWhere ([this, hit, group] (int i) { return group ? isPicked (i) : i == hit; });
+        commit();
         return;
     }
-    if (hit >= 0 && (e.mods.isPopupMenu()))
+
+    if (hit < 0 && (tool == Tool::select || e.mods.isShiftDown()))
     {
-        notes.erase (notes.begin() + hit);
+        // Rubber band: drag a rectangle to select the notes in it (Ctrl / Shift: add to the selection).
+        drag = Drag::marquee;
+        if (! adding)
+            clearPicks();
+        marqueeBase = picked;
+        marquee = { p, p };
         selected = -1;
-        commit();
+        updateStatus();
         return;
     }
 
     if (hit >= 0)
     {
+        if (adding)
+            picked[(size_t) hit] = isPicked (hit) ? 0 : 1;   // Ctrl / Shift + click: add or remove it
+        else if (! isPicked (hit))
+        {
+            clearPicks();
+            picked[(size_t) hit] = 1;
+        }
         selected = hit;
         drag = edge ? Drag::resize : Drag::move;
+        if (adding && ! isPicked (hit))
+            drag = Drag::none;
     }
     else
     {
-        // A new note on the grid, as long as the grid step (or the last length you used).
+        // A new note, as long as the grid step (drag to make it longer).
         sgk::LoopNote n;
         n.start = snapping (e) ? snapped (beatAt (p.x)) : juce::jlimit (0.0, length - 0.01, beatAt (p.x));
         n.length = snap;
@@ -2608,37 +2771,56 @@ void PianoRollEditor::mouseDown (const juce::MouseEvent& e)
         n.velocity = 100;
         n.part = drawPart;
         notes.push_back (n);
+        clearPicks();
+        picked.back() = 1;
         selected = (int) notes.size() - 1;
         drag = Drag::resize;
         commit();
     }
 
-    const auto& n = notes[(size_t) selected];
+    dragOrigin = notes;
     dragStartBeat = beatAt (p.x);
     dragStartNote = noteAt (p.y);
-    noteStartBeat = n.start;
-    noteStartLength = n.length;
-    noteStartPitch = n.note;
     updateStatus();
+    repaint();
 }
 
 void PianoRollEditor::mouseDrag (const juce::MouseEvent& e)
 {
     const auto p = e.position;
+    syncPicks();
+
     if (drag == Drag::erase)
     {
         bool edge = false;
         if (const int hit = hitNote (p, edge); hit >= 0)
         {
-            notes.erase (notes.begin() + hit);
-            selected = -1;
+            eraseWhere ([hit] (int i) { return i == hit; });
             commit();
         }
         return;
     }
+
+    if (drag == Drag::marquee)
+    {
+        marquee = juce::Rectangle<float> (e.mouseDownPosition, p);
+        picked = marqueeBase;
+        for (int i = 0; i < (int) notes.size(); ++i)
+        {
+            const auto& n = notes[(size_t) i];
+            const auto r = juce::Rectangle<float> (xOf (n.start), yOf (n.note), juce::jmax (3.0f, (float) (n.length * pixelsPerBeat)), rowHeight());
+            if (isShown (n) && r.intersects (marquee))
+                picked[(size_t) i] = 1;
+        }
+        updateStatus();
+        repaint();
+        return;
+    }
+
     if (drag == Drag::velocity)
     {
-        // The note nearest to the mouse (the selected one first) takes the height as velocity.
+        // The note nearest to the mouse takes the height as velocity: with a selection, all the
+        // selected notes; otherwise the notes struck with it (Shift: only that one).
         const auto lane = velocityArea();
         const int velocity = juce::jlimit (1, 127, juce::roundToInt ((lane.getBottom() - p.y) / lane.getHeight() * 127.0f));
         int best = -1;
@@ -2647,39 +2829,70 @@ void PianoRollEditor::mouseDrag (const juce::MouseEvent& e)
         {
             if (! isShown (notes[(size_t) i]))
                 continue;
-            const float d = std::abs (xOf (notes[(size_t) i].start) - p.x) - (i == selected ? 3.0f : 0.0f);
+            const float d = std::abs (xOf (notes[(size_t) i].start) - p.x) - (isPicked (i) ? 3.0f : 0.0f);
             if (d < bestDistance) { bestDistance = d; best = i; }
         }
         if (best >= 0)
         {
-            // Notes struck together (a chord) move together, unless a single one is selected there.
             const double start = notes[(size_t) best].start;
-            const bool onlySelected = best == selected && e.mods.isShiftDown();
-            for (auto& n : notes)
-                if (isShown (n) && std::abs (n.start - start) < 1.0e-4 && n.part == notes[(size_t) best].part && (! onlySelected || &n == &notes[(size_t) best]))
+            const auto part = notes[(size_t) best].part;
+            const bool group = isPicked (best) && numPicked() > 1;
+            for (int i = 0; i < (int) notes.size(); ++i)
+            {
+                auto& n = notes[(size_t) i];
+                const bool together = group ? isPicked (i)
+                                            : (i == best || (! e.mods.isShiftDown() && isShown (n) && n.part == part && std::abs (n.start - start) < 1.0e-4));
+                if (together)
                     n.velocity = velocity;
+            }
+            selected = best;
             commit();
         }
         return;
     }
 
-    if (! juce::isPositiveAndBelow (selected, (int) notes.size()) || drag == Drag::none)
+    if (drag != Drag::move && drag != Drag::resize)
+        return;
+    if (dragOrigin.size() != notes.size())
         return;
 
-    auto& n = notes[(size_t) selected];
     if (drag == Drag::move)
     {
+        // Free: the notes follow the mouse. SNAP: they move by whole grid steps, keeping their feel.
         const double delta = beatAt (p.x) - dragStartBeat;
-        // Free: the note follows the mouse. SNAP: it moves by whole grid steps, keeping its own feel.
-        const double moved = snapping (e) ? std::round (delta / snap) * snap : delta;
-        n.start = juce::jlimit (0.0, length - 0.01, noteStartBeat + moved);
-        n.note = juce::jlimit (lowNote, highNote, noteStartPitch + (noteAt (p.y) - dragStartNote));
+        double moved = snapping (e) ? std::round (delta / snap) * snap : delta;
+        int pitch = noteAt (p.y) - dragStartNote;
+
+        // The whole selection stays inside the loop and the keyboard.
+        for (int i = 0; i < (int) notes.size(); ++i)
+            if (isPicked (i))
+            {
+                const auto& o = dragOrigin[(size_t) i];
+                moved = juce::jlimit (-o.start, length - 0.01 - o.start, moved);
+                pitch = juce::jlimit (lowNote - o.note, highNote - o.note, pitch);
+            }
+        for (int i = 0; i < (int) notes.size(); ++i)
+            if (isPicked (i))
+            {
+                notes[(size_t) i].start = dragOrigin[(size_t) i].start + moved;
+                notes[(size_t) i].note = dragOrigin[(size_t) i].note + pitch;
+            }
     }
-    else if (drag == Drag::resize)
+    else
     {
+        // Lengths: the note you hold follows the mouse, the other selected ones change by as much.
+        if (! juce::isPositiveAndBelow (selected, (int) notes.size()))
+            return;
+        const auto& held = dragOrigin[(size_t) selected];
         const double end = snapping (e) ? std::round (beatAt (p.x) / snap) * snap : beatAt (p.x);
         const double shortest = snapping (e) ? snap * 0.5 : 0.03;
-        n.length = juce::jlimit (shortest, juce::jmax (shortest, length - n.start), juce::jmax (shortest, end - n.start));
+        const double change = juce::jmax (shortest, end - held.start) - held.length;
+        for (int i = 0; i < (int) notes.size(); ++i)
+            if (isPicked (i) || i == selected)
+            {
+                const auto& o = dragOrigin[(size_t) i];
+                notes[(size_t) i].length = juce::jlimit (shortest, juce::jmax (shortest, length - o.start), o.length + change);
+            }
     }
     repaint();
     updateStatus();
@@ -2689,14 +2902,14 @@ void PianoRollEditor::mouseUp (const juce::MouseEvent&)
 {
     if (drag == Drag::move || drag == Drag::resize)
     {
-        // Sorting in the processor would move the selection: keep it on the same note.
-        const auto keep = juce::isPositiveAndBelow (selected, (int) notes.size()) ? notes[(size_t) selected] : sgk::LoopNote {};
-        std::sort (notes.begin(), notes.end(), [] (const sgk::LoopNote& a, const sgk::LoopNote& b) { return a.start < b.start; });
-        for (int i = 0; i < (int) notes.size(); ++i)
-            if (juce::approximatelyEqual (notes[(size_t) i].start, keep.start) && notes[(size_t) i].note == keep.note && notes[(size_t) i].part == keep.part)
-                selected = i;
+        sortNotes();
         fitRange();
         commit();
+    }
+    if (drag == Drag::marquee)
+    {
+        marquee = {};
+        repaint();
     }
     drag = Drag::none;
 }
@@ -2712,8 +2925,7 @@ void PianoRollEditor::mouseDoubleClick (const juce::MouseEvent& e)
     const int hit = gridArea().contains (e.position) ? hitNote (e.position, edge) : -1;
     if (hit >= 0)
     {
-        notes.erase (notes.begin() + hit);
-        selected = -1;
+        eraseWhere ([hit] (int i) { return i == hit; });
         commit();
     }
 }
@@ -2732,24 +2944,47 @@ void PianoRollEditor::mouseWheelMove (const juce::MouseEvent& e, const juce::Mou
 
 bool PianoRollEditor::keyPressed (const juce::KeyPress& key)
 {
+    syncPicks();
+    const auto mods = key.getModifiers();
     if (key == juce::KeyPress::escapeKey)
     {
-        setVisible (false);
+        // First Esc clears the selection, the second one closes.
+        if (numPicked() > 0) { clearPicks(); selected = -1; updateStatus(); }
+        else                 setVisible (false);
         return true;
     }
-    if (! juce::isPositiveAndBelow (selected, (int) notes.size()))
+    if (key == juce::KeyPress::spaceKey)
+    {
+        processor.previewOn = ! processor.previewOn.load();   // play / stop the preview
+        return true;
+    }
+    if (mods.isCommandDown() && (key.getKeyCode() == 'A' || key.getKeyCode() == 'a'))
+    {
+        for (int i = 0; i < (int) notes.size(); ++i)
+            picked[(size_t) i] = isShown (notes[(size_t) i]) ? 1 : 0;
+        updateStatus();
+        return true;
+    }
+    if (numPicked() == 0)
         return false;
 
-    auto& n = notes[(size_t) selected];
     if (key == juce::KeyPress::deleteKey || key == juce::KeyPress::backspaceKey)
+        eraseWhere ([this] (int i) { return isPicked (i); });
+    else if (key.getKeyCode() == juce::KeyPress::upKey || key.getKeyCode() == juce::KeyPress::downKey)
     {
-        notes.erase (notes.begin() + selected);
-        selected = -1;
+        const int step = (key.getKeyCode() == juce::KeyPress::upKey ? 1 : -1) * (mods.isShiftDown() ? 12 : 1);
+        for (int i = 0; i < (int) notes.size(); ++i)
+            if (isPicked (i))
+                notes[(size_t) i].note = juce::jlimit (0, 127, notes[(size_t) i].note + step);
     }
-    else if (key.getKeyCode() == juce::KeyPress::upKey)    n.note = juce::jmin (127, n.note + (key.getModifiers().isShiftDown() ? 12 : 1));
-    else if (key.getKeyCode() == juce::KeyPress::downKey)  n.note = juce::jmax (0, n.note - (key.getModifiers().isShiftDown() ? 12 : 1));
-    else if (key.getKeyCode() == juce::KeyPress::rightKey) n.start = juce::jmin (length - snap, n.start + snap);
-    else if (key.getKeyCode() == juce::KeyPress::leftKey)  n.start = juce::jmax (0.0, n.start - snap);
+    else if (key.getKeyCode() == juce::KeyPress::rightKey || key.getKeyCode() == juce::KeyPress::leftKey)
+    {
+        const double step = key.getKeyCode() == juce::KeyPress::rightKey ? snap : -snap;
+        for (int i = 0; i < (int) notes.size(); ++i)
+            if (isPicked (i))
+                notes[(size_t) i].start = juce::jlimit (0.0, length - 0.01, notes[(size_t) i].start + step);
+        sortNotes();
+    }
     else
         return false;
 
@@ -2777,6 +3012,7 @@ void PianoRollEditor::timerCallback()
         else
             notes = processor.generatedLoop (length);
         selected = -1;
+        clearPicks();
         updateScrollBar();
         updateStatus();
     }
@@ -2819,12 +3055,13 @@ void PianoRollEditor::paint (juce::Graphics& g)
     g.drawText (Localisation::upper (tr ("Piano roll")), titleRow.removeFromLeft (150.0f), juce::Justification::centredLeft);
     g.setColour (processor.hasEditedLoop() ? Palette::accent2 : Palette::dim);
     g.setFont (font (12.0f));
-    g.drawText (status, titleRow.withTrimmedRight (600.0f), juce::Justification::centredLeft);
+    g.setColour (Palette::dim);
 
     // Captions: what the two PIANO / BASS groups mean.
     g.setColour (Palette::dim);
     g.setFont (font (10.5f, true));
     g.drawText (Localisation::upper (tr ("Show")), showAllButton.getBounds().toFloat().translated (-70.0f, 0.0f).withWidth (64.0f), juce::Justification::centredRight);
+    g.drawText (Localisation::upper (tr ("Hear")), hearAllButton.getBounds().toFloat().translated (-70.0f, 0.0f).withWidth (64.0f), juce::Justification::centredRight);
     g.drawText (Localisation::upper (tr ("Draws")), pianoPartButton.getBounds().toFloat().translated (-72.0f, 0.0f).withWidth (66.0f), juce::Justification::centredRight);
 
     const auto grid = gridArea();
@@ -2905,14 +3142,23 @@ void PianoRollEditor::paint (juce::Graphics& g)
             }
             g.setColour ((sounding ? colour.brighter (0.4f) : colour).withAlpha (0.5f + 0.5f * (float) n.velocity / 127.0f));
             g.fillRoundedRectangle (r, 3.0f);
-            g.setColour (i == selected ? Palette::text : juce::Colours::black.withAlpha (0.4f));
-            g.drawRoundedRectangle (r, 3.0f, i == selected ? 2.0f : 0.8f);
+            g.setColour (isPicked (i) ? Palette::text : juce::Colours::black.withAlpha (0.4f));
+            g.drawRoundedRectangle (r, 3.0f, isPicked (i) ? 2.0f : 0.8f);
             if (r.getWidth() > 34.0f && rowH >= 10.0f)
             {
                 g.setColour (Palette::background);
                 g.setFont (font (juce::jmin (10.0f, rowH - 1.0f), true));
                 g.drawText (juce::String (sgk::noteName (n.note)) + juce::String (n.note / 12 - 1), r.reduced (3.0f, 0.0f), juce::Justification::centredLeft);
             }
+        }
+
+        // The rubber band.
+        if (! marquee.isEmpty())
+        {
+            g.setColour (Palette::text.withAlpha (0.08f));
+            g.fillRect (marquee);
+            g.setColour (Palette::text.withAlpha (0.7f));
+            g.drawRect (marquee, 1.0f);
         }
 
         if (playhead >= 0.0)
@@ -2955,16 +3201,15 @@ void PianoRollEditor::paint (juce::Graphics& g)
             const float x = xOf (n.start);
             const float h = lane.getHeight() * (float) n.velocity / 127.0f;
             const auto colour = n.part == sgk::Part::bass ? Palette::accent2 : Palette::accent;
-            g.setColour (i == selected ? Palette::text : colour.withAlpha (0.8f));
+            g.setColour (isPicked (i) ? Palette::text : colour.withAlpha (0.8f));
             g.fillRect (x - 1.0f, lane.getBottom() - h, 3.0f, h);
             g.fillEllipse (x - 3.0f, lane.getBottom() - h - 3.0f, 7.0f, 7.0f);
         }
     }
 
-    g.setColour (Palette::dim);
-    g.setFont (font (10.5f));
-    g.drawText (tr ("Click: add a note  |  drag: move (freely, or on the grid with SNAP)  |  drag the right edge: length  |  double-click or right-click: delete  |  arrows: move the selected note (Shift: octave)  |  bottom lane: velocity"),
-                juce::Rectangle<float> (c.getX() + 16.0f, c.getBottom() - 22.0f, c.getWidth() - 32.0f, 16.0f), juce::Justification::centredLeft);
+    g.setColour (processor.hasEditedLoop() ? Palette::accent2 : Palette::dim);
+    g.setFont (font (12.0f));
+    g.drawText (status, juce::Rectangle<float> (c.getX() + 16.0f, c.getBottom() - 26.0f, c.getWidth() - 70.0f, 18.0f), juce::Justification::centredLeft);
 }
 
 //==============================================================================
@@ -3366,6 +3611,13 @@ UpdateOverlay::UpdateOverlay()
     {
         const auto report = Updater::install (result);
         setVisible (false);
+
+        if (report.relaunching)
+        {
+            // Standalone app: close now; the new version opens by itself.
+            juce::MessageManager::callAsync ([] { if (auto* app = juce::JUCEApplicationBase::getInstance()) app->systemRequestedQuit(); });
+            return;
+        }
 
         if (! report.updated.isEmpty())
             juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, "Fase Groove Piano",
@@ -3876,15 +4128,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     // The big piano roll, to edit the notes one by one.
     auto openRollEditor = [this]
     {
-        auto s = processor.currentSettings();
-        s.editedLoop = nullptr;
         updatePianoRoll (processor.currentSettings());
-        const int patternBars = juce::jmax (1, sgk::GrooveEngine::patternLength (s) / 16);
-        const int progressionBars = juce::jmax (1, (s.progressionLength * s.stepsPerChord + 15) / 16);
-        int bars = std::lcm (patternBars, progressionBars);
-        if (bars > 8)
-            bars = juce::jmin (8, juce::jmax (patternBars, progressionBars));
-        rollEditor.show (bars * 4.0);
+        rollEditor.show (processor.naturalLoopBeats());
     };
     expandRollButton.onClick = openRollEditor;
     pianoRoll.onDoubleClick = openRollEditor;
@@ -3978,6 +4223,9 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         processor.setParameterFromUI (ParamIDs::strumDir, (float) ((now + 1) % 3));
     };
     addAndMakeVisible (strumDirButton);
+    fullScreenButton.onClick = [this] { toggleFullScreen(); };
+    fullScreenButton.setTooltip ("Full screen");
+    addAndMakeVisible (fullScreenButton);
     addAndMakeVisible (undoButton);
     addAndMakeVisible (redoButton);
     undoButton.onClick = [this] { undo(); };
@@ -4840,6 +5088,15 @@ void FaseGroovePianoEditor::timerCallback()
         return;
     }
 
+    // Back on the window (Alt+Tab, a click on the title bar): the keys work again at once, so
+    // the space bar plays without clicking inside first.
+    if (auto* peer = getPeer(); peer != nullptr && peer->isFocused() && isShowing()
+        && juce::Component::getCurrentlyFocusedComponent() == nullptr)
+        (rollEditor.isVisible() ? static_cast<juce::Component&> (rollEditor) : static_cast<juce::Component&> (*this)).grabKeyboardFocus();
+
+    fullScreenButton.setToggleState (isFullScreen(), juce::dontSendNotification);
+    fullScreenButton.setTooltip (tr (isFullScreen() ? "Exit full screen" : "Full screen"));
+
     auto s = processor.currentSettings();
     const int heldRoot = processor.uiHeldRoot.load();
     if (heldRoot >= 0)
@@ -4912,7 +5169,7 @@ void FaseGroovePianoEditor::timerCallback()
         currentRoman = romanText;
         currentKey = keyText;
         showingHold = heldRoot >= 0;
-        repaint (chordDisplayArea.toFloat().transformedBy (juce::AffineTransform::scale (uiScale)).getSmallestIntegerContainer().expanded (2));
+        repaint (chordDisplayArea.toFloat().transformedBy (uiTransform()).getSmallestIntegerContainer().expanded (2));
     }
 
     const bool bassOn = processor.isBassOn();
@@ -4984,7 +5241,7 @@ void FaseGroovePianoEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> a
 void FaseGroovePianoEditor::paint (juce::Graphics& g)
 {
     g.fillAll (Palette::background);
-    g.addTransform (juce::AffineTransform::scale (uiScale));
+    g.addTransform (uiTransform());
 
     if (miniMode)
     {
@@ -5053,15 +5310,50 @@ void FaseGroovePianoEditor::resized()
     }
     else
     {
-        uiScale = juce::jmax (0.3f, getWidth() / (float) baseWidth);
-        processor.editorScale = uiScale;
+        // Full screen can have another shape: the interface keeps its proportions, centred.
+        uiScale = juce::jmax (0.3f, juce::jmin (getWidth() / (float) baseWidth, getHeight() / (float) baseHeight));
+        if (! isFullScreen())
+            processor.editorScale = uiScale;
         layoutFull();
     }
+    uiOffset = miniMode ? juce::Point<float>()
+                        : juce::Point<float> ((getWidth() - baseWidth * uiScale) * 0.5f, (getHeight() - baseHeight * uiScale) * 0.5f);
 
     // Everything is laid out at base size and scaled as a whole.
     for (auto* c : getChildren())
         if (dynamic_cast<juce::ResizableCornerComponent*> (c) == nullptr && dynamic_cast<juce::TooltipWindow*> (c) == nullptr)
-            c->setTransform (juce::AffineTransform::scale (uiScale));
+            c->setTransform (uiTransform());
+}
+
+bool FaseGroovePianoEditor::isFullScreen() const
+{
+    if (auto* window = findParentComponentOfClass<juce::ResizableWindow>())
+        return window->isFullScreen();
+    return ! sizeBeforeFullScreen.isEmpty();
+}
+
+void FaseGroovePianoEditor::toggleFullScreen()
+{
+    // The standalone app: the real full screen. In a DAW the plug-in fills the screen instead
+    // (the DAW owns its window).
+    if (auto* window = findParentComponentOfClass<juce::ResizableWindow>())
+    {
+        window->setFullScreen (! window->isFullScreen());
+        return;
+    }
+    if (! sizeBeforeFullScreen.isEmpty())
+    {
+        setSize (sizeBeforeFullScreen.getWidth(), sizeBeforeFullScreen.getHeight());
+        sizeBeforeFullScreen = {};
+        return;
+    }
+    if (const auto* display = juce::Desktop::getInstance().getDisplays().getDisplayForRect (getScreenBounds()))
+    {
+        sizeBeforeFullScreen = getBounds();
+        const auto area = display->userArea.reduced (8).withTrimmedTop (30);
+        const float scale = juce::jmin (area.getWidth() / (float) baseWidth, area.getHeight() / (float) baseHeight, 2.0f);
+        setSize (juce::roundToInt (baseWidth * scale), juce::roundToInt (baseHeight * scale));
+    }
 }
 
 void FaseGroovePianoEditor::layoutMini()
@@ -5085,6 +5377,7 @@ void FaseGroovePianoEditor::layoutFull()
     optionsButton.setBounds (headerArea.getRight() - 78, headerArea.getBottom() - 22, 74, 20);
     resetButton.setBounds (optionsButton.getBounds().translated (-62, 0).withWidth (58));
     styleMenuButton.setBounds (resetButton.getBounds().translated (-70, 0).withWidth (66));
+    fullScreenButton.setBounds (styleMenuButton.getBounds().translated (-34, 0).withWidth (30));
     {
         auto topRow = juce::Rectangle<int> (headerArea.getRight() - 118, headerArea.getY() + 4, 114, 22);
         redoButton.setBounds (topRow.removeFromRight (20).reduced (2));

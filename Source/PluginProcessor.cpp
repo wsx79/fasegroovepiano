@@ -7,6 +7,7 @@
 
 #include <map>
 #include <mutex>
+#include <numeric>
 
 namespace
 {
@@ -178,6 +179,10 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     resetUserPattern();
     resetSong();
     events.reserve (1024);
+
+    // Edits made in the piano roll follow the settings: a change carries them over to the new notes.
+    editRefresher.callback = [this] { refreshEditedLoop(); };
+    editRefresher.startTimer (150);
 }
 
 void FaseGroovePianoProcessor::resetUserPattern()
@@ -1322,26 +1327,89 @@ int FaseGroovePianoProcessor::clipLengthInBars (int bars) const
     return juce::jmax (1, sgk::GrooveEngine::loopLengthInSteps (currentSettings()) / 16);
 }
 
+namespace
+{
+    void roundAndSort (std::vector<sgk::LoopNote>& notes)
+    {
+        // Times kept to 1/10000 of a beat (as saved), in a fixed order: a saved project loads back identical.
+        for (auto& n : notes)
+        {
+            n.start = std::round (n.start * 10000.0) / 10000.0;
+            n.length = juce::jmax (0.001, std::round (n.length * 10000.0) / 10000.0);
+        }
+        std::stable_sort (notes.begin(), notes.end(), [] (const sgk::LoopNote& a, const sgk::LoopNote& b)
+        {
+            return std::tie (a.start, a.note, a.part) < std::tie (b.start, b.note, b.part);
+        });
+    }
+
+    FaseGroovePianoProcessor::EditedLoop share (std::vector<sgk::LoopNote> notes)
+    {
+        return std::make_shared<const std::vector<sgk::LoopNote>> (std::move (notes));
+    }
+}
+
+double FaseGroovePianoProcessor::naturalLoopBeats() const
+{
+    auto s = currentSettings();
+    s.editedLoop = nullptr;
+    const int patternBars = juce::jmax (1, sgk::GrooveEngine::patternLength (s) / 16);
+    const int progressionBars = juce::jmax (1, (s.progressionLength * s.stepsPerChord + 15) / 16);
+    int bars = std::lcm (patternBars, progressionBars);
+    if (bars > 8)
+        bars = juce::jmin (8, juce::jmax (patternBars, progressionBars));
+    return bars * 4.0;
+}
+
 void FaseGroovePianoProcessor::setEditedLoop (std::vector<sgk::LoopNote> notes, double lengthInBeats)
 {
-    // Times kept to 1/10000 of a beat (as saved), in a fixed order: a saved project loads back identical.
-    for (auto& n : notes)
-    {
-        n.start = std::round (n.start * 10000.0) / 10000.0;
-        n.length = juce::jmax (0.001, std::round (n.length * 10000.0) / 10000.0);
-    }
-    std::sort (notes.begin(), notes.end(), [] (const sgk::LoopNote& a, const sgk::LoopNote& b)
-    {
-        return std::tie (a.start, a.note, a.part) < std::tie (b.start, b.note, b.part);
-    });
-    editedLength = juce::jlimit (4.0, 64.0 * 4.0, lengthInBeats);
-    std::atomic_store (&editedNotes, EditedLoop (std::make_shared<const std::vector<sgk::LoopNote>> (std::move (notes))));
+    const double length = juce::jlimit (4.0, 64.0 * 4.0, lengthInBeats);
+    roundAndSort (notes);
+    auto base = generatedLoop (length);
+
+    lastGenerated = base;
+    lastGeneratedLength = length;
+    editedLength = length;
+    playingLength = length;
+    std::atomic_store (&editedBase, share (std::move (base)));
+    std::atomic_store (&editedNotes, share (notes));
+    std::atomic_store (&playingNotes, share (std::move (notes)));
 }
 
 void FaseGroovePianoProcessor::clearEditedLoop()
 {
+    std::atomic_store (&playingNotes, EditedLoop());
     std::atomic_store (&editedNotes, EditedLoop());
+    std::atomic_store (&editedBase, EditedLoop());
     editedLength = 0.0;
+    playingLength = 0.0;
+    lastGenerated.clear();
+}
+
+void FaseGroovePianoProcessor::refreshEditedLoop()
+{
+    const auto edits = std::atomic_load (&editedNotes);
+    const auto base = std::atomic_load (&editedBase);
+    if (edits == nullptr || base == nullptr)
+        return;
+
+    const double length = naturalLoopBeats();
+    auto now = generatedLoop (length);
+    auto same = [] (const sgk::LoopNote& a, const sgk::LoopNote& b)
+    {
+        return juce::approximatelyEqual (a.start, b.start) && juce::approximatelyEqual (a.length, b.length)
+               && a.note == b.note && a.velocity == b.velocity && a.part == b.part;
+    };
+    if (juce::approximatelyEqual (length, lastGeneratedLength) && now.size() == lastGenerated.size()
+        && std::equal (now.begin(), now.end(), lastGenerated.begin(), same))
+        return;   // nothing that makes the notes changed
+
+    auto carried = sgk::carryEdits (*base, *edits, editedLength.load(), now, length);
+    roundAndSort (carried);
+    lastGenerated = std::move (now);
+    lastGeneratedLength = length;
+    playingLength = length;
+    std::atomic_store (&playingNotes, share (std::move (carried)));
 }
 
 std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengthInBeats) const
@@ -1365,6 +1433,9 @@ std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengt
             open.erase (it);
         }
     }
+    roundAndSort (notes);
+    for (int i = 0; i < (int) notes.size(); ++i)
+        notes[(size_t) i].origin = i;   // what the edits refer to
     return notes;
 }
 
@@ -1537,19 +1608,28 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("freeChords", free.joinIntoString (","), nullptr);
     state.setProperty ("freeCircle", freeCircle, nullptr);
 
-    // The notes edited in the piano roll: "start length note velocity part" per note.
-    if (const auto loop = editedLoop(); loop != nullptr && ! loop->empty())
+    // The notes edited in the piano roll and the generated notes they were made on:
+    // "start length note velocity part origin" per note.
+    const auto edits = std::atomic_load (&editedNotes);
+    const auto base = std::atomic_load (&editedBase);
+    if (edits != nullptr && base != nullptr && ! edits->empty())
     {
-        juce::StringArray notes;
-        for (const auto& n : *loop)
-            notes.add (juce::String (n.start, 4) + " " + juce::String (n.length, 4) + " " + juce::String (n.note) + " "
-                       + juce::String (n.velocity) + " " + juce::String ((int) n.part));
-        state.setProperty ("editedNotes", notes.joinIntoString (";"), nullptr);
+        auto write = [] (const std::vector<sgk::LoopNote>& list)
+        {
+            juce::StringArray notes;
+            for (const auto& n : list)
+                notes.add (juce::String (n.start, 4) + " " + juce::String (n.length, 4) + " " + juce::String (n.note) + " "
+                           + juce::String (n.velocity) + " " + juce::String ((int) n.part) + " " + juce::String (n.origin));
+            return notes.joinIntoString (";");
+        };
+        state.setProperty ("editedNotes", write (*edits), nullptr);
+        state.setProperty ("editedBase", write (*base), nullptr);
         state.setProperty ("editedLength", editedLength.load(), nullptr);
     }
     else
     {
         state.removeProperty ("editedNotes", nullptr);
+        state.removeProperty ("editedBase", nullptr);
         state.removeProperty ("editedLength", nullptr);
     }
 
@@ -1612,27 +1692,54 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     freeCircle = (bool) state.getProperty ("freeCircle", false);
 
     {
-        std::vector<sgk::LoopNote> notes;
         const double length = (double) state.getProperty ("editedLength", 0.0);
-        for (const auto& item : juce::StringArray::fromTokens (state.getProperty ("editedNotes").toString(), ";", {}))
+        auto read = [length] (const juce::String& text, bool& ok)
         {
-            const auto f = juce::StringArray::fromTokens (item, " ", {});
-            if (f.size() != 5)
-                continue;
-            sgk::LoopNote n;
-            n.start = f[0].getDoubleValue();
-            n.length = f[1].getDoubleValue();
-            n.note = f[2].getIntValue();
-            n.velocity = f[3].getIntValue();
-            n.part = (sgk::Part) juce::jlimit (0, 2, f[4].getIntValue());
-            if (n.start >= 0.0 && n.start < length && n.length > 0.0 && juce::isPositiveAndBelow (n.note, 128)
-                && juce::isPositiveAndBelow (n.velocity, 128) && n.velocity > 0)
-                notes.push_back (n);
+            std::vector<sgk::LoopNote> notes;
+            for (const auto& item : juce::StringArray::fromTokens (text, ";", {}))
+            {
+                const auto f = juce::StringArray::fromTokens (item, " ", {});
+                if (f.size() != 5 && f.size() != 6)
+                {
+                    ok = false;
+                    continue;
+                }
+                sgk::LoopNote n;
+                n.start = f[0].getDoubleValue();
+                n.length = f[1].getDoubleValue();
+                n.note = f[2].getIntValue();
+                n.velocity = f[3].getIntValue();
+                n.part = (sgk::Part) juce::jlimit (0, 2, f[4].getIntValue());
+                n.origin = f.size() == 6 ? f[5].getIntValue() : -1;
+                if (n.start >= 0.0 && n.start < length && n.length > 0.0 && juce::isPositiveAndBelow (n.note, 128)
+                    && juce::isPositiveAndBelow (n.velocity, 128) && n.velocity > 0)
+                    notes.push_back (n);
+                else
+                    ok = false;
+            }
+            return notes;
+        };
+        bool ok = true;
+        auto notes = read (state.getProperty ("editedNotes").toString(), ok);
+        auto base = read (state.getProperty ("editedBase").toString(), ok);
+        clearEditedLoop();
+        if (ok && ! notes.empty() && length > 0.0)
+        {
+            if (base.empty())
+            {
+                // Saved before the edits followed the settings: they are their own base.
+                base = notes;
+                for (int i = 0; i < (int) notes.size(); ++i)
+                    base[(size_t) i].origin = notes[(size_t) i].origin = i;
+            }
+            editedLength = length;
+            playingLength = length;
+            lastGenerated = base;
+            lastGeneratedLength = length;
+            std::atomic_store (&editedBase, share (std::move (base)));
+            std::atomic_store (&editedNotes, share (notes));
+            std::atomic_store (&playingNotes, share (std::move (notes)));
         }
-        if (! notes.empty() && length > 0.0)
-            setEditedLoop (std::move (notes), length);
-        else
-            clearEditedLoop();
     }
 }
 

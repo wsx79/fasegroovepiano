@@ -477,6 +477,30 @@ InstallKind installKind()
     return bundle.exists() && bundle.getParentDirectory().hasWriteAccess() ? InstallKind::portable : InstallKind::manual;
 }
 
+bool isStandaloneApp()
+{
+    return juce::JUCEApplicationBase::isStandaloneApp();
+}
+
+namespace
+{
+    /** Opens the (just updated) standalone app again, a moment after this one has quit. */
+    bool relaunchLater()
+    {
+        const auto app = runningBundle();
+       #if JUCE_MAC
+        juce::ChildProcess p;
+        return p.start (juce::StringArray { "/bin/sh", "-c", "sleep 1; open -n \"" + app.getFullPathName() + "\"" }, 0);
+       #elif JUCE_WINDOWS
+        // The old .exe was renamed by the swap: the new one is at the same path.
+        return app.startAsProcess();
+       #else
+        juce::ChildProcess p;
+        return p.start (juce::StringArray { "/bin/sh", "-c", "sleep 1; \"" + app.getFullPathName() + "\" &" }, 0);
+       #endif
+    }
+}
+
 InstallReport install (const Result& result)
 {
     InstallReport report;
@@ -484,8 +508,12 @@ InstallReport install (const Result& result)
     if (result.kind == InstallKind::installer && result.file.existsAsFile())
     {
         // Same setup, no wizard: it keeps the folders and parts you chose last time and asks to
-        // close the DAW only if the plug-in is in use.
-        report.installerStarted = report.done = result.file.startAsProcess ("/SILENT /NORESTART");
+        // close the DAW only if the plug-in is in use. In the standalone app the setup reopens it
+        // when it is done (RELAUNCH), and the app quits so its files can be replaced.
+        const bool standalone = isStandaloneApp();
+        report.installerStarted = report.done
+            = result.file.startAsProcess (standalone ? "/SILENT /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1" : "/SILENT /NORESTART");
+        report.relaunching = report.done && standalone;
         if (report.done)
             return report;
     }
@@ -499,6 +527,7 @@ InstallReport install (const Result& result)
             for (const auto& t : targets)
                 report.updated.add (t.getFullPathName());
             report.done = true;
+            report.relaunching = isStandaloneApp() && relaunchLater();
             return report;
         }
     }
