@@ -2322,16 +2322,23 @@ namespace
                 break;
             }
             case I::gear:
-                for (int k = 0; k < 8; ++k)
+            {
+                // A gear outline (8 teeth) with a hole in the middle.
+                const int teeth = 8;
+                const float outer = 0.46f, inner = 0.34f;
+                for (int k = 0; k < teeth * 4; ++k)
                 {
-                    juce::Path tooth;
-                    tooth.addRoundedRectangle (-0.07f, -0.44f, 0.14f, 0.18f, 0.03f);
-                    tooth.applyTransform (juce::AffineTransform::rotation (k * juce::MathConstants<float>::pi / 4.0f).translated (0.5f, 0.5f));
-                    p.addPath (tooth);
+                    const float a = (k / (float) (teeth * 4)) * juce::MathConstants<float>::twoPi - juce::MathConstants<float>::halfPi;
+                    const float r = (k % 4 == 0 || k % 4 == 1) ? outer : inner;
+                    const juce::Point<float> pt (0.5f + r * std::cos (a), 0.5f + r * std::sin (a));
+                    if (k == 0) p.startNewSubPath (pt); else p.lineTo (pt);
                 }
-                p.addEllipse (0.24f, 0.24f, 0.52f, 0.52f);
+                p.closeSubPath();
+                p.addEllipse (0.36f, 0.36f, 0.28f, 0.28f);
+                p.setUsingNonZeroWinding (false);
                 filled = true;
                 break;
+            }
             case I::close:
                 p.startNewSubPath (0.24f, 0.24f); p.lineTo (0.76f, 0.76f);
                 p.startNewSubPath (0.76f, 0.24f); p.lineTo (0.24f, 0.76f);
@@ -4237,7 +4244,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     for (juce::Button* b : std::initializer_list<juce::Button*> { &styleMenuButton, &resetButton, &optionsButton })
     {
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
-        b->setColour (juce::TextButton::textColourOffId, Palette::dim);
+        b->setColour (juce::TextButton::textColourOffId, Palette::text);
         addAndMakeVisible (b);
     }
     styleMenuButton.setColour (juce::TextButton::textColourOffId, Palette::accent);
@@ -4436,7 +4443,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     for (auto* b : { &presetsButton, &learnButton })
     {
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
-        b->setColour (juce::TextButton::textColourOffId, Palette::dim);
+        b->setColour (juce::TextButton::textColourOffId, Palette::text);
         addAndMakeVisible (b);
     }
     learnButton.setClickingTogglesState (false);
@@ -4979,7 +4986,7 @@ void FaseGroovePianoEditor::applyLanguage()
     diceProgression.setButtonText ({});
     newRiffButton.setButtonText (tr ("NEW RIFF"));
     syncButton.setButtonText (tr ("SYNC DAW"));
-    optionsButton.setButtonText ({});
+    optionsButton.setButtonText (tr ("OPTIONS"));
     styleMenuButton.setButtonText (tr ("STYLE"));
     styleMenuButton.setTooltip (tr ("Ready-made setups by genre: progression, voicing, groove, feel and sound in one click (the key stays)"));
     resetButton.setButtonText (tr ("RESET"));
@@ -5651,16 +5658,16 @@ void FaseGroovePianoEditor::layoutFull()
     headerArea = top;
     {
         // Two rows of utilities at the right of the logo, all the same height.
-        auto bottomRow = juce::Rectangle<int> (headerArea.getRight() - 206, headerArea.getBottom() - 30, 202, 26);
-        fullScreenButton.setBounds (bottomRow.removeFromRight (30));
+        auto bottomRow = juce::Rectangle<int> (headerArea.getRight() - 238, headerArea.getBottom() - 30, 234, 26);
+        optionsButton.setBounds (bottomRow.removeFromRight (100));
         bottomRow.removeFromRight (4);
-        optionsButton.setBounds (bottomRow.removeFromRight (30));
-        bottomRow.removeFromRight (4);
-        resetButton.setBounds (bottomRow.removeFromRight (62));
+        resetButton.setBounds (bottomRow.removeFromRight (60));
         bottomRow.removeFromRight (4);
         styleMenuButton.setBounds (bottomRow);
 
-        auto topRow = juce::Rectangle<int> (headerArea.getRight() - 206, headerArea.getY() + 8, 202, 26);
+        auto topRow = juce::Rectangle<int> (headerArea.getRight() - 238, headerArea.getY() + 8, 234, 26);
+        fullScreenButton.setBounds (topRow.removeFromRight (30));
+        topRow.removeFromRight (4);
         redoButton.setBounds (topRow.removeFromRight (30));
         undoButton.setBounds (topRow.removeFromRight (30));
         undoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
