@@ -1027,6 +1027,17 @@ namespace
         CHECK (p.isSegmentLocked (p.segmentAtStep (0)));
         CHECK (pads.computeLeds().side[4] != pads.computeLeds().side[5]);
         CHECK (PadController::enabled() == false || pads.status() != PadController::Status::taken);
+
+        // Push (User mode): pads 36 (bottom left) .. 99 (top right); the same steps and buttons.
+        CHECK (PadController::pushPadNote (0, 0) == 92 && PadController::pushPadNote (7, 7) == 43);
+        const char beforePush = p.stepSymbol (false, 1);
+        pads.handlePushPress (93, false);   // top row, second pad = chords step 2
+        const char afterPush = p.stepSymbol (false, 1);
+        CHECK (afterPush == (beforePush == 'x' ? 'X' : beforePush == 'X' ? 'g' : beforePush == 'g' ? '.' : 'x'));
+        pads.handlePushPress (107, true);   // sixth button above the display = sequencer
+        CHECK (p.apvts.getRawParameterValue (ParamIDs::sequencer)->load() < 0.5f);
+        pads.handlePushPress (39, true);    // scene button 5 = lock part A
+        CHECK (! p.isSegmentLocked (p.segmentAtStep (0)));
     }
 }
 

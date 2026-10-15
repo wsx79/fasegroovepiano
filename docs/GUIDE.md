@@ -382,11 +382,11 @@ The guide sound is ducked only when **Guide sound** is on and **Pump** is above 
 
 The standalone app has no sidechain input (use *Tempo (internal)*).
 
-### Launchpad as a hardware grid
+### Launchpad or Push as a hardware grid
 
-A **Novation Launchpad** (Mini MK3, X or Pro MK3) can be the rhythm grid in your hands. Switch it on
-in **OPTIONS → SETTINGS → Launchpad as a hardware grid** (it stays on for all your projects); the line
-below says whether it is connected.
+A **Novation Launchpad** (Mini MK3, X or Pro MK3) or an **Ableton Push 2 / Push 3** can be the rhythm
+grid in your hands. Switch it on in **OPTIONS → SETTINGS → Launchpad / Push as a hardware grid** (it
+stays on for all your projects); the line below says whether it is connected.
 
 | On the Launchpad | What it does |
 |---|---|
@@ -402,7 +402,17 @@ below says whether it is connected.
   (Settings → Link, Tempo & MIDI) and switch off *Track* / *Remote* for its ports; on Windows a MIDI
   port can be used by one program at a time.
 - Switching the option off puts the Launchpad back in its normal mode.
-- Ableton Push and other controllers are not supported (Push only talks to Live).
+
+**Ableton Push 2 / Push 3** (connected to the computer, in Control Mode) works the same way in its
+**User mode**: the 8x8 pads are the grid, the **8 buttons above the display** are the Launchpad's top
+row, the **8 scene buttons** on the right its right column, and **Play** plays / pauses.
+
+- Live keeps Push as its control surface: the plug-in uses only Push's **User Port** (in Live's
+  settings leave *Track* and *Remote* off on the User Port) and switches Push to User mode; switching
+  the option off gives Push back to Live.
+- If the pads stay dark, press **User** on Push. On **Push 3** first set the pads to *Poly Aftertouch*
+  in Control Mode (Ableton's advice for User mode).
+- Push 1 and Push 3 in Standalone mode are not supported.
 
 ### Export MIDI
 

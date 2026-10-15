@@ -1176,7 +1176,7 @@ void OptionsOverlay::refreshText()
     tipsToggle.setButtonText (tr ("Show tips when the mouse rests on a control"));
     updatesToggle.setButtonText (tr ("Check for updates automatically (GitHub)"));
     checkUpdatesButton.setButtonText (tr ("CHECK NOW"));
-    padToggle.setButtonText (tr ("Launchpad as a hardware grid (Novation Mini MK3, X, Pro MK3)"));
+    padToggle.setButtonText (tr ("Launchpad / Push as a hardware grid (Launchpad Mini MK3, X, Pro MK3, Push 2, Push 3)"));
     padToggle.setTooltip (tr ("The pads show and edit the groove, the round buttons play, stop and roll new rhythms. Set the Launchpad's control surface to None in your DAW."));
     repaint();
 }
@@ -1243,7 +1243,7 @@ void OptionsOverlay::resized()
     }
     settings.removeFromTop (16);
     padToggle.setBounds (settings.removeFromTop (26).withWidth (500));
-    padStatus.setBounds (settings.removeFromTop (34).withTrimmedLeft (30).withWidth (480));
+    padStatus.setBounds (settings.removeFromTop (48).withTrimmedLeft (30).withWidth (480));
 
     // About tab: link buttons above the footer
     auto row = inner.withTrimmedBottom (26).removeFromBottom (30);
@@ -5852,9 +5852,11 @@ void FaseGroovePianoEditor::timerCallback()
         using S = PadController::Status;
         const auto st = processor.pads->status();
         options.setPadStatus (st == S::off       ? tr ("Not in use")
-                            : st == S::searching ? tr ("Looking for a Launchpad... (connect it by USB)")
+                            : st == S::searching ? tr ("Looking for a Launchpad or a Push... (connect it by USB)")
                             : st == S::connected ? tr ("Connected:") + " " + processor.pads->deviceName()
-                            : st == S::busy      ? tr ("The Launchpad is in use by another program: in your DAW's MIDI settings set its control surface to None and switch off its ports")
+                                                   + (processor.pads->deviceName().containsIgnoreCase ("Push")
+                                                          ? "\n" + tr ("Push: if the pads stay dark, press User on Push (Push 3: set the pads to Poly Aftertouch in Control Mode first)") : juce::String())
+                            : st == S::busy      ? tr ("The Launchpad is in use by another program: in your DAW's MIDI settings set its control surface to None and switch off its ports (Push: switch off Track and Remote on its User Port)")
                                                  : tr ("Used by another Fase Groove Piano in this project"),
                               st == S::connected);
     }

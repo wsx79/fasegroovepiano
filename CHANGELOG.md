@@ -9,7 +9,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ## [2.4.0] - 2026-10-15
 
 ### Added
-- **Launchpad as a hardware grid** (Novation Launchpad Mini MK3, X, Pro MK3; OPTIONS → SETTINGS):
+- **Launchpad or Push as a hardware grid** (Novation Launchpad Mini MK3, X, Pro MK3, Ableton Push 2
+  and Push 3 in User mode; OPTIONS → SETTINGS):
   the pads show the groove with the playhead (chords on top, bass below) and edit it like a click
   on the grid; the round buttons play / stop, roll new rhythms, switch the sequencer and the parts,
   and roll or lock parts A-D. Works with the plug-in window closed.

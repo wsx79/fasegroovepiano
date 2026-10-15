@@ -399,11 +399,11 @@ Il suono guida si abbassa solo se **Suono guida** è acceso e **Pompa** è sopra
 
 L'app standalone non ha l'ingresso sidechain (usa *Tempo (interno)*).
 
-### Launchpad come griglia hardware
+### Launchpad o Push come griglia hardware
 
-Un **Novation Launchpad** (Mini MK3, X o Pro MK3) può diventare la griglia ritmica sotto le tue
-dita. Accendilo in **OPZIONI → IMPOSTAZIONI → Launchpad come griglia hardware** (resta acceso per
-tutti i progetti); la riga sotto dice se è collegato.
+Un **Novation Launchpad** (Mini MK3, X o Pro MK3) o un **Ableton Push 2 / Push 3** può diventare la
+griglia ritmica sotto le tue dita. Accendilo in **OPZIONI → IMPOSTAZIONI → Launchpad / Push come
+griglia hardware** (resta acceso per tutti i progetti); la riga sotto dice se è collegato.
 
 | Sul Launchpad | Cosa fa |
 |---|---|
@@ -419,7 +419,18 @@ tutti i progetti); la riga sotto dice se è collegato.
   *Nessuna* (Impostazioni → Link, Tempo & MIDI) e spegni *Track* / *Remote* sulle sue porte; su
   Windows una porta MIDI la può usare un solo programma alla volta.
 - Spegnendo l'opzione il Launchpad torna nella sua modalità normale.
-- Ableton Push e altri controller non sono supportati (Push parla solo con Live).
+
+**Ableton Push 2 / Push 3** (collegato al computer, in Control Mode) funziona allo stesso modo nella
+sua **User mode**: i pad 8x8 sono la griglia, gli **8 pulsanti sopra il display** fanno da fila in alto
+del Launchpad, gli **8 pulsanti delle scene** a destra da colonna a destra, e **Play** suona / mette in
+pausa.
+
+- Live tiene Push come control surface: il plug-in usa solo la **User Port** del Push (nelle
+  impostazioni di Live lascia spenti *Track* e *Remote* sulla User Port) e mette il Push in User mode;
+  spegnendo l'opzione il Push torna a Live.
+- Se i pad restano spenti, premi **User** sul Push. Su **Push 3** prima imposta i pad su *Poly
+  Aftertouch* in Control Mode (come consiglia Ableton per la User mode).
+- Push 1 e Push 3 in modalità Standalone non sono supportati.
 
 ### Esporta MIDI
 

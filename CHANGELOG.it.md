@@ -9,8 +9,8 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 ## [2.4.0] - 2026-10-15
 
 ### Aggiunto
-- **Launchpad come griglia hardware** (Novation Launchpad Mini MK3, X, Pro MK3; OPZIONI →
-  IMPOSTAZIONI): i pad mostrano il groove con la testina (accordi sopra, basso sotto) e lo
+- **Launchpad o Push come griglia hardware** (Novation Launchpad Mini MK3, X, Pro MK3, Ableton
+  Push 2 e Push 3 in User mode; OPZIONI → IMPOSTAZIONI): i pad mostrano il groove con la testina (accordi sopra, basso sotto) e lo
   modificano come un clic sulla griglia; i pulsanti tondi suonano / fermano, creano nuovi ritmi,
   accendono il sequencer e le parti, e rinnovano o bloccano le parti A-D. Funziona anche con la
   finestra del plug-in chiusa.
