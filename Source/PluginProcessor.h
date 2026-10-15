@@ -253,6 +253,13 @@ public:
     juce::AudioProcessorValueTreeState apvts;
 
     std::atomic<bool> previewOn { false };   // play the groove without the host transport
+    // Transport of the preview: play resumes where pause left it; stop and rewind go back to the start.
+    std::atomic<bool> previewFromStart { true }, previewRewind { false };
+    void previewPlay()   { previewOn = true; }
+    void previewPause()  { previewOn = false; previewFromStart = false; }
+    void previewStop()   { previewOn = false; previewFromStart = true; }
+    void previewToStart() { previewFromStart = true; previewRewind = true; }
+    void previewToggle() { previewOn.load() ? previewPause() : previewPlay(); }
     std::atomic<double> lastBpm { 120.0 };   // tempo in use (DAW or manual)
     /** The tempo exported files use: the manual BPM as set now, or the DAW's (as last reported). */
     double exportBpm() const;

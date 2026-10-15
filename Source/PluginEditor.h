@@ -425,36 +425,31 @@ private:
     bool mini = false;
 };
 
-/** Full-screen button: four corners (pointing in while full screen). */
-class FullScreenButton : public juce::Button
+/** The one button of the interface: a drawn icon, optionally a second icon and a caption.
+    Off: raised and neutral; on (toggle state): filled with `onColour`. `mutedWhenOff` draws a
+    slash over the icon when off (a part you don't hear / don't see). */
+class IconButton : public juce::Button
 {
 public:
-    FullScreenButton() : juce::Button ("full screen") {}
-    void paintButton (juce::Graphics&, bool highlighted, bool down) override;
-};
+    enum class Icon { none, play, pause, stop, rewind, dice, piano, bass, pencil, arrow, eraser, magnet, quantize,
+                      zoomIn, zoomOut, fit, follow, undo, redo, gear, close, fullScreen, exitFullScreen, eye, reset };
 
-/** Round play / stop button (next to PREVIEW): a triangle when stopped, a square while playing. */
-class PlayButton : public juce::Button
-{
-public:
-    PlayButton() : juce::Button ("play") {}
-    void paintButton (juce::Graphics&, bool highlighted, bool down) override;
-};
+    explicit IconButton (Icon i = Icon::none, Icon second = Icon::none) : juce::Button ({}), icon (i), icon2 (second) {}
 
-/** A tool button with a small drawn icon (pencil, arrow, eraser) and a caption. */
-class ToolButton : public juce::Button
-{
-public:
-    enum class Icon { pencil, arrow, eraser };
-    ToolButton (Icon i) : juce::Button ({}), icon (i) {}
+    void setIcon (Icon i, Icon second = Icon::none)  { if (i != icon || second != icon2) { icon = i; icon2 = second; repaint(); } }
+    juce::Colour onColour = Palette::accent;
+    bool mutedWhenOff = false;
+    bool primary = false;   // filled with onColour even when off (the main action of a panel)
+
     void paintButton (juce::Graphics&, bool highlighted, bool down) override;
     static void drawIcon (juce::Graphics&, Icon, juce::Rectangle<float>, juce::Colour);
-    /** A mouse cursor drawn like the icon. */
+    /** A mouse cursor drawn like the icon (pencil, eraser). */
     static juce::MouseCursor cursor (Icon);
 
 private:
-    Icon icon;
+    Icon icon, icon2;
 };
+using ToolButton = IconButton;
 
 /** The big piano roll: every note of the loop, zoomable, to edit one by one. Click an empty
     spot to add a note, drag a note to move it, drag its right edge to make it longer or
@@ -544,11 +539,19 @@ private:
 
     FaseGroovePianoProcessor::EditedLoop lastLoop;   // to notice an undo / a preset while open
     juce::ScrollBar scrollBar { false };
-    juce::TextButton zoomOut { "-" }, zoomIn { "+" }, fitButton, snapButton, snapToggle, quantizeButton, generatedButton, closeButton;
-    juce::TextButton pianoPartButton, bassPartButton, followButton;
-    juce::TextButton showAllButton, showPianoButton, showBassButton;
-    juce::TextButton hearAllButton, hearPianoButton, hearBassButton, helpButton;
-    ToolButton drawTool { ToolButton::Icon::pencil }, selectTool { ToolButton::Icon::arrow }, eraseTool { ToolButton::Icon::eraser };
+    // Toolbar, in groups: transport | tools | draws | grid | view | hear | zoom.
+    IconButton rewindButton { IconButton::Icon::rewind }, playButton { IconButton::Icon::play }, stopButton { IconButton::Icon::stop };
+    IconButton pianoPartButton { IconButton::Icon::piano }, bassPartButton { IconButton::Icon::bass };
+    IconButton snapToggle { IconButton::Icon::magnet }, quantizeButton { IconButton::Icon::quantize };
+    juce::TextButton snapButton;
+    IconButton showPianoButton { IconButton::Icon::eye, IconButton::Icon::piano }, showBassButton { IconButton::Icon::eye, IconButton::Icon::bass };
+    IconButton hearPianoButton { IconButton::Icon::piano }, hearBassButton { IconButton::Icon::bass };
+    IconButton zoomOut { IconButton::Icon::zoomOut }, zoomIn { IconButton::Icon::zoomIn }, fitButton { IconButton::Icon::fit },
+               followButton { IconButton::Icon::follow };
+    IconButton generatedButton { IconButton::Icon::reset }, closeButton { IconButton::Icon::close };
+    juce::TextButton helpButton;
+    std::vector<std::pair<juce::Rectangle<int>, juce::String>> groupCaptions;   // set in resized()
+    IconButton drawTool { IconButton::Icon::pencil }, selectTool { IconButton::Icon::arrow }, eraseTool { IconButton::Icon::eraser };
     juce::String status;
 };
 
@@ -684,10 +687,10 @@ private:
     void translateHostWindow();
     void parentHierarchyChanged() override;
 
-    juce::TextButton optionsButton { "OPTIONS" };
+    IconButton optionsButton { IconButton::Icon::gear };
     juce::TextButton styleMenuButton { "STYLE" }, resetButton { "RESET" };
     juce::TextButton presetsButton { "PRESETS" }, learnButton { "LEARN" };
-    juce::ArrowButton undoButton { "undo", 0.5f, Palette::dim }, redoButton { "redo", 0.0f, Palette::dim };
+    IconButton undoButton { IconButton::Icon::undo }, redoButton { IconButton::Icon::redo };
     void showPresetMenu();
     void savePresetAs();
     void showGrooveMenu();
@@ -732,7 +735,7 @@ private:
     // Progression
     juce::Label presetLabel;
     Choice::PopupBox presetBox;
-    juce::TextButton diceProgression { "DICE" };
+    IconButton diceProgression { IconButton::Icon::dice };
     Choice progLength, chordLength;
     juce::OwnedArray<ChordSlot> slots;
 
@@ -747,13 +750,13 @@ private:
 
     // Groove
     Choice pattern, section, fills, fillStyle, playMode, variation, grooveBars;
-    juce::TextButton newRiffButton { "NEW RIFF" };
+    IconButton newRiffButton { IconButton::Icon::dice };
     Knob swing, gate, velocity, humanize, riffDensity;
 
     // Sound & MIDI
     juce::ToggleButton soundToggle { "Guide sound" };
     juce::TextButton previewButton { "PREVIEW" };
-    PlayButton playButton;
+    IconButton rewindButton { IconButton::Icon::rewind }, playButton { IconButton::Icon::play }, stopButton { IconButton::Icon::stop };
     Choice bassChannel, soundType;
     juce::AudioProcessorValueTreeState::ButtonAttachment soundAttachment;
     Knob tone, reverb, volume, chorus, pump;
@@ -767,11 +770,15 @@ private:
     bool rollShown = true;
     double rollLength = 8.0;
     void updatePianoRoll (const sgk::GrooveSettings&);
-    juce::TextButton playBothButton { "PIANO + BASS" }, bassButton { "PIANO" }, soloBassButton { "BASS" };
-    juce::TextButton rndPianoButton { "RND PIANO" }, rndBassButton { "RND BASS" }, myGroovesButton { "MY GROOVES" };
+    // What you hear: the piano and / or the bass (lit = you hear it).
+    IconButton hearPianoButton { IconButton::Icon::piano }, hearBassButton { IconButton::Icon::bass };
+    void hearPart (bool bass);
+    IconButton rndPianoButton { IconButton::Icon::dice, IconButton::Icon::piano }, rndBassButton { IconButton::Icon::dice, IconButton::Icon::bass };
+    juce::TextButton myGroovesButton { "MY GROOVES" };
     juce::OwnedArray<juce::ComboBox> segmentBoxes;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ComboBoxAttachment> segmentAttachments;
-    juce::OwnedArray<juce::TextButton> segmentDice, segmentLocks;
+    juce::OwnedArray<IconButton> segmentDice;
+    juce::OwnedArray<juce::TextButton> segmentLocks;
 
     // Scaling (the whole UI is laid out at base size, then scaled) and mini mode.
     static constexpr int baseWidth = 1180, baseHeight = 860;
@@ -779,7 +786,7 @@ private:
     float uiScale = 1.0f;
     juce::Point<float> uiOffset;
     juce::AffineTransform uiTransform() const { return juce::AffineTransform::scale (uiScale).translated (uiOffset); }
-    FullScreenButton fullScreenButton;
+    IconButton fullScreenButton { IconButton::Icon::fullScreen };
     bool isFullScreen() const;
     void toggleFullScreen();
     juce::Rectangle<int> sizeBeforeFullScreen;

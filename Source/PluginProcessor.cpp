@@ -1019,7 +1019,16 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     if (followHost)
         startPpq = hostPpq;
     else if (running)
-        startPpq = wasRunning ? internalPpq : 0.0;   // free-running clock from the start
+    {
+        // Free-running clock: from the start, or where PAUSE left it; REWIND jumps back.
+        startPpq = wasRunning || ! previewFromStart.load() ? internalPpq : 0.0;
+        if (previewRewind.exchange (false))
+            startPpq = 0.0;
+        if (! wasRunning)
+            previewFromStart = true;   // a resume happens once; the next start is from the top again
+    }
+    else
+        previewRewind = false;
 
     events.clear();
 

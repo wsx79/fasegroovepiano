@@ -1632,7 +1632,7 @@ bool GrooveBrowser::keyPressed (const juce::KeyPress& key)
     }
     if (key == juce::KeyPress::spaceKey)
     {
-        processor.previewOn = ! processor.previewOn.load();   // play / stop the preview
+        processor.previewToggle();   // play / pause the preview
         return true;
     }
     return false;
@@ -1782,7 +1782,7 @@ void VoicingCoach::visibilityChanged()
 {
     if (! isVisible() && startedPreview)
     {
-        processor.previewOn = false;
+        processor.previewStop();
         startedPreview = false;
     }
 }
@@ -1791,7 +1791,7 @@ void ChordLab::visibilityChanged()
 {
     if (! isVisible() && startedPreview)
     {
-        processor.previewOn = false;
+        processor.previewStop();
         startedPreview = false;
     }
 }
@@ -2215,165 +2215,302 @@ void SongOverlay::paint (juce::Graphics& g)
 }
 
 //==============================================================================
-void FullScreenButton::paintButton (juce::Graphics& g, bool highlighted, bool)
+namespace
 {
-    auto r = getLocalBounds().toFloat().reduced (0.5f);
-    g.setColour (highlighted ? Palette::panelEdge : Palette::background);
-    g.fillRoundedRectangle (r, 4.0f);
-    g.setColour (Palette::panelEdge);
-    g.drawRoundedRectangle (r, 4.0f, 1.0f);
-
-    // Four corners: outwards to go full screen, inwards to come back.
-    const auto box = r.withSizeKeepingCentre (12.0f, 12.0f);
-    const float a = 4.0f;
-    const bool in = getToggleState();
-    juce::Path p;
-    for (int corner = 0; corner < 4; ++corner)
+    /** Icons are drawn in a unit square, then fitted to the area. */
+    juce::Path unitIcon (IconButton::Icon icon, float& strokeWidth, bool& filled)
     {
-        const float x = corner % 2 == 0 ? box.getX() : box.getRight();
-        const float y = corner < 2 ? box.getY() : box.getBottom();
-        const float dx = corner % 2 == 0 ? a : -a, dy = corner < 2 ? a : -a;
-        if (! in)
+        using I = IconButton::Icon;
+        juce::Path p;
+        strokeWidth = 0.09f;
+        filled = false;
+        switch (icon)
         {
-            p.startNewSubPath (x + dx, y);
-            p.lineTo (x, y);
-            p.lineTo (x, y + dy);
+            case I::play:   p.addTriangle (0.28f, 0.18f, 0.28f, 0.82f, 0.82f, 0.5f); filled = true; break;
+            case I::pause:  p.addRoundedRectangle (0.24f, 0.2f, 0.17f, 0.6f, 0.03f); p.addRoundedRectangle (0.59f, 0.2f, 0.17f, 0.6f, 0.03f); filled = true; break;
+            case I::stop:   p.addRoundedRectangle (0.24f, 0.24f, 0.52f, 0.52f, 0.05f); filled = true; break;
+            case I::rewind: p.addRectangle (0.2f, 0.22f, 0.11f, 0.56f); p.addTriangle (0.8f, 0.22f, 0.8f, 0.78f, 0.33f, 0.5f); filled = true; break;
+            case I::dice:
+                p.addRoundedRectangle (0.14f, 0.14f, 0.72f, 0.72f, 0.14f);
+                for (auto pip : { juce::Point<float> (0.33f, 0.33f), { 0.67f, 0.33f }, { 0.5f, 0.5f }, { 0.33f, 0.67f }, { 0.67f, 0.67f } })
+                    p.addEllipse (pip.x - 0.065f, pip.y - 0.065f, 0.13f, 0.13f);
+                strokeWidth = 0.08f;
+                break;
+            case I::piano:
+                p.addRoundedRectangle (0.1f, 0.2f, 0.8f, 0.6f, 0.06f);
+                for (float x : { 0.3f, 0.5f, 0.7f })
+                {
+                    p.startNewSubPath (x, 0.5f);
+                    p.lineTo (x, 0.8f);
+                }
+                for (float x : { 0.3f, 0.5f, 0.7f })
+                    p.addRectangle (x - 0.055f, 0.2f, 0.11f, 0.32f);
+                strokeWidth = 0.07f;
+                break;
+            case I::bass:
+                // The bass clef.
+                p.addEllipse (0.16f, 0.3f, 0.16f, 0.16f);
+                p.startNewSubPath (0.2f, 0.36f);
+                p.cubicTo (0.22f, 0.12f, 0.66f, 0.12f, 0.66f, 0.4f);
+                p.cubicTo (0.66f, 0.62f, 0.46f, 0.78f, 0.2f, 0.88f);
+                p.addEllipse (0.76f, 0.26f, 0.1f, 0.1f);
+                p.addEllipse (0.76f, 0.5f, 0.1f, 0.1f);
+                strokeWidth = 0.08f;
+                break;
+            case I::pencil:
+                p.startNewSubPath (0.78f, 0.12f); p.lineTo (0.88f, 0.22f); p.lineTo (0.32f, 0.78f); p.lineTo (0.14f, 0.86f);
+                p.lineTo (0.22f, 0.68f); p.closeSubPath(); filled = true; break;
+            case I::arrow:
+                p.startNewSubPath (0.26f, 0.1f); p.lineTo (0.26f, 0.8f); p.lineTo (0.42f, 0.64f); p.lineTo (0.55f, 0.92f);
+                p.lineTo (0.67f, 0.86f); p.lineTo (0.55f, 0.6f); p.lineTo (0.76f, 0.6f); p.closeSubPath(); filled = true; break;
+            case I::eraser:
+            {
+                juce::Path block;
+                block.addRoundedRectangle (-0.36f, -0.16f, 0.72f, 0.32f, 0.05f);
+                block.applyTransform (juce::AffineTransform::rotation (-0.75f).translated (0.5f, 0.5f));
+                p = block;
+                p.startNewSubPath (0.18f, 0.88f); p.lineTo (0.86f, 0.88f);
+                strokeWidth = 0.08f;
+                break;
+            }
+            case I::magnet:
+                p.startNewSubPath (0.24f, 0.18f); p.lineTo (0.24f, 0.5f);
+                p.addCentredArc (0.5f, 0.5f, 0.26f, 0.26f, 0.0f, -juce::MathConstants<float>::halfPi, juce::MathConstants<float>::halfPi, false);
+                p.lineTo (0.76f, 0.18f);
+                p.startNewSubPath (0.14f, 0.3f); p.lineTo (0.34f, 0.3f);
+                p.startNewSubPath (0.66f, 0.3f); p.lineTo (0.86f, 0.3f);
+                strokeWidth = 0.12f;
+                break;
+            case I::quantize:
+                for (float x : { 0.2f, 0.5f, 0.8f })
+                {
+                    p.startNewSubPath (x, 0.12f);
+                    p.lineTo (x, 0.88f);
+                }
+                p.addRectangle (0.2f, 0.32f, 0.26f, 0.14f);
+                p.addRectangle (0.5f, 0.56f, 0.26f, 0.14f);
+                strokeWidth = 0.06f;
+                break;
+            case I::zoomIn:
+            case I::zoomOut:
+                p.addEllipse (0.14f, 0.14f, 0.52f, 0.52f);
+                p.startNewSubPath (0.6f, 0.6f); p.lineTo (0.86f, 0.86f);
+                p.startNewSubPath (0.28f, 0.4f); p.lineTo (0.52f, 0.4f);
+                if (icon == I::zoomIn) { p.startNewSubPath (0.4f, 0.28f); p.lineTo (0.4f, 0.52f); }
+                break;
+            case I::fit:
+                p.startNewSubPath (0.12f, 0.22f); p.lineTo (0.12f, 0.78f);
+                p.startNewSubPath (0.88f, 0.22f); p.lineTo (0.88f, 0.78f);
+                p.startNewSubPath (0.24f, 0.5f); p.lineTo (0.76f, 0.5f);
+                p.startNewSubPath (0.36f, 0.38f); p.lineTo (0.24f, 0.5f); p.lineTo (0.36f, 0.62f);
+                p.startNewSubPath (0.64f, 0.38f); p.lineTo (0.76f, 0.5f); p.lineTo (0.64f, 0.62f);
+                break;
+            case I::follow:
+                p.startNewSubPath (0.3f, 0.12f); p.lineTo (0.3f, 0.88f);
+                p.startNewSubPath (0.46f, 0.5f); p.lineTo (0.86f, 0.5f);
+                p.startNewSubPath (0.72f, 0.36f); p.lineTo (0.86f, 0.5f); p.lineTo (0.72f, 0.64f);
+                break;
+            case I::undo:
+            case I::redo:
+            {
+                juce::Path a;
+                a.addCentredArc (0.5f, 0.56f, 0.28f, 0.24f, 0.0f, -2.2f, 1.6f, true);
+                a.startNewSubPath (0.12f, 0.24f); a.lineTo (0.24f, 0.42f); a.lineTo (0.42f, 0.3f);
+                if (icon == I::redo)
+                    a.applyTransform (juce::AffineTransform::scale (-1.0f, 1.0f).translated (1.0f, 0.0f));
+                p = a;
+                break;
+            }
+            case I::gear:
+                for (int k = 0; k < 8; ++k)
+                {
+                    juce::Path tooth;
+                    tooth.addRoundedRectangle (-0.07f, -0.44f, 0.14f, 0.18f, 0.03f);
+                    tooth.applyTransform (juce::AffineTransform::rotation (k * juce::MathConstants<float>::pi / 4.0f).translated (0.5f, 0.5f));
+                    p.addPath (tooth);
+                }
+                p.addEllipse (0.24f, 0.24f, 0.52f, 0.52f);
+                filled = true;
+                break;
+            case I::close:
+                p.startNewSubPath (0.24f, 0.24f); p.lineTo (0.76f, 0.76f);
+                p.startNewSubPath (0.76f, 0.24f); p.lineTo (0.24f, 0.76f);
+                strokeWidth = 0.1f;
+                break;
+            case I::fullScreen:
+            case I::exitFullScreen:
+            {
+                const bool in = icon == I::exitFullScreen;
+                for (int c = 0; c < 4; ++c)
+                {
+                    const float x = c % 2 == 0 ? 0.16f : 0.84f, y = c < 2 ? 0.16f : 0.84f;
+                    const float dx = c % 2 == 0 ? 0.24f : -0.24f, dy = c < 2 ? 0.24f : -0.24f;
+                    if (! in) { p.startNewSubPath (x + dx, y); p.lineTo (x, y); p.lineTo (x, y + dy); }
+                    else      { p.startNewSubPath (x + dx, y); p.lineTo (x + dx, y + dy); p.lineTo (x, y + dy); }
+                }
+                break;
+            }
+            case I::eye:
+                p.startNewSubPath (0.08f, 0.5f);
+                p.quadraticTo (0.5f, 0.1f, 0.92f, 0.5f);
+                p.quadraticTo (0.5f, 0.9f, 0.08f, 0.5f);
+                p.closeSubPath();
+                p.addEllipse (0.38f, 0.38f, 0.24f, 0.24f);
+                strokeWidth = 0.07f;
+                break;
+            case I::reset:
+                p.addCentredArc (0.5f, 0.5f, 0.32f, 0.32f, 0.0f, 0.6f, juce::MathConstants<float>::twoPi - 0.2f, true);
+                p.startNewSubPath (0.5f, 0.06f); p.lineTo (0.5f, 0.24f); p.lineTo (0.66f, 0.16f);
+                break;
+            case I::none:
+            default: break;
         }
-        else
-        {
-            p.startNewSubPath (x + dx, y);
-            p.lineTo (x + dx, y + dy);
-            p.lineTo (x, y + dy);
-        }
+        return p;
     }
-    g.setColour (Palette::accent);
-    g.strokePath (p, juce::PathStrokeType (1.6f));
 }
 
-//==============================================================================
-void PlayButton::paintButton (juce::Graphics& g, bool highlighted, bool)
+void IconButton::drawIcon (juce::Graphics& g, Icon icon, juce::Rectangle<float> r, juce::Colour colour)
 {
-    auto r = getLocalBounds().toFloat().reduced (1.0f);
-    r = r.withSizeKeepingCentre (juce::jmin (r.getWidth(), r.getHeight()), juce::jmin (r.getWidth(), r.getHeight()));
-    const bool playing = getToggleState();
-    g.setColour (playing ? Palette::accent2 : (highlighted ? Palette::accent.brighter (0.15f) : Palette::accent));
-    g.fillEllipse (r);
-    g.setColour (Palette::background);
-    const auto c = r.getCentre();
-    const float s = r.getWidth() * 0.22f;
-    if (playing)
-        g.fillRect (juce::Rectangle<float> (s * 1.8f, s * 1.8f).withCentre (c));
-    else
-    {
-        juce::Path triangle;
-        triangle.addTriangle (c.x - s * 0.8f, c.y - s, c.x - s * 0.8f, c.y + s, c.x + s * 1.1f, c.y);
-        g.fillPath (triangle);
-    }
-}
-
-//==============================================================================
-void ToolButton::drawIcon (juce::Graphics& g, Icon icon, juce::Rectangle<float> r, juce::Colour colour)
-{
+    if (icon == Icon::none)
+        return;
+    float stroke = 0.09f;
+    bool filled = false;
+    auto p = unitIcon (icon, stroke, filled);
     const float s = juce::jmin (r.getWidth(), r.getHeight());
-    const auto c = r.getCentre();
-    juce::Path path;
-    if (icon == Icon::pencil)
-    {
-        // A pencil pointing down-left: body, tip.
-        path.startNewSubPath (c.x + 0.42f * s, c.y - 0.30f * s);
-        path.lineTo (c.x + 0.30f * s, c.y - 0.42f * s);
-        path.lineTo (c.x - 0.30f * s, c.y + 0.18f * s);
-        path.lineTo (c.x - 0.42f * s, c.y + 0.42f * s);
-        path.lineTo (c.x - 0.18f * s, c.y + 0.30f * s);
-        path.closeSubPath();
-        g.setColour (colour);
-        g.fillPath (path);
-    }
-    else if (icon == Icon::arrow)
-    {
-        path.startNewSubPath (c.x - 0.30f * s, c.y - 0.42f * s);
-        path.lineTo (c.x - 0.30f * s, c.y + 0.32f * s);
-        path.lineTo (c.x - 0.10f * s, c.y + 0.14f * s);
-        path.lineTo (c.x + 0.04f * s, c.y + 0.44f * s);
-        path.lineTo (c.x + 0.16f * s, c.y + 0.38f * s);
-        path.lineTo (c.x + 0.02f * s, c.y + 0.09f * s);
-        path.lineTo (c.x + 0.30f * s, c.y + 0.09f * s);
-        path.closeSubPath();
-        g.setColour (colour);
-        g.fillPath (path);
-    }
+    const auto box = r.withSizeKeepingCentre (s, s);
+    p.applyTransform (juce::AffineTransform::scale (s).translated (box.getX(), box.getY()));
+    g.setColour (colour);
+    if (filled)
+        g.fillPath (p);
     else
-    {
-        // An eraser: a tilted block with a lighter end.
-        juce::Path block;
-        block.addRoundedRectangle (-0.40f * s, -0.18f * s, 0.80f * s, 0.36f * s, 0.06f * s);
-        block.applyTransform (juce::AffineTransform::rotation (-0.7f).translated (c.x, c.y));
-        g.setColour (colour);
-        g.fillPath (block);
-        juce::Path tip;
-        tip.addRoundedRectangle (-0.40f * s, -0.18f * s, 0.28f * s, 0.36f * s, 0.06f * s);
-        tip.applyTransform (juce::AffineTransform::rotation (-0.7f).translated (c.x, c.y));
-        g.setColour (Palette::accent2);
-        g.fillPath (tip);
-    }
+        g.strokePath (p, juce::PathStrokeType (juce::jmax (1.2f, stroke * s), juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 }
 
-juce::MouseCursor ToolButton::cursor (Icon icon)
+juce::MouseCursor IconButton::cursor (Icon icon)
 {
-    if (icon == Icon::arrow)
+    if (icon != Icon::pencil && icon != Icon::eraser)
         return juce::MouseCursor::NormalCursor;
 
     juce::Image image (juce::Image::ARGB, 24, 24, true);
     {
         juce::Graphics g (image);
-        drawIcon (g, icon, { 1.0f, 1.0f, 22.0f, 22.0f }, juce::Colours::black);
-        drawIcon (g, icon, { 2.5f, 2.5f, 19.0f, 19.0f }, juce::Colours::white);
+        drawIcon (g, icon, { 0.0f, 0.0f, 24.0f, 24.0f }, juce::Colours::black);
+        drawIcon (g, icon, { 2.0f, 2.0f, 20.0f, 20.0f }, juce::Colours::white);
     }
-    // The hot spot is the pencil tip, or the middle of the eraser.
-    return icon == Icon::pencil ? juce::MouseCursor (image, 3, 21) : juce::MouseCursor (image, 12, 12);
+    return icon == Icon::pencil ? juce::MouseCursor (image, 4, 20) : juce::MouseCursor (image, 12, 12);
 }
 
-void ToolButton::paintButton (juce::Graphics& g, bool highlighted, bool)
+void IconButton::paintButton (juce::Graphics& g, bool highlighted, bool down)
 {
     auto r = getLocalBounds().toFloat().reduced (0.5f);
     const bool on = getToggleState();
-    g.setColour (on ? Palette::accent : highlighted ? Palette::panelEdge : Palette::background);
-    g.fillRoundedRectangle (r, 5.0f);
-    g.setColour (Palette::panelEdge);
-    g.drawRoundedRectangle (r, 5.0f, 1.0f);
-    auto iconArea = r.removeFromLeft (r.getHeight()).reduced (5.0f);
-    drawIcon (g, icon, iconArea, on ? Palette::background : Palette::text);
-    g.setColour (on ? Palette::background : Palette::text);
-    g.setFont (font (12.0f, true));
-    g.drawFittedText (getButtonText(), r.toNearestInt().withTrimmedRight (4), juce::Justification::centredLeft, 1, 0.7f);
+    const bool filled = on || primary;
+    const bool flatLeft = isConnectedOnLeft(), flatRight = isConnectedOnRight();
+
+    auto fillColour = filled ? onColour : Palette::control;
+    if (down)             fillColour = fillColour.darker (0.15f);
+    else if (highlighted) fillColour = fillColour.brighter (0.08f);
+    if (! isEnabled())    fillColour = fillColour.withMultipliedAlpha (0.5f);
+
+    juce::Path shape;
+    shape.addRoundedRectangle (r.getX(), r.getY(), r.getWidth(), r.getHeight(), 4.0f, 4.0f, ! flatLeft, ! flatRight, ! flatLeft, ! flatRight);
+    g.setColour (fillColour);
+    g.fillPath (shape);
+    g.setColour (filled ? fillColour.darker (0.3f) : (highlighted ? Palette::panelEdge.brighter (0.35f) : Palette::panelEdge));
+    g.strokePath (shape, juce::PathStrokeType (1.0f));
+
+    const auto ink = filled ? Palette::background : (mutedWhenOff ? Palette::dim : Palette::text.withAlpha (0.92f));
+    const float iconSize = juce::jmin (r.getHeight() * 0.56f, 18.0f);
+    const auto text = getButtonText();
+
+    auto content = r.reduced (6.0f, 0.0f);
+    if (text.isEmpty())
+    {
+        // Icons only, centred.
+        const float total = iconSize * (icon2 != Icon::none ? 2.15f : 1.0f);
+        auto area = content.withSizeKeepingCentre (total, iconSize);
+        drawIcon (g, icon, area.removeFromLeft (iconSize), ink);
+        if (icon2 != Icon::none)
+            drawIcon (g, icon2, area.removeFromRight (iconSize), ink);
+    }
+    else
+    {
+        juce::Font f (juce::FontOptions (juce::jlimit (10.0f, 13.0f, r.getHeight() * 0.46f)).withStyle ("Bold"));
+        const float textW = juce::GlyphArrangement::getStringWidth (f, text);
+        const float iconsW = icon == Icon::none ? 0.0f : iconSize * (icon2 != Icon::none ? 2.15f : 1.0f) + 6.0f;
+        auto area = content.withSizeKeepingCentre (juce::jmin (content.getWidth(), iconsW + textW), content.getHeight());
+        if (icon != Icon::none)
+        {
+            auto icons = area.removeFromLeft (iconsW - 6.0f).withSizeKeepingCentre (iconsW - 6.0f, iconSize);
+            drawIcon (g, icon, icons.removeFromLeft (iconSize), ink);
+            if (icon2 != Icon::none)
+                drawIcon (g, icon2, icons.removeFromRight (iconSize), ink);
+            area.removeFromLeft (6.0f);
+        }
+        g.setColour (ink);
+        g.setFont (f);
+        g.drawFittedText (text, area.toNearestInt(), juce::Justification::centredLeft, 1, 0.7f);
+    }
+
+    // Muted / hidden: a slash across the icon.
+    if (mutedWhenOff && ! on)
+    {
+        const auto iconArea = text.isEmpty() ? content.withSizeKeepingCentre (iconSize, iconSize)
+                                             : content.withWidth (iconSize).withSizeKeepingCentre (iconSize, iconSize)
+                                                   .translated (juce::jmax (0.0f, (content.getWidth() - (iconSize + 6.0f + juce::GlyphArrangement::getStringWidth (juce::Font (juce::FontOptions (juce::jlimit (10.0f, 13.0f, r.getHeight() * 0.46f)).withStyle ("Bold")), text))) * 0.5f), 0.0f);
+        g.setColour (Palette::dim.brighter (0.3f));
+        g.drawLine ({ iconArea.getBottomLeft().translated (-1.0f, 1.0f), iconArea.getTopRight().translated (1.0f, -1.0f) }, 1.8f);
+    }
 }
 
 //==============================================================================
 PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
 {
     setWantsKeyboardFocus (true);
-    for (auto* b : { &zoomOut, &zoomIn, &fitButton, &snapButton, &snapToggle, &quantizeButton, &pianoPartButton, &bassPartButton,
-                     &followButton, &showAllButton, &showPianoButton, &showBassButton, &hearAllButton, &hearPianoButton, &hearBassButton,
-                     &helpButton, &generatedButton, &closeButton })
+    for (juce::Button* b : std::initializer_list<juce::Button*> {
+             &rewindButton, &playButton, &stopButton, &drawTool, &selectTool, &eraseTool, &pianoPartButton, &bassPartButton,
+             &snapToggle, &snapButton, &quantizeButton, &showPianoButton, &showBassButton, &hearPianoButton, &hearBassButton,
+             &zoomOut, &zoomIn, &fitButton, &followButton, &generatedButton, &closeButton, &helpButton })
     {
-        b->setColour (juce::TextButton::buttonColourId, Palette::background);
-        b->setColour (juce::TextButton::textColourOffId, Palette::text);
         b->setWantsKeyboardFocus (false);
         addAndMakeVisible (b);
     }
-    closeButton.setColour (juce::TextButton::buttonColourId, Palette::accent);
-    closeButton.setColour (juce::TextButton::textColourOffId, Palette::background);
-    generatedButton.setColour (juce::TextButton::textColourOffId, Palette::accent2);
+
+    // Segments: buttons of a group touch each other.
+    auto segment = [] (std::initializer_list<juce::Button*> buttons)
+    {
+        const int n = (int) buttons.size();
+        int i = 0;
+        for (auto* b : buttons)
+        {
+            b->setConnectedEdges ((i > 0 ? juce::Button::ConnectedOnLeft : 0) | (i < n - 1 ? juce::Button::ConnectedOnRight : 0));
+            ++i;
+        }
+    };
+    segment ({ &rewindButton, &playButton, &stopButton });
+    segment ({ &drawTool, &selectTool, &eraseTool });
+    segment ({ &pianoPartButton, &bassPartButton });
+    segment ({ &snapToggle, &snapButton, &quantizeButton });
+    segment ({ &showPianoButton, &showBassButton });
+    segment ({ &hearPianoButton, &hearBassButton });
+    segment ({ &zoomOut, &zoomIn, &fitButton });
+
+    for (auto* b : { &bassPartButton, &hearBassButton, &showBassButton })
+        b->onColour = Palette::accent2;
+    playButton.onColour = Palette::accent2;
+    for (auto* b : { &showPianoButton, &showBassButton, &hearPianoButton, &hearBassButton })
+        b->mutedWhenOff = true;
+    for (auto* b : { &showPianoButton, &showBassButton })
+        b->onColour = Palette::panelEdge.brighter (0.5f);
+
+    rewindButton.onClick = [this] { processor.previewToStart(); };
+    playButton.onClick = [this] { processor.previewToggle(); };
+    stopButton.onClick = [this] { processor.previewStop(); };
 
     zoomOut.onClick = [this] { setZoom (pixelsPerBeat / 1.5, gridArea().getCentreX()); };
     zoomIn.onClick  = [this] { setZoom (pixelsPerBeat * 1.5, gridArea().getCentreX()); };
     fitButton.onClick = [this] { setZoom (gridArea().getWidth() / length, gridArea().getX()); };
-    snapToggle.setClickingTogglesState (false);
-    snapToggle.onClick = [this]
-    {
-        snapOn = ! snapOn;
-        refreshText();
-    };
+    snapToggle.onClick = [this] { snapOn = ! snapOn; refreshText(); };
     quantizeButton.onClick = [this] { quantize(); };
     snapButton.onClick = [this]
     {
@@ -2381,48 +2518,43 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
         refreshText();
     };
     // Which part the pencil draws: the colours are the notes' own.
-    pianoPartButton.setConnectedEdges (juce::Button::ConnectedOnRight);
-    bassPartButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
     pianoPartButton.onClick = [this] { drawPart = sgk::Part::chords; setTool (Tool::draw); refreshText(); };
     bassPartButton.onClick  = [this] { drawPart = sgk::Part::bass;   setTool (Tool::draw); refreshText(); };
     followButton.onClick = [this] { follow = ! follow; refreshText(); };
 
-    // What the roll shows: everything, or only the piano / the bass (the others are greyed out and can't be touched).
-    showAllButton.setConnectedEdges (juce::Button::ConnectedOnRight);
-    showPianoButton.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
-    showBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
-    auto showOnly = [this] (int which)
+    // What the roll shows (eye): the piano, the bass or both; a hidden part is greyed out and can't be touched.
+    auto toggleView = [this] (bool bass)
     {
-        shown = which;
-        if (juce::isPositiveAndBelow (selected, (int) notes.size()) && ! isShown (notes[(size_t) selected]))
-            selected = -1;
+        const bool pianoVisible = shown != 2, bassVisible = shown != 1;
+        if (bass) shown = bassVisible ? (pianoVisible ? 1 : 2) : 0;
+        else      shown = pianoVisible ? (bassVisible ? 2 : 1) : 0;
         syncPicks();
         for (int i = 0; i < (int) notes.size(); ++i)
             if (! isShown (notes[(size_t) i]))
                 picked[(size_t) i] = 0;
-        if (which != 0)
-            drawPart = which == 2 ? sgk::Part::bass : sgk::Part::chords;   // the pencil draws what you see
+        if (shown != 0)
+            drawPart = shown == 2 ? sgk::Part::bass : sgk::Part::chords;   // the pencil draws what you see
         refreshText();
     };
-    hearAllButton.setConnectedEdges (juce::Button::ConnectedOnRight);
-    hearPianoButton.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
-    hearBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
-    hearAllButton.onClick   = [this] { setListening (0); };
-    hearPianoButton.onClick = [this] { setListening (1); };
-    hearBassButton.onClick  = [this] { setListening (2); };
+    showPianoButton.onClick = [toggleView] { toggleView (false); };
+    showBassButton.onClick  = [toggleView] { toggleView (true); };
+
+    // What you hear (lit = you hear it), as under the main piano roll.
+    hearPianoButton.onClick = [this]
+    {
+        const int now = listening();   // 0 both, 1 piano, 2 bass
+        setListening (now == 0 ? 2 : now == 1 ? 2 : 0);
+    };
+    hearBassButton.onClick = [this]
+    {
+        const int now = listening();
+        setListening (now == 0 ? 1 : now == 2 ? 1 : 0);
+    };
     helpButton.setButtonText ("?");
-    showAllButton.onClick   = [showOnly] { showOnly (0); };
-    showPianoButton.onClick = [showOnly] { showOnly (1); };
-    showBassButton.onClick  = [showOnly] { showOnly (2); };
 
     drawTool.onClick   = [this] { setTool (Tool::draw); };
     selectTool.onClick = [this] { setTool (Tool::select); };
     eraseTool.onClick  = [this] { setTool (Tool::erase); };
-    for (auto* b : { &drawTool, &selectTool, &eraseTool })
-    {
-        b->setWantsKeyboardFocus (false);
-        addAndMakeVisible (b);
-    }
     setTool (Tool::draw);
     generatedButton.onClick = [this]
     {
@@ -2439,7 +2571,6 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
 
     scrollBar.addListener (this);
     scrollBar.setAutoHide (false);
-    scrollBar.setColour (juce::ScrollBar::thumbColourId, Palette::accent.withAlpha (0.6f));
     addAndMakeVisible (scrollBar);
     refreshText();
 }
@@ -2451,74 +2582,45 @@ PianoRollEditor::~PianoRollEditor()
 
 void PianoRollEditor::refreshText()
 {
-    fitButton.setButtonText (tr ("FIT"));
-    snapButton.setButtonText (tr ("Grid") + ": " + (snap > 0.4 ? "1/8" : snap > 0.2 ? "1/16" : "1/32"));
-    snapToggle.setButtonText (tr ("SNAP"));
-    snapToggle.setColour (juce::TextButton::buttonColourId, snapOn ? Palette::accent : Palette::background);
-    snapToggle.setColour (juce::TextButton::textColourOffId, snapOn ? Palette::background : Palette::dim);
+    snapButton.setButtonText (snap > 0.4 ? "1/8" : snap > 0.2 ? "1/16" : "1/32");
+    snapButton.setTooltip (tr ("Grid") + ": 1/8, 1/16, 1/32");
+    snapToggle.setToggleState (snapOn, juce::dontSendNotification);
     snapToggle.setTooltip (tr ("On: notes stick to the grid. Off: move them freely (Alt while dragging does the opposite)"));
-    quantizeButton.setButtonText (tr ("QUANTIZE"));
     quantizeButton.setTooltip (tr ("Moves the selected note (or every note, when none is selected) onto the grid"));
-    pianoPartButton.setButtonText (tr ("PIANO"));
-    bassPartButton.setButtonText (tr ("BASS"));
-    {
-        const bool bass = drawPart == sgk::Part::bass;
-        pianoPartButton.setColour (juce::TextButton::buttonColourId, bass ? Palette::background : Palette::accent);
-        pianoPartButton.setColour (juce::TextButton::textColourOffId, bass ? Palette::accent : Palette::background);
-        bassPartButton.setColour (juce::TextButton::buttonColourId, bass ? Palette::accent2 : Palette::background);
-        bassPartButton.setColour (juce::TextButton::textColourOffId, bass ? Palette::background : Palette::accent2);
-    }
+
+    pianoPartButton.setToggleState (drawPart != sgk::Part::bass, juce::dontSendNotification);
+    bassPartButton.setToggleState (drawPart == sgk::Part::bass, juce::dontSendNotification);
     pianoPartButton.setTooltip (tr ("The pencil draws piano notes (orange)"));
     bassPartButton.setTooltip (tr ("The pencil draws bass notes (pink, exported on the bass track)"));
-    showAllButton.setButtonText (tr ("ALL"));
-    showPianoButton.setButtonText (tr ("PIANO"));
-    showBassButton.setButtonText (tr ("BASS"));
-    {
-        int index = 0;
-        for (auto* b : { &showAllButton, &showPianoButton, &showBassButton })
-        {
-            const bool on = index++ == shown;
-            b->setColour (juce::TextButton::buttonColourId, on ? Palette::text : Palette::background);
-            b->setColour (juce::TextButton::textColourOffId, on ? Palette::background : Palette::dim);
-        }
-    }
-    hearAllButton.setButtonText (tr ("BOTH"));
-    hearPianoButton.setButtonText (tr ("PIANO"));
-    hearBassButton.setButtonText (tr ("BASS"));
-    {
-        const int now = listening();
-        int index = 0;
-        for (auto* b : { &hearAllButton, &hearPianoButton, &hearBassButton })
-        {
-            const bool on = index++ == now;
-            const auto colour = b == &hearBassButton ? Palette::accent2 : Palette::accent;
-            b->setColour (juce::TextButton::buttonColourId, on ? colour : Palette::background);
-            b->setColour (juce::TextButton::textColourOffId, on ? Palette::background : Palette::dim);
-        }
-    }
-    hearAllButton.setTooltip (tr ("Hear the piano and the bass"));
-    hearPianoButton.setTooltip (tr ("Piano only: the bass is switched off"));
-    hearBassButton.setTooltip (tr ("Bass only: the chords are silent while you play (exported clips keep everything)"));
-    helpButton.setTooltip (tr ("Click: add a note  |  drag: move (freely, or on the grid with SNAP)  |  drag the right edge: length  |  double-click or right-click: delete  |  arrows: move the selected note (Shift: octave)  |  bottom lane: velocity")
-                           + "\n" + tr ("Select: drag a rectangle with MOVE (or Shift + drag), Ctrl / Shift + click to add, Ctrl + A for all; then drag, arrows, Delete, QUANTIZE and the velocity lane work on all of them."));
-    showAllButton.setTooltip (tr ("Show all the notes"));
-    showPianoButton.setTooltip (tr ("Show only the piano: the bass is greyed out and can't be touched"));
-    showBassButton.setTooltip (tr ("Show only the bass: the piano is greyed out and can't be touched"));
-    followButton.setButtonText (tr ("FOLLOW"));
-    followButton.setColour (juce::TextButton::buttonColourId, follow ? Palette::accent : Palette::background);
-    followButton.setColour (juce::TextButton::textColourOffId, follow ? Palette::background : Palette::dim);
+
+    showPianoButton.setToggleState (shown != 2, juce::dontSendNotification);
+    showBassButton.setToggleState (shown != 1, juce::dontSendNotification);
+    showPianoButton.setTooltip (tr ("Show or hide the piano notes (hidden notes are greyed out and can't be touched)"));
+    showBassButton.setTooltip (tr ("Show or hide the bass notes (hidden notes are greyed out and can't be touched)"));
+
+    const int now = listening();
+    hearPianoButton.setToggleState (now != 2, juce::dontSendNotification);
+    hearBassButton.setToggleState (now != 1, juce::dontSendNotification);
+    hearPianoButton.setTooltip (tr ("Hear the piano (lit) or mute it: exported clips keep everything"));
+    hearBassButton.setTooltip (tr ("Hear the bass (lit) or switch it off"));
+
+    followButton.setToggleState (follow, juce::dontSendNotification);
     followButton.setTooltip (tr ("The view follows the playhead while the loop plays"));
-    drawTool.setButtonText (tr ("DRAW"));
-    selectTool.setButtonText (tr ("MOVE"));
-    eraseTool.setButtonText (tr ("ERASE"));
     drawTool.setTooltip (tr ("Pencil: click to add a note (drag to make it longer); drag a note to move it"));
     selectTool.setTooltip (tr ("Arrow: drag a note to move it, its right edge to change its length"));
     eraseTool.setTooltip (tr ("Eraser: click a note, or drag over several, to delete them"));
-    generatedButton.setButtonText (tr ("BACK TO GENERATED"));
-    closeButton.setButtonText (tr ("CLOSE"));
+    rewindButton.setTooltip (tr ("Back to the start"));
+    playButton.setTooltip (tr ("Play / pause the groove without starting the DAW (space bar)"));
+    stopButton.setTooltip (tr ("Stop (the next play starts from the top)"));
     zoomOut.setTooltip (tr ("Zoom out (Ctrl + mouse wheel)"));
     zoomIn.setTooltip (tr ("Zoom in (Ctrl + mouse wheel)"));
+    fitButton.setTooltip (tr ("FIT"));
+    generatedButton.setButtonText (tr ("BACK TO GENERATED"));
     generatedButton.setTooltip (tr ("Forget your edits: the plug-in plays the generated notes again"));
+    closeButton.setTooltip (tr ("CLOSE"));
+    helpButton.setTooltip (tr ("Click: add a note  |  drag: move (freely, or on the grid with SNAP)  |  drag the right edge: length  |  double-click or right-click: delete  |  arrows: move the selected note (Shift: octave)  |  bottom lane: velocity")
+                           + "\n" + tr ("Select: drag a rectangle with MOVE (or Shift + drag), Ctrl / Shift + click to add, Ctrl + A for all; then drag, arrows, Delete, QUANTIZE and the velocity lane work on all of them."));
+    resized();
     repaint();
 }
 
@@ -2570,13 +2672,13 @@ void PianoRollEditor::fitRange()
 
 juce::Rectangle<float> PianoRollEditor::keyboardArea() const
 {
-    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (76.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
+    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (92.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
     return r.withWidth (44.0f);
 }
 
 juce::Rectangle<float> PianoRollEditor::gridArea() const
 {
-    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (76.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
+    auto r = card().reduced (16.0f, 12.0f).withTrimmedTop (92.0f + PianoRollView::chordLaneHeight).withTrimmedBottom (110.0f);
     return r.withTrimmedLeft (44.0f);
 }
 
@@ -2617,8 +2719,8 @@ void PianoRollEditor::setTool (Tool t)
     drawTool.setToggleState (t == Tool::draw, juce::dontSendNotification);
     selectTool.setToggleState (t == Tool::select, juce::dontSendNotification);
     eraseTool.setToggleState (t == Tool::erase, juce::dontSendNotification);
-    setMouseCursor (t == Tool::draw ? ToolButton::cursor (ToolButton::Icon::pencil)
-                  : t == Tool::erase ? ToolButton::cursor (ToolButton::Icon::eraser) : juce::MouseCursor::NormalCursor);
+    setMouseCursor (t == Tool::draw ? IconButton::cursor (IconButton::Icon::pencil)
+                  : t == Tool::erase ? IconButton::cursor (IconButton::Icon::eraser) : juce::MouseCursor::NormalCursor);
 }
 
 void PianoRollEditor::updateCursor (const juce::MouseEvent& e)
@@ -2628,14 +2730,14 @@ void PianoRollEditor::updateCursor (const juce::MouseEvent& e)
     if (! gridArea().contains (e.position))
         return setMouseCursor (juce::MouseCursor::NormalCursor);
     if (tool == Tool::erase)
-        return setMouseCursor (ToolButton::cursor (ToolButton::Icon::eraser));
+        return setMouseCursor (IconButton::cursor (IconButton::Icon::eraser));
 
     bool edge = false;
     const int hit = hitNote (e.position, edge);
     if (hit >= 0)
         setMouseCursor (edge ? juce::MouseCursor::LeftRightResizeCursor : juce::MouseCursor::DraggingHandCursor);
     else
-        setMouseCursor (tool == Tool::draw ? ToolButton::cursor (ToolButton::Icon::pencil) : juce::MouseCursor::NormalCursor);
+        setMouseCursor (tool == Tool::draw ? IconButton::cursor (IconButton::Icon::pencil) : juce::MouseCursor::NormalCursor);
 }
 
 bool PianoRollEditor::snapping (const juce::MouseEvent& e) const
@@ -2753,44 +2855,35 @@ void PianoRollEditor::scrollBarMoved (juce::ScrollBar*, double newStart)
 void PianoRollEditor::resized()
 {
     auto head = card().reduced (16.0f, 12.0f).toNearestInt();
-    auto top = head.removeFromTop (30);
-    closeButton.setBounds (top.removeFromRight (90));
+
+    // Title row: the title on the left, BACK TO GENERATED and close on the right.
+    auto top = head.removeFromTop (28);
+    closeButton.setBounds (top.removeFromRight (28));
     top.removeFromRight (8);
-    generatedButton.setBounds (top.removeFromRight (190));
-    top.removeFromRight (24);
-    showBassButton.setBounds (top.removeFromRight (62));
-    showPianoButton.setBounds (top.removeFromRight (62));
-    showAllButton.setBounds (top.removeFromRight (62));
-    top.removeFromRight (84);   // "SHOW" caption
-    hearBassButton.setBounds (top.removeFromRight (62));
-    hearPianoButton.setBounds (top.removeFromRight (62));
-    hearAllButton.setBounds (top.removeFromRight (70));
+    generatedButton.setBounds (top.removeFromRight (196));
 
-    // Toolbar: tools, the part the pencil draws, grid, zoom, follow.
-    head.removeFromTop (8);
+    // Toolbar: groups of buttons, each with a small caption above it.
+    head.removeFromTop (6);
+    auto captions = head.removeFromTop (14);
     auto bar = head.removeFromTop (28);
-    drawTool.setBounds (bar.removeFromLeft (92));
-    bar.removeFromLeft (4);
-    selectTool.setBounds (bar.removeFromLeft (92));
-    bar.removeFromLeft (4);
-    eraseTool.setBounds (bar.removeFromLeft (100));
-    bar.removeFromLeft (76);   // "DRAWS" caption
-    pianoPartButton.setBounds (bar.removeFromLeft (76));
-    bassPartButton.setBounds (bar.removeFromLeft (76));
-    bar.removeFromLeft (18);
-    snapToggle.setBounds (bar.removeFromLeft (62));
-    bar.removeFromLeft (4);
-    snapButton.setBounds (bar.removeFromLeft (100));
-    bar.removeFromLeft (4);
-    quantizeButton.setBounds (bar.removeFromLeft (100));
-
-    followButton.setBounds (bar.removeFromRight (80));
-    bar.removeFromRight (14);
-    fitButton.setBounds (bar.removeFromRight (74));
-    bar.removeFromRight (4);
-    zoomIn.setBounds (bar.removeFromRight (30));
-    bar.removeFromRight (4);
-    zoomOut.setBounds (bar.removeFromRight (30));
+    groupCaptions.clear();
+    auto group = [&] (const juce::String& caption, std::initializer_list<std::pair<juce::Component*, int>> items)
+    {
+        const int x = bar.getX();
+        for (const auto& [c, w] : items)
+            c->setBounds (bar.removeFromLeft (w));
+        groupCaptions.push_back ({ juce::Rectangle<int> (x, captions.getY(), bar.getX() - x, captions.getHeight()), caption });
+        bar.removeFromLeft (20);
+    };
+    const int sq = 32;
+    group (tr ("Transport"), { { &rewindButton, sq }, { &playButton, sq + 6 }, { &stopButton, sq } });
+    group (tr ("Tools"),     { { &drawTool, sq }, { &selectTool, sq }, { &eraseTool, sq } });
+    group (tr ("Draws"),     { { &pianoPartButton, sq }, { &bassPartButton, sq } });
+    group (tr ("Grid"),      { { &snapToggle, sq }, { &snapButton, 50 }, { &quantizeButton, sq } });
+    group (tr ("Show"),      { { &showPianoButton, 50 }, { &showBassButton, 50 } });
+    group (tr ("Hear"),      { { &hearPianoButton, sq }, { &hearBassButton, sq } });
+    group (tr ("Zoom"),      { { &zoomOut, sq }, { &zoomIn, sq }, { &fitButton, sq } });
+    group (tr ("Follow"),    { { &followButton, sq } });
 
     helpButton.setBounds (card().reduced (16.0f, 0.0f).toNearestInt().withTop ((int) card().getBottom() - 30).withHeight (22).removeFromRight (26));
 
@@ -3110,7 +3203,7 @@ bool PianoRollEditor::keyPressed (const juce::KeyPress& key)
     }
     if (key == juce::KeyPress::spaceKey)
     {
-        processor.previewOn = ! processor.previewOn.load();   // play / stop the preview
+        processor.previewToggle();   // play / pause the preview
         return true;
     }
     if (mods.isCommandDown() && (key.getKeyCode() == 'A' || key.getKeyCode() == 'a'))
@@ -3155,6 +3248,15 @@ void PianoRollEditor::timerCallback()
         stopTimer();
         return;
     }
+    {
+        const bool previewing = processor.previewOn.load();
+        playButton.setIcon (previewing ? IconButton::Icon::pause : IconButton::Icon::play);
+        playButton.setToggleState (previewing, juce::dontSendNotification);
+        const int now = listening();
+        hearPianoButton.setToggleState (now != 2, juce::dontSendNotification);
+        hearBassButton.setToggleState (now != 1, juce::dontSendNotification);
+    }
+
     // Undo, a preset or BACK TO GENERATED from outside: show what plays now.
     if (drag == Drag::none && processor.editedLoop() != lastLoop)
     {
@@ -3206,18 +3308,23 @@ void PianoRollEditor::paint (juce::Graphics& g)
     auto head = c.reduced (16.0f, 12.0f);
     g.setColour (Palette::accent);
     g.setFont (font (18.0f, true));
-    auto titleRow = head.removeFromTop (30.0f);
+    auto titleRow = head.removeFromTop (28.0f);
     g.drawText (Localisation::upper (tr ("Piano roll")), titleRow.removeFromLeft (150.0f), juce::Justification::centredLeft);
-    g.setColour (processor.hasEditedLoop() ? Palette::accent2 : Palette::dim);
-    g.setFont (font (12.0f));
-    g.setColour (Palette::dim);
 
-    // Captions: what the two PIANO / BASS groups mean.
-    g.setColour (Palette::dim);
-    g.setFont (font (10.5f, true));
-    g.drawText (Localisation::upper (tr ("Show")), showAllButton.getBounds().toFloat().translated (-70.0f, 0.0f).withWidth (64.0f), juce::Justification::centredRight);
-    g.drawText (Localisation::upper (tr ("Hear")), hearAllButton.getBounds().toFloat().translated (-70.0f, 0.0f).withWidth (64.0f), juce::Justification::centredRight);
-    g.drawText (Localisation::upper (tr ("Draws")), pianoPartButton.getBounds().toFloat().translated (-72.0f, 0.0f).withWidth (66.0f), juce::Justification::centredRight);
+    // Group captions over the toolbar, and a hairline under it.
+    {
+        auto f = font (9.5f, true);
+        f.setExtraKerningFactor (0.1f);
+        g.setFont (f);
+        g.setColour (Palette::dim);
+        for (const auto& [area, caption] : groupCaptions)
+            g.drawText (Localisation::upper (caption), area.withWidth (juce::jmax (area.getWidth(), 110)), juce::Justification::centredLeft);
+        if (! groupCaptions.empty())
+        {
+            g.setColour (Palette::panelEdge);
+            g.fillRect (c.getX() + 16.0f, (float) zoomIn.getBottom() + 8.0f, c.getWidth() - 32.0f, 1.0f);
+        }
+    }
 
     const auto grid = gridArea();
     const auto keys = keyboardArea();
@@ -4009,24 +4116,17 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
              &octaveToggle, &circle,
              &diceProgression, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
              &swing, &gate, &velocity, &humanize, &riffDensity,
-             &soundToggle, &previewButton, &bassChannel, &tone, &reverb, &volume, &patternView,
+             &soundToggle, &bassChannel, &tone, &reverb, &volume, &patternView,
              &clipLengthLabel, &clipPartLabel, &clipLength, &clipPart, &dragTile, &saveButton })
         addAndMakeVisible (c);
 
     octaveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, ParamIDs::octaveTop, octaveToggle);
     octaveToggle.setTooltip ("Double the top note of every chord an octave higher (bright house piano)");
 
-    auto styleButton = [] (juce::TextButton& b, juce::Colour colour)
-    {
-        b.setColour (juce::TextButton::buttonColourId, colour);
-        b.setColour (juce::TextButton::textColourOffId, Palette::background);
-    };
-
-    styleButton (newRiffButton, Palette::accent);
     newRiffButton.setTooltip ("Generate a brand new random funky riff");
+    newRiffButton.primary = true;
     newRiffButton.onClick = [this] { processor.rollNewRiff(); };
 
-    styleButton (diceProgression, Palette::accent2);
     diceProgression.setTooltip ("Random soulful-house progression");
     diceProgression.onClick = [this] { processor.rollNewProgression(); presetBox.setSelectedId (0, juce::dontSendNotification); };
 
@@ -4134,7 +4234,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     groovePrev.onClick = [this] { stepGroove (-1); };
     grooveNext.onClick = [this] { stepGroove (1); };
 
-    for (auto* b : { &styleMenuButton, &resetButton, &optionsButton })
+    for (juce::Button* b : std::initializer_list<juce::Button*> { &styleMenuButton, &resetButton, &optionsButton })
     {
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
         b->setColour (juce::TextButton::textColourOffId, Palette::dim);
@@ -4192,16 +4292,16 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         updateChecker.start (false);
     applyTips();
 
-    previewButton.setClickingTogglesState (true);
-    previewButton.setColour (juce::TextButton::buttonColourId, Palette::background);
-    previewButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent2);
-    previewButton.setColour (juce::TextButton::textColourOffId, Palette::text);
-    previewButton.setColour (juce::TextButton::textColourOnId, Palette::background);
-    previewButton.setTooltip ("Play the groove with the guide sound without starting the DAW");
-    previewButton.onClick = [this] { processor.previewOn = previewButton.getToggleState(); };
-    playButton.onClick = [this] { processor.previewOn = ! processor.previewOn.load(); };
-    playButton.setTooltip ("Play / stop the preview (space bar)");
-    addAndMakeVisible (playButton);
+    // Transport of the preview (the groove without the DAW): to the start, play / pause, stop.
+    rewindButton.onClick = [this] { processor.previewToStart(); };
+    playButton.onClick = [this] { processor.previewToggle(); };
+    stopButton.onClick = [this] { processor.previewStop(); };
+    playButton.onColour = Palette::accent2;
+    rewindButton.setConnectedEdges (juce::Button::ConnectedOnRight);
+    playButton.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
+    stopButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+    for (auto* b : { &rewindButton, &playButton, &stopButton })
+        addAndMakeVisible (b);
 
     styleCaption (clipLengthLabel, "Clip length");
     styleCaption (clipPartLabel, "Notes");
@@ -4237,31 +4337,15 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     patternView.onCellClicked = [this] (bool bassRow, int step, const juce::MouseEvent& e) { cellClicked (bassRow, step, e); };
     patternView.setTooltip ("Click a step: hit > accent > ghost > rest.  Right-click: more options");
 
-    // What you hear: both, the piano alone (bass off) or the bass alone (chords silent).
-    playBothButton.onClick = [this]
+    // What you hear: two switches, the piano and the bass (lit = you hear it; never both off).
+    hearPianoButton.onClick = [this] { hearPart (false); };
+    hearBassButton.onClick  = [this] { hearPart (true); };
+    hearPianoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
+    hearBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+    hearBassButton.onColour = Palette::accent2;
+    for (auto* b : { &hearPianoButton, &hearBassButton })
     {
-        processor.chordsMuted = false;
-        if (! processor.isBassOn())
-            processor.toggleBass();
-    };
-    bassButton.onClick = [this]
-    {
-        processor.chordsMuted = false;
-        if (processor.isBassOn())
-            processor.toggleBass();
-    };
-    soloBassButton.onClick = [this]
-    {
-        processor.chordsMuted = true;
-        if (! processor.isBassOn())
-            processor.toggleBass();
-    };
-    playBothButton.setConnectedEdges (juce::Button::ConnectedOnRight);
-    bassButton.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
-    soloBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
-    for (auto* b : { &playBothButton, &bassButton, &soloBassButton })
-    {
-        b->setClickingTogglesState (false);
+        b->mutedWhenOff = true;
         addAndMakeVisible (b);
     }
 
@@ -4320,7 +4404,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         segmentAttachments.add (new juce::AudioProcessorValueTreeState::ComboBoxAttachment (p.apvts, ParamIDs::segment (i), *box));
         addAndMakeVisible (box);
 
-        auto* dice = segmentDice.add (new juce::TextButton ("RND"));
+        auto* dice = segmentDice.add (new IconButton (IconButton::Icon::dice));
         dice->setColour (juce::TextButton::buttonColourId, Palette::background);
         dice->setColour (juce::TextButton::textColourOffId, Palette::accent);
         dice->setTooltip ("New random rhythm for this part");
@@ -4578,7 +4662,7 @@ bool FaseGroovePianoEditor::keyPressed (const juce::KeyPress& key)
     if (key == juce::KeyPress::spaceKey && ! mods.isAnyModifierKeyDown())
     {
         // Space: play / stop the preview (the plug-in can't start the DAW's transport).
-        processor.previewOn = ! processor.previewOn.load();
+        processor.previewToggle();
         return true;
     }
     return false;
@@ -4892,11 +4976,10 @@ void FaseGroovePianoEditor::applyLanguage()
         clipPart.changeItemText (i + 1, tr (parts[i]));
     clipPart.setSelectedId (selectedPart, juce::dontSendNotification);
 
-    diceProgression.setButtonText (tr ("DICE"));
+    diceProgression.setButtonText ({});
     newRiffButton.setButtonText (tr ("NEW RIFF"));
-    previewButton.setButtonText (tr ("PREVIEW"));
     syncButton.setButtonText (tr ("SYNC DAW"));
-    optionsButton.setButtonText (tr ("OPTIONS"));
+    optionsButton.setButtonText ({});
     styleMenuButton.setButtonText (tr ("STYLE"));
     styleMenuButton.setTooltip (tr ("Ready-made setups by genre: progression, voicing, groove, feel and sound in one click (the key stays)"));
     resetButton.setButtonText (tr ("RESET"));
@@ -4927,23 +5010,24 @@ void FaseGroovePianoEditor::applyLanguage()
     diceProgression.setTooltip (tr ("Random soulful-house progression"));
     syncButton.setTooltip (tr ("On: follow the DAW tempo. Off: set your own BPM."));
     tempoSlider.setTooltip (tr ("Drag, or double-click to type the BPM"));
-    previewButton.setTooltip (tr ("Play the groove with the guide sound without starting the DAW"));
-    playButton.setTooltip (tr ("Play / stop the preview (space bar)"));
+    rewindButton.setTooltip (tr ("Back to the start"));
+    playButton.setTooltip (tr ("Play / pause the groove without starting the DAW (space bar)"));
+    stopButton.setTooltip (tr ("Stop (the next play starts from the top)"));
     shrinkToggle.setTooltip (tr ("Shrink the plug-in window while you drag a clip, so you can see your DAW"));
     patternView.setTooltip (tr ("Click a step: hit > accent > ghost > rest.  Right-click: more options"));
-    bassButton.setTooltip (tr ("Piano only: the bass is switched off"));
-    soloBassButton.setTooltip (tr ("Bass only: the chords are silent while you play (exported clips keep everything)"));
-    rndPianoButton.setButtonText (tr ("RND PIANO"));
+    hearPianoButton.setTooltip (tr ("Hear the piano (lit) or mute it: exported clips keep everything"));
+    hearBassButton.setTooltip (tr ("Hear the bass (lit) or switch it off"));
+    rndPianoButton.setButtonText ({});
     myGroovesButton.setButtonText (tr ("MY GROOVES"));
     myGroovesButton.setTooltip (tr ("Save the rhythm grid as your own groove, or load one you saved (Documents/Fase Groove Piano/Grooves)"));
-    rndBassButton.setButtonText (tr ("RND BASS"));
+    rndBassButton.setButtonText ({});
     rndPianoButton.setTooltip (tr ("New random rhythm for the piano (chords) only: the bass stays"));
     rndBassButton.setTooltip (tr ("New random rhythm for the bass only: the piano stays"));
 
     for (int i = 0; i < sgk::numSegments; ++i)
     {
         segmentBoxes[i]->setTooltip (tr ("Which part (A-D) plays here: combine parts like A A B C"));
-        segmentDice[i]->setButtonText (tr ("RND"));
+        segmentDice[i]->setButtonText ({});
         segmentDice[i]->setTooltip (tr ("New random rhythm for this part"));
         segmentLocks[i]->setButtonText (tr ("LOCK"));
         segmentLocks[i]->setTooltip (tr ("Keep this part when you press NEW RIFF"));
@@ -4973,10 +5057,8 @@ void FaseGroovePianoEditor::applyLanguage()
     gridTab.setButtonText (tr ("EDIT GRID"));
     rollTab.setTooltip (tr ("Every note the plug-in plays: chords, bass and fills, with the chord names"));
     gridTab.setTooltip (tr ("The rhythm grid: click the steps to write your own groove"));
-    playBothButton.setButtonText (tr ("BOTH"));
-    bassButton.setButtonText (tr ("PIANO"));
-    soloBassButton.setButtonText (tr ("BASS"));
-    playBothButton.setTooltip (tr ("Hear the piano and the bass"));
+    hearPianoButton.setButtonText (tr ("PIANO"));
+    hearBassButton.setButtonText (tr ("BASS"));
     morphButton.setButtonText (tr ("MORPH"));
     songButton.setTooltip (tr ("The whole song: arrange the sections, then drag or save it as one .mid, or one .mid per section"));
     morphButton.setTooltip (tr ("Morph the groove step by step towards another one (locked parts stay)"));
@@ -5165,6 +5247,24 @@ void FaseGroovePianoEditor::loadPreset (int index)
 }
 
 //==============================================================================
+void FaseGroovePianoEditor::hearPart (bool bass)
+{
+    // Lit = you hear it. Switching off the only part you hear switches the other one on.
+    const bool pianoOn = ! processor.chordsMuted.load() || ! processor.isBassOn();
+    const bool bassOn = processor.isBassOn();
+    if (bass)
+    {
+        if (bassOn) { processor.toggleBass(); processor.chordsMuted = false; }   // off (the piano plays)
+        else        processor.toggleBass();
+    }
+    else
+    {
+        if (pianoOn && bassOn)  processor.chordsMuted = true;                       // bass only
+        else if (pianoOn)      { processor.chordsMuted = true; processor.toggleBass(); }
+        else                   processor.chordsMuted = false;
+    }
+}
+
 void FaseGroovePianoEditor::showRoll (bool roll)
 {
     rollShown = roll;
@@ -5175,8 +5275,8 @@ void FaseGroovePianoEditor::showRoll (bool roll)
     patternView.setVisible (! roll);
     for (auto* list : { &segmentBoxes })
         for (auto* c : *list) c->setVisible (! roll);
-    for (auto* list : { &segmentDice, &segmentLocks })
-        for (auto* c : *list) c->setVisible (! roll);
+    for (auto* c : segmentDice) c->setVisible (! roll);
+    for (auto* c : segmentLocks) c->setVisible (! roll);
     if (getWidth() > 0)
         resized();
 }
@@ -5290,7 +5390,7 @@ void FaseGroovePianoEditor::timerCallback()
     }
     undoButton.setEnabled (! undoStack.isEmpty());
     redoButton.setEnabled (! redoStack.isEmpty());
-    undoButton.setAlpha (undoStack.isEmpty() ? 0.3f : 1.0f);
+    undoButton.setAlpha (undoStack.isEmpty() ? 0.35f : 1.0f);
     redoButton.setAlpha (redoStack.isEmpty() ? 0.3f : 1.0f);
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
@@ -5339,18 +5439,15 @@ void FaseGroovePianoEditor::timerCallback()
     if (songOverlay.isVisible())
         songOverlay.songTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("Song"));
 
+    feelStyleButton.setButtonText (tr ("Feel") + ": " + tr (sgk::humanizeStyleName (juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::humanizeStyle)->load()))) + "  " + juce::String::fromUTF8 ("\xe2\x96\xbe"));
+    hearPianoButton.setToggleState (! processor.chordsMuted.load() || ! bassOn, juce::dontSendNotification);
+    hearBassButton.setToggleState (bassOn, juce::dontSendNotification);
     {
-        const bool soloBass = processor.chordsMuted.load() && bassOn;
-        const int listening = ! bassOn ? 1 : soloBass ? 2 : 0;   // both, piano, bass
-        feelStyleButton.setButtonText (tr ("Feel") + ": " + tr (sgk::humanizeStyleName (juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::humanizeStyle)->load()))) + "  " + juce::String::fromUTF8 ("\xe2\x96\xbe"));
-        int index = 0;
-        for (auto* b : { &playBothButton, &bassButton, &soloBassButton })
-        {
-            const bool on = index++ == listening;
-            const auto colour = b == &soloBassButton ? Palette::accent2 : Palette::accent;
-            b->setColour (juce::TextButton::buttonColourId, on ? colour : Palette::background);
-            b->setColour (juce::TextButton::textColourOffId, on ? Palette::background : Palette::dim);
-        }
+        // Transport: play shows pause while the preview runs.
+        const bool previewing = processor.previewOn.load();
+        playButton.setIcon (previewing ? IconButton::Icon::pause : IconButton::Icon::play);
+        playButton.setToggleState (previewing, juce::dontSendNotification);
+        fullScreenButton.setIcon (isFullScreen() ? IconButton::Icon::exitFullScreen : IconButton::Icon::fullScreen);
     }
 
     for (int i = 0; i < sgk::numSegments; ++i)
@@ -5371,8 +5468,7 @@ void FaseGroovePianoEditor::timerCallback()
         diatonic.push_back ({ chord.rootPc, chord.third == 3, juce::String::fromUTF8 (sgk::romanNumeral (d, chord).c_str()) });
     }
     circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), tr (sgk::scaleName (s.scale)), marks, moves, playingSlot, diatonic);
-    previewButton.setToggleState (processor.previewOn.load(), juce::dontSendNotification);
-    playButton.setToggleState (processor.previewOn.load(), juce::dontSendNotification);
+
 
     const bool synced = syncButton.getToggleState();
     tempoSlider.setVisible (! synced);
@@ -5453,7 +5549,7 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
     g.setFont (font (13.0f));
     g.drawText ((showingHold ? tr ("HOLD: ") : juce::String()) + currentKey, cd, juce::Justification::centredRight);
 
-    drawPanel (g, tempoArea, tr ("TEMPO"));
+    drawPanel (g, tempoArea, tr ("TRANSPORT & TEMPO"));
     drawPanel (g, progressionPanel, tr ("PROGRESSION"));
     drawPanel (g, harmonyPanel, tr ("HARMONY & SCALES"));
     drawPanel (g, circlePanel, tr ("CIRCLE OF FIFTHS"));
@@ -5549,19 +5645,26 @@ void FaseGroovePianoEditor::layoutFull()
 
     // Header
     auto top = r.removeFromTop (76);
-    chordDisplayArea = top.removeFromRight (380).reduced (0, 4);
+    chordDisplayArea = top.removeFromRight (300).reduced (0, 4);
     top.removeFromRight (10);
     tempoArea = top.removeFromRight (330).reduced (0, 4);
     headerArea = top;
-    optionsButton.setBounds (headerArea.getRight() - 78, headerArea.getBottom() - 22, 74, 20);
-    resetButton.setBounds (optionsButton.getBounds().translated (-62, 0).withWidth (58));
-    styleMenuButton.setBounds (resetButton.getBounds().translated (-70, 0).withWidth (66));
-    fullScreenButton.setBounds (styleMenuButton.getBounds().translated (-34, 0).withWidth (30));
     {
-        auto topRow = juce::Rectangle<int> (headerArea.getRight() - 118, headerArea.getY() + 4, 114, 22);
-        redoButton.setBounds (topRow.removeFromRight (20).reduced (2));
-        topRow.removeFromRight (4);
-        undoButton.setBounds (topRow.removeFromRight (20).reduced (2));
+        // Two rows of utilities at the right of the logo, all the same height.
+        auto bottomRow = juce::Rectangle<int> (headerArea.getRight() - 206, headerArea.getBottom() - 30, 202, 26);
+        fullScreenButton.setBounds (bottomRow.removeFromRight (30));
+        bottomRow.removeFromRight (4);
+        optionsButton.setBounds (bottomRow.removeFromRight (30));
+        bottomRow.removeFromRight (4);
+        resetButton.setBounds (bottomRow.removeFromRight (62));
+        bottomRow.removeFromRight (4);
+        styleMenuButton.setBounds (bottomRow);
+
+        auto topRow = juce::Rectangle<int> (headerArea.getRight() - 206, headerArea.getY() + 8, 202, 26);
+        redoButton.setBounds (topRow.removeFromRight (30));
+        undoButton.setBounds (topRow.removeFromRight (30));
+        undoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
+        redoButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
         topRow.removeFromRight (6);
         presetsButton.setBounds (topRow);
     }
@@ -5575,10 +5678,14 @@ void FaseGroovePianoEditor::layoutFull()
     dnaOverlay.setBounds (0, 0, baseWidth, baseHeight);
     chordLab.setBounds (0, 0, baseWidth, baseHeight);
     {
-        auto inner = tempoArea.reduced (12, 8).withTrimmedLeft (64);
-        auto controls = inner.withSizeKeepingCentre (inner.getWidth(), 32);
-        syncButton.setBounds (controls.removeFromLeft (96));
-        controls.removeFromLeft (8);
+        // Transport: to the start, play / pause, stop; then the tempo.
+        auto controls = tempoArea.reduced (12, 8).withTrimmedTop (22);
+        rewindButton.setBounds (controls.removeFromLeft (34));
+        playButton.setBounds (controls.removeFromLeft (40));
+        stopButton.setBounds (controls.removeFromLeft (34));
+        controls.removeFromLeft (12);
+        syncButton.setBounds (controls.removeFromLeft (86));
+        controls.removeFromLeft (6);
         tempoSlider.setBounds (controls);
         dawTempo.setBounds (controls);
     }
@@ -5595,7 +5702,7 @@ void FaseGroovePianoEditor::layoutFull()
         auto presetRow = leftCol.removeFromTop (28);
         learnButton.setBounds (presetRow.removeFromRight (58));
         presetRow.removeFromRight (4);
-        diceProgression.setBounds (presetRow.removeFromRight (54));
+        diceProgression.setBounds (presetRow.removeFromRight (34));
         presetBox.setBounds (presetRow.withTrimmedRight (6));
         leftCol.removeFromTop (4);
         progLength.setBounds (leftCol.removeFromLeft (114));
@@ -5696,10 +5803,7 @@ void FaseGroovePianoEditor::layoutFull()
         auto inner = soundPanel.reduced (14, 8);
         inner.removeFromTop (22);
         auto toggleRow = row (inner, 28);
-        previewButton.setBounds (toggleRow.removeFromRight (70));
-        toggleRow.removeFromRight (3);
-        playButton.setBounds (toggleRow.removeFromRight (26));
-        toggleRow.removeFromRight (4);
+
         soundToggle.setBounds (toggleRow);
         soundType.setBounds (row (inner, 44));
         split (row (inner, 44), bassChannel, playMode, (inner.getWidth() - 10) / 2);
@@ -5726,9 +5830,8 @@ void FaseGroovePianoEditor::layoutFull()
             header.removeFromLeft (6);
             expandRollButton.setBounds (header.removeFromLeft (96));
             header.removeFromLeft (10);
-            playBothButton.setBounds (header.removeFromLeft (60));
-            bassButton.setBounds (header.removeFromLeft (56));
-            soloBassButton.setBounds (header.removeFromLeft (52));
+            hearPianoButton.setBounds (header.removeFromLeft (84));
+            hearBassButton.setBounds (header.removeFromLeft (84));
 
             dnaButton.setBounds (header.removeFromRight (44));
             header.removeFromRight (5);
@@ -5736,9 +5839,9 @@ void FaseGroovePianoEditor::layoutFull()
             header.removeFromRight (5);
             myGroovesButton.setBounds (header.removeFromRight (92));
             header.removeFromRight (8);
-            rndBassButton.setBounds (header.removeFromRight (72));
+            rndBassButton.setBounds (header.removeFromRight (52));
             header.removeFromRight (5);
-            rndPianoButton.setBounds (header.removeFromRight (78));
+            rndPianoButton.setBounds (header.removeFromRight (52));
         }
         inner.removeFromTop (6);
 
