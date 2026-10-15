@@ -744,6 +744,12 @@ namespace
         { "View", "Vista", "Vista", "Vue", "Ansicht", "Vista" },
         { "New rhythm", "Nuovo ritmo", "Nuevo ritmo", "Nouveau rythme", "Neuer Rhythmus", "Novo ritmo" },
         { "RANDOM", "CASUALE", "ALEATORIO", "ALÉATOIRE", "ZUFALL", "ALEATÓRIO" },
+        { "Lush 11ths (m11, maj9#11)", "11e ricche (m11, maj9#11)", "11as ricas (m11, maj9#11)", "11es riches (m11, maj9#11)", "Volle 11er (m11, maj9#11)", "11as ricas (m11, maj9#11)" },
+        { "Soulful 13ths", "13e soulful", "13as soulful", "13es soulful", "Soulful-13er", "13as soulful" },
+        { "Funky 7#9", "7#9 funky", "7#9 funky", "7#9 funky", "Funky 7#9", "7#9 funky" },
+        { "Upper triad (house stab)", "Triade superiore (stab house)", "Tríada superior (stab house)", "Triade supérieure (stab house)", "Obere Triade (House-Stab)", "Tríade superior (stab house)" },
+        { "Spread 10ths (2 hands)", "Decime aperte (2 mani)", "Décimas abiertas (2 manos)", "Dixièmes ouvertes (2 mains)", "Gespreizte Dezimen (2 Hände)", "Décimas abertas (2 mãos)" },
+        { "Open 5ths (deep pad)", "Quinte aperte (pad deep)", "Quintas abiertas (pad deep)", "Quintes ouvertes (pad deep)", "Offene Quinten (Deep-Pad)", "Quintas abertas (pad deep)" },
     };
     // clang-format on
 

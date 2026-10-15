@@ -151,14 +151,16 @@ const char* noteName (int pitchClass) noexcept      { return noteNames[mod (pitc
 const char* extensionName (int ext) noexcept
 {
     static const char* const names[numExtensions] { "Triads", "7ths", "9ths", "11ths / 13ths",
-                                                       "6/9", "Add 9", "Sus (9sus4)", "9ths + altered V" };
+                                                       "6/9", "Add 9", "Sus (9sus4)", "9ths + altered V",
+                                                       "Lush 11ths (m11, maj9#11)", "Soulful 13ths", "Funky 7#9" };
     return names[mod (ext, numExtensions)];
 }
 
 const char* voicingName (int voicing) noexcept
 {
     static const char* const names[numVoicings] { "Close", "Drop 2", "Rootless", "Wide (2 hands)", "Quartal (4ths)",
-                                                     "Shell (3-7-top)", "Drop 2+4", "Octave triads (disco)" };
+                                                     "Shell (3-7-top)", "Drop 2+4", "Octave triads (disco)",
+                                                     "Upper triad (house stab)", "Spread 10ths (2 hands)", "Open 5ths (deep pad)" };
     return names[mod (voicing, numVoicings)];
 }
 
@@ -181,10 +183,11 @@ Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept
     c.third  = above (2);
     c.fifth  = above (4);
 
+    const bool lush = ext == Extension::lushEleventh, soul = ext == Extension::soulThirteenth, funky = ext == Extension::funkySharpNine;
     bool wantsSeventh = ext == Extension::seventh || ext == Extension::ninth || ext == Extension::eleventh
-                     || ext == Extension::sus || ext == Extension::alteredDominant;
+                     || ext == Extension::sus || ext == Extension::alteredDominant || lush || soul || funky;
     bool wantsNinth   = ext == Extension::ninth || ext == Extension::eleventh || ext == Extension::sixNine
-                     || ext == Extension::add9 || ext == Extension::sus || ext == Extension::alteredDominant;
+                     || ext == Extension::add9 || ext == Extension::sus || ext == Extension::alteredDominant || lush || soul;
 
     if (ext == Extension::sixNine)
     {
@@ -220,6 +223,26 @@ Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept
 
     if (alteredV)
         c.thirteenth = scaleIsMinor (scale) ? 8 : 9;   // b13 in minor keys, 13 in major keys
+
+    // Lush 11ths: m11 on minor chords, maj9#11 where the #11 belongs to the scale, 13 on dominants.
+    if (lush)
+    {
+        const int eleventh = above (10) % 12;
+        if (c.third == 3 && eleventh == 5)
+            c.eleventh = 5;
+        else if (c.third == 4 && c.seventh == 11 && eleventh == 6)
+            c.eleventh = 6;
+        else if (dominant && c.ninth == 2)
+            c.thirteenth = 9;
+    }
+
+    // Soulful 13ths: every dominant becomes a 13 (9 + 13); the others stay 9ths.
+    if (soul && dominant && c.ninth == 2)
+        c.thirteenth = 9;
+
+    // Funky 7#9: plain 7ths, the dominants with the #9 (the "Hendrix" chord of funk and jackin').
+    if (funky && dominant)
+        c.ninth = 3;
 
     if (ext == Extension::eleventh)
     {
@@ -526,6 +549,52 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
         return v;
     }
 
+    if (voicing == Voicing::spreadTenths)
+    {
+        // The pianist's spread: left hand root and 10th (the 3rd an octave up), right hand the
+        // 7th, 9th and the colour note, each just above the one before: never crossing.
+        const int lhRoot = (centre - 24) + mod (chord.rootPc - (centre - 24), 12);
+        v.leftHand.add (lhRoot);
+        v.leftHand.add (lhRoot + 12 + chord.third);
+
+        NoteSet upper;
+        if (chord.seventh >= 0)    upper.add (chord.seventh);
+        else if (chord.sixth >= 0) upper.add (chord.sixth);
+        if (chord.ninth >= 0)      upper.add (chord.ninth);
+        if (chord.thirteenth >= 0) upper.add (chord.thirteenth);
+        else if (chord.eleventh >= 0) upper.add (chord.eleventh);
+        else                       upper.add (chord.fifth);
+        if (upper.size < 2)
+            upper.add (0);   // triads: the root on top
+
+        int note = v.leftHand[1];
+        for (int i = 0; i < upper.size; ++i)
+        {
+            const int pc = absolutePc (upper[i]);
+            int next = note + 1 + mod (pc - (note + 1), 12);
+            if (next - note < 2 && i == 0)
+                next += 12;   // no semitone straight above the 10th
+            v.rightHand.add (next);
+            note = next;
+        }
+        return v;
+    }
+
+    if (voicing == Voicing::openFifths)
+    {
+        // The deep house pad: root, 5th, 9th and the 3rd on top (R 5 9 10), open, moving in
+        // parallel like a held pad shape.
+        NoteSet shape;
+        const int bottom = centre - 9 + mod (chord.rootPc - (centre - 9), 12);
+        shape.add (bottom);
+        shape.add (bottom + (chord.fifth >= 0 ? chord.fifth : 7));
+        shape.add (bottom + 12 + (chord.ninth >= 0 ? chord.ninth : 0));   // the 9th, or the octave
+        shape.add (bottom + 12 + chord.third);
+        shape.sort();
+        v.rightHand = placeNear (shape, centre);
+        return v;
+    }
+
     if (voicing == Voicing::octaveTriads)
     {
         // Disco piano: a plain triad doubled an octave up (R 3 5 R 3 5), both hands locked.
@@ -598,6 +667,15 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
             const int top = chord.tones[chord.tones.size - 1];
             const int topPc = absolutePc (top);
             pcs.add (chord.tones.size > 3 && ! pcs.contains (topPc) ? topPc : chord.rootPc);
+            break;
+        }
+
+        case Voicing::upperTriad:
+        {
+            // The upper three tones of the chord as a close triad (over Am9: C E G... B), the
+            // modern house stab; the bass plays the root.
+            for (int i = std::max (0, all.size - 3); i < all.size; ++i)
+                pcs.add (all[i]);
             break;
         }
 

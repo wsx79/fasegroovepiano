@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v2.1.0: libreria più grande: 40 progressioni, 30 groove, 3 estensioni, 3 voicing, 12 stili.
 - v2.0.0: nuova interfaccia (tema studio, pulsanti con icone, trasporto, interruttori ascolta / nuovo ritmo, barra del piano roll a gruppi).
 - v1.28.0: le modifiche seguono le impostazioni, selezione multipla, ascolto piano / basso nell'editor, schermo intero, riavvio automatico dopo gli aggiornamenti.
 - v1.27.0: strumenti dell'editor del piano roll (matita, sposta, gomma), spostamento libero con snap / quantizza, filtro di visualizzazione, segui, barra spaziatrice.

@@ -34,16 +34,16 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 🎹 **Armonia:** 12 tonalità × 13 scale/modi (Maggiore, Dorian, Minore, Mixolydian, Lydian,
   Phrygian, Locrian, Minore armonica e melodica, Maggiore armonica, Lidia dominante, Misolidia b6,
   Frigia dominante). Triadi, 7ª, 9ª, 11ª/13ª, **6/9**, **add9**, **9sus4** e il **V alterato
-  13(b9)** gospel; tensioni gestite in automatico.
-- 🎛️ **Voicing:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (due mani), Quartal, Triadi in ottava (disco), con voice
+  13(b9)** gospel, **m11 / maj9#11** ricche, **13e** soulful e **7#9** funky; tensioni gestite in automatico.
+- 🎛️ **Voicing:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (due mani), Quartal, Triadi in ottava (disco), Triade superiore (stab house), Decime aperte, Quinte aperte (pad deep), con voice
   leading automatico.
 - ↗️ **Accordi di passaggio:** lo slide gospel di mezzo tono verso ogni cambio d'accordo (da sopra o da sotto).
-- 🔁 **Progressioni:** 1–8 accordi, 54 preset in un menu diviso per stile (tra cui le progressioni sul circolo delle quinte e quelle cromatiche con accordi presi in prestito)
+- 🔁 **Progressioni:** 1–8 accordi, 94 preset in un menu diviso per stile (tra cui le progressioni sul circolo delle quinte e quelle cromatiche con accordi presi in prestito)
   e **DICE** per progressioni casuali ma musicali.
 - ⭕ **Circolo delle quinte** interattivo: gli accordi della scala coi numeri romani, la progressione con punti numerati uniti da curve morbide, trascina i punti per cambiare gli accordi (anche fuori scala).
 - 🌈 **Colori dell'armonia:** accordi e passaggi colorati in base a quanto suonano bene insieme (verde = benissimo, grigio = stride).
 - 🎚️ **STILE:** impostazioni pronte per genere con un clic (deep, soulful, gospel, jackin', piano anni '90, garage, afro, neo soul…) e **RESET** per ripartire da zero.
-- 🥁 **142 groove** a due mani in 13 generi (loop di **piano house**, soulful, deep, gospel, **jackin' house**, **piano jackin'**, garage, afro, funky e disco, piano house anni '90, neo soul, chill, stab dance), suonati nel classico stile piano house: una nota in alto condivisa (**Pedale house**), il basso sotto ogni stab
+- 🥁 **172 groove** a due mani in 13 generi (loop di **piano house**, soulful, deep, gospel, **jackin' house**, **piano jackin'**, garage, afro, funky e disco, piano house anni '90, neo soul, chill, stab dance), suonati nel classico stile piano house: una nota in alto condivisa (**Pedale house**), il basso sotto ogni stab
   più **NEW RIFF**, che genera riff funky casuali sul momento, e fill opzionali (11 stili, dalle scale gospel ai glissati di piano).
 - 🎚️ **Strum** (accordi arpeggiati come un pianista vero) e **Top +8va** (nota alta raddoppiata all'ottava).
 - 🎼 **Piano roll** di tutte le note che suonano (accordi, basso, fill) coi nomi degli accordi e la testina, che si apre in grande per **modificare le note una per una** (zoom, corsia della dinamica), e **TUTTI / PIANO / BASSO** per scegliere cosa ascolti.

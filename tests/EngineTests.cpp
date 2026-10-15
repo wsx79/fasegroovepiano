@@ -886,7 +886,7 @@ static void testStrum()
 
 static void testPatternsWellFormed()
 {
-    CHECK (groovePatterns().size() == 142);
+    CHECK (groovePatterns().size() == 172);
     for (const auto& p : groovePatterns())
         CHECK (std::find_if (grooveCategories().begin(), grooveCategories().end(), [&p] (const char* c) { return p.category == c; }) != grooveCategories().end());
 

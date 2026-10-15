@@ -770,6 +770,28 @@ namespace
     }
 
     //==============================================================================
+    //==============================================================================
+    void testLibrary()
+    {
+        // Every style loads its own progression and groove, and plays.
+        const auto names = FaseGroovePianoProcessor::styleNames();
+        CHECK (names.size() >= 28);
+        for (int i = 0; i < names.size(); ++i)
+        {
+            FaseGroovePianoProcessor p;
+            p.applyStyle (i);
+            CHECK (FaseGroovePianoProcessor::stylePreset (i) >= 0);
+            const auto s = p.currentSettings();
+            const auto events = sgk::GrooveEngine::renderClip (s, 16.0);
+            int ons = 0, offs = 0;
+            for (const auto& e : events)
+                (e.isNoteOn() ? ons : offs)++;
+            CHECK (ons > 8 && ons == offs);
+        }
+        CHECK (sgk::progressionPresets().size() >= 90);
+        CHECK (sgk::groovePatterns().size() >= 170);
+    }
+
 }
 
 int main()
@@ -790,6 +812,7 @@ int main()
     testSectionFillsNoStuckNotes();
     testUpdateSwap();
     testEditedNotes();
+    testLibrary();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

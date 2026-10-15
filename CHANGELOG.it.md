@@ -6,6 +6,25 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.1.0] - 2026-10-15
+
+### Aggiunto
+- **Una libreria molto più grande**, tutta per soulful, deep e jackin' house, controllata su quanto
+  gli accordi suonano bene insieme:
+  - **40 nuove progressioni** (94 in tutto): soulful e gospel (Soul Cycle, Sunday Gospel, Classic
+    Soul, Sunrise, Vocal Lift, Church Turn...), deep (Late Night Minor, Deep Float, Minor Two,
+    Midnight...), jackin' (Jack Vamp, Funk Turn, Chicago Shuffle...), circolo delle quinte, accordi
+    presi in prestito e modali.
+  - **30 nuovi groove** (172 in tutto): loop di piano house sulle figure di crome puntate, comping
+    soulful con anticipi, chop gospel, pad e accordi dub deep, sedicesimi e chop jackin'.
+  - **3 nuove estensioni**: *11e ricche* (m11, maj9#11, 13 sulle dominanti), *13e soulful*,
+    *7#9 funky*.
+  - **3 nuovi voicing**: *Triade superiore (stab house)*, *Decime aperte (2 mani)*, *Quinte aperte
+    (pad deep)*.
+  - **12 nuovi stili** (28 in tutto): Sunday Soulful, Deep Night Pads, Chicago Jack, Piano House
+    Anthem, Vocal House, Deep Soul Keys, Gospel Chops, Jackin' Funk, Classic Piano House, Deep
+    Minimal, Soulful Lift, Jackin' Piano Chicago.
+
 ## [2.0.0] - 2026-10-15
 
 ### Modificato

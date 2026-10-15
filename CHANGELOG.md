@@ -6,6 +6,24 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-10-15
+
+### Added
+- **A bigger library**, all for soulful, deep and jackin' house, checked for how well the chords
+  sound together:
+  - **40 new progressions** (94 in all): soulful and gospel (Soul Cycle, Sunday Gospel, Classic
+    Soul, Sunrise, Vocal Lift, Church Turn...), deep (Late Night Minor, Deep Float, Minor Two,
+    Midnight...), jackin' (Jack Vamp, Funk Turn, Chicago Shuffle...), circle of fifths, borrowed
+    chords and modal.
+  - **30 new grooves** (172 in all): piano house loops on the dotted-8th figures, soulful
+    comping with pushes, gospel chops, deep pads and dub chords, jackin' 16ths and chops.
+  - **3 new extensions**: *Lush 11ths* (m11, maj9#11, 13 on dominants), *Soulful 13ths*,
+    *Funky 7#9*.
+  - **3 new voicings**: *Upper triad (house stab)*, *Spread 10ths (2 hands)*, *Open 5ths (deep pad)*.
+  - **12 new styles** (28 in all): Sunday Soulful, Deep Night Pads, Chicago Jack, Piano House
+    Anthem, Vocal House, Deep Soul Keys, Gospel Chops, Jackin' Funk, Classic Piano House, Deep
+    Minimal, Soulful Lift, Jackin' Piano Chicago.
+
 ## [2.0.0] - 2026-10-15
 
 ### Changed

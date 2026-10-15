@@ -35,16 +35,16 @@ Rhodes or synth.
 - 🎹 **Harmony:** 12 keys × 13 scales/modes (Major, Dorian, Minor, Mixolydian, Lydian, Phrygian,
   Locrian, Harmonic and Melodic Minor, Harmonic Major, Lydian Dominant, Mixolydian b6, Phrygian
   Dominant). Triads, 7ths, 9ths, 11ths/13ths, **6/9**, **add9**, **9sus4** and the gospel
-  **altered V 13(b9)**; clashing tensions are handled automatically.
-- 🎛️ **Voicings:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (two hands), Quartal, Octave triads (disco), with
+  **altered V 13(b9)**, lush **m11 / maj9#11**, soulful **13ths** and funky **7#9**; clashing tensions are handled automatically.
+- 🎛️ **Voicings:** Close, Drop 2, Drop 2+4, Rootless, Shell, Wide (two hands), Quartal, Octave triads (disco), Upper triad (house stab), Spread 10ths, Open 5ths (deep pad), with
   automatic voice leading.
 - ↗️ **Approach chords:** the gospel half-step slide into every chord change (from above or below).
-- 🔁 **Progressions:** 1–8 chords, 54 presets in a menu grouped by style (including circle-of-fifths and chromatic, borrowed-chord progressions) and
+- 🔁 **Progressions:** 1–8 chords, 94 presets in a menu grouped by style (including circle-of-fifths and chromatic, borrowed-chord progressions) and
   **DICE** for random but musical progressions.
 - ⭕ Interactive **circle of fifths**: the chords of the scale with their numerals, your progression as numbered dots joined by soft curves, drag the dots to change chords (even outside the scale).
 - 🌈 **Harmony colours:** chords and chord changes coloured by how well they sound together (green = great, grey = clashes).
 - 🎚️ **STYLE:** one-click setups by genre (deep, soulful, gospel, jackin', '90s piano, garage, afro, neo soul…) and **RESET** to start over.
-- 🥁 **142 two-hand grooves** in 13 genres (**piano house** loops, soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill, dance stabs), played in the classic house piano style: one shared top note (**House pedal**), the bass under every stab
+- 🥁 **172 two-hand grooves** in 13 genres (**piano house** loops, soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill, dance stabs), played in the classic house piano style: one shared top note (**House pedal**), the bass under every stab
   plus **NEW RIFF**, a random funky riff generator, and optional fills (11 styles, from gospel runs to piano glissandos).
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
 - 🎼 **Piano roll** of every note that plays (chords, bass, fills) with the chord names and the playhead, which opens big to **edit the notes one by one** (zoom, velocity lane), and **BOTH / PIANO / BASS** to choose what you hear.
