@@ -103,8 +103,8 @@ usano sempre. **AVANZATE** (in alto a destra di ciascuno) mostra tutti i comandi
 
 | Pannello | Vista semplice | Solo in AVANZATE |
 |---|---|---|
-| Armonia e scale | Tonalità, Scala, Estensioni, Voicing, Basso mano sinistra, Registro | Ottava sopra, Accordo di passaggio, Linea in alto, Movimento, Arpeggiato |
-| Groove | Groove + NUOVO RIFF, Sezione del brano, Fill, Swing, Gate, Dinamica, Umanizza | Lunghezza groove, Variazione, Stile fill, Stile feel / NUOVO FEEL, Densità |
+| Armonia e scale | Tonalità, Scala, Estensioni, Voicing, Basso mano sinistra, Registro | Ottava sopra, Accordo di passaggio, Linea in alto, Movimento, Arpeggiato, Range accordi |
+| Groove | Groove + NUOVO RIFF, Sezione del brano, Fill, Variazione, Swing, Gate, Dinamica, Umanizza | Lunghezza groove, Stile fill, Stile feel / NUOVO FEEL, Densità |
 | Suono guida | Acceso/spento, Suono, Riverbero, Volume, Pompa | Timbro, Chorus, Uscita MIDI, Modalità play, Sidechain, Ritmo, Rilascio |
 
 Le progressioni pronte si aprono con **SFOGLIA...** (mostra il nome di quella che hai caricato).
@@ -153,7 +153,8 @@ I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si
 | **Approach chord** (Accordo di passaggio) | Lo **slide** gospel: sull'ultimo sedicesimo prima di ogni cambio d'accordo suona l'accordo successivo (e la sua nota di basso) mezzo tono **sopra** (*From above*) o **sotto** (*From below*), che poi risolve. Solo dove quella mano sta già suonando: un basso spento resta spento. |
 | **Top +8va** | Raddoppia all'ottava superiore la nota più alta di ogni accordo: il classico suono di piano house brillante. |
 | **Strum** (Arpeggiato) | Arpeggia l'accordo come un pianista vero invece di suonare tutte le note insieme. L'arpeggio dura un tempo reale (fino a circa 90 ms al 100%, a qualsiasi BPM), accelera leggermente come una mano, non supera mai metà della nota e non tocca mai le ghost note. Il piccolo pulsante sotto la manopola sceglie la **direzione**: *Su* (dal basso), *Giù* (dall'alto) o *Alternato* (su sui tempi, giù sui controtempi, alla gospel). Tra 20% e 40% suona naturale. |
-| **Register** | Sposta in alto o in basso la mano destra. Gli accordi scelgono in automatico il rivolto più vicino al precedente (voice leading), così il giro scorre senza salti. |
+| **Register** | Sposta in alto o in basso la mano destra. Gli accordi scelgono in automatico il rivolto più vicino al precedente (voice leading), così il giro scorre senza salti. In basso gli accordi si tengono lontani dal basso da soli (v2.7): sotto il Mi3 solo fondamentali e quinte, e nessuna nota dell'accordo sotto il basso. |
+| **Range accordi** (AVANZATE) | Un cursore a due maniglie: nessuna nota degli accordi va sotto la sinistra o sopra la destra (una nota fuori si sposta di un'ottava). "tutto" = nessun limite. |
 
 #### Regole veloci di armonia per il piano house
 
@@ -208,7 +209,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). |
 | **Fills** | **Spenti (Off)** di default. Ogni battuta, oppure ogni 2/4/8 battute, la fine della battuta diventa un breve fill che porta all'accordo successivo. |
 | **Fill style** | 11 stili, tutti diretti verso la nota alta dell'accordo successivo: *Pentatonic run up* / *down* (scaletta in salita / discesa), *Chord roll* (arpeggio fluido in trentaduesimi dell'accordo successivo, partendo un'ottava sotto), *Gospel run* (otto sedicesimi in salita sulla scala negli ultimi due tempi), *Chromatic walk-up* (quattro semitoni verso l'accordo successivo), *Push stabs* (uno stab, una ghost note, poi l'accordo successivo anticipato sul "e" del 4), *16th chord chops* (quattro chop leggeri in crescendo), *Gospel thirds* (terze parallele in discesa), *Piano glissando* (una spazzata veloce in salita), *Blues lick* (giù per la scala blues) e *Mix*, che a ogni fill ne suona uno diverso. |
-| **Variation** (Variazione) | Ogni 4 o 8 battute l'ultima battuta suona una **variazione** del groove (un colpo spostato, una ghost note, un anticipo, una nota di basso in levare), così un loop lungo non è mai statico. |
+| **Variation** (Variazione) | Ogni 4 o 8 battute l'ultima battuta suona una **variazione** del groove (un colpo spostato, una ghost note, un anticipo, una nota di basso in levare), così un loop lungo non è mai statico. **Evoluzione in 8 / 16 battute** (v2.7): lo stesso groove **cresce** in quattro passi - com'è scritto, poi con le ghost note, poi una variazione con un po' più di energia, e l'ultima battuta suona un fill verso il giro successivo. Anche nella vista semplice. |
 | **Groove length** (Lunghezza groove) | *2 battute* (normale), *1 battuta* (la prima battuta in loop: più stretto e ipnotico) o *4 battute* (il groove seguito da una sua variazione). |
 | **Swing** | 0% = dritto, 100% = shuffle terzinato. 15–35% è il classico feel house. |
 | **Gate** | Quanta parte dello spazio prima del colpo successivo riempie ogni nota, come la mano di un pianista: basso = stab corti, alto = quasi legato. Col valore di default (65%) uno stab che sta tre sedicesimi prima del successivo suona per circa due sedicesimi. Le note tenute con *=* nella griglia mantengono la loro durata. |

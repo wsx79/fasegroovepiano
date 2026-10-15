@@ -4330,6 +4330,30 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     styleCaption (presetLabel, "Progression presets");
     addAndMakeVisible (presetLabel);
 
+    // Chord range: two thumbs, each one a parameter.
+    rangeSlider.setRange (24.0, 108.0, 1.0);
+    rangeSlider.setColour (juce::Slider::trackColourId, Palette::accent);
+    rangeSlider.setColour (juce::Slider::backgroundColourId, Palette::panelEdge);
+    rangeSlider.setColour (juce::Slider::thumbColourId, Palette::text);
+    rangeSlider.onValueChange = [this]
+    {
+        const int low = juce::jlimit (24, 72, juce::roundToInt (rangeSlider.getMinValue()));
+        const int high = juce::jlimit (60, 108, juce::roundToInt (rangeSlider.getMaxValue()));
+        processor.setParameterFromUI (ParamIDs::chordLow, (float) low);
+        processor.setParameterFromUI (ParamIDs::chordHigh, (float) juce::jmax (high, low + 12));
+    };
+    rangeSlider.onDragEnd = [this]
+    {
+        // Snap the thumbs to what the parameters accept.
+        rangeSlider.setMinAndMaxValues (processor.apvts.getRawParameterValue (ParamIDs::chordLow)->load(),
+                                        processor.apvts.getRawParameterValue (ParamIDs::chordHigh)->load(), juce::dontSendNotification);
+    };
+    rangeLabel.setFont (font (10.0f, true));
+    rangeLabel.setBorderSize ({});
+    rangeLabel.setColour (juce::Label::textColourId, Palette::dim);
+    addChildComponent (rangeSlider);
+    addChildComponent (rangeLabel);
+
     presetBox.setTextWhenNothingSelected ("Load a progression...");
     buildPresetMenu();
     presetBox.onChange = [this] { loadPreset (presetBox.getSelectedId() - 1); };
@@ -5370,7 +5394,7 @@ void FaseGroovePianoEditor::applyLanguage()
     redoButton.setTooltip (tr ("Redo (Ctrl+Shift+Z)"));
     movement.box.setTooltip (tr ("Voicing movement: some hits play the chord an inversion up or down so the riff moves instead of repeating the same chord"));
     topLine.box.setTooltip (tr ("The melody the top notes of the chords draw across the progression"));
-    variation.box.setTooltip (tr ("Every 4 or 8 bars the last bar plays a variation of the groove, so the loop never feels static"));
+    variation.box.setTooltip (tr ("Every 4 or 8 bars the last bar plays a variation of the groove, so the loop never feels static. Evolve: over 8 or 16 bars the same groove grows - as written, then ghost notes, then a variation, then a fill into the next round"));
     grooveBars.box.setTooltip (tr ("1 bar, 2 bars, or 4 bars (the groove followed by a variation of it)"));
     resetButton.setTooltip (tr ("Put every setting back to its default (the language stays)"));
     soundToggle.setButtonText (tr ("Guide sound"));
@@ -5486,6 +5510,7 @@ void FaseGroovePianoEditor::applyLanguage()
     soundToggle.setTooltip (tr ("Turns the built-in guide sound on or off (the MIDI keeps playing)"));
     presetBox.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
     presetBrowseButton.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
+    rangeSlider.setTooltip (tr ("The chords' range: no chord note goes below the left thumb or above the right one (notes outside move by an octave)"));
     clipLength.setTooltip (tr ("How long the exported MIDI clip is"));
     clipPart.setTooltip (tr ("Which notes go into the clip: chords and bass, chords only or bass only"));
     dragTile.setTooltip (tr ("Drag this onto a track in your DAW to drop the groove as a MIDI clip"));
@@ -5904,6 +5929,19 @@ void FaseGroovePianoEditor::timerCallback()
     if (velocityShown && ! rollShown)
         updateVelocityView (s);
 
+    if (rangeSlider.isVisible())
+    {
+        const int low = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::chordLow)->load());
+        const int high = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::chordHigh)->load());
+        if (! rangeSlider.isMouseButtonDown()
+            && (juce::roundToInt (rangeSlider.getMinValue()) != low || juce::roundToInt (rangeSlider.getMaxValue()) != high))
+            rangeSlider.setMinAndMaxValues (low, high, juce::dontSendNotification);
+        auto noteText = [] (int n) { return juce::String (sgk::noteName (n)) + juce::String (n / 12 - 1); };
+        const auto text = Localisation::upper (tr ("Chord range")) + "   " + (low <= 24 && high >= 108 ? tr ("all") : noteText (low) + " - " + noteText (high));
+        if (rangeLabel.getText() != text)
+            rangeLabel.setText (text, juce::dontSendNotification);
+    }
+
     // The view can change under the open window (the DAW restores a project, undo / redo).
     if (shownAdvanced != (processor.advancedView ? 1 : 0))
         applyViewMode();
@@ -6147,8 +6185,8 @@ void FaseGroovePianoEditor::layoutMini()
 
 std::vector<juce::Component*> FaseGroovePianoEditor::advancedOnly()
 {
-    return { &octaveToggle, &approach, &topLine, &movement, &strumKnob, &strumDirButton,
-             &grooveBars, &variation, &fillStyle, &feelStyleButton, &newFeelButton, &riffDensity,
+    return { &octaveToggle, &approach, &topLine, &movement, &strumKnob, &strumDirButton, &rangeSlider, &rangeLabel,
+             &grooveBars, &fillStyle, &feelStyleButton, &newFeelButton, &riffDensity,
              &tone, &chorus, &bassChannel, &playMode, &pumpSource, &pumpRate, &pumpRelease };
 }
 
@@ -6294,6 +6332,9 @@ void FaseGroovePianoEditor::layoutFull()
         last.removeFromLeft (6);
         movement.setBounds (last.removeFromBottom (44));
         last.removeFromBottom (6);
+        rangeSlider.setBounds (last.removeFromBottom (16));
+        rangeLabel.setBounds (last.removeFromBottom (13));
+        last.removeFromBottom (24);   // room for the strum direction under the knob
         const int kw = last.getWidth() / 2;
         const int kh = juce::jmin (kw + 34, last.getHeight());
         registerKnob.setBounds (last.removeFromLeft (kw).withSizeKeepingCentre (kw, kh));
@@ -6320,7 +6361,16 @@ void FaseGroovePianoEditor::layoutFull()
         grooveNext.setBounds (arrows);
         pattern.setBounds (grooveRow.withTrimmedRight (4));
         if (! all)
-            split (row (inner, 44), section, fills, (inner.getWidth() - 10) / 2);
+        {
+            // Simple: section, fills and variation (where the groove's evolution is).
+            auto three = row (inner, 44);
+            const int w = (three.getWidth() - 16) / 3;
+            section.setBounds (three.removeFromLeft (w));
+            three.removeFromLeft (8);
+            fills.setBounds (three.removeFromLeft (w));
+            three.removeFromLeft (8);
+            variation.setBounds (three);
+        }
         else
         {
             {

@@ -185,6 +185,8 @@ struct GrooveSettings
     TopLine topLine = TopLine::automatic;
     std::array<int, maxProgressionLength> inversions {};   // per slot, -3..3
     int variationEvery = 0;                // 0 = off, else every 4 or 8 bars the last bar varies
+    int evolveBars = 0;                    // 0 = off, else the groove grows over 8 or 16 bars (see GrooveEngine)
+    int rangeLow = 24, rangeHigh = 108;    // the chords' range: their notes are kept between these
     int grooveBars = 2;                    // 1, 2 or 4 bars
     int movement = 1;                      // voicing movement: 0 off, 1 subtle, 2 lively
     int strumDirection = 0;                // 0 up, 1 down, 2 alternate (up on the beat, down off it)
@@ -320,6 +322,8 @@ private:
 
     const GroovePattern& patternFor (const GrooveSettings& s);
 
+    static void clearLowRegister (VoicedChord&, const Chord&, bool bassOn) noexcept;
+    static void keepInRange (VoicedChord&, int low, int high) noexcept;
     void collectStep (long long step, const GrooveSettings& s, const GroovePattern& normalPattern, const GroovePattern& variation,
                       const std::array<Chord, maxProgressionLength>& chords,
                       const std::array<VoicedChord, maxProgressionLength>& voiced);
@@ -352,6 +356,7 @@ private:
 
     // Cache of the resolved pattern, rebuilt only when its inputs change.
     GroovePattern cachedPattern, cachedVariation;
+    std::array<GroovePattern, 3> cachedEvolution;   // the groove's evolution: + ghosts, + variation, + fill
     int cachedBars = 2, cachedMovement = 1;
     int cachedIndex = -1;
     std::uint32_t cachedSeed = 0;

@@ -52,6 +52,10 @@ GroovePattern makeRandomPattern (std::uint32_t seed, float density);
     note there, a push into the next bar, a bass pick-up. Same seed = same variation. */
 GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed);
 
+/** The groove with a few ghost notes added (a 16th before some hits, on empty steps), and now and
+    then a bass ghost before a bass hit: the first step of the groove's evolution. */
+GroovePattern addGhostNotes (const GroovePattern& source, std::uint32_t seed);
+
 /** Groove morphing: amount 0 = a, 1 = b, in between a step-by-step blend that always grows the
     same way (each step switches from a to b at its own point), with the holds repaired. */
 GroovePattern morphPatterns (const GroovePattern& a, const GroovePattern& b, double amount, std::uint32_t seed);

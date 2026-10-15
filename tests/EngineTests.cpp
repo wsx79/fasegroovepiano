@@ -817,6 +817,88 @@ static void testStepVelocities()
     CHECK (at (set, Part::chords, 12) < at (automatic, Part::chords, 12) - 40);
 }
 
+static void testClearLowRegister()
+{
+    // Bass and chords: below E3 only roots and 5ths, never a chord tone under the bass, whatever
+    // the voicing and the register.
+    for (int v = 0; v < numVoicings; ++v)
+        for (int centre = 50; centre <= 72; centre += 2)
+            for (int key = 0; key < 12; key += 5)
+            {
+                GrooveSettings s;
+                s.keyRoot = key; s.voicing = (Voicing) v; s.centre = centre;
+                s.extension = Extension::ninth; s.bass = BassMode::withChords;
+                s.progression = { 0, 3, 4, 5, 1, 0, 0, 0 }; s.progressionLength = 5;
+                std::array<Chord, maxProgressionLength> chords {};
+                std::array<VoicedChord, maxProgressionLength> voiced {};
+                GrooveEngine::voiceProgression (s, chords, voiced);
+                for (int i = 0; i < s.progressionLength; ++i)
+                    for (const auto* hand : { &voiced[(size_t) i].rightHand, &voiced[(size_t) i].leftHand })
+                        for (int k = 0; k < hand->size; ++k)
+                        {
+                            const int n = (*hand)[k];
+                            const int interval = ((n - chords[(size_t) i].rootPc) % 12 + 12) % 12;
+                            CHECK (n >= 52 || interval == 0 || interval == 7);
+                            CHECK (n >= 36 + chords[(size_t) i].rootPc);
+                        }
+                CHECK (voiced[0].rightHand.size >= 2);
+            }
+}
+
+static void testEvolution()
+{
+    // Evolve over 8 bars: bars 1-2 as written, 3-4 with ghost notes added, 5-8 varied, a fill in
+    // bar 8; the loop covers the whole 8 bars; nothing changes when it is off.
+    GrooveSettings s;
+    s.humanize = 0.0f; s.swing = 0.0f; s.pattern = 1; s.fillEveryBars = 0;
+    auto notesPerBar = [] (const GrooveSettings& set)
+    {
+        std::vector<int> bars (8, 0);
+        std::vector<int> fills (8, 0);
+        for (const auto& e : GrooveEngine::renderClip (set, 32.0))
+            if (e.isNoteOn() && e.ppq < 32.0)
+            {
+                ++bars[(size_t) (e.ppq / 4.0)];
+                if (e.part == Part::fill) ++fills[(size_t) (e.ppq / 4.0)];
+            }
+        return std::make_pair (bars, fills);
+    };
+
+    const auto [plain, plainFills] = notesPerBar (s);
+    s.evolveBars = 8;
+    CHECK (GrooveEngine::loopLengthInSteps (s) % (16 * 8) == 0);
+    const auto [grown, grownFills] = notesPerBar (s);
+    CHECK (grown[0] == plain[0] && grown[1] == plain[1]);                  // stage 1: as written
+    CHECK (grown[2] + grown[3] > plain[2] + plain[3]);                    // stage 2: + ghost notes
+    CHECK (grownFills[7] > 0 && plainFills[7] == 0);                       // the last bar fills
+    for (int b = 0; b < 7; ++b)
+        CHECK (grownFills[(size_t) b] == 0);
+}
+
+static void testChordRange()
+{
+    // The chord range keeps every chord note between its limits (and the default changes nothing).
+    GrooveSettings s;
+    s.voicing = Voicing::wide; s.extension = Extension::ninth; s.centre = 64;
+    s.progression = { 0, 3, 4, 5, 0, 0, 0, 0 }; s.progressionLength = 4;
+    std::array<Chord, maxProgressionLength> chords {};
+    std::array<VoicedChord, maxProgressionLength> plain {}, ranged {};
+    GrooveEngine::voiceProgression (s, chords, plain);
+    s.rangeLow = 55; s.rangeHigh = 74;
+    GrooveEngine::voiceProgression (s, chords, ranged);
+    bool changed = false;
+    for (int i = 0; i < 4; ++i)
+    {
+        for (const auto* hand : { &ranged[(size_t) i].rightHand, &ranged[(size_t) i].leftHand })
+            for (int k = 0; k < hand->size; ++k)
+                CHECK ((*hand)[k] >= 55 && (*hand)[k] <= 74);
+        CHECK (ranged[(size_t) i].rightHand.size >= 2);
+        changed = changed || ranged[(size_t) i].rightHand.notes != plain[(size_t) i].rightHand.notes
+                          || ranged[(size_t) i].leftHand.notes != plain[(size_t) i].leftHand.notes;
+    }
+    CHECK (changed);
+}
+
 static void testEditedLoop()
 {
     // Notes edited in the piano roll replace the groove in the main section and loop at their length.
@@ -1420,6 +1502,9 @@ int main()
     testVoicingMovement();
     testHousePedalAndStabBass();
     testStepVelocities();
+    testClearLowRegister();
+    testEvolution();
+    testChordRange();
     testEditedLoop();
     testCarryEdits();
     testAutoMovement();

@@ -115,7 +115,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::humanizeSeed, 1 }, "Humanize Feel", 0, 99999, 0));
     choice (ParamIDs::fills, "Fills", { "Off", "Every 2 bars", "Every 4 bars", "Every 8 bars", "Every bar" }, 0);
     choice (ParamIDs::fillStyle, "Fill Style", namesFrom (sgk::numFillStyles, sgk::fillStyleName), 0);
-    choice (ParamIDs::variation, "Variation", { "Off", "Every 4 bars", "Every 8 bars" }, 0);
+    choice (ParamIDs::variation, "Variation", { "Off", "Every 4 bars", "Every 8 bars", "Evolve over 8 bars", "Evolve over 16 bars" }, 0);
     choice (ParamIDs::grooveBars, "Groove Length", { "2 bars", "1 bar", "4 bars" }, 0);
     choice (ParamIDs::movement, "Voicing Movement", { "Off", "Subtle", "Lively" }, 0);
     choice (ParamIDs::strumDir, "Strum Direction", { "Up", "Down", "Alternate" }, 0);
@@ -155,6 +155,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::pumpRate, "Sidechain Rate", { "1/4", "1/8", "1/2", "1/16" }, 0);
     unitFloat (ParamIDs::pumpRelease, "Sidechain Release", 0.0f, 0.5f);
     add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::sequencer, 1 }, "Internal Sequencer", true));
+    // The chords' range: no chord note below / above (the defaults leave everything as voiced).
+    auto noteText = [] (int v, int) { return String (sgk::noteName (v)) + String (v / 12 - 1); };
+    add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::chordLow, 1 }, "Chord Range Low", 24, 72, 24,
+                                              AudioParameterIntAttributes().withStringFromValueFunction (noteText)));
+    add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::chordHigh, 1 }, "Chord Range High", 60, 108, 108,
+                                              AudioParameterIntAttributes().withStringFromValueFunction (noteText)));
     group ("sound", "Guide sound");
     return layout;
 }
@@ -870,6 +876,8 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.extension = (sgk::Extension) asInt (ParamIDs::extension);
     s.voicing = (sgk::Voicing) asInt (ParamIDs::voicing);
     s.centre = asInt (ParamIDs::registerPos);
+    s.rangeLow = asInt (ParamIDs::chordLow);
+    s.rangeHigh = juce::jmax (asInt (ParamIDs::chordHigh), s.rangeLow + 12);   // at least an octave
     s.bass = (sgk::BassMode) asInt (ParamIDs::bass);
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
@@ -892,9 +900,12 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         s.inversions[(size_t) i] = juce::roundToInt (inversionParams[(size_t) i]->load());
     {
-        constexpr int every[] { 0, 4, 8 };
+        constexpr int every[] { 0, 4, 8, 0, 0 };
+        constexpr int evolve[] { 0, 0, 0, 8, 16 };
         constexpr int bars[] { 2, 1, 4 };
-        s.variationEvery = every[juce::jlimit (0, 2, asInt (ParamIDs::variation))];
+        const int variationChoice = juce::jlimit (0, 4, asInt (ParamIDs::variation));
+        s.variationEvery = every[variationChoice];
+        s.evolveBars = evolve[variationChoice];
         s.grooveBars = bars[juce::jlimit (0, 2, asInt (ParamIDs::grooveBars))];
         s.movement = juce::jlimit (0, 2, asInt (ParamIDs::movement));
         s.strumDirection = juce::jlimit (0, 2, asInt (ParamIDs::strumDir));
@@ -1194,10 +1205,17 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             side = getBusBuffer (buffer, true, 0);
 
         // With nothing routed some hosts hand back the plug-in's own last output: not a sidechain.
+        // (Compared within a tiny tolerance: a host may round or dither what it hands back.)
         if (side.getNumChannels() > 0 && numSamples <= (int) lastOutput.size()
-            && std::equal (lastOutput.begin(), lastOutput.begin() + numSamples, side.getReadPointer (0))
             && std::any_of (lastOutput.begin(), lastOutput.begin() + numSamples, [] (float v) { return v != 0.0f; }))
-            side = juce::AudioBuffer<float>();
+        {
+            const float* in = side.getReadPointer (0);
+            bool same = true;
+            for (int i = 0; i < numSamples && same; ++i)
+                same = std::abs (in[i] - lastOutput[(size_t) i]) <= 1.0e-4f + 1.0e-3f * std::abs (lastOutput[(size_t) i]);
+            if (same)
+                side = juce::AudioBuffer<float>();
+        }
 
         float blockPeak = 0.0f;
         const float attack = 1.0f - std::exp (-1.0f / (0.002f * (float) sampleRate));

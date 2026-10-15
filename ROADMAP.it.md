@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v2.7.0: evoluzione del groove (8 / 16 battute), basso e accordi separati in automatico, range accordi.
 - v2.6.0: vista semplice / avanzata dei pannelli, pulsante SFOGLIA per le progressioni.
 - v2.5.0: pulsante TUTTO (random totale), suono guida circa 2,3 volte più leggero sulla CPU.
 - v2.4.0: Novation Launchpad (Mini MK3, X, Pro MK3) e Ableton Push 2 / 3 come griglia hardware.

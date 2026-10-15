@@ -6,11 +6,26 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
-## [Non pubblicato]
+## [2.7.0] - 2026-10-15
+
+### Aggiunto
+- **Evoluzione del groove** (menu Variazione, ora anche nella vista semplice): *Evoluzione in 8 /
+  16 battute* - lo stesso groove cresce in quattro passi: com'è scritto, + ghost note, + una
+  variazione con un po' più di energia, e un fill nell'ultima battuta verso il giro successivo.
+- **Range accordi** (Armonia, AVANZATE): un cursore a due maniglie che tiene ogni nota degli
+  accordi tra una nota più bassa e una più alta.
+
+### Modificato
+- **Basso e accordi non si pestano più i piedi**, da soli: sotto il Mi3 gli accordi tengono solo
+  fondamentali e quinte (terze, settime ed estensioni salgono di un'ottava), e col basso acceso
+  nessuna nota dell'accordo va sotto il basso. Nessun nuovo comando.
 
 ### Corretto
-- La vista semplice / avanzata ora segue subito un progetto ripristinato con la finestra aperta
-  (e annulla / ripeti).
+- La vista semplice / avanzata segue un progetto ripristinato con la finestra aperta (e annulla /
+  ripeti).
+- Il controllo del sidechain sull'uscita del plug-in rimandata dall'host ora tollera gli
+  arrotondamenti.
+- Un controllo di sicurezza nel generatore casuale.
 
 ## [2.6.0] - 2026-10-15
 

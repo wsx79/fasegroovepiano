@@ -27,7 +27,7 @@ namespace
 
         double uniform() noexcept       { return (next() >> 8) * (1.0 / 16777216.0); }
         bool chance (double p) noexcept { return uniform() < p; }
-        int below (int n) noexcept      { return (int) (next() % (std::uint32_t) n); }
+        int below (int n) noexcept      { return n > 0 ? (int) (next() % (std::uint32_t) n) : 0; }
 
         std::uint32_t state;
     };
@@ -547,6 +547,23 @@ GroovePattern applyIntention (const GroovePattern& source, Intention intention, 
     repairHolds (lh);
     if (std::none_of (rh.begin(), rh.end(), isHit))
         rh[0] = 'X';
+    return p;
+}
+
+GroovePattern addGhostNotes (const GroovePattern& source, std::uint32_t seed)
+{
+    Random rng (seed ^ 0x6057u);
+    GroovePattern p = source;
+    auto ghost = [&rng] (std::string& line, double chance)
+    {
+        const int len = (int) line.size();
+        for (int i = 1; i < len; ++i)
+            if (line[(size_t) i - 1] == '.' && (line[(size_t) i] == 'X' || line[(size_t) i] == 'x') && rng.chance (chance)
+                && (i < 2 || line[(size_t) i - 2] != 'g'))
+                line[(size_t) i - 1] = 'g';
+    };
+    ghost (p.rightHand, 0.45);
+    ghost (p.leftHand, 0.2);
     return p;
 }
 

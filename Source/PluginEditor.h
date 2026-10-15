@@ -815,6 +815,9 @@ private:
 
     // Progression
     juce::Label presetLabel;
+    // ADVANCED, harmony: the chords' range (lowest / highest note), one slider with two thumbs.
+    juce::Slider rangeSlider { juce::Slider::TwoValueHorizontal, juce::Slider::NoTextBox };
+    juce::Label rangeLabel;
     Choice::PopupBox presetBox;        // holds the chosen preset (its list opens the browser)
     juce::TextButton presetBrowseButton;   // what you see: the preset's name, or BROWSE
     IconButton diceProgression { IconButton::Icon::dice };

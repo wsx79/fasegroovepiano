@@ -911,6 +911,8 @@ int GrooveEngine::loopLengthInSteps (const GrooveSettings& s) noexcept
         steps = lcm (steps, 16LL * s.fillEveryBars);
     if (s.variationEvery > 0)
         steps = lcm (steps, 16LL * s.variationEvery);
+    if (s.evolveBars > 0)
+        steps = lcm (steps, 16LL * s.evolveBars);
 
     steps = lcm (steps, 16);                 // whole bars
     return (int) std::min<long long> (steps, 64 * 16);
@@ -1001,6 +1003,12 @@ const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
     {
         cachedPattern = resolvePattern (s);
         cachedVariation = makeVariation (cachedPattern, s.riffSeed * 17u + (std::uint32_t) s.pattern);
+        // Evolution: the same groove, growing. Each stage keeps what the one before added.
+        cachedEvolution[0] = addGhostNotes (cachedPattern, s.riffSeed * 29u + (std::uint32_t) s.pattern);
+        cachedEvolution[1] = cachedEvolution[0];
+        for (std::uint32_t k = 0; k < 6 && cachedEvolution[1].rightHand == cachedEvolution[0].rightHand; ++k)   // it must change
+            cachedEvolution[1] = makeVariation (cachedEvolution[0], s.riffSeed * 37u + (std::uint32_t) s.pattern + k * 101u);
+        cachedEvolution[2] = cachedEvolution[1];
         cachedBars = s.grooveBars;
         cachedMovement = s.movement;
         cachedIndex = s.pattern;
@@ -1115,6 +1123,50 @@ GrooveEngine::HarmonyScores GrooveEngine::harmonyScores (const GrooveSettings& s
     return h;
 }
 
+void GrooveEngine::clearLowRegister (VoicedChord& v, const Chord& chord, bool bassOn) noexcept
+{
+    // Bass and chords together: down low (below E3) only the root and the 5th sound clear; a 3rd,
+    // 7th or extension there muddies the bass, and with the bass on no chord tone goes below it.
+    // Those notes move up an octave (a note already there is not doubled).
+    constexpr int clearAbove = 52;
+    const int bassRoot = 36 + chord.rootPc;
+    for (auto* hand : { &v.leftHand, &v.rightHand })
+    {
+        NoteSet fixed;
+        for (int i = 0; i < hand->size; ++i)
+        {
+            int n = (*hand)[i];
+            const int interval = mod (n - chord.rootPc, 12);
+            while ((n < clearAbove && interval != 0 && interval != 7) || (bassOn && n < bassRoot))
+                n += 12;
+            if (! fixed.contains (n) && ! (hand == &v.rightHand && v.leftHand.contains (n)))
+                fixed.add (n);
+        }
+        fixed.sort();
+        *hand = fixed;
+    }
+}
+
+void GrooveEngine::keepInRange (VoicedChord& v, int low, int high) noexcept
+{
+    // Chord range (ADVANCED): a note above the top comes down an octave, one below the bottom goes
+    // up (high >= low + 12, so every note finds a place); a note already there is not doubled.
+    for (auto* hand : { &v.leftHand, &v.rightHand })
+    {
+        NoteSet kept;
+        for (int i = 0; i < hand->size; ++i)
+        {
+            int n = (*hand)[i];
+            while (n > high) n -= 12;
+            while (n < low)  n += 12;
+            if (! kept.contains (n) && ! (hand == &v.rightHand && v.leftHand.contains (n)))
+                kept.add (n);
+        }
+        kept.sort();
+        *hand = kept;
+    }
+}
+
 void GrooveEngine::voiceProgression (const GrooveSettings& s,
                                      std::array<Chord, maxProgressionLength>& chords,
                                      std::array<VoicedChord, maxProgressionLength>& voiced) noexcept
@@ -1197,6 +1249,9 @@ void GrooveEngine::voiceProgression (const GrooveSettings& s,
                 while (voiced[(size_t) i].rightHand.lowest() < 28)   invert (voiced[(size_t) i].rightHand, voiced[(size_t) i].rightHand.size);
             }
 
+            keepInRange (voiced[(size_t) i], s.rangeLow, std::max (s.rangeHigh, s.rangeLow + 12));
+            clearLowRegister (voiced[(size_t) i], chords[(size_t) i], s.bass != BassMode::off);
+
             previous = &voiced[(size_t) i].rightHand;
         }
     };
@@ -1219,7 +1274,15 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     // Every N bars the last bar plays a variation of the groove (the turnaround).
     const bool varied = s.variationEvery > 0 && mod (floorDiv (step, 16), s.variationEvery) == s.variationEvery - 1
                      && variation.length() == normalPattern.length();
-    const GroovePattern& pattern = varied ? variation : normalPattern;
+
+    // Evolution: over 8 or 16 bars the groove grows in four stages: as written, + ghost notes,
+    // + a variation (moved hits, a push into the next bar), and the last one ends with a fill.
+    const int evolveStage = s.evolveBars > 0 ? (int) (mod (floorDiv (step, 16), s.evolveBars) * 4 / s.evolveBars) : 0;
+    const GroovePattern* chosen = varied ? &variation : &normalPattern;
+    if (evolveStage > 0 && cachedEvolution[(size_t) evolveStage - 1].length() == normalPattern.length())
+        chosen = &cachedEvolution[(size_t) evolveStage - 1];
+    const GroovePattern& pattern = *chosen;
+    const double evolveLift = evolveStage == 3 ? 1.06 : evolveStage == 2 ? 1.03 : 1.0;   // a little more energy
 
     const int pos = mod (step, pattern.length());
 
@@ -1250,7 +1313,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
                 level = set * s.velocity / 118.0;
         }
 
-        double v = level * scale * sectionVelocityScale (s.section);
+        double v = level * scale * sectionVelocityScale (s.section) * evolveLift;
         if (s.section == Section::buildup)   // crescendo through the build-up
             v *= 0.72 + 0.4 * (double) pos / (double) std::max (1, pattern.length() - 1);
         v += amount * 18.0 * (noise (step, seedSalt + salt + 7) - 0.5) * 2.0;
@@ -1292,6 +1355,8 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     const int stepInBar = mod (step, 16);
     auto fillStyle = effectiveFillStyle (s.fillStyle, bar);
     bool fillBar = s.fillEveryBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1;
+    if (s.evolveBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.evolveBars) == s.evolveBars - 1)
+        fillBar = true;   // the evolution's last bar leads into the next round
     if (s.forcedFillBar >= 0)
     {
         // A song section with its own fill: only on its last bar.

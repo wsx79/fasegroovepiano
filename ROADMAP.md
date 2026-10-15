@@ -11,6 +11,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Done
 
+- v2.7.0: groove evolution (8 / 16 bars), bass and chords kept clear automatically, chord range.
 - v2.6.0: simple / advanced view of the panels, BROWSE button for the progressions.
 - v2.5.0: TOTAL random button, guide sound about 2.3x lighter on the CPU.
 - v2.4.0: Novation Launchpad (Mini MK3, X, Pro MK3) and Ableton Push 2 / 3 as a hardware grid.

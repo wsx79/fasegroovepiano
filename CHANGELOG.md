@@ -6,11 +6,24 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.7.0] - 2026-10-15
+
+### Added
+- **Groove evolution** (Variation menu, now also in the simple view): *Evolve over 8 / 16 bars* -
+  the same groove grows in four steps: as written, + ghost notes, + a variation with a little more
+  energy, and a fill on the last bar into the next round.
+- **Chord range** (Harmony, ADVANCED): a two-thumb slider that keeps every chord note between a
+  lowest and a highest note.
+
+### Changed
+- **Bass and chords keep clear of each other** by themselves: below E3 the chords keep only roots
+  and 5ths (3rds, 7ths and extensions move up an octave), and with the bass on no chord note goes
+  under it. No new control.
 
 ### Fixed
-- The simple / advanced view now follows a project restored while the window is open (and undo /
-  redo) at once.
+- The simple / advanced view follows a project restored while the window is open (and undo / redo).
+- The sidechain's check for a host handing back the plug-in's own output now allows for rounding.
+- A safety check in the random generator.
 
 ## [2.6.0] - 2026-10-15
 

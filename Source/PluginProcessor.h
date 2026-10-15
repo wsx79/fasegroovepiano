@@ -52,6 +52,8 @@ namespace ParamIDs
     inline constexpr const char* pumpRate    = "pumpRate";      // 1/4, 1/8, 1/2, 1/16
     inline constexpr const char* pumpRelease = "pumpRelease";
     inline constexpr const char* sequencer   = "sequencer";     // off: the groove doesn't play with the DAW
+    inline constexpr const char* chordLow    = "chordLow";      // the chords' range (lowest / highest note)
+    inline constexpr const char* chordHigh   = "chordHigh";
     inline constexpr const char* riffSeed    = "riffSeed";
     inline constexpr const char* riffDensity = "riffDensity";
     inline constexpr const char* sound       = "sound";

@@ -100,8 +100,8 @@ use all the time. **ADVANCED** (top right of each of them) shows every control o
 
 | Panel | Simple view | Only in ADVANCED |
 |---|---|---|
-| Harmony & Scales | Key, Scale, Extensions, Voicing, Left-hand bass, Register | Top +8va, Approach chord, Top line, Movement, Strum |
-| Groove | Groove + NEW RIFF, Song section, Fills, Swing, Gate, Velocity, Humanize | Groove length, Variation, Fill style, Feel style / NEW FEEL, Density |
+| Harmony & Scales | Key, Scale, Extensions, Voicing, Left-hand bass, Register | Top +8va, Approach chord, Top line, Movement, Strum, Chord range |
+| Groove | Groove + NEW RIFF, Song section, Fills, Variation, Swing, Gate, Velocity, Humanize | Groove length, Fill style, Feel style / NEW FEEL, Density |
 | Guide sound | On/off, Sound, Reverb, Volume, Pump | Tone, Chorus, MIDI out, Play mode, Sidechain, Rate, Release |
 
 Ready-made progressions open with **BROWSE...** (it shows the name of the one you loaded).
@@ -150,7 +150,8 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Approach chord** | The gospel **slide**: on the last 16th before each chord change the next chord (and its bass note) is played a half step **from above** or **from below**, then resolves. Only where the hand is already playing, so a muted bass stays muted. |
 | **Top +8va** | Doubles the top note of every chord an octave higher: the bright, ringing classic house piano sound. |
 | **Strum** | Rolls the chord like a real pianist instead of hitting all the notes at once. The roll is a real time (up to about 90 ms at 100%, whatever the tempo), slightly accelerating like a hand, never longer than half the note, and ghost notes are never rolled. The small button under the knob sets the **direction**: *Up* (low to high), *Down* (high to low) or *Alternate* (up on the beat, down off it, the gospel way). 20–40% sounds natural. |
-| **Register** | Moves the right hand up or down. Chords automatically pick the inversion closest to the previous one (voice leading), so the progression flows without jumps. |
+| **Register** | Moves the right hand up or down. Chords automatically pick the inversion closest to the previous one (voice leading), so the progression flows without jumps. Down low the chords keep clear of the bass by themselves (v2.7): below E3 only roots and 5ths, and no chord note under the bass. |
+| **Chord range** (ADVANCED) | A slider with two thumbs: no chord note goes below the left one or above the right one (a note outside moves by an octave). "all" = no limit. |
 
 #### Quick harmony rules for house piano
 
@@ -202,7 +203,7 @@ Outer ring = major keys, inner ring = relative minors.
 | **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
 | **Fills** | **Off** by default. Every bar, or every 2/4/8 bars, the end of the bar becomes a short fill leading into the next chord. |
 | **Fill style** | 11 styles, all aimed at the top note of the next chord: *Pentatonic run up* / *down*, *Chord roll* (a flowing 32nd-note arpeggio of the next chord, from an octave below), *Gospel run* (eight 16ths up the scale over the last two beats), *Chromatic walk-up* (four semitones into the next chord), *Push stabs* (a stab, a ghost, then the next chord pushed in on the "&" of 4), *16th chord chops* (four light chops with a crescendo), *Gospel thirds* (parallel thirds walking down), *Piano glissando* (a fast sweep up), *Blues lick* (down the blues scale) and *Mix*, which plays a different one at every fill. |
-| **Variation** | Every 4 or 8 bars the last bar plays a **variation** of the groove (a hit moved, a ghost note, a push into the next bar, a bass pick-up), so a long loop never sounds static. |
+| **Variation** | Every 4 or 8 bars the last bar plays a **variation** of the groove (a hit moved, a ghost note, a push into the next bar, a bass pick-up), so a long loop never sounds static. **Evolve over 8 / 16 bars** (v2.7): the same groove **grows** in four steps - as written, then with ghost notes, then a variation with a little more energy, and the last bar plays a fill into the next round. In the simple view too. |
 | **Groove length** | *2 bars* (normal), *1 bar* (the first bar looped: tighter, more hypnotic) or *4 bars* (the groove followed by a variation of it). |
 | **Swing** | 0% = straight, 100% = triplet shuffle. 15–35% is the classic house feel. |
 | **Gate** | How much of the space before the next hit each note fills, like a pianist's hand: low = short stabs, high = almost legato. At the default 65% a stab three 16ths before the next one rings about two 16ths. Notes held with *=* in the grid keep their length. |
