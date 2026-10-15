@@ -32,6 +32,12 @@ Fase Groove Piano is distributed under the **GNU Affero General Public License v
 > DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+## Inter (typeface)
+
+- The interface font, embedded in the plug-in: https://github.com/rsms/inter
+- Copyright © 2016 The Inter Project Authors.
+- **SIL Open Font License 1.1**: the full text is in [Resources/Inter-OFL.txt](Resources/Inter-OFL.txt).
+
 ## Trademarks
 
 - **VST** is a registered trademark of Steinberg Media Technologies GmbH.

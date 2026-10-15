@@ -69,11 +69,11 @@ xattr -cr ~/Library/Audio/Plug-Ins/Components/"Fase Groove Piano.component"
 1. Load **Fase Groove Piano** on an instrument track.
 2. In **PROGRESSION** open *Load a progression…* and pick **Dorian Vamp i – IV**.
 3. In **GROOVE** pick **Soulful Push**.
-4. Press **PREVIEW** (top right, in the *Guide sound* panel): you hear the riff straight away.
+4. Press **▶** (top, in *Transport & tempo*) or the space bar: you hear the riff straight away.
 5. Change groove, voicing and extensions while it plays until you like it.
 6. Drag **DRAG MIDI TO DAW** onto your favourite piano track. Done!
 
-Want something new? Press **DICE** (random progression) and **NEW RIFF** (random rhythm).
+Want something new? Press **🎲 RANDOM** (random progression) and **🎲 NEW RIFF** (random rhythm).
 
 **Even faster:** press **STYLE** (top left) and pick a genre, e.g. *Classic Deep House* or
 *Jackin' House*: progression, voicing, groove, feel and sound are set in one click, ready to play.
@@ -84,12 +84,21 @@ Want something new? Press **DICE** (random progression) and **NEW RIFF** (random
 
 <p align="center"><img src="screenshot.png" alt="Interface" width="900"></p>
 
-### Tempo (top)
+### The look of version 2.0
+
+Every button of the interface is drawn the same way: **lit (filled) = on**, raised = off. **Amber**
+is the piano and the main actions, **cyan** the bass and "playing", **violet** the fills. Buttons
+that belong together are joined, and every group has a small caption above it. Icons used
+everywhere: ▶ play, ❚❚ pause, ■ stop, ⏮ back to the start, 🎲 random, 🔊 hear / 🔇 muted,
+the keyboard = piano, the bass clef = bass, the eye = show. Every button has a tooltip.
+
+### Transport & tempo (top)
 
 | Control | What it does |
 |---|---|
+| **⏮ ▶/❚❚ ■** | The **transport** of the guide sound, to hear the groove without starting the DAW: back to the start, play / pause (cyan while it plays), stop (the next play starts from the top). The **space bar** is play / pause when the plug-in window is active. With the DAW playing, the groove follows the DAW. |
 | **SYNC DAW** on | The groove follows the DAW's tempo and position (recommended). The DAW tempo is shown next to it. |
-| **SYNC DAW** off | A BPM bar appears (60–180): drag it or double-click to type a value. The groove runs at its own tempo but still starts/stops with the DAW's Play or with PREVIEW. |
+| **SYNC DAW** off | A BPM bar appears (60–180): drag it or double-click to type a value. The groove runs at its own tempo but still starts/stops with the DAW's Play or with ▶. |
 
 The chosen tempo is also used for exported MIDI clips.
 
@@ -103,7 +112,7 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 | Control | What it does |
 |---|---|
 | **Load a progression…** | 54 ready-made progressions in a **browser**: styles on the left, the progressions of that style on the right with their **chords in your key**, and a search box. Click one to hear it at once, double-click (or Enter) to close. Click the **☆ star** to keep it in **★ Favourites**; **Recent** lists the last ones you tried. Styles: *Soulful & Gospel*, *Circle of 5ths*, *Deep house*, *Modal & exotic*, *Jackin' & funky*, *Chromatic & borrowed*. Loading one also sets the recommended scale. The **Chromatic & borrowed** ones use chords from outside the scale, the way dance producers do (maj9 chords sliding by a tone, the borrowed minor iv, bIII / bVI / bVII, dominant chords like III7 or bVII7): they load as free chords on the circle, so you can see and move them. |
-| **DICE** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
+| **🎲 RANDOM** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
 | **VARIANTS** (next to the panel title) | The **Chord Variation Lab**: alternatives of your progression in the same key and with the same number of chords, so the rhythm stays: **More soulful** (ii before V, a secondary dominant), **Gospel** (the borrowed iv, dominant 7ths), **Deep** (minor v, vi instead of a returning I) and **Chromatic** (tritone substitution bII7, bVI). **HEAR** switches to one while the loop plays; **KEEP** or **CANCEL**. |
 | **LEARN** | Play chords on your **MIDI keyboard**: each chord you play (and release) fills the next slot, starting from slot 1, and the progression grows with it. Chords of the scale become degrees, the others free chords. Press LEARN again to stop. |
 | **Import a MIDI file** | Drop a **.mid** file anywhere on the window (or use *Import a MIDI file…* at the bottom of the progression browser): the plug-in **estimates the key** (major, Dorian or minor), **the chords** and **how long each lasts**, finds the loop (up to 8 chords) and loads it as your progression. A window shows what it found, the notes outside the scale and a **reliability** (high, medium, low). Drums (channel 10) are ignored. It is an **estimate**: inversions, missing roots and passing notes can mislead it, so check the chords and fix them on the circle, or undo with ◀. |
@@ -168,7 +177,7 @@ Outer ring = major keys, inner ring = relative minors.
   chord). Major slices give a major 7/9 chord, minor slices a minor 7/9 chord, with the current
   *Extensions*. Free chords are stored relative to the key, so they follow a key change. The slot
   shows **Free** and a chromatic numeral (bVI, #iv…). It may sound "wrong": your choice!
-  Loading a preset or pressing DICE clears the free chords.
+  Loading a preset or pressing 🎲 RANDOM clears the free chords.
 
 ### Groove
 
@@ -211,8 +220,8 @@ Outer ring = major keys, inner ring = relative minors.
 
 The big panel at the bottom has two views (tabs at the top left):
 
-- **PIANO ROLL** (the default): **every note the plug-in plays**, on a keyboard: chords in orange,
-  bass in pink, fills in blue, brighter while they sound. Above the notes, the **chord names** of
+- **PIANO ROLL** (the default): **every note the plug-in plays**, on a keyboard: chords in amber,
+  bass in cyan, fills in violet, brighter while they sound. Above the notes, the **chord names** of
   the loop (the playing one lit), and the white playhead. It shows the whole loop (until the groove
   and the progression come round together, up to 8 bars) exactly as it will be exported.
 - **EDIT GRID**: the rhythm in 16th notes over 2 bars, to edit by hand (below).
@@ -220,22 +229,26 @@ The big panel at the bottom has two views (tabs at the top left):
 **EDIT NOTES** (next to the tabs, or double-click the piano roll) opens the piano roll **big**, to
 edit the **notes one by one**:
 
-- **Tools** (each with its own mouse cursor): **DRAW** (pencil: click to add a note, drag to make
-  it longer; you can still drag a note to move it), **MOVE** (arrow: drag a note to move it, its
-  **right edge** to change its length) and **ERASE** (eraser: click a note, or drag over several,
+The toolbar is in groups, each with its caption: **TRANSPORT** (⏮ ▶ ■) | **TOOLS** | **DRAWS** |
+**GRID** | **SHOW** | **HEAR** | **ZOOM** | **FOLLOW**; **BACK TO GENERATED** and ✕ (close) on the
+right; **?** (bottom right) recalls the mouse and keyboard commands.
+
+- **Tools** (each with its own mouse cursor): the **pencil** (click to add a note, drag to make
+  it longer; you can still drag a note to move it), the **arrow** (drag a note to move it, its
+  **right edge** to change its length) and the **eraser** (click a note, or drag over several,
   to delete them). Double-click or right-click also deletes a note.
-- **DRAWS PIANO / BASS** (orange / pink, the colours of the notes): which part the pencil draws.
-- **SHOW ALL / PIANO / BASS**: see only the piano or only the bass; the other part is greyed out and
-  can't be touched. **HEAR BOTH / PIANO / BASS**: listen to only one part (as under the main piano
-  roll).
+- **DRAWS** keyboard / bass clef (amber / cyan, the colours of the notes): which part the pencil draws.
+- **SHOW** (eye + keyboard, eye + bass clef): hide the piano or the bass; a hidden part is greyed out
+  and can't be touched. **HEAR** (🔊 + keyboard, 🔊 + bass clef): lit = you hear it, 🔇 = muted
+  (as under the main piano roll).
 - **Select several notes**: drag a rectangle with MOVE (or Shift + drag with the pencil),
   Ctrl / Shift + click to add or remove a note, Ctrl + A for all; Esc clears the selection. Dragging,
   the arrows, Delete, QUANTIZE and the velocity lane then work on all of them.
-- Notes move **freely** (no jumps). **SNAP** sticks them to the **Grid** (1/8, 1/16 or 1/32; Alt
-  while dragging does the opposite) and **QUANTIZE** puts the selected note (or every note shown)
-  on the grid.
-- **Zoom** with **- / +**, **FIT** (the whole loop) or Ctrl + mouse wheel; the mouse wheel and the
-  bar at the bottom scroll. **FOLLOW** (on by default) turns the page with the playhead.
+- Notes move **freely** (no jumps). The **magnet** (SNAP) sticks them to the grid (**1/8, 1/16 or
+  1/32**; Alt while dragging does the opposite) and **QUANTIZE** (the icon next to it) puts the
+  selected notes (or every note shown) on the grid.
+- **Zoom** with the magnifiers, **fit** (the whole loop) or Ctrl + mouse wheel; the mouse wheel and
+  the bar at the bottom scroll. **FOLLOW** (on by default) turns the page with the playhead.
 - The arrows move the selected note (up / down a semitone, Shift an octave; left / right one grid
   step), Delete removes it. The **space bar** plays / stops the preview.
 - The **lane at the bottom** is the **velocity**: drag on it to set how hard a stab plays (the
@@ -250,10 +263,15 @@ carried over (the notes you deleted stay deleted, the ones you moved, lengthened
 change the same way, the ones you added follow the chord). **BACK TO GENERATED** forgets the edits. They are saved with the project and
 undone with ◀.
 
-Next to the tabs, **BOTH / PIANO / BASS** choose what you hear: **PIANO** switches the bass off
-(it remembers the bass mode you had chosen), **BASS** keeps the chords silent so you hear only the
-bass, **BOTH** brings back both. BASS only affects what plays: dragged and saved clips still
-contain everything (use *Notes* in the EXPORT MIDI panel to export one part).
+Above the piano roll the buttons are in four captioned groups:
+
+- **VIEW**: PIANO ROLL / GRID / EDIT NOTES.
+- **HEAR**: **🔊 PIANO** and **🔊 BASS**, two switches: lit = you hear it, grey with **🔇** = muted.
+  They can't both be off (switching off the only one you hear switches on the other). Muting the
+  piano only affects what plays: dragged and saved clips still contain everything (use *Notes* in
+  the EXPORT MIDI panel to export one part); switching the bass off remembers the bass mode you had.
+- **NEW RHYTHM**: **🎲 PIANO** and **🎲 BASS** (see below).
+- **GROOVE**: MY GROOVES, MORPH, DNA.
 
 The grid shows the **CHORDS** row (right hand) and the **BASS** row (left hand). **You can edit it
 by hand**:
@@ -290,9 +308,9 @@ anywhere in between (each step switches at its own point, so more amount only ad
 target). **Locked** parts stay as they are. **KEEP** keeps the blend (as your *User pattern*),
 **CANCEL** puts everything back.
 
-**RND PIANO** and **RND BASS** (next to it) give a new random rhythm to **one hand only**: the
+**NEW RHYTHM 🎲 PIANO** and **🎲 BASS** give a new random rhythm to **one hand only**: the
 piano (chords row) or the bass, while the other row stays as it is. Locked parts (**LOCK**) are
-kept. With a bass line from the library, **RND BASS** picks another line. Press them a few times until the two hands lock together.
+kept. With a bass line from the library, **🎲 BASS** picks another line. Press them a few times until the two hands lock together.
 
 | Cell | Meaning |
 |---|---|
@@ -310,7 +328,7 @@ kept. With a bass line from the library, **RND BASS** picks another line. Press 
 |---|---|
 | **Guide sound** | Turns the built-in sound on/off. Turn it off if you only use the MIDI. |
 | **Sound** | *Rhodes (FM)* electric piano, *Soulful Grand* acoustic piano, *House Piano (M1 style)* – the bright '90s house piano – *House Organ* for jackin' organ stabs, *Wurlitzer* (reedy, a little driven), *Gospel Organ (Leslie)* (full drawbars through a rotating speaker) or *Warm Pad* (soft detuned pad for breaks). |
-| **PREVIEW** | Plays the groove even with the DAW stopped. The round **▶** button next to it does the same (■ while it plays), and so does the **space bar** when the plug-in window is active (a plug-in can't start the DAW's own transport). **HEAR** in VARIANTS and in the voicing coach starts it by itself when nothing is playing. |
+| **▶ (Transport, top)** | Plays the groove even with the DAW stopped (also the **space bar**; a plug-in can't start the DAW's own transport). **HEAR** in VARIANTS and in the voicing coach starts it by itself when nothing is playing. |
 | **MIDI out** | *All on channel 1* or *Bass on channel 2* (to send the bass to a different instrument). |
 | **Play mode** (in the Groove panel) | *Host transport*: plays with the DAW's Play. *Hold a key*: plays while you hold a MIDI key, and **that key sets the key** (great for live jamming and in the Standalone app). |
 | **Tone / Reverb / Volume** | Brightness (or drawbars for the organ), reverb and volume of the guide sound (they don't affect the MIDI). |
@@ -514,7 +532,7 @@ Two ways to use it:
 | **Floating deep sus** | F Dorian · *Dorian Vamp i – IV* · Sus (9sus4) · Wide · *Deep Chords* · Reverb 40% |
 | **Lydian dominant funk** | E Lydian Dominant · *Lydian Dom Funk I7#11 – II* · 9ths · Shell · *Funky Upstrokes* · Swing 30% |
 | **Dark Afro-deep** | A Phrygian Dominant · *Dark Deep I – II* · 7ths · Drop 2+4 · *Deep Sway* · Gate 70% |
-| **Random inspiration** | DICE + NEW RIFF a few times, Density 30–60%, then export what you like |
+| **Random inspiration** | 🎲 RANDOM + 🎲 NEW RIFF a few times, Density 30–60%, then export what you like |
 
 ---
 
@@ -525,11 +543,11 @@ Those are the **fills**. Set **Fills** to **Off** (the default since v1.2), or p
 **Fill style**.
 
 **I can't hear anything.**
-Check that *Guide sound* is on and press **PREVIEW**, or press Play in your DAW
+Check that *Guide sound* is on and press **▶** (top), or press Play in your DAW
 (*Play mode: Host transport*). In *Hold a key* mode you need to hold a MIDI key.
 
 **The Standalone app doesn't start playing.**
-The Standalone app has no DAW: use **PREVIEW** or *Play mode → Hold a key*. To change the tempo,
+The Standalone app has no DAW: use **▶** (or the space bar) or *Play mode → Hold a key*. To change the tempo,
 turn off *SYNC DAW* and set the BPM.
 
 **The groove isn't in time with my DAW.**

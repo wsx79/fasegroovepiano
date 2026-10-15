@@ -11,6 +11,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Done
 
+- v2.0.0: new interface (studio theme, icon buttons, transport, hear / new rhythm switches, grouped piano roll toolbar).
 - v1.28.0: edits follow the settings, multiple selection, hear piano / bass in the editor, full screen, automatic restart after updates.
 - v1.27.0: piano roll editor tools (draw, move, erase), free movement with snap / quantize, show filter, follow, space bar.
 - v1.26.0: piano roll editor (notes one by one, velocity lane), hook in the pedal top line, left-hand octaves, whole-song drag fixed.

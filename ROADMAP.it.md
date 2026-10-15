@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v2.0.0: nuova interfaccia (tema studio, pulsanti con icone, trasporto, interruttori ascolta / nuovo ritmo, barra del piano roll a gruppi).
 - v1.28.0: le modifiche seguono le impostazioni, selezione multipla, ascolto piano / basso nell'editor, schermo intero, riavvio automatico dopo gli aggiornamenti.
 - v1.27.0: strumenti dell'editor del piano roll (matita, sposta, gomma), spostamento libero con snap / quantizza, filtro di visualizzazione, segui, barra spaziatrice.
 - v1.26.0: editor del piano roll (note una per una, corsia della dinamica), gancio nella linea a pedale, ottave della mano sinistra, trascinamento del brano intero corretto.

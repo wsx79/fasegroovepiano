@@ -31,6 +31,7 @@ Rhodes or synth.
 
 ## Features
 
+- ✨ **Version 2.0: a new interface**, clean and professional: graphite studio look, icon buttons, a real transport (▶ ❚❚ ■), clear switches to hear the piano or the bass.
 - 🎹 **Harmony:** 12 keys × 13 scales/modes (Major, Dorian, Minor, Mixolydian, Lydian, Phrygian,
   Locrian, Harmonic and Melodic Minor, Harmonic Major, Lydian Dominant, Mixolydian b6, Phrygian
   Dominant). Triads, 7ths, 9ths, 11ths/13ths, **6/9**, **add9**, **9sus4** and the gospel

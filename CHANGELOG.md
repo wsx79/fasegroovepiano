@@ -6,6 +6,24 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-10-15
+
+### Changed
+- **New interface.** A clean "studio" look: graphite surfaces, one warm accent (amber: the piano
+  and the main actions) and one cool accent (cyan: the bass and "playing"), violet for fills, the
+  **Inter** typeface embedded (the same on every system), flat panels with hairline borders and
+  small letter-spaced titles, studio knobs, slim menus, switches, tooltips and scroll bars.
+- **One family of buttons with drawn icons**: lit = on, buttons that belong together are joined,
+  each group has a caption.
+- **Transport** at the top (⏮ back to the start, ▶ / ❚❚ play / pause, ■ stop) instead of
+  PREVIEW: pause resumes where it stopped; the space bar is play / pause.
+- **HEAR 🔊 PIANO / 🔊 BASS** switches above the piano roll (🔇 when muted), **NEW RHYTHM
+  🎲 PIANO / 🎲 BASS**, **🎲 RANDOM** for the progression, 🎲 NEW RIFF, undo / redo, full screen
+  and options with icons.
+- **Piano roll editor** toolbar in captioned groups: transport, tools, draws, grid (snap magnet,
+  grid size, quantize), show, hear, zoom, follow; ✕ to close.
+- The current chord in a display, a top bar for the logo and the utilities.
+
 ## [1.28.0] - 2026-10-14
 
 ### Added

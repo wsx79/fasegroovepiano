@@ -70,11 +70,11 @@ xattr -cr ~/Library/Audio/Plug-Ins/Components/"Fase Groove Piano.component"
 1. Carica **Fase Groove Piano** su una traccia strumento.
 2. In **PROGRESSION** apri *Load a progression…* e scegli **Dorian Vamp i – IV**.
 3. In **GROOVE** scegli **Soulful Push**.
-4. Premi **PREVIEW** (in alto a destra, nel riquadro *Guide sound*): senti subito il riff.
+4. Premi **▶** (in alto, in *Trasporto e tempo*) o la barra spaziatrice: senti subito il riff.
 5. Cambia groove, voicing ed estensioni mentre suona, finché ti piace.
 6. Trascina **DRAG MIDI TO DAW** sulla traccia del tuo piano preferito. Fatto!
 
-Vuoi qualcosa di nuovo? Premi **DICE** (progressione casuale) e **NEW RIFF** (ritmo casuale).
+Vuoi qualcosa di nuovo? Premi **🎲 CASUALE** (progressione casuale) e **🎲 NUOVO RIFF** (ritmo casuale).
 
 **Ancora più veloce:** premi **STILE** (in alto a sinistra) e scegli un genere, ad esempio
 *Classic Deep House* o *Jackin' House*: progressione, voicing, groove, feel e suono vengono
@@ -86,12 +86,22 @@ impostati con un clic, pronti da suonare.
 
 <p align="center"><img src="screenshot.png" alt="Interfaccia" width="900"></p>
 
-### Tempo (in alto)
+### L'aspetto della versione 2.0
+
+Tutti i pulsanti dell'interfaccia sono disegnati allo stesso modo: **acceso (pieno) = attivo**,
+in rilievo = spento. L'**ambra** è il piano e le azioni principali, l'**azzurro** il basso e "sta
+suonando", il **viola** i fill. I pulsanti che vanno insieme sono uniti, e ogni gruppo ha una piccola
+didascalia sopra. Icone usate ovunque: ▶ play, ❚❚ pausa, ■ stop, ⏮ torna all'inizio, 🎲 casuale,
+🔊 senti / 🔇 muto, la tastiera = piano, la chiave di basso = basso, l'occhio = mostra. Ogni
+pulsante ha il suo tooltip.
+
+### Trasporto e tempo (in alto)
 
 | Controllo | Cosa fa |
 |---|---|
+| **⏮ ▶/❚❚ ■** | Il **trasporto** del suono guida, per sentire il groove senza avviare la DAW: torna all'inizio, play / pausa (azzurro mentre suona), stop (il play successivo riparte dall'inizio). La **barra spaziatrice** fa play / pausa quando la finestra del plug-in è attiva. Con la DAW in play, il groove segue la DAW. |
 | **SYNC DAW** acceso | Il groove segue BPM e posizione della DAW (consigliato). Accanto vedi il tempo della DAW. |
-| **SYNC DAW** spento | Compare la barra dei BPM (60–180): trascinala o fai doppio clic per scrivere il valore. Il groove gira al suo tempo ma parte/si ferma comunque col Play della DAW o con PREVIEW. |
+| **SYNC DAW** spento | Compare la barra dei BPM (60–180): trascinala o fai doppio clic per scrivere il valore. Il groove gira al suo tempo ma parte/si ferma comunque col Play della DAW o con ▶. |
 
 Il tempo scelto viene usato anche nelle clip MIDI esportate.
 
@@ -105,7 +115,7 @@ Con *Play mode → Hold a key* mostra anche "HOLD" e la tonalità scelta col tas
 | Controllo | Cosa fa |
 |---|---|
 | **Load a progression…** | 54 progressioni pronte in un **browser**: stili a sinistra, a destra le progressioni di quello stile con i loro **accordi nella tua tonalità**, e una casella di ricerca. Clicca una progressione per sentirla subito, doppio clic (o Invio) per chiudere. Clicca la **stella ☆** per tenerla nei **★ Preferiti**; **Recenti** elenca le ultime che hai provato. Stili: *Soulful e gospel*, *Circolo delle quinte*, *Deep house*, *Modali ed esotiche*, *Jackin' e funky*, *Cromatiche e prestiti*. Caricarne una imposta anche la scala consigliata. Le **Cromatiche e prestiti** usano accordi fuori scala come fanno i produttori dance (accordi maj9 che scivolano di un tono, la iv minore presa in prestito, bIII / bVI / bVII, dominanti come III7 o bVII7): si caricano come accordi liberi sul circolo, così li vedi e li puoi spostare. |
-| **DICE** | Progressione casuale ma musicale, coi movimenti tipici della soulful house (ii–V, IV–iii–ii, quinte discendenti). Mantiene la lunghezza attuale. |
+| **🎲 CASUALE** | Progressione casuale ma musicale, coi movimenti tipici della soulful house (ii–V, IV–iii–ii, quinte discendenti). Mantiene la lunghezza attuale. |
 | **VARIANTI** (accanto al titolo del pannello) | Il **Chord Variation Lab**: alternative della tua progressione nella stessa tonalità e con lo stesso numero di accordi, così il ritmo resta: **Più soulful** (ii prima del V, una dominante secondaria), **Gospel** (la iv presa in prestito, settime di dominante), **Deep** (v minore, vi al posto del I che ritorna) e **Cromatica** (sostituzione di tritono bII7, bVI). **ASCOLTA** passa a una variante mentre il loop suona; **TIENI** o **ANNULLA**. |
 | **LEARN** (IMPARA) | Suona gli accordi sulla **tastiera MIDI**: ogni accordo che suoni (e rilasci) riempie lo slot successivo, partendo dallo slot 1, e la progressione cresce con lui. Gli accordi della scala diventano gradi, gli altri accordi liberi. Premi di nuovo per fermare. |
 | **Importa un file MIDI** | Trascina un file **.mid** in un punto qualsiasi della finestra (oppure usa *Importa un file MIDI…* in fondo al browser delle progressioni): il plug-in **stima la tonalità** (maggiore, dorica o minore), **gli accordi** e **quanto dura ognuno**, trova il loop (fino a 8 accordi) e lo carica come progressione. Una finestra ti mostra cosa ha trovato, le note fuori scala e l'**affidabilità** (alta, media, bassa). La batteria (canale 10) viene ignorata. È una **stima**: rivolti, fondamentali mancanti e note di passaggio possono ingannarla, quindi controlla gli accordi e correggili sul circolo, o annulla con ◀. |
@@ -173,7 +183,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
   7/9, quelli minori un minore 7/9, con le *Extensions* attuali. Gli accordi liberi sono salvati
   rispetto alla tonalità, quindi la seguono se la cambi. Lo slot mostra **Libero** e un numero
   romano cromatico (bVI, #iv…). Può suonare "sbagliato": scelta tua!
-  Caricare una progressione pronta o premere DICE cancella gli accordi liberi.
+  Caricare una progressione pronta o premere 🎲 CASUALE cancella gli accordi liberi.
 
 ### Groove
 
@@ -217,7 +227,7 @@ con Swing 30–45%, quelli UK garage con 45–55%.
 Il pannello grande in basso ha due viste (schede in alto a sinistra):
 
 - **PIANO ROLL** (il default): **tutte le note che suona il plug-in**, su una tastiera: accordi in
-  arancione, basso in rosa, fill in azzurro, più luminose mentre suonano. Sopra le note i **nomi
+  ambra, basso in azzurro, fill in viola, più luminose mentre suonano. Sopra le note i **nomi
   degli accordi** del loop (quello che suona è acceso) e la testina bianca. Mostra il loop intero
   (finché groove e progressione tornano insieme, fino a 8 battute) esattamente come verrà esportato.
 - **GRIGLIA**: il ritmo in sedicesimi su 2 battute, da modificare a mano (sotto).
@@ -225,22 +235,26 @@ Il pannello grande in basso ha due viste (schede in alto a sinistra):
 **MODIFICA NOTE** (accanto alle schede, o doppio clic sul piano roll) apre il piano roll **in
 grande**, per modificare le **note una per una**:
 
-- **Strumenti** (ognuno col suo cursore): **MATITA** (clic per aggiungere una nota, trascina per
-  allungarla; puoi comunque trascinare una nota per spostarla), **SPOSTA** (freccia: trascina una
-  nota per spostarla, il suo **bordo destro** per cambiarne la durata) e **GOMMA** (clicca una
-  nota, o trascina sopra più note, per cancellarle). Anche doppio clic o clic destro eliminano una
-  nota.
-- **DISEGNA PIANO / BASSO** (arancione / rosa, i colori delle note): quale parte disegna la matita.
-- **MOSTRA TUTTO / PIANO / BASSO**: vedi solo il piano o solo il basso; l'altra parte diventa grigia
-  e non si può toccare. **ASCOLTA TUTTI / PIANO / BASSO**: senti una parte sola (come sotto il piano
-  roll principale).
+La barra strumenti è a gruppi, ognuno con la sua didascalia: **TRASPORTO** (⏮ ▶ ■) | **STRUMENTI** |
+**DISEGNA** | **GRIGLIA** | **MOSTRA** | **ASCOLTA** | **ZOOM** | **SEGUI**; a destra **TORNA AL
+GENERATO** e ✕ (chiudi); **?** (in basso a destra) ricorda i comandi di mouse e tastiera.
+
+- **Strumenti** (ognuno col suo cursore): la **matita** (clic per aggiungere una nota, trascina per
+  allungarla; puoi comunque trascinare una nota per spostarla), la **freccia** (trascina una nota
+  per spostarla, il suo **bordo destro** per cambiarne la durata) e la **gomma** (clicca una nota,
+  o trascina sopra più note, per cancellarle). Anche doppio clic o clic destro eliminano una nota.
+- **DISEGNA** tastiera / chiave di basso (ambra / azzurro, i colori delle note): quale parte disegna
+  la matita.
+- **MOSTRA** (occhio + tastiera, occhio + chiave di basso): nascondi il piano o il basso; la parte
+  nascosta diventa grigia e non si può toccare. **ASCOLTA** (🔊 + tastiera, 🔊 + chiave di basso):
+  acceso = lo senti, 🔇 = muto (come sotto il piano roll principale).
 - **Selezionare più note**: trascina un rettangolo con SPOSTA (o Shift + trascina con la matita),
   Ctrl / Shift + clic per aggiungere o togliere una nota, Ctrl + A per tutte; Esc toglie la
   selezione. Trascinare, le frecce, Canc, QUANTIZZA e la corsia della dinamica lavorano su tutte.
-- Le note si spostano **liberamente** (senza scatti). **SNAP** le aggancia alla **Griglia** (1/8,
-  1/16 o 1/32; Alt mentre trascini fa il contrario) e **QUANTIZZA** porta sulla griglia la nota scelta
-  (o tutte quelle visibili).
-- **Zoom** con **- / +**, **ADATTA** (tutto il loop) o Ctrl + rotella; la rotella e la barra in
+- Le note si spostano **liberamente** (senza scatti). Il **magnete** (SNAP) le aggancia alla griglia
+  (**1/8, 1/16 o 1/32**; Alt mentre trascini fa il contrario) e **QUANTIZZA** (l'icona accanto) porta
+  sulla griglia le note scelte (o tutte quelle visibili).
+- **Zoom** con le lenti, **adatta** (tutto il loop) o Ctrl + rotella; la rotella e la barra in
   basso scorrono. **SEGUI** (acceso di default) gira pagina seguendo la testina.
 - Le frecce spostano la nota scelta (su / giù di un semitono, Shift un'ottava; destra / sinistra di
   un passo), Canc la elimina. La **barra spaziatrice** avvia / ferma l'ascolto.
@@ -257,10 +271,16 @@ piano cambiano allo stesso modo, quelle aggiunte seguono l'accordo). **TORNA AL 
 le modifiche. Si salvano nel progetto e si
 annullano con ◀.
 
-Accanto alle schede, **TUTTI / PIANO / BASSO** scelgono cosa senti: **PIANO** spegne il basso
-(ricorda il tipo di basso che avevi scelto), **BASSO** fa tacere gli accordi così senti solo il
-basso, **TUTTI** li riporta entrambi. BASSO cambia solo quello che suona: le clip trascinate e
-salvate contengono sempre tutto (per esportare una parte sola usa *Note* nel pannello ESPORTA MIDI).
+Sopra il piano roll i pulsanti sono in quattro gruppi con didascalia:
+
+- **VISTA**: PIANO ROLL / GRIGLIA / MODIFICA NOTE.
+- **ASCOLTA**: **🔊 PIANO** e **🔊 BASSO**, due interruttori: acceso = lo senti, grigio con **🔇** =
+  muto. Non si spengono tutti e due (spegnendo l'unico che senti si accende l'altro). Zittire il
+  piano cambia solo quello che suona: le clip trascinate e salvate contengono sempre tutto (per
+  esportare una parte sola usa *Note* nel pannello ESPORTA MIDI); spegnendo il basso viene
+  ricordato il tipo di basso che avevi.
+- **NUOVO RITMO**: **🎲 PIANO** e **🎲 BASSO** (vedi sotto).
+- **GROOVE**: I MIEI GROOVE, MORPH, DNA.
 
 La griglia mostra la riga **CHORDS** (mano destra) e la riga **BASS** (mano sinistra).
 **Puoi modificarla a mano**:
@@ -298,9 +318,9 @@ ti puoi fermare a metà strada (ogni passo cambia in un suo punto, quindi aument
 si aggiunge solo altro groove di arrivo). Le parti **bloccate** restano com'erano. **TIENI** tiene
 il risultato (come *User pattern*), **ANNULLA** rimette tutto com'era.
 
-**RND PIANO** e **RND BASSO** (lì accanto) danno un nuovo ritmo casuale **a una sola mano**: il
+**NUOVO RITMO 🎲 PIANO** e **🎲 BASSO** danno un nuovo ritmo casuale **a una sola mano**: il
 piano (riga accordi) o il basso, mentre l'altra riga resta com'è. Le parti bloccate (**LOCK**)
-restano. Con una linea di basso della libreria, **RND BASSO** sceglie un'altra linea. Premili qualche volta finché le due mani non si incastrano.
+restano. Con una linea di basso della libreria, **🎲 BASSO** sceglie un'altra linea. Premili qualche volta finché le due mani non si incastrano.
 
 | Cella | Significato |
 |---|---|
@@ -318,7 +338,7 @@ restano. Con una linea di basso della libreria, **RND BASSO** sceglie un'altra l
 |---|---|
 | **Guide sound** | Accende/spegne il suono interno. Spegnilo se usi solo il MIDI. |
 | **Sound** | *Rhodes (FM)* (piano elettrico), *Soulful Grand* (pianoforte acustico), *House Piano (M1 style)* (il piano brillante della house anni '90) *House Organ* (organo per gli stab jackin'), *Wurlitzer* (ancioso, un po' saturato), *Gospel Organ (Leslie)* (tiranti pieni con altoparlante rotante) o *Warm Pad* (pad morbido e detunato per i break). |
-| **PREVIEW** | Fa suonare il groove anche a DAW ferma. Il pulsante tondo **▶** accanto fa lo stesso (■ mentre suona), e così la **barra spaziatrice** quando la finestra del plug-in è attiva (un plug-in non può avviare il Play della DAW). **ASCOLTA** in VARIANTI e nel coach dei voicing lo avvia da solo quando non suona niente. |
+| **▶ (Trasporto, in alto)** | Fa suonare il groove anche a DAW ferma (anche la **barra spaziatrice**; un plug-in non può avviare il Play della DAW). **ASCOLTA** in VARIANTI e nel coach dei voicing lo avvia da solo quando non suona niente. |
 | **MIDI out** | *All on channel 1* oppure *Bass on channel 2* (per mandare il basso a uno strumento diverso). |
 | **Play mode** (nel riquadro Groove) | *Host transport*: suona col Play della DAW. *Hold a key*: suona mentre tieni premuto un tasto MIDI, e **il tasto sceglie la tonalità** (ottimo per jam dal vivo e nello Standalone). |
 | **Tone / Reverb / Volume** | Brillantezza (per l'organo: i tiranti), riverbero e volume del suono guida (non influiscono sul MIDI). |
@@ -419,8 +439,8 @@ o su **CHIUDI** per tornare indietro):
 <p align="center"><img src="options.png" alt="OPZIONI - IMPOSTAZIONI" width="460"></p>
 
 > In questa guida i comandi sono indicati col nome inglese (con l'interfaccia in italiano trovi
-> l'etichetta tradotta nello stesso punto, ad es. *NEW RIFF* = *NUOVO RIFF*, *PREVIEW* =
-> *ASCOLTA*, *DICE* = *DADO*). Nomi degli accordi, modi e groove restano invariati.
+> l'etichetta tradotta nello stesso punto, ad es. *NEW RIFF* = *NUOVO RIFF*, *RANDOM* =
+> *CASUALE*). Nomi degli accordi, modi e groove restano invariati.
 
 ---
 
@@ -526,7 +546,7 @@ Due modi di usarla:
 | **Deep sospeso** | F Dorian · *Dorian Vamp i – IV* · Sus (9sus4) · Wide · *Deep Chords* · Reverb 40% |
 | **Funk lidio dominante** | E Lydian Dominant · *Lydian Dom Funk I7#11 – II* · 9ths · Shell · *Funky Upstrokes* · Swing 30% |
 | **Afro-deep scuro** | A Phrygian Dominant · *Dark Deep I – II* · 7ths · Drop 2+4 · *Deep Sway* · Gate 70% |
-| **Ispirazione casuale** | DICE + NEW RIFF più volte, Density 30–60%, poi esporta quello che ti piace |
+| **Ispirazione casuale** | 🎲 CASUALE + 🎲 NUOVO RIFF più volte, Density 30–60%, poi esporta quello che ti piace |
 
 ---
 
@@ -537,11 +557,11 @@ Sono i **fill**. Imposta **Fills** su **Off** (è il valore di partenza dalla v1
 un altro **Fill style**.
 
 **Non sento nulla.**
-Controlla che *Guide sound* sia acceso e premi **PREVIEW**, oppure premi Play nella DAW
+Controlla che *Guide sound* sia acceso e premi **▶** (in alto), oppure premi Play nella DAW
 (*Play mode: Host transport*). In *Hold a key* devi tenere premuto un tasto MIDI.
 
 **Nello Standalone non parte.**
-Lo Standalone non ha una DAW: usa **PREVIEW** oppure *Play mode → Hold a key*. Per cambiare il
+Lo Standalone non ha una DAW: usa **▶** (o la barra spaziatrice) oppure *Play mode → Hold a key*. Per cambiare il
 tempo spegni *SYNC DAW* e imposta i BPM.
 
 **Il groove non è a tempo con la DAW.**

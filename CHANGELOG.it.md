@@ -6,6 +6,26 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.0.0] - 2026-10-15
+
+### Modificato
+- **Nuova interfaccia.** Un aspetto pulito da "studio": superfici grafite, un solo colore caldo
+  (ambra: il piano e le azioni principali) e uno freddo (azzurro: il basso e "sta suonando"), viola
+  per i fill, il font **Inter** incorporato (uguale su ogni sistema), pannelli piatti con bordi
+  sottili e titoli in piccolo maiuscoletto spaziato, manopole da studio, menu, interruttori, tooltip
+  e barre di scorrimento sottili.
+- **Un'unica famiglia di pulsanti con icone disegnate**: acceso = attivo, i pulsanti che vanno
+  insieme sono uniti, ogni gruppo ha la sua didascalia.
+- **Trasporto** in alto (⏮ torna all'inizio, ▶ / ❚❚ play / pausa, ■ stop) al posto di ASCOLTA: la
+  pausa riprende da dove si era fermata; la barra spaziatrice fa play / pausa.
+- Interruttori **ASCOLTA 🔊 PIANO / 🔊 BASSO** sopra il piano roll (🔇 quando è muto), **NUOVO
+  RITMO 🎲 PIANO / 🎲 BASSO**, **🎲 CASUALE** per la progressione, 🎲 NUOVO RIFF, annulla / ripeti,
+  schermo intero e opzioni con le icone.
+- Barra strumenti dell'**editor del piano roll** a gruppi con didascalia: trasporto, strumenti,
+  disegna, griglia (magnete dello snap, passo della griglia, quantizza), mostra, ascolta, zoom,
+  segui; ✕ per chiudere.
+- L'accordo corrente in un display, una barra in alto per il logo e i comandi.
+
 ## [1.28.0] - 2026-10-14
 
 ### Aggiunto

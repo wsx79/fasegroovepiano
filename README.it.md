@@ -30,6 +30,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 
 ## Funzioni
 
+- ✨ **Versione 2.0: una nuova interfaccia**, pulita e professionale: aspetto da studio grafite, pulsanti con icone, un vero trasporto (▶ ❚❚ ■), interruttori chiari per sentire il piano o il basso.
 - 🎹 **Armonia:** 12 tonalità × 13 scale/modi (Maggiore, Dorian, Minore, Mixolydian, Lydian,
   Phrygian, Locrian, Minore armonica e melodica, Maggiore armonica, Lidia dominante, Misolidia b6,
   Frigia dominante). Triadi, 7ª, 9ª, 11ª/13ª, **6/9**, **add9**, **9sus4** e il **V alterato
