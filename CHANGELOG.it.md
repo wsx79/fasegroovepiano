@@ -6,6 +6,15 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.6.0] - 2026-10-15
+
+### Modificato
+- **Interfaccia più semplice**: i pannelli Armonia, Groove e Suono guida partono in **vista
+  semplice** con i comandi principali; **AVANZATE** (nell'intestazione di ciascun pannello) li
+  mostra tutti, **SEMPLICE** li nasconde di nuovo (si salva nel progetto).
+- Le progressioni pronte si aprono con un pulsante **SFOGLIA...** che mostra il nome della
+  progressione caricata (al posto del menu grigio "Carica una progressione...").
+
 ## [2.5.0] - 2026-10-15
 
 ### Aggiunto

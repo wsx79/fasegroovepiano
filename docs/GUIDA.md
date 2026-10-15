@@ -95,6 +95,20 @@ didascalia sopra. Icone usate ovunque: ▶ play, ❚❚ pausa, ■ stop, ⏮ tor
 🔊 senti / 🔇 muto, la tastiera = piano, la chiave di basso = basso, l'occhio = mostra. Ogni
 pulsante ha il suo tooltip.
 
+### Vista semplice e avanzata (v2.6)
+
+I pannelli **Armonia**, **Groove** e **Suono guida** partono in **vista semplice**, con i comandi che si
+usano sempre. **AVANZATE** (in alto a destra di ciascuno) mostra tutti i comandi dei tre pannelli;
+**SEMPLICE** li nasconde di nuovo. La scelta si salva nel progetto.
+
+| Pannello | Vista semplice | Solo in AVANZATE |
+|---|---|---|
+| Armonia e scale | Tonalità, Scala, Estensioni, Voicing, Basso mano sinistra, Registro | Ottava sopra, Accordo di passaggio, Linea in alto, Movimento, Arpeggiato |
+| Groove | Groove + NUOVO RIFF, Sezione del brano, Fill, Swing, Gate, Dinamica, Umanizza | Lunghezza groove, Variazione, Stile fill, Stile feel / NUOVO FEEL, Densità |
+| Suono guida | Acceso/spento, Suono, Riverbero, Volume, Pompa | Timbro, Chorus, Uscita MIDI, Modalità play, Sidechain, Ritmo, Rilascio |
+
+Le progressioni pronte si aprono con **SFOGLIA...** (mostra il nome di quella che hai caricato).
+
 ### Trasporto e tempo (in alto)
 
 | Controllo | Cosa fa |

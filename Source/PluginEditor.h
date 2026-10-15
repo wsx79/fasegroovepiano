@@ -750,6 +750,11 @@ private:
     void timerCallback() override;
     void loadPreset (int index);
     void layoutFull();
+
+    // Simple view: the panels show their main controls; ADVANCED (in each panel's header) shows all.
+    std::array<juce::TextButton, 3> advancedButtons;   // harmony, groove, sound
+    void applyViewMode();
+    std::vector<juce::Component*> advancedOnly() ;
     void layoutMini();
     void cellClicked (bool bassRow, int step, const juce::MouseEvent&);
     void drawPanel (juce::Graphics&, juce::Rectangle<int> area, const juce::String& title);
@@ -809,7 +814,8 @@ private:
 
     // Progression
     juce::Label presetLabel;
-    Choice::PopupBox presetBox;
+    Choice::PopupBox presetBox;        // holds the chosen preset (its list opens the browser)
+    juce::TextButton presetBrowseButton;   // what you see: the preset's name, or BROWSE
     IconButton diceProgression { IconButton::Icon::dice };
     Choice progLength, chordLength;
     juce::OwnedArray<ChordSlot> slots;

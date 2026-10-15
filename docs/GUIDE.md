@@ -92,6 +92,20 @@ that belong together are joined, and every group has a small caption above it. I
 everywhere: ▶ play, ❚❚ pause, ■ stop, ⏮ back to the start, 🎲 random, 🔊 hear / 🔇 muted,
 the keyboard = piano, the bass clef = bass, the eye = show. Every button has a tooltip.
 
+### Simple and advanced view (v2.6)
+
+The **Harmony**, **Groove** and **Guide sound** panels start in a **simple view** with the controls you
+use all the time. **ADVANCED** (top right of each of them) shows every control of the three panels;
+**SIMPLE** hides them again. The choice is saved with the project.
+
+| Panel | Simple view | Only in ADVANCED |
+|---|---|---|
+| Harmony & Scales | Key, Scale, Extensions, Voicing, Left-hand bass, Register | Top +8va, Approach chord, Top line, Movement, Strum |
+| Groove | Groove + NEW RIFF, Song section, Fills, Swing, Gate, Velocity, Humanize | Groove length, Variation, Fill style, Feel style / NEW FEEL, Density |
+| Guide sound | On/off, Sound, Reverb, Volume, Pump | Tone, Chorus, MIDI out, Play mode, Sidechain, Rate, Release |
+
+Ready-made progressions open with **BROWSE...** (it shows the name of the one you loaded).
+
 ### Transport & tempo (top)
 
 | Control | What it does |

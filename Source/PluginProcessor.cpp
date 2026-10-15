@@ -671,9 +671,11 @@ bool FaseGroovePianoProcessor::loadPreset (const juce::File& file)
     // A preset is music, not window layout: keep the current size.
     const auto scale = editorScale;
     const auto shrink = shrinkWhileDragging;
+    const auto advanced = advancedView;
     setStateInformation (data.getData(), (int) data.getSize());
     editorScale = scale;
     shrinkWhileDragging = shrink;
+    advancedView = advanced;
     return true;
 }
 
@@ -1967,6 +1969,7 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     }
     state.setProperty ("editorScale", editorScale, nullptr);
     state.setProperty ("shrinkWhileDragging", shrinkWhileDragging, nullptr);
+    state.setProperty ("advancedView", advancedView, nullptr);
 
     juce::StringArray free;
     for (const auto& f : freeChords)
@@ -2070,6 +2073,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     }
     editorScale = juce::jlimit (0.6f, 2.0f, (float) state.getProperty ("editorScale", 1.0f));
     shrinkWhileDragging = (bool) state.getProperty ("shrinkWhileDragging", true);
+    advancedView = (bool) state.getProperty ("advancedView", false);
 
     const auto free = juce::StringArray::fromTokens (state.getProperty ("freeChords").toString(), ",", {});
     for (int i = 0; i < sgk::maxProgressionLength; ++i)

@@ -11,6 +11,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Done
 
+- v2.6.0: simple / advanced view of the panels, BROWSE button for the progressions.
 - v2.5.0: TOTAL random button, guide sound about 2.3x lighter on the CPU.
 - v2.4.0: Novation Launchpad (Mini MK3, X, Pro MK3) and Ableton Push 2 / 3 as a hardware grid.
 - v2.3.0: velocity page random / A-D / lock change only the velocities; sidechain input fixed for Ableton Live (VST3), input meter, Sequencer on/off switch, clearer holds.

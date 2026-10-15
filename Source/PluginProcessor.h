@@ -161,6 +161,7 @@ public:
     // Editor preferences, saved with the project.
     float editorScale = 1.0f;
     bool shrinkWhileDragging = true;
+    bool advancedView = false;   // the panels show every control (ADVANCED) or only the main ones
 
     /** Replaces the progression with a random soulful-house one of the current length. */
     void rollNewProgression();

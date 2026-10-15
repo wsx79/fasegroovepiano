@@ -4335,12 +4335,25 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     presetBox.onChange = [this] { loadPreset (presetBox.getSelectedId() - 1); };
     presetBox.onPopup = [this] { grooveBrowser.show (GrooveBrowser::Mode::progressions, presetBox.getSelectedId() - 1); };
     grooveBrowser.onProgressionChosen = [this] (int preset) { presetBox.setSelectedId (preset + 1, juce::dontSendNotification); };
+    presetBrowseButton.onClick = [this] { grooveBrowser.show (GrooveBrowser::Mode::progressions, presetBox.getSelectedId() - 1); };
+    presetBrowseButton.setColour (juce::TextButton::buttonColourId, Palette::control);
+    presetBrowseButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    addAndMakeVisible (presetBrowseButton);
     grooveBrowser.onImportMidi = [this] { chooseMidiToImport(); };
     addChildComponent (voicingCoach);
     addChildComponent (songOverlay);
     addChildComponent (morphOverlay);
     addChildComponent (dnaOverlay);
     addChildComponent (chordLab);
+    for (auto& b : advancedButtons)
+    {
+        b.setColour (juce::TextButton::buttonColourId, Palette::background);
+        b.setColour (juce::TextButton::buttonOnColourId, Palette::panelEdge);
+        b.setColour (juce::TextButton::textColourOffId, Palette::dim);
+        b.setColour (juce::TextButton::textColourOnId, Palette::text);
+        b.onClick = [this] { processor.advancedView = ! processor.advancedView; applyViewMode(); };
+        addAndMakeVisible (b);
+    }
     for (auto* b : { &songButton, &morphButton, &dnaButton, &variantsButton, &feelStyleButton, &newFeelButton })
     {
         b->setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -4423,7 +4436,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     coachButton.setColour (juce::TextButton::textColourOffId, Palette::accent);
     coachButton.onClick = [this] { voicingCoach.show(); };
     addAndMakeVisible (coachButton);
-    addAndMakeVisible (presetBox);
+    addChildComponent (presetBox);   // shown through presetBrowseButton
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
@@ -5472,6 +5485,7 @@ void FaseGroovePianoEditor::applyLanguage()
     pumpRate.box.setTooltip (tr ("How often the tempo sidechain ducks: every beat, 8th, half bar or 16th"));
     soundToggle.setTooltip (tr ("Turns the built-in guide sound on or off (the MIDI keeps playing)"));
     presetBox.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
+    presetBrowseButton.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
     clipLength.setTooltip (tr ("How long the exported MIDI clip is"));
     clipPart.setTooltip (tr ("Which notes go into the clip: chords and bass, chords only or bass only"));
     dragTile.setTooltip (tr ("Drag this onto a track in your DAW to drop the groove as a MIDI clip"));
@@ -5484,6 +5498,7 @@ void FaseGroovePianoEditor::applyLanguage()
     repaint();
     for (auto* c : getChildren())
         c->repaint();
+    applyViewMode();
 }
 
 void FaseGroovePianoEditor::mouseUp (const juce::MouseEvent& e)
@@ -5878,7 +5893,7 @@ void FaseGroovePianoEditor::timerCallback()
 
     {
         const bool external = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pumpSource)->load()) == 1;
-        sidechainMeter.setVisible (external);
+        sidechainMeter.setVisible (external && processor.advancedView);
         sidechainMeter.setState (processor.sidechainMeter.load(), processor.apvts.getRawParameterValue (ParamIDs::pump)->load() < 0.001f);
         processor.sidechainMeter = processor.sidechainMeter.load() * 0.7f;   // falls when nothing arrives
     }
@@ -5888,6 +5903,15 @@ void FaseGroovePianoEditor::timerCallback()
                           ! processor.chordsMuted.load() || ! bassOn);
     if (velocityShown && ! rollShown)
         updateVelocityView (s);
+
+    {
+        const int preset = presetBox.getSelectedId() - 1;
+        const auto& presets = sgk::progressionPresets();
+        const juce::String text = juce::isPositiveAndBelow (preset, (int) presets.size())
+                                      ? juce::String (presets[(size_t) preset].name) : tr ("BROWSE...");
+        if (presetBrowseButton.getButtonText() != text)
+            presetBrowseButton.setButtonText (text);
+    }
 
     if (rollShown)
         updatePianoRoll (s);
@@ -6035,6 +6059,7 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
     drawPanel (g, clipPanel, tr ("EXPORT MIDI"));
 
     // FEEL: a small heading with a line, so the knobs read as their own group.
+    if (! feelHeader.isEmpty())
     {
         auto h = feelHeader.toFloat();
         g.setColour (Palette::accent);
@@ -6043,7 +6068,8 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
         const float tw = juce::GlyphArrangement::getStringWidth (font (11.0f, true), title) + 8.0f;
         g.drawText (title, h.withWidth (tw), juce::Justification::centredLeft);
         g.setColour (Palette::panelEdge);
-        g.fillRect (h.getX() + tw, h.getCentreY() - 0.5f, juce::jmax (0.0f, (float) feelStyleButton.getX() - 8.0f - h.getX() - tw), 1.0f);
+        const float lineEnd = feelStyleButton.isVisible() ? (float) feelStyleButton.getX() - 8.0f : h.getRight();
+        g.fillRect (h.getX() + tw, h.getCentreY() - 0.5f, juce::jmax (0.0f, lineEnd - h.getX() - tw), 1.0f);
     }
 
     auto hint = clipPanel.reduced (14, 8).removeFromBottom (16);
@@ -6115,8 +6141,32 @@ void FaseGroovePianoEditor::layoutMini()
         dragTile.setBounds (juce::Rectangle<int> (0, 0, miniWidth, miniHeight).reduced (10).withTrimmedBottom (14));
 }
 
+std::vector<juce::Component*> FaseGroovePianoEditor::advancedOnly()
+{
+    return { &octaveToggle, &approach, &topLine, &movement, &strumKnob, &strumDirButton,
+             &grooveBars, &variation, &fillStyle, &feelStyleButton, &newFeelButton, &riffDensity,
+             &tone, &chorus, &bassChannel, &playMode, &pumpSource, &pumpRate, &pumpRelease };
+}
+
+void FaseGroovePianoEditor::applyViewMode()
+{
+    const bool all = processor.advancedView;
+    for (auto* c : advancedOnly())
+        c->setVisible (all);
+    for (auto& b : advancedButtons)
+    {
+        b.setToggleState (all, juce::dontSendNotification);
+        b.setButtonText (all ? tr ("SIMPLE") : tr ("ADVANCED"));
+        b.setTooltip (all ? tr ("Show only the main controls") : tr ("Show every control of the panels"));
+    }
+    if (getWidth() > 0 && ! miniMode)
+        resized();
+    repaint();
+}
+
 void FaseGroovePianoEditor::layoutFull()
 {
+    const bool all = processor.advancedView;
     auto r = juce::Rectangle<int> (0, 0, baseWidth, baseHeight).reduced (20, 14);
 
     // Header
@@ -6183,6 +6233,7 @@ void FaseGroovePianoEditor::layoutFull()
         presetRow.removeFromRight (4);
         diceProgression.setBounds (presetRow.removeFromRight (92));
         presetBox.setBounds (presetRow.withTrimmedRight (6));
+        presetBrowseButton.setBounds (presetBox.getBounds());
         leftCol.removeFromTop (4);
         progLength.setBounds (leftCol.removeFromLeft (114));
         chordLength.setBounds (leftCol.withTrimmedLeft (12));
@@ -6213,10 +6264,19 @@ void FaseGroovePianoEditor::layoutFull()
 
     {
         auto inner = harmonyPanel.reduced (14, 8);
+        advancedButtons[0].setBounds (harmonyPanel.getRight() - 78, harmonyPanel.getY() + 6, 66, 17);
         inner.removeFromTop (22);
         split (row (inner, 44), key, scale, 80);
         split (row (inner, 44), extension, voicing, 125);
         coachButton.setBounds (voicing.getRight() - 34, voicing.getY(), 34, 15);
+        if (! all)
+        {
+            // Simple: the bass, then the register big in the middle.
+            bass.setBounds (row (inner, 44));
+            registerKnob.setBounds (inner.withSizeKeepingCentre (130, juce::jmin (inner.getHeight(), 150)));
+        }
+        else
+        {
         auto last = inner;
         auto leftCol = last.removeFromLeft (124);
         bass.setBounds (leftCol.removeFromTop (44));
@@ -6234,6 +6294,7 @@ void FaseGroovePianoEditor::layoutFull()
         registerKnob.setBounds (last.removeFromLeft (kw).withSizeKeepingCentre (kw, kh));
         strumKnob.setBounds (last.withSizeKeepingCentre (kw, kh));
         strumDirButton.setBounds (strumKnob.getBounds().getCentreX() - 34, strumKnob.getBottom() + 2, 68, 18);
+        }
     }
 
     {
@@ -6244,6 +6305,7 @@ void FaseGroovePianoEditor::layoutFull()
 
     {
         auto inner = groovePanel.reduced (14, 8);
+        advancedButtons[1].setBounds (groovePanel.getRight() - 78, groovePanel.getY() + 6, 66, 17);
         inner.removeFromTop (22);
         auto grooveRow = row (inner, 44);
         newRiffButton.setBounds (grooveRow.removeFromRight (84).withTrimmedTop (16));
@@ -6252,39 +6314,60 @@ void FaseGroovePianoEditor::layoutFull()
         groovePrev.setBounds (arrows.removeFromLeft (20));
         grooveNext.setBounds (arrows);
         pattern.setBounds (grooveRow.withTrimmedRight (4));
+        if (! all)
+            split (row (inner, 44), section, fills, (inner.getWidth() - 10) / 2);
+        else
         {
-            auto three = row (inner, 44);
-            const int w = (three.getWidth() - 16) / 3;
-            section.setBounds (three.removeFromLeft (w));
-            three.removeFromLeft (8);
-            grooveBars.setBounds (three.removeFromLeft (w));
-            three.removeFromLeft (8);
-            variation.setBounds (three);
+            {
+                auto three = row (inner, 44);
+                const int w = (three.getWidth() - 16) / 3;
+                section.setBounds (three.removeFromLeft (w));
+                three.removeFromLeft (8);
+                grooveBars.setBounds (three.removeFromLeft (w));
+                three.removeFromLeft (8);
+                variation.setBounds (three);
+            }
+            split (row (inner, 44), fills, fillStyle, (inner.getWidth() - 10) * 2 / 5);
         }
-        split (row (inner, 44), fills, fillStyle, (inner.getWidth() - 10) * 2 / 5);
 
         // FEEL: its own small header (style menu and NEW FEEL), then the five knobs.
-        feelHeader = inner.removeFromTop (20);
+        // (Simple view: no header, just the four knobs.)
+        feelHeader = {};
+        if (all)
         {
+            feelHeader = inner.removeFromTop (20);
             auto h = feelHeader;
             newFeelButton.setBounds (h.removeFromRight (78));
             h.removeFromRight (6);
             feelStyleButton.setBounds (h.removeFromRight (130));
+            inner.removeFromTop (4);
         }
-        inner.removeFromTop (4);
-        const int w = inner.getWidth() / 5;
+        const int count = all ? 5 : 4;
+        const int w = inner.getWidth() / count;
         auto knobs = inner.withSizeKeepingCentre (inner.getWidth(), juce::jmin (inner.getHeight(), w + 40));
         for (auto* k : { &swing, &gate, &velocity, &humanize, &riffDensity })
-            k->setBounds (knobs.removeFromLeft (w));
+            if (all || k != &riffDensity)
+                k->setBounds (knobs.removeFromLeft (w));
     }
 
     {
         auto inner = soundPanel.reduced (14, 8);
+        advancedButtons[2].setBounds (soundPanel.getRight() - 78, soundPanel.getY() + 6, 66, 17);
         inner.removeFromTop (22);
         // The on/off switch next to the sound menu, then MIDI out, the knobs and the sidechain.
         auto soundRow = row (inner, 44);
         soundToggle.setBounds (soundRow.removeFromLeft (118).withTrimmedTop (16));
         soundType.setBounds (soundRow.withTrimmedLeft (8));
+        if (! all)
+        {
+            // Simple: reverb, volume and the (tempo) sidechain pump.
+            const int w = inner.getWidth() / 3;
+            auto knobs = inner.withSizeKeepingCentre (inner.getWidth(), juce::jmin (inner.getHeight(), w + 50));
+            for (auto* k : { &reverb, &volume, &pump })
+                k->setBounds (knobs.removeFromLeft (w));
+        }
+        else
+        {
         split (row (inner, 44), bassChannel, playMode, (inner.getWidth() - 10) / 2);
         const int w = inner.getWidth() / 3;
         auto top = inner.removeFromTop ((inner.getHeight() - 52) / 2);
@@ -6294,6 +6377,7 @@ void FaseGroovePianoEditor::layoutFull()
         sidechainMeter.setBounds (pumpSource.getRight() - 56, pumpSource.getY() + 2, 56, 10);
         for (auto* k : { &chorus, &pump, &pumpRelease })
             k->setBounds (inner.removeFromLeft (w));
+        }
     }
 
     r.removeFromTop (10);

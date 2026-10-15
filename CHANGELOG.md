@@ -6,6 +6,15 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.6.0] - 2026-10-15
+
+### Changed
+- **Simpler interface**: the Harmony, Groove and Guide sound panels start in a **simple view** with
+  the main controls; **ADVANCED** (in each panel's header) shows them all, **SIMPLE** hides them
+  again (saved with the project).
+- Ready-made progressions open with a **BROWSE...** button that shows the loaded progression's name
+  (instead of the grey "Load a progression..." menu).
+
 ## [2.5.0] - 2026-10-15
 
 ### Added
