@@ -11,15 +11,19 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+// v2 "studio" theme: graphite surfaces, one warm accent (piano) and one cool accent (bass).
 namespace Palette
 {
-    const juce::Colour background { 0xff17111c };
-    const juce::Colour panel      { 0xff231a2b };
-    const juce::Colour panelEdge  { 0xff3b2c46 };
-    const juce::Colour accent     { 0xfff2a65a };   // warm orange
-    const juce::Colour accent2    { 0xffe85d75 };   // soulful pink
-    const juce::Colour text       { 0xfff4e9dc };
-    const juce::Colour dim        { 0xff9c8ca8 };
+    const juce::Colour background { 0xff0d0f13 };   // window
+    const juce::Colour panel      { 0xff161920 };   // panels
+    const juce::Colour panelEdge  { 0xff272c35 };   // borders, tracks, empty cells
+    const juce::Colour control    { 0xff1d2129 };   // buttons
+    const juce::Colour field      { 0xff0f1216 };   // menus, displays
+    const juce::Colour accent     { 0xffffa94d };   // amber: the piano, the main actions
+    const juce::Colour accent2    { 0xff4cc3f0 };   // cyan: the bass, pushes, playing
+    const juce::Colour fill       { 0xffb69cff };   // violet: fills
+    const juce::Colour text       { 0xffe7e9ec };
+    const juce::Colour dim        { 0xff7f8794 };
 }
 
 //==============================================================================
@@ -31,6 +35,25 @@ public:
     void drawRotarySlider (juce::Graphics&, int x, int y, int width, int height, float sliderPos,
                            float startAngle, float endAngle, juce::Slider&) override;
     void drawToggleButton (juce::Graphics&, juce::ToggleButton&, bool highlighted, bool down) override;
+
+    // One typeface everywhere (Inter, embedded), flat controls with thin borders.
+    juce::Typeface::Ptr getTypefaceForFont (const juce::Font&) override;
+    void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour& background, bool highlighted, bool down) override;
+    juce::Font getTextButtonFont (juce::TextButton&, int buttonHeight) override;
+    void drawComboBox (juce::Graphics&, int width, int height, bool isDown, int bx, int by, int bw, int bh, juce::ComboBox&) override;
+    juce::Font getComboBoxFont (juce::ComboBox&) override;
+    void positionComboBoxText (juce::ComboBox&, juce::Label&) override;
+    void drawPopupMenuBackground (juce::Graphics&, int width, int height) override;
+    juce::Font getPopupMenuFont() override;
+    void drawScrollbar (juce::Graphics&, juce::ScrollBar&, int x, int y, int width, int height, bool vertical,
+                        int thumbStart, int thumbSize, bool over, bool down) override;
+    void drawTooltip (juce::Graphics&, const juce::String& text, int width, int height) override;
+    juce::Rectangle<int> getTooltipBounds (const juce::String& text, juce::Point<int> screenPos, juce::Rectangle<int> parentArea) override;
+    juce::Font getLabelFont (juce::Label&) override;
+    void drawButtonText (juce::Graphics&, juce::TextButton&, bool highlighted, bool down) override;
+
+private:
+    juce::Typeface::Ptr regular, semiBold;
 };
 
 //==============================================================================
@@ -124,7 +147,7 @@ private:
     DegreeBox degree;
     bool showingFree = false;
     int inversion = 0;
-    juce::ArrowButton invertUp { "up", 0.75f, Palette::accent }, invertDown { "down", 0.25f, Palette::accent };
+    juce::ArrowButton invertUp { "up", 0.75f, Palette::dim }, invertDown { "down", 0.25f, Palette::dim };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
     juce::String name, numeral;
     bool isEnabledSlot = true, isPlaying = false;
@@ -550,7 +573,7 @@ private:
 
     FaseGroovePianoProcessor& processor;
     juce::TextButton targetButton;
-    juce::ArrowButton targetPrev { "previous target", 0.5f, Palette::accent }, targetNext { "next target", 0.0f, Palette::accent };
+    juce::ArrowButton targetPrev { "previous target", 0.5f, Palette::dim }, targetNext { "next target", 0.0f, Palette::dim };
     int targetPattern = -1;
     void setTarget (int pattern);
     juce::Slider amount;
@@ -664,7 +687,7 @@ private:
     juce::TextButton optionsButton { "OPTIONS" };
     juce::TextButton styleMenuButton { "STYLE" }, resetButton { "RESET" };
     juce::TextButton presetsButton { "PRESETS" }, learnButton { "LEARN" };
-    juce::ArrowButton undoButton { "undo", 0.5f, Palette::accent }, redoButton { "redo", 0.0f, Palette::accent };
+    juce::ArrowButton undoButton { "undo", 0.5f, Palette::dim }, redoButton { "redo", 0.0f, Palette::dim };
     void showPresetMenu();
     void savePresetAs();
     void showGrooveMenu();
@@ -697,7 +720,7 @@ private:
     juce::TextButton songButton { "SONG" }, morphButton { "MORPH" }, dnaButton { "DNA" }, variantsButton { "VARIANTS" };
     juce::TextButton feelStyleButton, newFeelButton;
     juce::TextButton coachButton { "A/B" };
-    juce::ArrowButton groovePrev { "previous groove", 0.5f, Palette::accent }, grooveNext { "next groove", 0.0f, Palette::accent };
+    juce::ArrowButton groovePrev { "previous groove", 0.5f, Palette::dim }, grooveNext { "next groove", 0.0f, Palette::dim };
     void stepGroove (int direction);
     UpdateOverlay updateOverlay;
     Updater::Checker updateChecker;

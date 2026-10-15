@@ -72,7 +72,9 @@ if(SGK_BUILD_PLUGIN)
 
     juce_add_binary_data(FaseGroovePianoData SOURCES
         Resources/fgp_icon.svg
-        Resources/fs_pitch_logo.png)
+        Resources/fs_pitch_logo.png
+        Resources/Inter-Regular.otf
+        Resources/Inter-SemiBold.otf)
 
     target_sources(FaseGroovePiano PRIVATE
         Source/PluginProcessor.cpp

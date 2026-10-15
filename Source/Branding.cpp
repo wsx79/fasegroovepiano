@@ -7,8 +7,8 @@
 
 namespace
 {
-    const juce::Colour warm1 { 0xfff2a65a };
-    const juce::Colour warm2 { 0xffe85d75 };
+    const juce::Colour warm1 { 0xffffb35c };
+    const juce::Colour warm2 { 0xffff7a3d };
 
     juce::Font boldFont (float height, float kerning = 0.0f)
     {
