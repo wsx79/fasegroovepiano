@@ -13,6 +13,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   bass, sound and feel, all at once. Undo with ↶, RESET to start over.
 
 ### Changed
+- **Piano off** now works like bass off: the chords disappear from the grid (with a hint to turn
+  them back on), from the VELOCITY page and from the Launchpad / Push pads.
 - Launchpad / Push: the four lower buttons of the right column are now **NEW RIFF** (they were LOCK).
 - **Lighter on the CPU**: the guide sound's voices use table sines and running envelopes instead of
   per-sample sin / exp / tanh, about **2.3× faster** on average (Rhodes, organs and Wurlitzer up to

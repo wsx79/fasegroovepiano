@@ -13,6 +13,8 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
   basso, suono e feel a caso, tutti insieme. Annulla con ↶, RESET per ripartire da zero.
 
 ### Modificato
+- **Piano spento** ora fa come il basso spento: gli accordi spariscono dalla griglia (con
+  l'indicazione per riaccenderlo), dalla pagina VELOCITY e dai pad di Launchpad / Push.
 - Launchpad / Push: i quattro pulsanti in basso della colonna a destra ora sono **NUOVO RIFF** (prima
   erano BLOCCA).
 - **Consuma meno CPU**: le voci del suono guida usano seni da tabella e inviluppi calcolati al volo

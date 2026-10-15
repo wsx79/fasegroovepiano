@@ -1018,6 +1018,14 @@ namespace
         const char after = p.stepSymbol (false, 0);
         CHECK (after == (before == 'x' ? 'X' : before == 'X' ? 'g' : before == 'g' ? '.' : 'x'));
 
+        // Piano off (bass only): its rows go dark, like the bass rows when the bass is off.
+        p.hearPart (false);
+        CHECK (p.chordsMuted.load());
+        for (int i = 0; i < 32; ++i)
+            CHECK (pads.computeLeds().pads[(size_t) i] == 0);
+        p.hearPart (false);
+        CHECK (! p.chordsMuted.load());
+
         // Round buttons: sequencer off / on, lock part A.
         pads.handlePress (96, true);
         CHECK (p.apvts.getRawParameterValue (ParamIDs::sequencer)->load() < 0.5f);

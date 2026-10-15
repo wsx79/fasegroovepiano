@@ -170,8 +170,9 @@ PadController::Leds PadController::computeLeds() const
             {
                 const auto& line = bassRow ? bassLine : pattern.rightHand;
                 const char c = step < (int) line.size() ? line[(size_t) step] : '.';
-                colour = (bassRow && ! bassOn) ? Colour::off : symbolColour (c, bassRow);
-                if (colour == Colour::off && step % 4 == 0)
+                const bool heard = bassRow ? bassOn : (! processor.chordsMuted.load() || ! bassOn);
+                colour = heard ? symbolColour (c, bassRow) : Colour::off;   // a part you don't hear goes dark
+                if (colour == Colour::off && step % 4 == 0 && heard)
                     colour = Colour::beat;   // the beats, to find your way
                 if (step == playing)
                     colour = Colour::white;
@@ -203,6 +204,8 @@ void PadController::pressPad (int row, int column)
     padToStep (row, column, bassRow, step);
     if (step >= sgk::GrooveEngine::resolvePattern (processor.currentSettings()).length())
         return;
+    if (! bassRow && processor.chordsMuted.load() && processor.isBassOn())
+        return;   // the piano is off: its rows are dark
 
     // Like a click on the grid: rest -> hit -> accent -> ghost -> rest.
     const char current = processor.stepSymbol (bassRow, step);

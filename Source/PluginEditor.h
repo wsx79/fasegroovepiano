@@ -165,7 +165,7 @@ public:
     /** Called when a cell is clicked (right click / ctrl-click = popup menu). */
     std::function<void (bool bassRow, int step, const juce::MouseEvent&)> onCellClicked;
 
-    void setState (const sgk::GroovePattern& pattern, int step, bool bassOn);
+    void setState (const sgk::GroovePattern& pattern, int step, bool bassOn, bool pianoOn = true);
     void paint (juce::Graphics&) override;
     juce::String getTooltip() override;
     void mouseDown (const juce::MouseEvent&) override;
@@ -177,7 +177,7 @@ private:
 
     sgk::GroovePattern pattern;
     int currentStep = -1;
-    bool bassEnabled = true;
+    bool bassEnabled = true, pianoEnabled = true;
     int hoverStep = -1;
     bool hoverBass = false;
 };

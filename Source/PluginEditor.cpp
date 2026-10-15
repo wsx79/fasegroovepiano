@@ -494,15 +494,16 @@ void ChordSlot::setInversion (int newInversion)
 }
 
 //==============================================================================
-void PatternView::setState (const sgk::GroovePattern& newPattern, int step, bool bassOn)
+void PatternView::setState (const sgk::GroovePattern& newPattern, int step, bool bassOn, bool pianoOn)
 {
-    if (step == currentStep && bassOn == bassEnabled
+    if (step == currentStep && bassOn == bassEnabled && pianoOn == pianoEnabled
         && newPattern.rightHand == pattern.rightHand && newPattern.leftHand == pattern.leftHand)
         return;
 
     pattern = newPattern;
     currentStep = step;
     bassEnabled = bassOn;
+    pianoEnabled = pianoOn;
     repaint();
 }
 
@@ -594,10 +595,11 @@ void PatternView::paint (juce::Graphics& g)
         g.setColour (Palette::dim);
         g.drawFittedText (caption, juce::Rectangle<float> (0.0f, y, labelW - 2.0f, rowH).toNearestInt(), juce::Justification::centredLeft, 1, 0.6f);
 
-        if (isBass && ! bassEnabled)
+        // A part you don't hear disappears from the grid, with a hint to bring it back.
+        if (isBass ? ! bassEnabled : ! pianoEnabled)
         {
             g.setColour (Palette::dim.withAlpha (0.6f));
-            g.drawText (tr ("Bass off  -  click BASS to turn it back on"),
+            g.drawText (isBass ? tr ("Bass off  -  click BASS to turn it back on") : tr ("Piano off  -  click PIANO to turn it back on"),
                         juce::Rectangle<float> (labelW, y, area.getWidth() - labelW, rowH), juce::Justification::centred);
             return;
         }
@@ -5533,6 +5535,9 @@ void FaseGroovePianoEditor::saveClip()
 
 void FaseGroovePianoEditor::cellClicked (bool bassRow, int step, const juce::MouseEvent& e)
 {
+    if (! bassRow && processor.chordsMuted.load() && processor.isBassOn())
+        return;   // the piano is off: its row is hidden
+
     const char current = processor.stepSymbol (bassRow, step);
 
     if (e.mods.isPopupMenu())
@@ -5684,6 +5689,12 @@ void FaseGroovePianoEditor::updateVelocityView (const sgk::GrooveSettings& s)
     {
         chords.levels[(size_t) i] = processor.stepVelocity (false, i);
         bass.levels[(size_t) i] = processor.stepVelocity (true, i);
+    }
+
+    if (processor.chordsMuted.load() && processor.isBassOn())
+    {
+        chords.enabled = false;
+        chords.message = tr ("Piano off  -  click PIANO to turn it back on");
     }
 
     // The bass row shows what the bass plays: with the piano-stab bass, the piano's stabs.
@@ -5873,7 +5884,8 @@ void FaseGroovePianoEditor::timerCallback()
     }
 
     const bool bassOn = processor.isBassOn();
-    patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load(), bassOn);
+    patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load(), bassOn,
+                          ! processor.chordsMuted.load() || ! bassOn);
     if (velocityShown && ! rollShown)
         updateVelocityView (s);
 
