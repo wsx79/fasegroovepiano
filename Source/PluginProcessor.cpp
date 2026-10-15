@@ -1987,7 +1987,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
         const auto velLocks = state.getProperty ("velocityLocks").toString();
         for (int i = 0; i < sgk::numSegments; ++i)
         {
-            velocityOrder[(size_t) i] = order.length() == sgk::numSegments ? juce::jlimit (0, sgk::numSegments - 1, order[i] - '0') : i;
+            velocityOrder[(size_t) i] = order.length() == sgk::numSegments ? juce::jlimit (0, sgk::numSegments - 1, (int) (order[i] - '0')) : i;
             velocityLocked[(size_t) i] = velLocks[i] == '1';
         }
     }
