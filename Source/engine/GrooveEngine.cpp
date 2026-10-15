@@ -873,6 +873,8 @@ const char* bassModeName (int m) noexcept
     static const char* const names[numBassPatternModes] { "Off", "Root", "Octaves", "Root + 5th", "Walking", "Syncopated octaves",
                                                           "Piano stabs (bass in every chord)" };
     m = mod (m, numBassModes);
+    if (m == stabsOwnRhythmMode)
+        return "Piano stabs (own rhythm)";
     return m < numBassPatternModes ? names[m] : bassLines()[(size_t) (m - numBassPatternModes)].name;
 }
 
@@ -1600,6 +1602,26 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
                 pending.push_back ({ t, root + 12, hitVelocity (symbol, 0.85, 92, human * hv.bassVel), len, tie, Part::bass });
         }
     }
+    else if ((int) bassMode == stabsOwnRhythmMode)
+    {
+        // The piano-stab bass on the bass row's own rhythm: octaves on the accents and pushes.
+        const char symbol = pattern.leftHand[(size_t) pos];
+        if (isHit (symbol))
+        {
+            auto& line = stabLine;
+            line = pattern.leftHand;
+            for (auto& c : line)
+                if (c == '>') c = 'x';
+            const int root = 36 + chords[(size_t) slotFor (symbol)].rootPc;
+            const double t = hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02;
+            const double len = durationFor (line);
+            const bool tie = isTiedFromPush (line, pos);
+            const char velocitySymbol = symbol == '>' ? 'x' : symbol;
+            pending.push_back ({ t, root, hitVelocity (velocitySymbol, 0.92, 91, human * hv.bassVel), len, tie, Part::bass });
+            if (symbol == 'X' || symbol == '>')
+                pending.push_back ({ t, root + 12, hitVelocity (velocitySymbol, 0.85, 92, human * hv.bassVel), len, tie, Part::bass });
+        }
+    }
     else if (bassMode != BassMode::off)
     {
         const char symbol = pattern.leftHand[(size_t) pos];
@@ -1999,6 +2021,28 @@ void GrooveEngine::allNotesOff (double ppq, std::vector<NoteEvent>& out)
     }
 }
 
+
+//==============================================================================
+std::string stabBassLine (const GroovePattern& pattern)
+{
+    const int n = (int) pattern.rightHand.size();
+    auto rhStabAt = [&] (int i)
+    {
+        const char r = pattern.rightHand[(size_t) ((i % n + n) % n)];
+        return isHit (r) && r != 'g';
+    };
+    std::string line = pattern.leftHand;
+    for (int i = 0; i < n && i < (int) line.size(); ++i)
+    {
+        const char r = pattern.rightHand[(size_t) i];
+        const bool ownHit = isHit (pattern.leftHand[(size_t) i]) && ! rhStabAt (i) && ! rhStabAt (i - 1) && ! rhStabAt (i + 1);
+        if (rhStabAt (i))
+            line[(size_t) i] = r == '>' ? '>' : (r == 'X' || r == 'U' || r == 'D') ? 'X' : (r == 'u' || r == 'd') ? 'x' : r;
+        else if (isHit (line[(size_t) i]) && ! ownHit)
+            line[(size_t) i] = '.';
+    }
+    return line;
+}
 
 //==============================================================================
 std::vector<LoopNote> carryEdits (const std::vector<LoopNote>& base, const std::vector<LoopNote>& edited, double baseLength,

@@ -23,6 +23,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   - **12 new styles** (28 in all): Sunday Soulful, Deep Night Pads, Chicago Jack, Piano House
     Anthem, Vocal House, Deep Soul Keys, Gospel Chops, Jackin' Funk, Classic Piano House, Deep
     Minimal, Soulful Lift, Jackin' Piano Chicago.
+- Bass mode **Piano stabs (own rhythm)**: the piano-stab bass on the bass row's rhythm.
+
+### Changed
+- Every random button (🎲 RANDOM, 🎲 NEW RIFF, 🎲 PIANO, 🎲 BASS, the dice of the parts) looks the
+  same: a neutral button with a violet dice.
+
+### Fixed
+- **🎲 PIANO changed the bass too** with the default *Piano stabs* bass (which plays under every
+  piano stab). Now the bass rhythm you hear is kept on the bass row (mode *Piano stabs (own
+  rhythm)*) and only the piano changes.
 
 ## [2.0.0] - 2026-10-15
 

@@ -750,6 +750,7 @@ namespace
         { "Upper triad (house stab)", "Triade superiore (stab house)", "Tríada superior (stab house)", "Triade supérieure (stab house)", "Obere Triade (House-Stab)", "Tríade superior (stab house)" },
         { "Spread 10ths (2 hands)", "Decime aperte (2 mani)", "Décimas abiertas (2 manos)", "Dixièmes ouvertes (2 mains)", "Gespreizte Dezimen (2 Hände)", "Décimas abertas (2 mãos)" },
         { "Open 5ths (deep pad)", "Quinte aperte (pad deep)", "Quintas abiertas (pad deep)", "Quintes ouvertes (pad deep)", "Offene Quinten (Deep-Pad)", "Quintas abertas (pad deep)" },
+        { "Piano stabs (own rhythm)", "Stab di piano (ritmo suo)", "Stabs de piano (ritmo propio)", "Stabs de piano (rythme propre)", "Piano-Stabs (eigener Rhythmus)", "Stabs de piano (ritmo próprio)" },
     };
     // clang-format on
 

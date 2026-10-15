@@ -760,6 +760,14 @@ void FaseGroovePianoProcessor::rerollHand (bool bass)
     if (current.length() != sgk::userPatternLength)
         return;
 
+    // With the "Piano stabs" bass the bass follows the piano's stabs: RND PIANO would change it
+    // too. Keep it: write the rhythm it plays now on the bass row and let the bass follow that row.
+    if (! bass && s.bass == sgk::BassMode::withChords)
+    {
+        current.leftHand = sgk::stabBassLine (current);
+        setParameterFromUI (ParamIDs::bass, (float) sgk::stabsOwnRhythmMode);
+    }
+
     const auto seed = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
     const auto fresh = sgk::makeRandomPattern (seed, s.riffDensity);
     const int segLength = sgk::userPatternLength / sgk::numSegments;

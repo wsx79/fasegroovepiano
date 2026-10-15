@@ -441,6 +441,10 @@ public:
     juce::Colour onColour = Palette::accent;
     bool mutedWhenOff = false;
     bool primary = false;   // filled with onColour even when off (the main action of a panel)
+    juce::Colour iconColour;  // when set: the icon's own colour (e.g. the dice of every random button)
+
+    /** The look shared by every "random" button: neutral, with a violet dice. */
+    void makeRandomButton()   { icon = Icon::dice; iconColour = Palette::fill; primary = false; repaint(); }
 
     void paintButton (juce::Graphics&, bool highlighted, bool down) override;
     static void drawIcon (juce::Graphics&, Icon, juce::Rectangle<float>, juce::Colour);

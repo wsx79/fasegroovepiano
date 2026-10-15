@@ -5,6 +5,7 @@
 // undo snapshots, exported MIDI files, DAW transport (play, stop, seek, loop, tempo changes,
 // odd block sizes) and the portable update's all-or-nothing file swap.
 
+#include <tuple>
 #include "../Source/PluginProcessor.h"
 #include "../Source/Updater.h"
 
@@ -792,6 +793,40 @@ namespace
         CHECK (sgk::groovePatterns().size() >= 170);
     }
 
+    //==============================================================================
+    void testRandomPianoKeepsBass()
+    {
+        // RND PIANO with the default piano-stab bass: the piano changes, the bass stays exactly.
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::bass, (float) sgk::BassMode::withChords);
+        auto bassOf = [&p]
+        {
+            std::vector<std::tuple<long long, int, int>> out;
+            for (const auto& e : sgk::GrooveEngine::renderClip (p.currentSettings(), 16.0))
+                if (e.isNoteOn() && e.part == sgk::Part::bass)
+                    out.push_back ({ std::llround (e.ppq * 960.0), e.note, e.velocity });
+            return out;
+        };
+        auto pianoOf = [&p]
+        {
+            std::vector<long long> out;
+            for (const auto& e : sgk::GrooveEngine::renderClip (p.currentSettings(), 16.0))
+                if (e.isNoteOn() && e.part != sgk::Part::bass)
+                    out.push_back (std::llround (e.ppq * 960.0));
+            return out;
+        };
+        for (int round = 0; round < 6; ++round)
+        {
+            const auto bassBefore = bassOf();
+            const auto pianoBefore = pianoOf();
+            p.rerollHand (false);
+            CHECK (bassOf() == bassBefore);
+            if (round == 0)
+                CHECK (pianoOf() != pianoBefore);
+        }
+        CHECK (juce::roundToInt (value (p, ParamIDs::bass)) == sgk::stabsOwnRhythmMode);
+    }
+
 }
 
 int main()
@@ -813,6 +848,7 @@ int main()
     testUpdateSwap();
     testEditedNotes();
     testLibrary();
+    testRandomPianoKeepsBass();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

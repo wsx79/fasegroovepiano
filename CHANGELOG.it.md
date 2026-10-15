@@ -24,6 +24,17 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
   - **12 nuovi stili** (28 in tutto): Sunday Soulful, Deep Night Pads, Chicago Jack, Piano House
     Anthem, Vocal House, Deep Soul Keys, Gospel Chops, Jackin' Funk, Classic Piano House, Deep
     Minimal, Soulful Lift, Jackin' Piano Chicago.
+- Modalità di basso **Stab di piano (ritmo suo)**: il basso a stab di piano sul ritmo della riga del
+  basso.
+
+### Modificato
+- Tutti i pulsanti casuali (🎲 CASUALE, 🎲 NUOVO RIFF, 🎲 PIANO, 🎲 BASSO, i dadi delle parti) hanno
+  lo stesso aspetto: pulsante neutro con il dado viola.
+
+### Corretto
+- **🎲 PIANO cambiava anche il basso** col basso di default *Stab di piano* (che suona sotto ogni
+  stab del piano). Ora il ritmo del basso che senti viene tenuto sulla riga del basso (modalità
+  *Stab di piano (ritmo suo)*) e cambia solo il piano.
 
 ## [2.0.0] - 2026-10-15
 

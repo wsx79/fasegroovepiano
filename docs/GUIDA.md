@@ -320,7 +320,10 @@ il risultato (come *User pattern*), **ANNULLA** rimette tutto com'era.
 
 **NUOVO RITMO 🎲 PIANO** e **🎲 BASSO** danno un nuovo ritmo casuale **a una sola mano**: il
 piano (riga accordi) o il basso, mentre l'altra riga resta com'è. Le parti bloccate (**LOCK**)
-restano. Con una linea di basso della libreria, **🎲 BASSO** sceglie un'altra linea. Premili qualche volta finché le due mani non si incastrano.
+restano. Con una linea di basso della libreria, **🎲 BASSO** sceglie un'altra linea. Col basso
+*Stab di piano* (che suona sotto ogni stab del piano), **🎲 PIANO** prima scrive sulla riga del basso
+il ritmo che senti e passa il basso a *Stab di piano (ritmo suo)*: cambia il piano, il basso resta
+identico. Premili qualche volta finché le due mani non si incastrano.
 
 | Cella | Significato |
 |---|---|

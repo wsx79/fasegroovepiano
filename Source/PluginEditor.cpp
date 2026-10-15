@@ -2444,6 +2444,7 @@ void IconButton::paintButton (juce::Graphics& g, bool highlighted, bool down)
     g.strokePath (shape, juce::PathStrokeType (1.0f));
 
     const auto ink = filled ? Palette::background : (mutedWhenOff ? Palette::dim : Palette::text.withAlpha (0.92f));
+    const auto iconInk = ! filled && ! iconColour.isTransparent() ? iconColour : ink;
     const float iconSize = juce::jmin (r.getHeight() * 0.56f, 18.0f);
     const auto text = getButtonText();
 
@@ -2453,7 +2454,7 @@ void IconButton::paintButton (juce::Graphics& g, bool highlighted, bool down)
         // Icons only, centred.
         const float total = iconSize * (icon2 != Icon::none ? 2.15f : 1.0f);
         auto area = content.withSizeKeepingCentre (total, iconSize);
-        drawIcon (g, icon, area.removeFromLeft (iconSize), ink);
+        drawIcon (g, icon, area.removeFromLeft (iconSize), iconInk);
         if (icon2 != Icon::none)
             drawIcon (g, icon2, area.removeFromRight (iconSize), ink);
     }
@@ -2466,7 +2467,7 @@ void IconButton::paintButton (juce::Graphics& g, bool highlighted, bool down)
         if (icon != Icon::none)
         {
             auto icons = area.removeFromLeft (iconsW - 6.0f).withSizeKeepingCentre (iconsW - 6.0f, iconSize);
-            drawIcon (g, icon, icons.removeFromLeft (iconSize), ink);
+            drawIcon (g, icon, icons.removeFromLeft (iconSize), iconInk);
             if (icon2 != Icon::none)
                 drawIcon (g, icon2, icons.removeFromRight (iconSize), ink);
             area.removeFromLeft (6.0f);
@@ -4152,7 +4153,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     octaveToggle.setTooltip ("Double the top note of every chord an octave higher (bright house piano)");
 
     newRiffButton.setTooltip ("Generate a brand new random funky riff");
-    newRiffButton.primary = true;
+    for (auto* b : { &newRiffButton, &diceProgression, &rndPianoButton, &rndBassButton })
+        b->makeRandomButton();
     newRiffButton.onClick = [this] { processor.rollNewRiff(); };
 
     diceProgression.setTooltip ("Random soulful-house progression");
@@ -4246,6 +4248,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         Choice::Group rhythm { "Follow the groove", {}, true };
         for (int i = 0; i < sgk::numBassPatternModes; ++i)
             rhythm.items.push_back (i);
+        rhythm.items.push_back (sgk::stabsOwnRhythmMode);
         groups.push_back (rhythm);
         for (int i = 0; i < sgk::numBassLines; ++i)
         {
@@ -4430,6 +4433,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (box);
 
         auto* dice = segmentDice.add (new IconButton (IconButton::Icon::dice));
+        dice->makeRandomButton();
         dice->setColour (juce::TextButton::buttonColourId, Palette::background);
         dice->setColour (juce::TextButton::textColourOffId, Palette::accent);
         dice->setTooltip ("New random rhythm for this part");

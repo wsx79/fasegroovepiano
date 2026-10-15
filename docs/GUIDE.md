@@ -310,7 +310,10 @@ target). **Locked** parts stay as they are. **KEEP** keeps the blend (as your *U
 
 **NEW RHYTHM 🎲 PIANO** and **🎲 BASS** give a new random rhythm to **one hand only**: the
 piano (chords row) or the bass, while the other row stays as it is. Locked parts (**LOCK**) are
-kept. With a bass line from the library, **🎲 BASS** picks another line. Press them a few times until the two hands lock together.
+kept. With a bass line from the library, **🎲 BASS** picks another line. With the *Piano stabs*
+bass (which plays under every piano stab), **🎲 PIANO** first writes the bass rhythm you hear on
+the bass row and switches the bass to *Piano stabs (own rhythm)*: the piano changes, the bass
+stays exactly as it was. Press them a few times until the two hands lock together.
 
 | Cell | Meaning |
 |---|---|

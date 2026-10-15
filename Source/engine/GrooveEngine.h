@@ -101,8 +101,11 @@ const char* fillStyleName (int style) noexcept;
     of the library (each one its own rhythm and notes). */
 constexpr int numBassPatternModes = 7;
 constexpr int numBassLines = 12;
-constexpr int numBassModes = numBassPatternModes + numBassLines;
-constexpr bool isBassLine (BassMode m) noexcept { return (int) m >= numBassPatternModes; }
+/** Appended after the bass lines (saved projects keep their mode): the piano-stab bass on the
+    bass row's own rhythm (what RND PIANO switches to, so the bass doesn't change with the piano). */
+constexpr int stabsOwnRhythmMode = numBassPatternModes + numBassLines;
+constexpr int numBassModes = stabsOwnRhythmMode + 1;
+constexpr bool isBassLine (BassMode m) noexcept { return (int) m >= numBassPatternModes && (int) m < stabsOwnRhythmMode; }
 
 /** A bass line over two bars, one symbol per 16th, relative to the chord playing:
     R root, O octave up, 5 fifth, L fifth below, 3 the chord's 3rd, 7 its 7th, 6 sixth,
@@ -146,6 +149,10 @@ struct LoopNote
     or played softer in `edited` is found again in `now` (same part, same moment, same place in
     the chord) and changed the same way; notes added by hand follow the harmony; new generated
     notes stay. The result's `origin`s point into `now`. */
+/** The rhythm the "Piano stabs" bass plays for a groove (a root under every chord stab, plus the
+    bass's own hits that don't crowd a stab), written as a left-hand line. */
+std::string stabBassLine (const GroovePattern&);
+
 std::vector<LoopNote> carryEdits (const std::vector<LoopNote>& base, const std::vector<LoopNote>& edited, double baseLength,
                                   const std::vector<LoopNote>& now, double nowLength);
 
