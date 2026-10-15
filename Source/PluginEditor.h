@@ -754,6 +754,7 @@ private:
     // Simple view: the panels show their main controls; ADVANCED (in each panel's header) shows all.
     std::array<juce::TextButton, 3> advancedButtons;   // harmony, groove, sound
     void applyViewMode();
+    int shownAdvanced = -1;   // the view the controls show (-1 = not applied yet)
     std::vector<juce::Component*> advancedOnly() ;
     void layoutMini();
     void cellClicked (bool bassRow, int step, const juce::MouseEvent&);

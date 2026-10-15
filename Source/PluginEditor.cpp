@@ -5904,6 +5904,10 @@ void FaseGroovePianoEditor::timerCallback()
     if (velocityShown && ! rollShown)
         updateVelocityView (s);
 
+    // The view can change under the open window (the DAW restores a project, undo / redo).
+    if (shownAdvanced != (processor.advancedView ? 1 : 0))
+        applyViewMode();
+
     {
         const int preset = presetBox.getSelectedId() - 1;
         const auto& presets = sgk::progressionPresets();
@@ -6151,6 +6155,7 @@ std::vector<juce::Component*> FaseGroovePianoEditor::advancedOnly()
 void FaseGroovePianoEditor::applyViewMode()
 {
     const bool all = processor.advancedView;
+    shownAdvanced = all ? 1 : 0;
     for (auto* c : advancedOnly())
         c->setVisible (all);
     for (auto& b : advancedButtons)

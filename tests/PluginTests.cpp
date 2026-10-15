@@ -1082,6 +1082,24 @@ namespace
         }
         CHECK (changed);
     }
+
+    void testViewModeRestore()
+    {
+        // The simple / advanced view is saved with the project and restored, also over an open state.
+        FaseGroovePianoProcessor p;
+        CHECK (! p.advancedView);
+        p.advancedView = true;
+        juce::MemoryBlock advanced;
+        p.getStateInformation (advanced);
+        p.advancedView = false;
+        juce::MemoryBlock simple;
+        p.getStateInformation (simple);
+
+        p.setStateInformation (advanced.getData(), (int) advanced.getSize());
+        CHECK (p.advancedView);
+        p.setStateInformation (simple.getData(), (int) simple.getSize());
+        CHECK (! p.advancedView);
+    }
 }
 
 int main()
@@ -1109,6 +1127,7 @@ int main()
     testSequencerOff();
     testLaunchpadLayout();
     testTotalRandom();
+    testViewModeRestore();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

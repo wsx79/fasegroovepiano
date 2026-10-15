@@ -6,6 +6,12 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [Non pubblicato]
+
+### Corretto
+- La vista semplice / avanzata ora segue subito un progetto ripristinato con la finestra aperta
+  (e annulla / ripeti).
+
 ## [2.6.0] - 2026-10-15
 
 ### Modificato

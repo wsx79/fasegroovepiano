@@ -6,6 +6,12 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- The simple / advanced view now follows a project restored while the window is open (and undo /
+  redo) at once.
+
 ## [2.6.0] - 2026-10-15
 
 ### Changed
