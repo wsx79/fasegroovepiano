@@ -217,6 +217,9 @@ struct GrooveSettings
     // Velocity set by hand for each step of the user pattern (0 = automatic, from the symbol).
     std::array<unsigned char, userPatternLength> userVelRight {};
     std::array<unsigned char, userPatternLength> userVelLeft {};
+    // Which part's levels play in each half bar (the velocity page's own A-D order, over the
+    // displayed groove): 0 1 2 3 = each part keeps its own levels.
+    std::array<int, numSegments> velocityOrder { 0, 1, 2, 3 };
 };
 
 

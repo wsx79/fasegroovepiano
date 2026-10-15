@@ -69,6 +69,11 @@ public:
     FaseGroovePianoProcessor();
     ~FaseGroovePianoProcessor() override = default;
 
+    juce::VST3ClientExtensions* getVST3ClientExtensions() override { return &vst3Extensions; }
+
+    /** Peak level arriving at the sidechain input (for the meter in the UI). */
+    std::atomic<float> sidechainMeter { 0.0f };
+
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override {}
@@ -130,6 +135,15 @@ public:
     void resetStepVelocities (bool chords = true, bool bass = true);
     /** True when some step has a level set by hand (and the user groove plays). */
     bool hasStepVelocities() const;
+
+    // The velocity page's own parts: which part's levels play in each half bar (A-D), locks,
+    // and new random levels (only the levels change, never the rhythm).
+    int velocityPartAt (int position) const   { return velocityOrder[(size_t) juce::jlimit (0, sgk::numSegments - 1, position)].load(); }
+    void setVelocityPartAt (int position, int part);
+    bool isVelocityLocked (int part) const    { return velocityLocked[(size_t) juce::jlimit (0, sgk::numSegments - 1, part)]; }
+    void setVelocityLocked (int part, bool locked) { velocityLocked[(size_t) juce::jlimit (0, sgk::numSegments - 1, part)] = locked; }
+    /** New random levels for the chords and/or the bass: one part (0..3) or every unlocked one (-1). */
+    void randomizeVelocities (bool chords, bool bass, int part = -1);
 
     /** Quick bass on/off that remembers the last bass mode. */
     void toggleBass();
@@ -308,9 +322,19 @@ private:
     std::array<std::atomic<int>, sgk::userPatternLength> userVelRight, userVelLeft;   // 0 = automatic
 
     // Sidechain: the level of the sidechain input, per sample of the block, and its follower.
-    std::vector<float> sidechainLevel;
+    std::vector<float> sidechainLevel, lastOutput;
     float sidechainEnvelope = 0.0f;
+    static BusesProperties makeBuses();
+
+    struct Vst3Extensions : juce::VST3ClientExtensions
+    {
+        bool getPluginHasMainInput() const override { return false; }   // the input is a sidechain
+    } vst3Extensions;
     int baseStepIndex (int displayedStep) const;
+    int levelIndex (int displayedStep) const;
+    bool makeUserPattern();
+    std::array<std::atomic<int>, sgk::numSegments> velocityOrder;
+    std::array<bool, sgk::numSegments> velocityLocked {};
     void resetSegmentVelocities (int segment, bool chords, bool bass);
     std::array<bool, sgk::numSegments> segmentLocked {};
     std::array<std::atomic<int>, 6> songBars;                 // per song section (0 = left out)

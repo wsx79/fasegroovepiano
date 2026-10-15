@@ -6,6 +6,20 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.3.0] - 2026-10-15
+
+### Added
+- On the **VELOCITY page** the random buttons and the A-D strip change **only the velocities**:
+  🎲 PIANO / 🎲 BASS / NEW RIFF give new random velocities (the rhythm stays), the A-D menus pick
+  whose velocities play in each half bar (e.g. *A A A A*), each part has its own 🎲 and LOCK.
+- A **sidechain meter** next to the Sidechain menu shows the signal arriving (and *Pump 0%* when
+  the depth is at zero).
+
+### Fixed
+- The **external sidechain** did not show up in Ableton Live (VST3): the input is now a real
+  sidechain bus, active by default. After updating, rescan the plug-ins in Live once.
+- A host feeding the plug-in's own output back into the sidechain no longer ducks it.
+
 ## [2.2.0] - 2026-10-15
 
 ### Added

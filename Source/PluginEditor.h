@@ -225,6 +225,26 @@ private:
     bool hoverBass = false, dragBass = false, dragging = false;
 };
 
+/** The level arriving at the sidechain input, next to the Sidechain menu. */
+class SidechainMeter : public juce::Component, public juce::SettableTooltipClient
+{
+public:
+    void setState (float newLevel, bool pumpOff)
+    {
+        newLevel = juce::jlimit (0.0f, 1.0f, newLevel);
+        if (std::abs (newLevel - level) < 0.01f && pumpOff == noDepth)
+            return;
+        level = newLevel;
+        noDepth = pumpOff;
+        repaint();
+    }
+    void paint (juce::Graphics&) override;
+
+private:
+    float level = 0.0f;
+    bool noDepth = false;
+};
+
 /** Piano roll of what the plug-in plays: every chord and bass note of the loop on a keyboard,
     the chord names above, and the playhead. Read-only (the rhythm grid is where you edit). */
 class PianoRollView : public juce::Component, public juce::SettableTooltipClient
@@ -811,12 +831,14 @@ private:
     juce::AudioProcessorValueTreeState::ButtonAttachment soundAttachment;
     Knob tone, reverb, volume, chorus, pump, pumpRelease;
     Choice pumpSource, pumpRate;
+    SidechainMeter sidechainMeter;
 
     PatternView patternView;
     VelocityView velocityView;
     juce::TextButton velocityTab;
     bool velocityShown = false;
     void showVelocity (bool);
+    void updateRandomTips();
     void updateVelocityView (const sgk::GrooveSettings&);
     PianoRollView pianoRoll;
     PianoRollEditor rollEditor { processor };
@@ -836,6 +858,11 @@ private:
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ComboBoxAttachment> segmentAttachments;
     juce::OwnedArray<IconButton> segmentDice;
     juce::OwnedArray<juce::TextButton> segmentLocks;
+    // The same strip on the velocity page: the levels' own A-D order, random levels, locks.
+    juce::OwnedArray<juce::ComboBox> velocityBoxes;
+    juce::OwnedArray<IconButton> velocityDice;
+    juce::OwnedArray<juce::TextButton> velocityLocks;
+    bool onVelocityPage() const { return velocityShown && ! rollShown; }
 
     // Scaling (the whole UI is laid out at base size, then scaled) and mini mode.
     static constexpr int baseWidth = 1180, baseHeight = 860;

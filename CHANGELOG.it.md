@@ -6,6 +6,21 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.3.0] - 2026-10-15
+
+### Aggiunto
+- Sulla **pagina VELOCITY** i pulsanti random e la fascia A-D cambiano **solo le velocity**:
+  🎲 PIANO / 🎲 BASSO / NUOVO RIFF danno nuove velocity casuali (il ritmo resta), i menu A-D
+  scelgono di quale parte sono le velocity in ogni mezza battuta (es. *A A A A*), ogni parte ha il
+  suo 🎲 e il suo BLOCCA.
+- Un **indicatore del sidechain** accanto al menu Sidechain mostra il segnale che arriva (e
+  *Pompa 0%* quando la profondità è a zero).
+
+### Corretto
+- Il **sidechain esterno** non compariva in Ableton Live (VST3): l'ingresso ora è un vero bus
+  sidechain, attivo di default. Dopo l'aggiornamento riscansiona una volta i plug-in in Live.
+- Un host che rimanda al sidechain l'uscita stessa del plug-in non lo fa più abbassare.
+
 ## [2.2.0] - 2026-10-15
 
 ### Aggiunto

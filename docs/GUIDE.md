@@ -301,6 +301,14 @@ hit of the **CHORDS** and **BASS** rows is a green bar as tall as its velocity.
   A-D order; 🎲 PIANO / 🎲 BASS / RND / NEW RIFF clear the levels of what they change.
 - With the *Piano stabs* bass the BASS row shows the stabs it plays; a bass line from the library
   has its own levels (write the bass in the grid to set them).
+- On this page the random buttons and the strip above the faders **change only the velocities,
+  never the rhythm** (the caption NEW RHYTHM becomes NEW VELOCITY, the strip turns green):
+  - **🎲 PIANO / 🎲 BASS**: new random velocities for the chords / the bass (a shape per half bar:
+    loose, on the beat, rising or falling); **NEW RIFF** both at once.
+  - **A / B / C / D**: whose velocities play in each half bar, independent from the rhythm's
+    order: *A A A A* gives every half bar the accents of the first.
+  - **🎲** of a part: new velocities for that part only. **LOCK**: the random buttons keep that
+    part's velocities.
 
 **Parts A / B / C / D.** The pattern is split into 4 half-bar parts (the orange lines on the
 grid). Above each part you'll find:
@@ -356,7 +364,20 @@ stays exactly as it was. Press them a few times until the two hands lock togethe
 | **Play mode** (in the Groove panel) | *Host transport*: plays with the DAW's Play. *Hold a key*: plays while you hold a MIDI key, and **that key sets the key** (great for live jamming and in the Standalone app). |
 | **Tone / Reverb / Volume** | Brightness (or drawbars for the organ), reverb and volume of the guide sound (they don't affect the MIDI). |
 | **Chorus / Pump** | *Chorus* widens the sound; *Pump* is the **sidechain** depth: it ducks the sound like a kick sidechain, so the riff sounds the way it will in the mix. Guide sound only. |
-| **Sidechain / Rate / Release** | Where the duck comes from. **Tempo (internal)**: on the tempo while the groove plays, every **Rate** (1/4 = every beat, 1/8, 1/2, 1/16). **Sidechain input (external)**: it follows a track you send to the plug-in's **sidechain input** (usually the kick): in Logic the *Side Chain* menu at the top of the plug-in window, in Ableton *Sidechain* in the device, in Cubase activate side-chain and send to it, in FL Studio route the mixer track to the plug-in. **Release**: how fast the sound comes back. |
+| **Sidechain / Rate / Release** | Where the duck comes from. **Tempo (internal)**: on the tempo while the groove plays, every **Rate** (1/4 = every beat, 1/8, 1/2, 1/16). **Sidechain input (external)**: it follows a track you send to the plug-in's **sidechain input** (usually the kick); a small meter next to *Sidechain* shows the signal arriving (grey = nothing arrives; *Pump 0%* in amber = raise **Pump**). **Release**: how fast the sound comes back. See *Sidechain from your DAW* below. |
+
+#### Sidechain from your DAW
+
+The guide sound is ducked only when **Guide sound** is on and **Pump** is above 0%. Then send the kick:
+
+- **Ableton Live** (VST3): after updating, rescan the plug-ins once (*Settings → Plug-Ins → Rescan*;
+  hold Alt for a full rescan) and load the plug-in again. Unfold the device (the ▸ triangle in its
+  title bar) to show the **Sidechain** section, switch it on and pick the kick track in *Audio From*.
+- **Logic Pro** (AU): the *Side Chain* menu at the top of the plug-in window.
+- **Cubase / Studio One / Reaper**: activate the plug-in's side-chain input and send the kick to it.
+- **FL Studio**: route the kick's mixer track to the plug-in (sidechain to this track).
+
+The standalone app has no sidechain input (use *Tempo (internal)*).
 
 ### Export MIDI
 

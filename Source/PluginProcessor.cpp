@@ -158,10 +158,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
 }
 
 //==============================================================================
+juce::AudioProcessor::BusesProperties FaseGroovePianoProcessor::makeBuses()
+{
+    auto buses = BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true);
+
+    // In a DAW: one input, the sidechain (active, so hosts like Live offer it at once; in VST3 it
+    // is an aux bus, not a main input). The standalone app has none: no microphone needed.
+    if (juce::PluginHostType::getPluginLoadedAs() != wrapperType_Standalone)
+        buses = buses.withInput ("Sidechain", juce::AudioChannelSet::stereo(), true);
+    return buses;
+}
+
 FaseGroovePianoProcessor::FaseGroovePianoProcessor()
-    : AudioProcessor (BusesProperties().withInput ("Input", juce::AudioChannelSet::stereo(), false)
-                                       .withInput ("Sidechain", juce::AudioChannelSet::stereo(), false)
-                                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+    : AudioProcessor (makeBuses()),
       apvts (*this, nullptr, "FaseGroovePiano", createLayout())
 {
     auto& toneParam = *apvts.getRawParameterValue (ParamIDs::tone);
@@ -210,32 +219,106 @@ int FaseGroovePianoProcessor::baseStepIndex (int displayedStep) const
     return segmentAtStep (displayedStep) * segLength + displayedStep % segLength;
 }
 
+int FaseGroovePianoProcessor::levelIndex (int displayedStep) const
+{
+    // Through the velocity page's A-D order, then the groove's.
+    displayedStep %= sgk::userPatternLength;
+    const int segLength = sgk::userPatternLength / sgk::numSegments;
+    return baseStepIndex (velocityPartAt (displayedStep / segLength) * segLength + displayedStep % segLength);
+}
+
+bool FaseGroovePianoProcessor::makeUserPattern()
+{
+    // A groove from the library becomes yours (same rhythm) before it gets levels.
+    if (juce::roundToInt (raw (ParamIDs::pattern)) == sgk::userPatternIndex())
+        return true;
+    const auto current = sgk::GrooveEngine::basePattern (currentSettings());
+    if (current.length() != sgk::userPatternLength)
+        return false;
+    setUserPattern (current);
+    return true;
+}
+
 int FaseGroovePianoProcessor::stepVelocity (bool bassRow, int displayedStep) const
 {
     if (displayedStep < 0 || juce::roundToInt (raw (ParamIDs::pattern)) != sgk::userPatternIndex())
         return 0;
-    return (bassRow ? userVelLeft : userVelRight)[(size_t) baseStepIndex (displayedStep)].load();
+    return (bassRow ? userVelLeft : userVelRight)[(size_t) levelIndex (displayedStep)].load();
 }
 
 void FaseGroovePianoProcessor::setStepVelocity (bool bassRow, int displayedStep, int level)
 {
-    if (displayedStep < 0)
+    if (displayedStep < 0 || ! makeUserPattern())
+        return;
+    (bassRow ? userVelLeft : userVelRight)[(size_t) levelIndex (displayedStep)] = juce::jlimit (0, 127, level);
+}
+
+void FaseGroovePianoProcessor::setVelocityPartAt (int position, int part)
+{
+    if (! makeUserPattern())
+        return;
+    velocityOrder[(size_t) juce::jlimit (0, sgk::numSegments - 1, position)] = juce::jlimit (0, sgk::numSegments - 1, part);
+}
+
+void FaseGroovePianoProcessor::randomizeVelocities (bool chords, bool bass, int part)
+{
+    if (! makeUserPattern())
         return;
 
-    // A groove from the library becomes yours first (same rhythm), then gets the level.
-    if (juce::roundToInt (raw (ParamIDs::pattern)) != sgk::userPatternIndex())
-    {
-        const auto current = sgk::GrooveEngine::basePattern (currentSettings());
-        if (current.length() != sgk::userPatternLength)
-            return;
-        setUserPattern (current);
-    }
+    const auto s = currentSettings();
+    const auto p = sgk::GrooveEngine::resolvePattern (s);
+    const bool bassLevels = bass && isBassOn() && ! sgk::isBassLine (s.bass);
+    const auto bassLine = s.bass == sgk::BassMode::withChords ? sgk::stabBassLine (p) : p.leftHand;
+    const int segLength = sgk::userPatternLength / sgk::numSegments;
+    auto& random = juce::Random::getSystemRandom();
 
-    (bassRow ? userVelLeft : userVelRight)[(size_t) baseStepIndex (displayedStep)] = juce::jlimit (0, 127, level);
+    auto automatic = [] (char c) { return c == 'g' ? 65 : c == 'x' || c == 'u' || c == 'd' ? 106 : c == '>' ? 114 : 118; };
+    auto isHit = [] (char c) { return c != '.' && c != '='; };
+
+    for (int k = 0; k < sgk::numSegments; ++k)
+    {
+        if (part >= 0 ? k != part : velocityLocked[(size_t) k])
+            continue;
+
+        // The levels of part k, made for the hits of the half bar where it plays.
+        int shown = k;
+        for (int pos = sgk::numSegments - 1; pos >= 0; --pos)
+            if (velocityPartAt (pos) == k)
+                shown = pos;
+
+        // A shape for the half bar: loose, on the beat, rising or falling, then a little life.
+        const int shape = random.nextInt (4);
+        for (int row = 0; row < 2; ++row)
+        {
+            if ((row == 0 && ! chords) || (row == 1 && ! bassLevels))
+                continue;
+            const auto& line = row == 0 ? p.rightHand : bassLine;
+            auto& levels = row == 0 ? userVelRight : userVelLeft;
+            for (int i = 0; i < segLength; ++i)
+            {
+                const int d = shown * segLength + i;
+                const char c = d < (int) line.size() ? line[(size_t) d] : '.';
+                int level = 0;
+                if (isHit (c))
+                {
+                    level = automatic (c) + random.nextInt (25) - 16;
+                    if (shape == 1) level += i % 4 == 0 ? 8 : -6;
+                    if (shape == 2) level += (i - segLength / 2) * 3;
+                    if (shape == 3) level -= (i - segLength / 2) * 3;
+                    level = c == 'g' ? juce::jlimit (40, 85, level) : juce::jlimit (72, 127, level);
+                }
+                levels[(size_t) baseStepIndex (k * segLength + i)] = level;
+            }
+        }
+    }
 }
 
 void FaseGroovePianoProcessor::resetStepVelocities (bool chords, bool bass)
 {
+    if (chords && bass)
+        for (int i = 0; i < sgk::numSegments; ++i)
+            velocityOrder[(size_t) i] = i;
+
     for (int i = 0; i < sgk::userPatternLength; ++i)
     {
         if (chords) userVelRight[(size_t) i] = 0;
@@ -483,7 +566,8 @@ bool FaseGroovePianoProcessor::saveGroove (const juce::String& name)
         const int segLength = sgk::userPatternLength / sgk::numSegments;
         for (int i = 0; i < sgk::userPatternLength; ++i)
         {
-            const int index = juce::jlimit (0, sgk::numSegments - 1, s.segmentOrder[(size_t) (i / segLength)]) * segLength + i % segLength;
+            const int from = juce::jlimit (0, sgk::numSegments - 1, s.velocityOrder[(size_t) (i / segLength)]) * segLength + i % segLength;
+            const int index = juce::jlimit (0, sgk::numSegments - 1, s.segmentOrder[(size_t) (from / segLength)]) * segLength + from % segLength;
             velRight.add (juce::String (userVelRight[(size_t) index].load()));
             velLeft.add (juce::String (userVelLeft[(size_t) index].load()));
         }
@@ -521,6 +605,8 @@ bool FaseGroovePianoProcessor::loadGroove (const juce::File& file)
     };
     readLevels ("chordLevels", userVelRight);
     readLevels ("bassLevels", userVelLeft);
+    for (int i = 0; i < sgk::numSegments; ++i)   // saved as heard
+        velocityOrder[(size_t) i] = i;
     if (left.containsAnyOf ("XxgUuDd>") && ! isBassOn())
         toggleBass();
     return true;
@@ -794,6 +880,8 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
         s.userVelRight[(size_t) i] = (unsigned char) userVelRight[(size_t) i].load();
         s.userVelLeft[(size_t) i]  = (unsigned char) userVelLeft[(size_t) i].load();
     }
+    for (int i = 0; i < sgk::numSegments; ++i)
+        s.velocityOrder[(size_t) i] = velocityOrder[(size_t) i].load();
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         s.freeChords[(size_t) i] = freeChords[(size_t) i].load();
@@ -1007,6 +1095,7 @@ void FaseGroovePianoProcessor::prepareToPlay (double sampleRate, int samplesPerB
     outputGain.reset (sampleRate, 0.05);
     outputGain.setCurrentAndTargetValue (juce::Decibels::decibelsToGain (raw (ParamIDs::volume)));
     sidechainLevel.assign ((size_t) juce::jmax (1, samplesPerBlock), 0.0f);
+    lastOutput.assign ((size_t) juce::jmax (1, samplesPerBlock), 0.0f);
     sidechainEnvelope = 0.0f;
 
     wasRunning = false;
@@ -1038,12 +1127,21 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     // Sidechain input: follow its level before the buffer is used for the output.
     const bool externalPump = juce::roundToInt (raw (ParamIDs::pumpSource)) == 1;
-    if (externalPump)
     {
         if ((int) sidechainLevel.size() < numSamples)
             sidechainLevel.resize ((size_t) numSamples);
 
-        const auto side = getBusCount (true) > 1 ? getBusBuffer (buffer, true, 1) : juce::AudioBuffer<float>();
+        auto side = juce::AudioBuffer<float>();
+        if (auto* bus = getBus (true, 0); bus != nullptr && bus->isEnabled())
+            side = getBusBuffer (buffer, true, 0);
+
+        // With nothing routed some hosts hand back the plug-in's own last output: not a sidechain.
+        if (side.getNumChannels() > 0 && numSamples <= (int) lastOutput.size()
+            && std::equal (lastOutput.begin(), lastOutput.begin() + numSamples, side.getReadPointer (0))
+            && std::any_of (lastOutput.begin(), lastOutput.begin() + numSamples, [] (float v) { return v != 0.0f; }))
+            side = juce::AudioBuffer<float>();
+
+        float blockPeak = 0.0f;
         const float attack = 1.0f - std::exp (-1.0f / (0.002f * (float) sampleRate));
         const float releaseSeconds = 0.04f * std::pow (15.0f, raw (ParamIDs::pumpRelease));   // 40 ms .. 600 ms
         const float release = 1.0f - std::exp (-1.0f / (releaseSeconds * (float) sampleRate));
@@ -1052,9 +1150,11 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             float peak = 0.0f;
             for (int ch = 0; ch < side.getNumChannels(); ++ch)
                 peak = juce::jmax (peak, std::abs (side.getSample (ch, i)));
+            blockPeak = juce::jmax (blockPeak, peak);
             sidechainEnvelope += (peak - sidechainEnvelope) * (peak > sidechainEnvelope ? attack : release);
             sidechainLevel[(size_t) i] = sidechainEnvelope;
         }
+        sidechainMeter = juce::jmax (blockPeak, sidechainMeter.load() * 0.8f);   // for the meter in the UI
     }
     buffer.clear();
 
@@ -1293,6 +1393,15 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
         outputGain.setTargetValue (juce::Decibels::decibelsToGain (raw (ParamIDs::volume)));
         outputGain.applyGain (buffer, numSamples);
+    }
+
+    // Remember what went out (see the sidechain check above).
+    if (numSamples <= (int) lastOutput.size())
+    {
+        if (buffer.getNumChannels() > 0)
+            std::copy (buffer.getReadPointer (0), buffer.getReadPointer (0) + numSamples, lastOutput.begin());
+        else
+            std::fill (lastOutput.begin(), lastOutput.begin() + numSamples, 0.0f);
     }
 
     midi.swapWith (outMidi);
@@ -1771,6 +1880,14 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
         }
         state.setProperty ("userVelRight", velRight.joinIntoString (","), nullptr);
         state.setProperty ("userVelLeft", velLeft.joinIntoString (","), nullptr);
+        juce::String order, velLocks;
+        for (int i = 0; i < sgk::numSegments; ++i)
+        {
+            order += juce::String (velocityOrder[(size_t) i].load());
+            velLocks += velocityLocked[(size_t) i] ? "1" : "0";
+        }
+        state.setProperty ("velocityOrder", order, nullptr);
+        state.setProperty ("velocityLocks", velLocks, nullptr);
     }
     state.setProperty ("lastBassMode", lastBassMode, nullptr);
     state.setProperty ("soloBass", chordsMuted.load(), nullptr);
@@ -1859,6 +1976,13 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
         };
         readLevels ("userVelRight", userVelRight);
         readLevels ("userVelLeft", userVelLeft);
+        const auto order = state.getProperty ("velocityOrder").toString();
+        const auto velLocks = state.getProperty ("velocityLocks").toString();
+        for (int i = 0; i < sgk::numSegments; ++i)
+        {
+            velocityOrder[(size_t) i] = order.length() == sgk::numSegments ? juce::jlimit (0, sgk::numSegments - 1, order[i] - '0') : i;
+            velocityLocked[(size_t) i] = velLocks[i] == '1';
+        }
     }
 
     const auto locks = state.getProperty ("segmentLocks").toString();

@@ -809,6 +809,12 @@ static void testStepVelocities()
     set = levels (s);
     CHECK (at (set, Part::chords, 12) < at (automatic, Part::chords, 12) - 40);
     CHECK (at (set, Part::chords, 4) == at (automatic, Part::chords, 4));
+
+    // The velocity page's own order: A A C D plays part A's levels (now at step 12) in both halves.
+    s.velocityOrder = { 1, 1, 2, 3 };
+    set = levels (s);
+    CHECK (at (set, Part::chords, 4) < at (automatic, Part::chords, 4) - 40);
+    CHECK (at (set, Part::chords, 12) < at (automatic, Part::chords, 12) - 40);
 }
 
 static void testEditedLoop()

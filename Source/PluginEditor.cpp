@@ -643,6 +643,28 @@ void PatternView::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+void SidechainMeter::paint (juce::Graphics& g)
+{
+    auto r = getLocalBounds().toFloat();
+    if (noDepth)
+    {
+        // Sidechain chosen but no depth: say which knob does it.
+        g.setColour (Palette::accent);
+        g.setFont (font (10.0f, true));
+        g.drawText (tr ("Pump 0%"), r, juce::Justification::centredRight);
+        return;
+    }
+
+    const auto bar = r.withSizeKeepingCentre (r.getWidth(), 5.0f);
+    g.setColour (Palette::panelEdge);
+    g.fillRoundedRectangle (bar, 2.0f);
+    const float db = juce::Decibels::gainToDecibels (level, -60.0f);
+    const float t = juce::jlimit (0.0f, 1.0f, (db + 60.0f) / 60.0f);
+    g.setColour (t > 0.0f ? Palette::level : Palette::dim);
+    g.fillRoundedRectangle (bar.withWidth (juce::jmax (2.0f, bar.getWidth() * t)), 2.0f);
+}
+
+//==============================================================================
 void VelocityView::setState (const Row& chords, const Row& bass, int step)
 {
     if (step == currentStep && chords == rows[0] && bass == rows[1])
@@ -4360,7 +4382,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
 
     for (juce::Component* c : std::initializer_list<juce::Component*> {
-             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &movement, &variation, &grooveBars, &chorus, &pump, &pumpRelease, &pumpSource, &pumpRate, &registerKnob, &strumKnob,
+             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &movement, &variation, &grooveBars, &chorus, &pump, &pumpRelease, &pumpSource, &pumpRate, &sidechainMeter, &registerKnob, &strumKnob,
              &octaveToggle, &circle,
              &diceProgression, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
              &swing, &gate, &velocity, &humanize, &riffDensity,
@@ -4374,7 +4396,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     newRiffButton.setTooltip ("Generate a brand new random funky riff");
     for (auto* b : { &newRiffButton, &diceProgression, &rndPianoButton, &rndBassButton })
         b->makeRandomButton();
-    newRiffButton.onClick = [this] { processor.rollNewRiff(); };
+    newRiffButton.onClick = [this] { if (onVelocityPage()) processor.randomizeVelocities (true, true); else processor.rollNewRiff(); };
 
     diceProgression.setTooltip ("Random soulful-house progression");
     diceProgression.onClick = [this] { processor.rollNewProgression(); presetBox.setSelectedId (0, juce::dontSendNotification); };
@@ -4651,8 +4673,9 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     myGroovesButton.setColour (juce::TextButton::textColourOffId, Palette::text);
     myGroovesButton.onClick = [this] { showGrooveMenu(); };
     addAndMakeVisible (myGroovesButton);
-    rndPianoButton.onClick = [this] { processor.rerollHand (false); };
-    rndBassButton.onClick = [this] { processor.rerollHand (true); };
+    // On the velocity page the random buttons change only the levels.
+    rndPianoButton.onClick = [this] { if (onVelocityPage()) processor.randomizeVelocities (true, false); else processor.rerollHand (false); };
+    rndBassButton.onClick = [this] { if (onVelocityPage()) processor.randomizeVelocities (false, true); else processor.rerollHand (true); };
 
     for (int i = 0; i < sgk::numSegments; ++i)
     {
@@ -4683,6 +4706,34 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
             processor.setSegmentLocked (processor.segmentAtStep (i * sgk::userPatternLength / sgk::numSegments), lock->getToggleState());
         };
         addAndMakeVisible (lock);
+
+        // Velocity page: which part's levels play here, new random levels, lock.
+        auto* vbox = velocityBoxes.add (new juce::ComboBox());
+        vbox->addItemList ({ "A", "B", "C", "D" }, 1);
+        vbox->setJustificationType (juce::Justification::centred);
+        vbox->setColour (juce::ComboBox::textColourId, Palette::level);
+        vbox->setColour (juce::ComboBox::arrowColourId, Palette::level);
+        vbox->onChange = [this, i, vbox]
+        {
+            if (vbox->getSelectedId() > 0 && vbox->getSelectedId() - 1 != processor.velocityPartAt (i))
+                processor.setVelocityPartAt (i, vbox->getSelectedId() - 1);
+        };
+        addChildComponent (vbox);
+
+        auto* vdice = velocityDice.add (new IconButton (IconButton::Icon::dice));
+        vdice->makeRandomButton();
+        vdice->setColour (juce::TextButton::buttonColourId, Palette::background);
+        vdice->onClick = [this, i] { processor.randomizeVelocities (true, true, processor.velocityPartAt (i)); };
+        addChildComponent (vdice);
+
+        auto* vlock = velocityLocks.add (new juce::TextButton ("LOCK"));
+        vlock->setClickingTogglesState (true);
+        vlock->setColour (juce::TextButton::buttonColourId, Palette::background);
+        vlock->setColour (juce::TextButton::buttonOnColourId, Palette::level);
+        vlock->setColour (juce::TextButton::textColourOffId, Palette::dim);
+        vlock->setColour (juce::TextButton::textColourOnId, Palette::background);
+        vlock->onClick = [this, i, vlock] { processor.setVelocityLocked (processor.velocityPartAt (i), vlock->getToggleState()); };
+        addChildComponent (vlock);
     }
 
     newRiffButton.setTooltip ("New random funky riff (locked parts are kept)");
@@ -5281,11 +5332,15 @@ void FaseGroovePianoEditor::applyLanguage()
     myGroovesButton.setButtonText (tr ("MY GROOVES"));
     myGroovesButton.setTooltip (tr ("Save the rhythm grid as your own groove, or load one you saved (Documents/Fase Groove Piano/Grooves)"));
     rndBassButton.setButtonText (tr ("BASS"));
-    rndPianoButton.setTooltip (tr ("New random rhythm for the piano (chords) only: the bass stays"));
-    rndBassButton.setTooltip (tr ("New random rhythm for the bass only: the piano stays"));
+    updateRandomTips();
 
     for (int i = 0; i < sgk::numSegments; ++i)
     {
+        velocityBoxes[i]->setTooltip (tr ("Whose velocities play here (A-D): e.g. A A A A gives every half bar the accents of the first"));
+        velocityDice[i]->setButtonText ({});
+        velocityDice[i]->setTooltip (tr ("New random velocities for this part (the rhythm stays)"));
+        velocityLocks[i]->setButtonText (tr ("LOCK"));
+        velocityLocks[i]->setTooltip (tr ("Keep these velocities when you press the random buttons"));
         segmentBoxes[i]->setTooltip (tr ("Which part (A-D) plays here: combine parts like A A B C"));
         segmentDice[i]->setButtonText ({});
         segmentDice[i]->setTooltip (tr ("New random rhythm for this part"));
@@ -5358,6 +5413,7 @@ void FaseGroovePianoEditor::applyLanguage()
     pump.setTip (tr ("Sidechain depth: ducks the guide sound like a kick sidechain"));
     pumpRelease.setTip (tr ("How fast the sound comes back after each duck"));
     pumpSource.box.setTooltip (tr ("Tempo: the duck follows the beat. Sidechain input: it follows the track you send to the plug-in's sidechain input (e.g. the kick)"));
+    sidechainMeter.setTooltip (tr ("The signal arriving at the sidechain input: if it stays grey, nothing is routed to the plug-in"));
     pumpRate.box.setTooltip (tr ("How often the tempo sidechain ducks: every beat, 8th, half bar or 16th"));
     soundToggle.setTooltip (tr ("Turns the built-in guide sound on or off (the MIDI keeps playing)"));
     presetBox.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
@@ -5544,12 +5600,27 @@ void FaseGroovePianoEditor::showRoll (bool roll)
     velocityTab.setToggleState (velocityShown, juce::dontSendNotification);
     patternView.setVisible (! roll && ! velocityShown);
     velocityView.setVisible (! roll && velocityShown);
-    for (auto* list : { &segmentBoxes })
-        for (auto* c : *list) c->setVisible (! roll);
-    for (auto* c : segmentDice) c->setVisible (! roll);
-    for (auto* c : segmentLocks) c->setVisible (! roll);
+    const bool rhythmStrip = ! roll && ! velocityShown, levelStrip = ! roll && velocityShown;
+    for (auto* c : segmentBoxes)  c->setVisible (rhythmStrip);
+    for (auto* c : segmentDice)   c->setVisible (rhythmStrip);
+    for (auto* c : segmentLocks)  c->setVisible (rhythmStrip);
+    for (auto* c : velocityBoxes) c->setVisible (levelStrip);
+    for (auto* c : velocityDice)  c->setVisible (levelStrip);
+    for (auto* c : velocityLocks) c->setVisible (levelStrip);
+    updateRandomTips();   // the random buttons say what they change
     if (getWidth() > 0)
         resized();
+}
+
+void FaseGroovePianoEditor::updateRandomTips()
+{
+    const bool levels = onVelocityPage();
+    rndPianoButton.setTooltip (levels ? tr ("New random velocities for the chords (unlocked parts): the rhythm stays")
+                                      : tr ("New random rhythm for the piano (chords) only: the bass stays"));
+    rndBassButton.setTooltip (levels ? tr ("New random velocities for the bass (unlocked parts): the rhythm stays")
+                                     : tr ("New random rhythm for the bass only: the piano stays"));
+    newRiffButton.setTooltip (levels ? tr ("On the velocity page: new random velocities for chords and bass (unlocked parts)")
+                                     : tr ("New random funky riff (locked parts are kept)"));
 }
 
 void FaseGroovePianoEditor::showVelocity (bool show)
@@ -5740,6 +5811,13 @@ void FaseGroovePianoEditor::timerCallback()
         repaint (chordDisplayArea.toFloat().transformedBy (uiTransform()).getSmallestIntegerContainer().expanded (2));
     }
 
+    {
+        const bool external = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pumpSource)->load()) == 1;
+        sidechainMeter.setVisible (external);
+        sidechainMeter.setState (processor.sidechainMeter.load(), processor.apvts.getRawParameterValue (ParamIDs::pump)->load() < 0.001f);
+        processor.sidechainMeter = processor.sidechainMeter.load() * 0.7f;   // falls when nothing arrives
+    }
+
     const bool bassOn = processor.isBassOn();
     patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load(), bassOn);
     if (velocityShown && ! rollShown)
@@ -5769,8 +5847,14 @@ void FaseGroovePianoEditor::timerCallback()
     }
 
     for (int i = 0; i < sgk::numSegments; ++i)
+    {
         segmentLocks[i]->setToggleState (processor.isSegmentLocked (processor.segmentAtStep (i * sgk::userPatternLength / sgk::numSegments)),
                                          juce::dontSendNotification);
+        const int part = processor.velocityPartAt (i);
+        if (velocityBoxes[i]->getSelectedId() != part + 1)
+            velocityBoxes[i]->setSelectedId (part + 1, juce::dontSendNotification);
+        velocityLocks[i]->setToggleState (processor.isVelocityLocked (part), juce::dontSendNotification);
+    }
 
     std::vector<CircleOfFifths::ChordMark> marks;
     std::vector<float> moves;
@@ -6138,6 +6222,7 @@ void FaseGroovePianoEditor::layoutFull()
         for (auto* k : { &tone, &reverb, &volume })
             k->setBounds (top.removeFromLeft (w));
         split (row (inner, 44), pumpSource, pumpRate, (inner.getWidth() - 10) * 3 / 5);
+        sidechainMeter.setBounds (pumpSource.getRight() - 56, pumpSource.getY() + 2, 56, 10);
         for (auto* k : { &chorus, &pump, &pumpRelease })
             k->setBounds (inner.removeFromLeft (w));
     }
@@ -6164,7 +6249,7 @@ void FaseGroovePianoEditor::layoutFull()
             };
             group (tr ("View"), { { &rollTab, 78 }, { &gridTab, 64 }, { &expandRollButton, 96 } });
             group (tr ("Hear"), { { &hearPianoButton, 82 }, { &hearBassButton, 82 } });
-            group (tr ("New rhythm"), { { &rndPianoButton, 76 }, { &rndBassButton, 76 } });
+            group (onVelocityPage() ? tr ("New velocity") : tr ("New rhythm"), { { &rndPianoButton, 76 }, { &rndBassButton, 76 } });
             group (tr ("Groove"), { { &myGroovesButton, 92 }, { &morphButton, 60 }, { &dnaButton, header.getWidth() - 152 } });
             velocityTab.setBounds (expandRollButton.getBounds());
             velocityTab.setConnectedEdges (juce::Button::ConnectedOnLeft);
@@ -6191,6 +6276,9 @@ void FaseGroovePianoEditor::layoutFull()
             segmentLocks[i]->setBounds (cell.removeFromRight (52));
             cell.removeFromRight (6);
             segmentDice[i]->setBounds (cell.removeFromRight (46));
+            velocityBoxes[i]->setBounds (segmentBoxes[i]->getBounds());
+            velocityDice[i]->setBounds (segmentDice[i]->getBounds());
+            velocityLocks[i]->setBounds (segmentLocks[i]->getBounds());
         }
 
         inner.removeFromTop (2);

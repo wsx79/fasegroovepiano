@@ -871,6 +871,34 @@ namespace
         CHECK (! p.hasStepVelocities());
         p.editStep (false, hit, 'X');   // the library groove becomes yours again: no old levels
         CHECK (! p.hasStepVelocities());
+
+        // On the velocity page the random buttons change the levels only, and keep locked parts.
+        const auto rhythm = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+        p.setVelocityLocked (1, true);
+        p.randomizeVelocities (true, false);
+        const auto after = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+        CHECK (after.rightHand == rhythm.rightHand && after.leftHand == rhythm.leftHand);
+        int set = 0, lockedSet = 0, bassSet = 0;
+        for (int i = 0; i < sgk::userPatternLength; ++i)
+        {
+            const bool hitHere = rhythm.rightHand[(size_t) i] != '.' && rhythm.rightHand[(size_t) i] != '=';
+            const int level = p.stepVelocity (false, i);
+            if (hitHere && level > 0) ++set;
+            if (! hitHere) CHECK (level == 0);
+            if (i / 8 == 1 && level > 0) ++lockedSet;
+            if (p.stepVelocity (true, i) > 0) ++bassSet;
+        }
+        CHECK (set > 0 && lockedSet == 0 && bassSet == 0);
+
+        // Velocity order A A C D: the second half bar plays the first one's levels.
+        p.setVelocityPartAt (1, 0);
+        for (int i = 0; i < 8; ++i)
+            CHECK (p.stepVelocity (false, 8 + i) == p.stepVelocity (false, i));
+        juce::MemoryBlock saved;
+        p.getStateInformation (saved);
+        FaseGroovePianoProcessor r;
+        r.setStateInformation (saved.getData(), (int) saved.getSize());
+        CHECK (r.velocityPartAt (1) == 0 && r.isVelocityLocked (1));
     }
 
     void testSidechain()
@@ -880,7 +908,6 @@ namespace
         {
             FaseGroovePianoProcessor p;
             juce::AudioProcessor::BusesLayout layout;
-            layout.inputBuses.add (juce::AudioChannelSet::disabled());
             layout.inputBuses.add (juce::AudioChannelSet::stereo());
             layout.outputBuses.add (juce::AudioChannelSet::stereo());
             CHECK (p.setBusesLayout (layout));

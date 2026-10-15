@@ -11,6 +11,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Done
 
+- v2.3.0: velocity page random / A-D / lock change only the velocities; sidechain input fixed for Ableton Live (VST3), input meter.
 - v2.2.0: VELOCITY page (per-step velocity faders), controllable sidechain (internal / external, rate, release).
 - v2.1.0: bigger library: 40 progressions, 30 grooves, 3 extensions, 3 voicings, 12 styles.
 - v2.0.0: new interface (studio theme, icon buttons, transport, hear / new rhythm switches, grouped piano roll toolbar).

@@ -314,6 +314,14 @@ velocity.
   di quello che cambiano.
 - Col basso *Stab di piano* la riga BASSO mostra gli stab che suona; una linea di basso della
   libreria ha i suoi livelli (scrivi il basso nella griglia per regolarli).
+- Su questa pagina i pulsanti random e la fascia sopra i fader **cambiano solo le velocity, mai il
+  ritmo** (la didascalia NUOVO RITMO diventa NUOVA VELOCITY, la fascia diventa verde):
+  - **🎲 PIANO / 🎲 BASSO**: nuove velocity casuali per gli accordi / il basso (un andamento per
+    mezza battuta: libero, sui tempi, in crescendo o in calare); **NUOVO RIFF** tutti e due.
+  - **A / B / C / D**: di quale parte sono le velocity che suonano in ogni mezza battuta,
+    indipendente dall'ordine del ritmo: *A A A A* dà a ogni mezza battuta gli accenti della prima.
+  - **🎲** di una parte: nuove velocity solo per quella parte. **BLOCCA**: i pulsanti random tengono
+    le velocity di quella parte.
 
 **Parti A / B / C / D.** Il pattern è diviso in 4 parti da mezza battuta (le linee arancioni
 sulla griglia). Sopra ogni parte trovi:
@@ -370,7 +378,22 @@ identico. Premili qualche volta finché le due mani non si incastrano.
 | **Play mode** (nel riquadro Groove) | *Host transport*: suona col Play della DAW. *Hold a key*: suona mentre tieni premuto un tasto MIDI, e **il tasto sceglie la tonalità** (ottimo per jam dal vivo e nello Standalone). |
 | **Tone / Reverb / Volume** | Brillantezza (per l'organo: i tiranti), riverbero e volume del suono guida (non influiscono sul MIDI). |
 | **Chorus / Pompa** | *Chorus* allarga il suono; *Pompa* è la profondità del **sidechain**: lo abbassa come un sidechain sulla cassa, così senti il riff come suonerà nel mix. Solo sul suono guida. |
-| **Sidechain / Ritmo / Rilascio** | Da dove arriva l'abbassamento. **Tempo (interno)**: a tempo mentre suona il groove, ogni **Ritmo** (1/4 = ogni battito, 1/8, 1/2, 1/16). **Ingresso sidechain (esterno)**: segue una traccia che mandi all'**ingresso sidechain** del plug-in (di solito la cassa): in Logic il menu *Side Chain* in alto nella finestra del plug-in, in Ableton *Sidechain* nel device, in Cubase attiva il side-chain e manda la traccia, in FL Studio instrada la traccia del mixer al plug-in. **Rilascio**: quanto velocemente torna su il suono. |
+| **Sidechain / Ritmo / Rilascio** | Da dove arriva l'abbassamento. **Tempo (interno)**: a tempo mentre suona il groove, ogni **Ritmo** (1/4 = ogni battito, 1/8, 1/2, 1/16). **Ingresso sidechain (esterno)**: segue una traccia che mandi all'**ingresso sidechain** del plug-in (di solito la cassa); un piccolo indicatore accanto a *Sidechain* mostra il segnale che arriva (grigio = non arriva niente; *Pompa 0%* in arancio = alza **Pompa**). **Rilascio**: quanto velocemente torna su il suono. Vedi *Sidechain dalla DAW* sotto. |
+
+
+#### Sidechain dalla DAW
+
+Il suono guida si abbassa solo se **Suono guida** è acceso e **Pompa** è sopra lo 0%. Poi manda la cassa:
+
+- **Ableton Live** (VST3): dopo l'aggiornamento riscansiona i plug-in una volta (*Impostazioni →
+  Plug-In → Riscansiona*; tieni premuto Alt per una scansione completa) e ricarica il plug-in.
+  Espandi il device (il triangolo ▸ nella barra del titolo) per vedere la sezione **Sidechain**,
+  accendila e scegli la traccia della cassa in *Audio From*.
+- **Logic Pro** (AU): il menu *Side Chain* in alto nella finestra del plug-in.
+- **Cubase / Studio One / Reaper**: attiva l'ingresso side-chain del plug-in e manda la cassa.
+- **FL Studio**: instrada la traccia del mixer della cassa al plug-in (sidechain a questa traccia).
+
+L'app standalone non ha l'ingresso sidechain (usa *Tempo (interno)*).
 
 ### Esporta MIDI
 

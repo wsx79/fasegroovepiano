@@ -1242,7 +1242,8 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         if (s.pattern == userPatternIndex() && salt >= 60 && salt < 100 && ! (salt >= 90 && isBassLine (s.bass)))
         {
             const int segLength = userPatternLength / numSegments;
-            const int at = mod (pos, userPatternLength);
+            const int shown = mod (pos, userPatternLength);
+            const int at = std::clamp (s.velocityOrder[(size_t) (shown / segLength)], 0, numSegments - 1) * segLength + shown % segLength;
             const int index = std::clamp (s.segmentOrder[(size_t) (at / segLength)], 0, numSegments - 1) * segLength + at % segLength;
             const auto& hand = salt >= 90 ? s.userVelLeft : s.userVelRight;
             if (const int set = hand[(size_t) index]; set > 0)
