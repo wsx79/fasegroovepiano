@@ -643,6 +643,222 @@ void PatternView::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+void VelocityView::setState (const Row& chords, const Row& bass, int step)
+{
+    if (step == currentStep && chords == rows[0] && bass == rows[1])
+        return;
+    rows[0] = chords;
+    rows[1] = bass;
+    currentStep = step;
+    repaint();
+}
+
+juce::Rectangle<float> VelocityView::rowArea (bool bassRow) const
+{
+    const float rowH = (getHeight() - headerHeight) / 2.0f;
+    return { labelWidth, headerHeight + (bassRow ? rowH : 0.0f), getWidth() - labelWidth, rowH };
+}
+
+int VelocityView::stepAt (float x) const
+{
+    const int len = (int) rows[0].line.size();
+    if (len == 0 || x < labelWidth)
+        return -1;
+    return juce::jlimit (0, len - 1, (int) ((x - labelWidth) / ((getWidth() - labelWidth) / (float) len)));
+}
+
+int VelocityView::levelAt (bool bassRow, float y) const
+{
+    // The fader track inside a cell: bottom = 1, top = 127.
+    const auto area = rowArea (bassRow).reduced (0.0f, 6.0f);
+    const float t = 1.0f - (y - area.getY()) / juce::jmax (1.0f, area.getHeight());
+    return juce::jlimit (1, 127, juce::roundToInt (1.0f + 126.0f * t));
+}
+
+void VelocityView::setFrom (juce::Point<float> p)
+{
+    const int step = stepAt (p.x);
+    const auto& row = rows[dragBass ? 1 : 0];
+    if (step < 0 || step >= (int) row.line.size() || ! row.enabled || ! isHit (row.line[(size_t) step]))
+        return;
+
+    const int level = levelAt (dragBass, p.y);
+    if (step < (int) row.levels.size() && row.levels[(size_t) step] == level)
+        return;
+
+    // Shown at once; the processor gets it too and the next refresh confirms it.
+    if (step < (int) rows[dragBass ? 1 : 0].levels.size())
+        rows[dragBass ? 1 : 0].levels[(size_t) step] = level;
+    dragStep = step;
+    if (onLevel != nullptr)
+        onLevel (dragBass, step, level);
+    repaint();
+}
+
+void VelocityView::mouseDown (const juce::MouseEvent& e)
+{
+    if (e.position.y < headerHeight || e.position.x < labelWidth)
+        return;
+    dragBass = e.position.y >= rowArea (true).getY();
+
+    if (e.mods.isPopupMenu())
+    {
+        juce::PopupMenu menu;
+        menu.addSectionHeader (tr ("Velocity"));
+        menu.addItem (1, dragBass ? tr ("Bass: all automatic") : tr ("Chords: all automatic"));
+        menu.addItem (2, tr ("All automatic"));
+        const bool bassRow = dragBass;
+        menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this).withMousePosition(),
+                            [this, bassRow] (int r)
+                            {
+                                if (r > 0 && onReset != nullptr)
+                                    onReset (r == 2 || ! bassRow, r == 2 || bassRow);
+                            });
+        return;
+    }
+
+    dragging = true;
+    setFrom (e.position);
+}
+
+void VelocityView::mouseDrag (const juce::MouseEvent& e)
+{
+    if (dragging)
+        setFrom (e.position);
+}
+
+void VelocityView::mouseUp (const juce::MouseEvent&)
+{
+    dragging = false;
+    dragStep = -1;
+    repaint();
+}
+
+void VelocityView::mouseDoubleClick (const juce::MouseEvent& e)
+{
+    const bool bassRow = e.position.y >= rowArea (true).getY();
+    const int step = stepAt (e.position.x);
+    auto& row = rows[bassRow ? 1 : 0];
+    if (step < 0 || ! row.enabled || step >= (int) row.line.size() || ! isHit (row.line[(size_t) step]))
+        return;
+    if (step < (int) row.levels.size())
+        row.levels[(size_t) step] = 0;
+    if (onLevel != nullptr)
+        onLevel (bassRow, step, 0);
+    repaint();
+}
+
+void VelocityView::mouseMove (const juce::MouseEvent& e)
+{
+    const int step = e.position.y < headerHeight ? -1 : stepAt (e.position.x);
+    const bool bassRow = e.position.y >= rowArea (true).getY();
+    if (step != hoverStep || bassRow != hoverBass)
+    {
+        hoverStep = step;
+        hoverBass = bassRow;
+        repaint();
+    }
+}
+
+void VelocityView::mouseExit (const juce::MouseEvent&)
+{
+    hoverStep = -1;
+    repaint();
+}
+
+void VelocityView::paint (juce::Graphics& g)
+{
+    const int len = (int) rows[0].line.size();
+    if (len == 0)
+        return;
+
+    const auto area = getLocalBounds().toFloat();
+    const float cellW = (area.getWidth() - labelWidth) / (float) len;
+
+    g.setFont (font (11.0f, true));
+    for (int s = 0; s < len; s += 4)
+    {
+        g.setColour (s % 16 == 0 ? Palette::level : Palette::dim);
+        g.drawText (juce::String ((s / 4) % 4 + 1), juce::Rectangle<float> (labelWidth + s * cellW, 0.0f, cellW * 2.0f, 14.0f),
+                    juce::Justification::centredLeft);
+    }
+
+    if (len == sgk::userPatternLength)
+    {
+        g.setColour (Palette::level.withAlpha (0.3f));
+        for (int k = 1; k < sgk::numSegments; ++k)
+            g.fillRect (labelWidth + (float) (k * len / sgk::numSegments) * cellW - 0.75f, headerHeight, 1.5f, area.getHeight() - headerHeight);
+    }
+
+    for (int r = 0; r < 2; ++r)
+    {
+        const auto& row = rows[r];
+        const auto rowBounds = rowArea (r == 1);
+        g.setColour (Palette::dim);
+        g.setFont (font (11.0f, true));
+        g.drawFittedText (r == 0 ? tr ("CHORDS") : tr ("BASS"),
+                          juce::Rectangle<float> (0.0f, rowBounds.getY(), labelWidth - 2.0f, rowBounds.getHeight()).toNearestInt(),
+                          juce::Justification::centredLeft, 1, 0.6f);
+
+        if (! row.enabled)
+        {
+            g.setColour (Palette::dim.withAlpha (0.6f));
+            g.drawFittedText (row.message, rowBounds.toNearestInt().reduced (8, 0), juce::Justification::centred, 2);
+            continue;
+        }
+
+        // Guide lines: the automatic levels of a hit and of a ghost note.
+        const auto track = rowBounds.reduced (0.0f, 6.0f);
+        auto yFor = [&track] (int level) { return track.getBottom() - track.getHeight() * (float) (level - 1) / 126.0f; };
+        g.setColour (Palette::panelEdge.withAlpha (0.6f));
+        for (int level : { 118, 65 })
+            g.fillRect (track.getX(), yFor (level) - 0.5f, track.getWidth(), 1.0f);
+
+        for (int s = 0; s < len && s < (int) row.line.size(); ++s)
+        {
+            const char c = row.line[(size_t) s];
+            auto cell = juce::Rectangle<float> (labelWidth + s * cellW, track.getY(), cellW, track.getHeight()).reduced (juce::jmin (3.0f, cellW * 0.18f), 0.0f);
+
+            g.setColour (Palette::panelEdge.withAlpha (s % 4 == 0 ? 0.55f : 0.3f));
+            g.fillRoundedRectangle (cell, 2.5f);
+
+            if (! isHit (c))
+            {
+                if (c == '=')
+                {
+                    g.setColour (Palette::level.withAlpha (0.18f));
+                    g.fillRect (cell.withSizeKeepingCentre (cell.getWidth() + 3.0f, 3.0f).withY (cell.getBottom() - 6.0f));
+                }
+                continue;
+            }
+
+            const int set = s < (int) row.levels.size() ? row.levels[(size_t) s] : 0;
+            const int level = set > 0 ? set : automaticLevel (c);
+            auto bar = cell.withTop (yFor (level));
+            const auto colour = r == 0 ? Palette::level : Palette::level.interpolatedWith (Palette::accent2, 0.35f);
+            g.setColour (colour.withAlpha (set > 0 ? 0.95f : 0.4f));
+            g.fillRoundedRectangle (bar, 2.5f);
+            g.setColour (colour.brighter (0.4f).withAlpha (set > 0 ? 1.0f : 0.6f));
+            g.fillRoundedRectangle (bar.removeFromTop (3.0f), 1.5f);   // the fader cap
+
+            const bool active = (s == hoverStep && hoverBass == (r == 1)) || (dragging && s == dragStep && dragBass == (r == 1));
+            if (active && cellW > 14.0f)
+            {
+                g.setColour (Palette::text);
+                g.setFont (font (10.0f, true));
+                g.drawText (juce::String (level), juce::Rectangle<float> (cell.getX() - 6.0f, juce::jmax (rowBounds.getY(), yFor (level) - 14.0f), cell.getWidth() + 12.0f, 12.0f),
+                            juce::Justification::centred);
+            }
+            if (s == currentStep)
+            {
+                g.setColour (Palette::text);
+                g.drawRoundedRectangle (cell.expanded (1.0f), 2.5f, 1.5f);
+            }
+        }
+    }
+}
+
+//==============================================================================
 void PianoRollView::setContent (std::vector<Note> newNotes, std::vector<ChordSpan> newChords, double lengthInBeats, bool chordsMuted)
 {
     if (newNotes == notes && newChords == chords && juce::approximatelyEqual (lengthInBeats, length) && chordsMuted == mutedChords)
@@ -4032,6 +4248,9 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       volume (p.apvts, ParamIDs::volume, "Volume"),
       chorus (p.apvts, ParamIDs::chorus, "Chorus"),
       pump (p.apvts, ParamIDs::pump, "Pump"),
+      pumpRelease (p.apvts, ParamIDs::pumpRelease, "Release"),
+      pumpSource (p.apvts, ParamIDs::pumpSource, "Sidechain"),
+      pumpRate (p.apvts, ParamIDs::pumpRate, "Rate"),
       syncAttachment (p.apvts, ParamIDs::tempoSync, syncButton),
       tempoAttachment (p.apvts, ParamIDs::tempo, tempoSlider)
 {
@@ -4141,7 +4360,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
 
     for (juce::Component* c : std::initializer_list<juce::Component*> {
-             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &movement, &variation, &grooveBars, &chorus, &pump, &registerKnob, &strumKnob,
+             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &movement, &variation, &grooveBars, &chorus, &pump, &pumpRelease, &pumpSource, &pumpRate, &registerKnob, &strumKnob,
              &octaveToggle, &circle,
              &diceProgression, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
              &swing, &gate, &velocity, &humanize, &riffDensity,
@@ -4381,7 +4600,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     rollTab.setConnectedEdges (juce::Button::ConnectedOnRight);
     gridTab.setConnectedEdges (juce::Button::ConnectedOnLeft);
     rollTab.onClick = [this] { showRoll (true); };
-    gridTab.onClick = [this] { showRoll (false); };
+    gridTab.onClick = [this] { velocityShown = false; showRoll (false); };
     for (auto* b : { &rollTab, &gridTab })
     {
         b->setClickingTogglesState (false);
@@ -4392,6 +4611,18 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (b);
     }
     addAndMakeVisible (pianoRoll);
+
+    // The velocity page (grid view only): the hits as faders.
+    velocityTab.setClickingTogglesState (false);
+    velocityTab.setColour (juce::TextButton::buttonColourId, Palette::background);
+    velocityTab.setColour (juce::TextButton::buttonOnColourId, Palette::level);
+    velocityTab.setColour (juce::TextButton::textColourOffId, Palette::level);
+    velocityTab.setColour (juce::TextButton::textColourOnId, Palette::background);
+    velocityTab.onClick = [this] { showVelocity (! velocityShown); };
+    addChildComponent (velocityTab);
+    velocityView.onLevel = [this] (bool bassRow, int step, int level) { processor.setStepVelocity (bassRow, step, level); };
+    velocityView.onReset = [this] (bool chords, bool bass) { processor.resetStepVelocities (chords, bass); };
+    addChildComponent (velocityView);
 
     // The big piano roll, to edit the notes one by one.
     auto openRollEditor = [this]
@@ -4980,11 +5211,11 @@ void FaseGroovePianoEditor::buildPresetMenu()
 
 void FaseGroovePianoEditor::applyLanguage()
 {
-    for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump })
+    for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump, &pumpRelease })
         k->refreshText();
 
     for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &movement, &variation, &grooveBars, &pattern, &section,
-                     &fills, &fillStyle, &playMode, &bassChannel, &soundType })
+                     &fills, &fillStyle, &playMode, &bassChannel, &soundType, &pumpSource, &pumpRate })
         c->refreshText();
 
     presetLabel.setText (Localisation::upper (tr ("Progression presets")), juce::dontSendNotification);
@@ -5084,6 +5315,9 @@ void FaseGroovePianoEditor::applyLanguage()
     generatedButton.setTooltip (tr ("Forget your edits: the plug-in plays the generated notes again"));
     rollEditor.refreshText();
     gridTab.setButtonText (tr ("EDIT GRID"));
+    velocityTab.setButtonText (tr ("VELOCITY"));
+    velocityTab.setTooltip (tr ("The velocity of every hit, as faders: drag to set it, double-click for automatic"));
+    velocityView.setTooltip (tr ("Drag a fader up or down (or across several) to set the velocity. Double-click: automatic again. Right-click: reset"));
     rollTab.setTooltip (tr ("Every note the plug-in plays: chords, bass and fills, with the chord names"));
     gridTab.setTooltip (tr ("The rhythm grid: click the steps to write your own groove"));
     hearPianoButton.setButtonText (tr ("PIANO"));
@@ -5121,7 +5355,10 @@ void FaseGroovePianoEditor::applyLanguage()
     reverb.setTip (tr ("Reverb on the guide sound"));
     volume.setTip (tr ("Volume of the guide sound"));
     chorus.setTip (tr ("Widens the guide sound"));
-    pump.setTip (tr ("Ducks the guide sound on every beat, like a kick sidechain"));
+    pump.setTip (tr ("Sidechain depth: ducks the guide sound like a kick sidechain"));
+    pumpRelease.setTip (tr ("How fast the sound comes back after each duck"));
+    pumpSource.box.setTooltip (tr ("Tempo: the duck follows the beat. Sidechain input: it follows the track you send to the plug-in's sidechain input (e.g. the kick)"));
+    pumpRate.box.setTooltip (tr ("How often the tempo sidechain ducks: every beat, 8th, half bar or 16th"));
     soundToggle.setTooltip (tr ("Turns the built-in guide sound on or off (the MIDI keeps playing)"));
     presetBox.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
     clipLength.setTooltip (tr ("How long the exported MIDI clip is"));
@@ -5301,13 +5538,58 @@ void FaseGroovePianoEditor::showRoll (bool roll)
     gridTab.setToggleState (! roll, juce::dontSendNotification);
     pianoRoll.setVisible (roll);
     expandRollButton.setVisible (roll);
-    patternView.setVisible (! roll);
+    velocityTab.setVisible (! roll);
+    if (roll)
+        velocityShown = false;
+    velocityTab.setToggleState (velocityShown, juce::dontSendNotification);
+    patternView.setVisible (! roll && ! velocityShown);
+    velocityView.setVisible (! roll && velocityShown);
     for (auto* list : { &segmentBoxes })
         for (auto* c : *list) c->setVisible (! roll);
     for (auto* c : segmentDice) c->setVisible (! roll);
     for (auto* c : segmentLocks) c->setVisible (! roll);
     if (getWidth() > 0)
         resized();
+}
+
+void FaseGroovePianoEditor::showVelocity (bool show)
+{
+    velocityShown = show;
+    if (show)
+        updateVelocityView (processor.currentSettings());
+    showRoll (false);
+}
+
+void FaseGroovePianoEditor::updateVelocityView (const sgk::GrooveSettings& s)
+{
+    const auto p = sgk::GrooveEngine::resolvePattern (s);
+    const int len = p.length();
+
+    VelocityView::Row chords, bass;
+    chords.line = p.rightHand;
+    chords.levels.resize ((size_t) len);
+    bass.levels.resize ((size_t) len);
+    for (int i = 0; i < len; ++i)
+    {
+        chords.levels[(size_t) i] = processor.stepVelocity (false, i);
+        bass.levels[(size_t) i] = processor.stepVelocity (true, i);
+    }
+
+    // The bass row shows what the bass plays: with the piano-stab bass, the piano's stabs.
+    bass.line = s.bass == sgk::BassMode::withChords ? sgk::stabBassLine (p) : p.leftHand;
+    bass.line.resize ((size_t) len, '.');
+    if (! processor.isBassOn())
+    {
+        bass.enabled = false;
+        bass.message = tr ("Bass off  -  click BASS to turn it back on");
+    }
+    else if (sgk::isBassLine (s.bass))
+    {
+        bass.enabled = false;
+        bass.message = tr ("A bass line from the library plays its own levels: write the bass in the grid to set them here");
+    }
+
+    velocityView.setState (chords, bass, processor.uiStep.load());
 }
 
 std::vector<PianoRollView::ChordSpan> FaseGroovePianoEditor::chordSpansFor (const sgk::GrooveSettings& s, double length) const
@@ -5460,6 +5742,8 @@ void FaseGroovePianoEditor::timerCallback()
 
     const bool bassOn = processor.isBassOn();
     patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load(), bassOn);
+    if (velocityShown && ! rollShown)
+        updateVelocityView (s);
 
     if (rollShown)
         updatePianoRoll (s);
@@ -5844,18 +6128,18 @@ void FaseGroovePianoEditor::layoutFull()
     {
         auto inner = soundPanel.reduced (14, 8);
         inner.removeFromTop (22);
-        auto toggleRow = row (inner, 28);
-
-        soundToggle.setBounds (toggleRow);
-        soundType.setBounds (row (inner, 44));
+        // The on/off switch next to the sound menu, then MIDI out, the knobs and the sidechain.
+        auto soundRow = row (inner, 44);
+        soundToggle.setBounds (soundRow.removeFromLeft (118).withTrimmedTop (16));
+        soundType.setBounds (soundRow.withTrimmedLeft (8));
         split (row (inner, 44), bassChannel, playMode, (inner.getWidth() - 10) / 2);
         const int w = inner.getWidth() / 3;
-        auto top = inner.removeFromTop (inner.getHeight() / 2);
+        auto top = inner.removeFromTop ((inner.getHeight() - 52) / 2);
         for (auto* k : { &tone, &reverb, &volume })
             k->setBounds (top.removeFromLeft (w));
-        auto bottom = inner.withSizeKeepingCentre (w * 2, inner.getHeight());
-        for (auto* k : { &chorus, &pump })
-            k->setBounds (bottom.removeFromLeft (w));
+        split (row (inner, 44), pumpSource, pumpRate, (inner.getWidth() - 10) * 3 / 5);
+        for (auto* k : { &chorus, &pump, &pumpRelease })
+            k->setBounds (inner.removeFromLeft (w));
     }
 
     r.removeFromTop (10);
@@ -5882,6 +6166,8 @@ void FaseGroovePianoEditor::layoutFull()
             group (tr ("Hear"), { { &hearPianoButton, 82 }, { &hearBassButton, 82 } });
             group (tr ("New rhythm"), { { &rndPianoButton, 76 }, { &rndBassButton, 76 } });
             group (tr ("Groove"), { { &myGroovesButton, 92 }, { &morphButton, 60 }, { &dnaButton, header.getWidth() - 152 } });
+            velocityTab.setBounds (expandRollButton.getBounds());
+            velocityTab.setConnectedEdges (juce::Button::ConnectedOnLeft);
             expandRollButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
             gridTab.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
             hearPianoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
@@ -5909,6 +6195,7 @@ void FaseGroovePianoEditor::layoutFull()
 
         inner.removeFromTop (2);
         patternView.setBounds (inner);
+        velocityView.setBounds (inner);
     }
 
     {

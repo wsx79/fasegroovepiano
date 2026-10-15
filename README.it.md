@@ -48,7 +48,8 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 🎚️ **Strum** (accordi arpeggiati come un pianista vero) e **Top +8va** (nota alta raddoppiata all'ottava).
 - 🎼 **Piano roll** di tutte le note che suonano (accordi, basso, fill) coi nomi degli accordi e la testina, che si apre in grande per **modificare le note una per una** (zoom, corsia della dinamica), e **TUTTI / PIANO / BASSO** per scegliere cosa ascolti.
 - ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,
-  randomizzare (RND) e bloccare (LOCK).
+  randomizzare (RND) e bloccare (LOCK), con una pagina **VELOCITY**: ogni colpo è un fader verde
+  per regolarne la velocity a mano.
 - 🔍 **Interfaccia ridimensionabile** e finestra mini durante il trascinamento della clip.
 - 🌍 **Interfaccia in 6 lingue:** English, Italiano, Español, Français, Deutsch, Português
   (**OPZIONI → IMPOSTAZIONI**).
@@ -58,7 +59,8 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 📤 **MIDI:** trascina la clip nella DAW (completa, solo accordi, solo basso), salvala in
   `.mid` oppure usa il MIDI in tempo reale (basso su un canale separato, se vuoi).
 - 🔊 **Suoni guida:** Rhodes, Soulful Grand, House Piano (stile M1), House Organ, Wurlitzer,
-  Gospel Organ (Leslie) e Warm Pad, con chorus e **pompaggio** stile sidechain, più **PREVIEW**
+  Gospel Organ (Leslie) e Warm Pad, con chorus e **sidechain** regolabile (interno a tempo, o
+  esterno dall'ingresso sidechain del plug-in, con ritmo e rilascio), più **PREVIEW**
   per sentire il riff a DAW ferma.
 - 🎵 **Linea in alto** (la melodia delle note alte: morbida, ferma, in salita, in discesa, ad
   arco) e **rivolti ▲▼** su ogni accordo.

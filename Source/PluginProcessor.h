@@ -48,6 +48,9 @@ namespace ParamIDs
     inline constexpr const char* humanizeSeed  = "humanizeSeed";
     inline constexpr const char* chorus      = "chorus";
     inline constexpr const char* pump        = "pump";
+    inline constexpr const char* pumpSource  = "pumpSource";    // 0 = tempo (internal), 1 = sidechain input
+    inline constexpr const char* pumpRate    = "pumpRate";      // 1/4, 1/8, 1/2, 1/16
+    inline constexpr const char* pumpRelease = "pumpRelease";
     inline constexpr const char* riffSeed    = "riffSeed";
     inline constexpr const char* riffDensity = "riffDensity";
     inline constexpr const char* sound       = "sound";
@@ -118,6 +121,15 @@ public:
     void rerollHand (bool bass);
     bool isSegmentLocked (int segment) const          { return segmentLocked[(size_t) juce::jlimit (0, 3, segment)]; }
     void setSegmentLocked (int segment, bool locked)  { segmentLocked[(size_t) juce::jlimit (0, 3, segment)] = locked; }
+
+    /** Velocity set by hand on a displayed step (1..127, 118 = the Velocity control), 0 = automatic. */
+    int stepVelocity (bool bassRow, int displayedStep) const;
+    /** Sets the level of a displayed step (0 = back to automatic); the groove becomes the user pattern. */
+    void setStepVelocity (bool bassRow, int displayedStep, int level);
+    /** All steps of one row (or both) back to the automatic level. */
+    void resetStepVelocities (bool chords = true, bool bass = true);
+    /** True when some step has a level set by hand (and the user groove plays). */
+    bool hasStepVelocities() const;
 
     /** Quick bass on/off that remembers the last bass mode. */
     void toggleBass();
@@ -293,6 +305,13 @@ private:
 
     // The user pattern, readable from the audio thread without locks.
     std::array<std::atomic<char>, sgk::userPatternLength> userRight, userLeft;
+    std::array<std::atomic<int>, sgk::userPatternLength> userVelRight, userVelLeft;   // 0 = automatic
+
+    // Sidechain: the level of the sidechain input, per sample of the block, and its follower.
+    std::vector<float> sidechainLevel;
+    float sidechainEnvelope = 0.0f;
+    int baseStepIndex (int displayedStep) const;
+    void resetSegmentVelocities (int segment, bool chords, bool bass);
     std::array<bool, sgk::numSegments> segmentLocked {};
     std::array<std::atomic<int>, 6> songBars;                 // per song section (0 = left out)
     std::array<std::atomic<std::uint32_t>, 6> songVariation;  // 0 = the groove as it is

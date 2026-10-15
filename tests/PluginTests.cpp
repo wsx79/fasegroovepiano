@@ -827,6 +827,95 @@ namespace
         CHECK (juce::roundToInt (value (p, ParamIDs::bass)) == sgk::stabsOwnRhythmMode);
     }
 
+
+    void testStepVelocities()
+    {
+        // VELOCITY page: a level on a library groove makes it the user groove (same rhythm),
+        // is saved with the project, follows the A-D order and goes away with a new rhythm.
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::pattern, 3.0f);
+        const auto before = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+        int hit = 0;
+        while (hit < before.length() && ! (before.rightHand[(size_t) hit] == 'X' || before.rightHand[(size_t) hit] == 'x'))
+            ++hit;
+        CHECK (hit < before.length());
+        CHECK (! p.hasStepVelocities());
+
+        p.setStepVelocity (false, hit, 30);
+        CHECK (juce::roundToInt (value (p, ParamIDs::pattern)) == sgk::userPatternIndex());
+        CHECK (sgk::GrooveEngine::resolvePattern (p.currentSettings()).rightHand == before.rightHand);
+        CHECK (p.stepVelocity (false, hit) == 30 && p.stepVelocity (true, hit) == 0);
+        CHECK (p.hasStepVelocities());
+
+        juce::MemoryBlock data;
+        p.getStateInformation (data);
+        FaseGroovePianoProcessor q;
+        q.setStateInformation (data.getData(), (int) data.getSize());
+        CHECK (q.stepVelocity (false, hit) == 30);
+
+        // Swapping parts A and B moves the level with its step.
+        const int segLength = sgk::userPatternLength / sgk::numSegments;
+        q.setParameterFromUI (ParamIDs::segment (0), 1.0f);
+        q.setParameterFromUI (ParamIDs::segment (1), 0.0f);
+        const int moved = hit < segLength ? hit + segLength : hit < 2 * segLength ? hit - segLength : hit;
+        CHECK (q.stepVelocity (false, moved) == 30);
+
+        // RND BASS keeps the piano levels, RND PIANO clears them; a library groove has none.
+        p.setStepVelocity (true, hit, 50);
+        p.rerollHand (true);
+        CHECK (p.stepVelocity (false, hit) == 30 && p.stepVelocity (true, hit) == 0);
+        p.rerollHand (false);
+        CHECK (! p.hasStepVelocities());
+        p.setStepVelocity (false, hit, 30);
+        p.setParameterFromUI (ParamIDs::pattern, 3.0f);
+        CHECK (! p.hasStepVelocities());
+        p.editStep (false, hit, 'X');   // the library groove becomes yours again: no old levels
+        CHECK (! p.hasStepVelocities());
+    }
+
+    void testSidechain()
+    {
+        // The pump ducks the guide sound with the tempo (internal) or with the sidechain input.
+        auto loudness = [] (int source, bool feedSidechain)
+        {
+            FaseGroovePianoProcessor p;
+            juce::AudioProcessor::BusesLayout layout;
+            layout.inputBuses.add (juce::AudioChannelSet::disabled());
+            layout.inputBuses.add (juce::AudioChannelSet::stereo());
+            layout.outputBuses.add (juce::AudioChannelSet::stereo());
+            CHECK (p.setBusesLayout (layout));
+            p.setParameterFromUI (ParamIDs::pump, source < 0 ? 0.0f : 1.0f);
+            p.setParameterFromUI (ParamIDs::pumpSource, (float) juce::jmax (0, source));
+            p.setParameterFromUI (ParamIDs::reverb, 0.0f);
+            PlayHead head;
+            p.setPlayHead (&head);
+            p.prepareToPlay (44100.0, 512);
+            double sum = 0.0;
+            juce::MidiBuffer midi;
+            for (int block = 0; block < 400; ++block)
+            {
+                juce::AudioBuffer<float> buffer (p.getTotalNumInputChannels() > p.getTotalNumOutputChannels() ? p.getTotalNumInputChannels() : p.getTotalNumOutputChannels(), 512);
+                buffer.clear();
+                if (feedSidechain)
+                    for (int ch = 0; ch < 2; ++ch)
+                        for (int i = 0; i < 512; ++i)
+                            buffer.setSample (ch, i, 0.8f * std::sin ((float) (block * 512 + i) * 0.05f));
+                midi.clear();
+                p.processBlock (buffer, midi);
+                head.ppq += 512.0 / 44100.0 * head.bpm / 60.0;
+                for (int i = 0; i < 512; ++i)
+                    sum += std::abs (buffer.getSample (0, i));
+            }
+            p.setPlayHead (nullptr);
+            return sum;
+        };
+
+        const double dry = loudness (-1, false);
+        CHECK (dry > 0.0);
+        CHECK (loudness (0, false) < dry * 0.9);                  // tempo pump
+        CHECK (loudness (1, true) < dry * 0.4);                   // a loud sidechain ducks hard
+        CHECK (std::abs (loudness (1, false) - dry) < dry * 0.01);   // a silent one does nothing
+    }
 }
 
 int main()
@@ -849,6 +938,8 @@ int main()
     testEditedNotes();
     testLibrary();
     testRandomPianoKeepsBass();
+    testStepVelocities();
+    testSidechain();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

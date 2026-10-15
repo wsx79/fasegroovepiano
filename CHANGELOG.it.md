@@ -6,6 +6,24 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.2.0] - 2026-10-15
+
+### Aggiunto
+- **Pagina VELOCITY** (pulsante verde accanto a GRIGLIA, nella vista griglia): ogni colpo degli
+  accordi e del basso è un **fader verde** alto quanto la sua velocity. Trascinane uno (o su più
+  fader) per regolarla, doppio clic per tornare automatica, clic destro per azzerare una riga o
+  tutto. I livelli sono relativi alla manopola Dinamica, si salvano nel progetto e in *I MIEI
+  GROOVE*, seguono l'ordine A-D e i pulsanti random azzerano quelli di ciò che cambiano.
+- **Sidechain regolabile** nel pannello Suono guida:
+  - **Sidechain**: *Tempo (interno)*, che abbassa a tempo, o *Ingresso sidechain (esterno)*, che
+    segue una traccia mandata al nuovo **ingresso sidechain** del plug-in (es. la cassa).
+  - **Ritmo** (1/4, 1/8, 1/2, 1/16) per quello interno e **Rilascio** (quanto velocemente torna su
+    il suono) per entrambi. *Pompa* è la profondità.
+
+### Modificato
+- L'interruttore *Suono guida* sta accanto al menu del suono, per fare spazio ai controlli del
+  sidechain.
+
 ## [2.1.0] - 2026-10-15
 
 ### Aggiunto

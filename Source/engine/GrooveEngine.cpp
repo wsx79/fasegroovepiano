@@ -1234,8 +1234,22 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     auto hitVelocity = [&] (char symbol, double scale, int salt, double amount = -1.0)
     {
         if (amount < 0.0) amount = human * hv.chordVel;
-        double v = s.velocity * scale * sectionVelocityScale (s.section)
-                   * (symbol == 'X' || symbol == 'U' || symbol == 'D' ? 1.0 : symbol == '>' ? 0.97 : symbol == 'g' ? 0.55 : 0.9);
+        double level = s.velocity * (symbol == 'X' || symbol == 'U' || symbol == 'D' ? 1.0 : symbol == '>' ? 0.97 : symbol == 'g' ? 0.55 : 0.9);
+
+        // A velocity set by hand on this step of the user pattern (chord stabs: salts 60..89,
+        // bass: 90..99), relative to the Velocity control (118 = as set).
+        // The levels are stored per step of the user pattern as written (before the A-D order).
+        if (s.pattern == userPatternIndex() && salt >= 60 && salt < 100 && ! (salt >= 90 && isBassLine (s.bass)))
+        {
+            const int segLength = userPatternLength / numSegments;
+            const int at = mod (pos, userPatternLength);
+            const int index = std::clamp (s.segmentOrder[(size_t) (at / segLength)], 0, numSegments - 1) * segLength + at % segLength;
+            const auto& hand = salt >= 90 ? s.userVelLeft : s.userVelRight;
+            if (const int set = hand[(size_t) index]; set > 0)
+                level = set * s.velocity / 118.0;
+        }
+
+        double v = level * scale * sectionVelocityScale (s.section);
         if (s.section == Section::buildup)   // crescendo through the build-up
             v *= 0.72 + 0.4 * (double) pos / (double) std::max (1, pattern.length() - 1);
         v += amount * 18.0 * (noise (step, seedSalt + salt + 7) - 0.5) * 2.0;

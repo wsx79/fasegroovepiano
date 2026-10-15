@@ -49,7 +49,7 @@ Rhodes or synth.
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
 - 🎼 **Piano roll** of every note that plays (chords, bass, fills) with the chord names and the playhead, which opens big to **edit the notes one by one** (zoom, velocity lane), and **BOTH / PIANO / BASS** to choose what you hear.
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and
-  lock (LOCK).
+  lock (LOCK), with a **VELOCITY** page: every hit as a green fader to set its velocity by hand.
 - 🔍 **Resizable UI** and a mini window while you drag a clip.
 - 🌍 **Interface in 6 languages:** English, Italiano, Español, Français, Deutsch, Português
   (**OPTIONS → SETTINGS**).
@@ -58,7 +58,8 @@ Rhodes or synth.
 - 📤 **MIDI:** drag the clip into your DAW (full, chords only, bass only), save it as `.mid`, or
   use live MIDI out (bass on its own channel if you like).
 - 🔊 **Guide sounds:** Rhodes, Soulful Grand, House Piano (M1 style), House Organ, Wurlitzer,
-  Gospel Organ (Leslie) and Warm Pad, with chorus and a sidechain-style **pump**, plus
+  Gospel Organ (Leslie) and Warm Pad, with chorus and a controllable **sidechain** (internal on
+  the tempo, or external from the plug-in's sidechain input, with rate and release), plus
   **PREVIEW** to hear the riff with the DAW stopped.
 - 🎵 **Top line** (the melody of the top notes: smooth, steady, rising, falling, arch) and
   **▲▼ inversions** on every chord.

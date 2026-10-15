@@ -22,6 +22,7 @@ namespace Palette
     const juce::Colour accent     { 0xffffa94d };   // amber: the piano, the main actions
     const juce::Colour accent2    { 0xff4cc3f0 };   // cyan: the bass, pushes, playing
     const juce::Colour fill       { 0xffb69cff };   // violet: fills
+    const juce::Colour level      { 0xff5fd68a };   // green: velocity
     const juce::Colour text       { 0xffe7e9ec };
     const juce::Colour dim        { 0xff7f8794 };
 }
@@ -178,6 +179,50 @@ private:
     bool bassEnabled = true;
     int hoverStep = -1;
     bool hoverBass = false;
+};
+
+/** The velocity page: the grid's hits as green faders, one per step. Drag a fader (or across
+    several) to set its level, double-click it for the automatic level again. */
+class VelocityView : public juce::Component, public juce::SettableTooltipClient
+{
+public:
+    static constexpr float labelWidth = PatternView::labelWidth;
+    static constexpr float headerHeight = PatternView::headerHeight;
+
+    struct Row
+    {
+        std::string line;            // the hits, as in the grid
+        std::vector<int> levels;     // per step: 0 = automatic
+        bool enabled = true;
+        juce::String message;        // shown instead of the faders when disabled
+        bool operator== (const Row& o) const { return line == o.line && levels == o.levels && enabled == o.enabled && message == o.message; }
+    };
+
+    std::function<void (bool bassRow, int step, int level)> onLevel;   // level 0 = automatic
+    std::function<void (bool chords, bool bass)> onReset;
+
+    void setState (const Row& chords, const Row& bass, int step);
+    void paint (juce::Graphics&) override;
+    void mouseDown (const juce::MouseEvent&) override;
+    void mouseDrag (const juce::MouseEvent&) override;
+    void mouseUp (const juce::MouseEvent&) override;
+    void mouseDoubleClick (const juce::MouseEvent&) override;
+    void mouseMove (const juce::MouseEvent&) override;
+    void mouseExit (const juce::MouseEvent&) override;
+
+    static bool isHit (char c) { return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'U' || c == 'u' || c == 'D' || c == 'd'; }
+    /** The level a hit gets without a hand-set one (118 = the Velocity control). */
+    static int automaticLevel (char c) { return c == 'g' ? 65 : c == 'x' || c == 'u' || c == 'd' ? 106 : c == '>' ? 114 : 118; }
+
+private:
+    juce::Rectangle<float> rowArea (bool bassRow) const;
+    int stepAt (float x) const;
+    int levelAt (bool bassRow, float y) const;
+    void setFrom (juce::Point<float>);
+
+    Row rows[2];
+    int currentStep = -1, hoverStep = -1, dragStep = -1;
+    bool hoverBass = false, dragBass = false, dragging = false;
 };
 
 /** Piano roll of what the plug-in plays: every chord and bass note of the loop on a keyboard,
@@ -764,9 +809,15 @@ private:
     IconButton rewindButton { IconButton::Icon::rewind }, playButton { IconButton::Icon::play }, stopButton { IconButton::Icon::stop };
     Choice bassChannel, soundType;
     juce::AudioProcessorValueTreeState::ButtonAttachment soundAttachment;
-    Knob tone, reverb, volume, chorus, pump;
+    Knob tone, reverb, volume, chorus, pump, pumpRelease;
+    Choice pumpSource, pumpRate;
 
     PatternView patternView;
+    VelocityView velocityView;
+    juce::TextButton velocityTab;
+    bool velocityShown = false;
+    void showVelocity (bool);
+    void updateVelocityView (const sgk::GrooveSettings&);
     PianoRollView pianoRoll;
     PianoRollEditor rollEditor { processor };
     juce::TextButton rollTab { "PIANO ROLL" }, gridTab { "EDIT GRID" }, expandRollButton, generatedButton;

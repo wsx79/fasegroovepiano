@@ -214,6 +214,9 @@ struct GrooveSettings
     // Used when pattern == userPatternIndex(): the hand-edited grid.
     std::array<char, userPatternLength> userRight {};
     std::array<char, userPatternLength> userLeft {};
+    // Velocity set by hand for each step of the user pattern (0 = automatic, from the symbol).
+    std::array<unsigned char, userPatternLength> userVelRight {};
+    std::array<unsigned char, userPatternLength> userVelLeft {};
 };
 
 

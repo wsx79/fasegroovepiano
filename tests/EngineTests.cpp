@@ -763,6 +763,54 @@ static void testHousePedalAndStabBass()
     }
 }
 
+static void testStepVelocities()
+{
+    // Levels set by hand on the user pattern: chords and bass follow them, step by step,
+    // also when the A-D order moves the steps; 0 keeps the automatic level.
+    GrooveSettings s;
+    s.humanize = 0.0f; s.swing = 0.0f; s.velocity = 118; s.movement = 0;
+    s.pattern = userPatternIndex();
+    s.bass = BassMode::root;
+    for (int i = 0; i < userPatternLength; ++i)
+    {
+        s.userRight[(size_t) i] = i % 4 == 0 ? 'X' : '.';
+        s.userLeft[(size_t) i]  = i % 8 == 2 ? 'x' : '.';
+    }
+
+    auto levels = [] (const GrooveSettings& set)
+    {
+        std::map<std::pair<int, long long>, int> top;
+        for (const auto& e : GrooveEngine::renderClip (set, 8.0))
+            if (e.isNoteOn())
+            {
+                auto& v = top[{ (int) e.part, std::llround (e.ppq * 4.0) }];
+                v = std::max (v, (int) e.velocity);
+            }
+        return top;
+    };
+
+    auto at = [] (const std::map<std::pair<int, long long>, int>& m, Part part, long long step)
+    {
+        const auto it = m.find ({ (int) part, step });
+        return it == m.end() ? -1 : it->second;
+    };
+
+    const auto automatic = levels (s);
+    s.userVelRight[4] = 40;
+    s.userVelLeft[10] = 30;
+    auto set = levels (s);
+    CHECK (at (set, Part::chords, 4) < at (automatic, Part::chords, 4) - 40);
+    CHECK (at (set, Part::bass, 10) < at (automatic, Part::bass, 10) - 40);
+    CHECK (at (set, Part::chords, 0) == at (automatic, Part::chords, 0));
+    CHECK (at (set, Part::chords, 12) == at (automatic, Part::chords, 12));
+
+    // Order B A C D: step 4 of the written groove (segment A) now plays at step 12.
+    s.segmentOrder = { 1, 0, 2, 3 };
+    set = levels (s);
+    CHECK (at (set, Part::chords, 12) < at (automatic, Part::chords, 12) - 40);
+    CHECK (at (set, Part::chords, 4) == at (automatic, Part::chords, 4));
+}
+
 static void testEditedLoop()
 {
     // Notes edited in the piano roll replace the groove in the main section and loop at their length.
@@ -1365,6 +1413,7 @@ int main()
     testV19Features();
     testVoicingMovement();
     testHousePedalAndStabBass();
+    testStepVelocities();
     testEditedLoop();
     testCarryEdits();
     testAutoMovement();

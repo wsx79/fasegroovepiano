@@ -225,6 +225,8 @@ The big panel at the bottom has two views (tabs at the top left):
   the loop (the playing one lit), and the white playhead. It shows the whole loop (until the groove
   and the progression come round together, up to 8 bars) exactly as it will be exported.
 - **EDIT GRID**: the rhythm in 16th notes over 2 bars, to edit by hand (below).
+  - **VELOCITY** (green, next to EDIT GRID, only in the grid view): the **velocity page**, see
+    *The velocity page* below.
 
 **EDIT NOTES** (next to the tabs, or double-click the piano roll) opens the piano roll **big**, to
 edit the **notes one by one**:
@@ -265,7 +267,7 @@ undone with ◀.
 
 Above the piano roll the buttons are in four captioned groups:
 
-- **VIEW**: PIANO ROLL / GRID / EDIT NOTES.
+- **VIEW**: PIANO ROLL / GRID, then EDIT NOTES (piano roll) or VELOCITY (grid).
 - **HEAR**: **🔊 PIANO** and **🔊 BASS**, two switches: lit = you hear it, grey with **🔇** = muted.
   They can't both be off (switching off the only one you hear switches on the other). Muting the
   piano only affects what plays: dragged and saved clips still contain everything (use *Notes* in
@@ -281,6 +283,24 @@ by hand**:
   (plays the next chord early), *Hold* (holds the previous note), *Rest*.
 - On your first edit the groove becomes the **User pattern**: the original preset is untouched
   and your version is saved with the project.
+
+#### The velocity page
+
+**VELOCITY** (green, in the VIEW group when the grid is shown) turns the grid into **faders**: every
+hit of the **CHORDS** and **BASS** rows is a green bar as tall as its velocity.
+
+- **Drag** a fader up or down to set that hit's velocity; drag **across several** to draw a
+  crescendo or an accent pattern in one go. The number appears while you point at it.
+- Faint bars are **automatic** (hit 118, accent 118, push 114, short hit 106, ghost note 65);
+  bright bars are set by hand. **Double-click** a fader: automatic again. **Right-click**: all the
+  chords, all the bass or everything back to automatic.
+- 118 means *exactly the Velocity knob* (Groove panel): the knob still scales everything, your
+  faders keep their balance.
+- Like a grid edit, the first fader you move turns the groove into the **User pattern** (same
+  rhythm). The levels are saved with the project, with undo, and in *MY GROOVES*; they follow the
+  A-D order; 🎲 PIANO / 🎲 BASS / RND / NEW RIFF clear the levels of what they change.
+- With the *Piano stabs* bass the BASS row shows the stabs it plays; a bass line from the library
+  has its own levels (write the bass in the grid to set them).
 
 **Parts A / B / C / D.** The pattern is split into 4 half-bar parts (the orange lines on the
 grid). Above each part you'll find:
@@ -335,7 +355,8 @@ stays exactly as it was. Press them a few times until the two hands lock togethe
 | **MIDI out** | *All on channel 1* or *Bass on channel 2* (to send the bass to a different instrument). |
 | **Play mode** (in the Groove panel) | *Host transport*: plays with the DAW's Play. *Hold a key*: plays while you hold a MIDI key, and **that key sets the key** (great for live jamming and in the Standalone app). |
 | **Tone / Reverb / Volume** | Brightness (or drawbars for the organ), reverb and volume of the guide sound (they don't affect the MIDI). |
-| **Chorus / Pump** | *Chorus* widens the sound; *Pump* ducks it on every beat like a kick sidechain, so the riff sounds the way it will in the mix. Guide sound only. |
+| **Chorus / Pump** | *Chorus* widens the sound; *Pump* is the **sidechain** depth: it ducks the sound like a kick sidechain, so the riff sounds the way it will in the mix. Guide sound only. |
+| **Sidechain / Rate / Release** | Where the duck comes from. **Tempo (internal)**: on the tempo while the groove plays, every **Rate** (1/4 = every beat, 1/8, 1/2, 1/16). **Sidechain input (external)**: it follows a track you send to the plug-in's **sidechain input** (usually the kick): in Logic the *Side Chain* menu at the top of the plug-in window, in Ableton *Sidechain* in the device, in Cubase activate side-chain and send to it, in FL Studio route the mixer track to the plug-in. **Release**: how fast the sound comes back. |
 
 ### Export MIDI
 

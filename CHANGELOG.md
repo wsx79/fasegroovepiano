@@ -6,6 +6,23 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-10-15
+
+### Added
+- **VELOCITY page** (green button next to EDIT GRID, in the grid view): every hit of the chords
+  and the bass is a **green fader** as tall as its velocity. Drag one (or across several) to set
+  it, double-click for automatic again, right-click to reset a row or everything. The levels are
+  relative to the Velocity knob, saved with the project and in *MY GROOVES*, follow the A-D order
+  and are cleared by the random buttons for what they change.
+- **Controllable sidechain** in the Guide sound panel:
+  - **Sidechain**: *Tempo (internal)*, ducking on the tempo, or *Sidechain input (external)*,
+    following a track sent to the plug-in's new **sidechain input** (e.g. the kick).
+  - **Rate** (1/4, 1/8, 1/2, 1/16) for the internal one and **Release** (how fast the sound comes
+    back) for both. *Pump* is the depth.
+
+### Changed
+- The *Guide sound* switch sits next to the sound menu, to make room for the sidechain controls.
+
 ## [2.1.0] - 2026-10-15
 
 ### Added

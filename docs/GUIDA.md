@@ -231,6 +231,8 @@ Il pannello grande in basso ha due viste (schede in alto a sinistra):
   degli accordi** del loop (quello che suona è acceso) e la testina bianca. Mostra il loop intero
   (finché groove e progressione tornano insieme, fino a 8 battute) esattamente come verrà esportato.
 - **GRIGLIA**: il ritmo in sedicesimi su 2 battute, da modificare a mano (sotto).
+  - **VELOCITY** (verde, accanto a GRIGLIA, solo nella vista griglia): la **pagina della
+    velocity**, vedi *La pagina della velocity* sotto.
 
 **MODIFICA NOTE** (accanto alle schede, o doppio clic sul piano roll) apre il piano roll **in
 grande**, per modificare le **note una per una**:
@@ -273,7 +275,7 @@ annullano con ◀.
 
 Sopra il piano roll i pulsanti sono in quattro gruppi con didascalia:
 
-- **VISTA**: PIANO ROLL / GRIGLIA / MODIFICA NOTE.
+- **VISTA**: PIANO ROLL / GRIGLIA, poi MODIFICA NOTE (piano roll) o VELOCITY (griglia).
 - **ASCOLTA**: **🔊 PIANO** e **🔊 BASSO**, due interruttori: acceso = lo senti, grigio con **🔇** =
   muto. Non si spengono tutti e due (spegnendo l'unico che senti si accende l'altro). Zittire il
   piano cambia solo quello che suona: le clip trascinate e salvate contengono sempre tutto (per
@@ -290,6 +292,28 @@ La griglia mostra la riga **CHORDS** (mano destra) e la riga **BASS** (mano sini
   dell'accordo successivo), *Hold* (tieni la nota precedente), *Rest*.
 - Alla prima modifica il groove diventa **User pattern**: il preset originale resta intatto, la
   tua versione viene salvata nel progetto.
+
+
+#### La pagina della velocity
+
+**VELOCITY** (verde, nel gruppo VISTA quando è mostrata la griglia) trasforma la griglia in
+**fader**: ogni colpo delle righe **ACCORDI** e **BASSO** è una barra verde alta quanto la sua
+velocity.
+
+- **Trascina** un fader su o giù per regolare la velocity di quel colpo; trascina **su più fader**
+  per disegnare un crescendo o un giro di accenti in un colpo solo. Il numero compare quando ci
+  passi sopra.
+- Le barre tenui sono **automatiche** (colpo 118, accento 118, anticipo 114, colpo corto 106, ghost
+  note 65); quelle accese sono regolate a mano. **Doppio clic** su un fader: di nuovo automatica.
+  **Clic destro**: tutti gli accordi, tutto il basso o tutto di nuovo automatico.
+- 118 vuol dire *esattamente la manopola Dinamica* (pannello Groove): la manopola scala ancora
+  tutto, i fader mantengono il loro equilibrio.
+- Come una modifica alla griglia, il primo fader che muovi trasforma il groove nel **Pattern
+  utente** (stesso ritmo). I livelli si salvano nel progetto, con annulla, e in *I MIEI GROOVE*;
+  seguono l'ordine A-D; 🎲 PIANO / 🎲 BASSO / i dadi delle parti / NUOVO RIFF azzerano i livelli
+  di quello che cambiano.
+- Col basso *Stab di piano* la riga BASSO mostra gli stab che suona; una linea di basso della
+  libreria ha i suoi livelli (scrivi il basso nella griglia per regolarli).
 
 **Parti A / B / C / D.** Il pattern è diviso in 4 parti da mezza battuta (le linee arancioni
 sulla griglia). Sopra ogni parte trovi:
@@ -345,7 +369,8 @@ identico. Premili qualche volta finché le due mani non si incastrano.
 | **MIDI out** | *All on channel 1* oppure *Bass on channel 2* (per mandare il basso a uno strumento diverso). |
 | **Play mode** (nel riquadro Groove) | *Host transport*: suona col Play della DAW. *Hold a key*: suona mentre tieni premuto un tasto MIDI, e **il tasto sceglie la tonalità** (ottimo per jam dal vivo e nello Standalone). |
 | **Tone / Reverb / Volume** | Brillantezza (per l'organo: i tiranti), riverbero e volume del suono guida (non influiscono sul MIDI). |
-| **Chorus / Pump** | *Chorus* allarga il suono; *Pump* lo abbassa a ogni battito come un sidechain sulla cassa, così senti il riff come suonerà nel mix. Solo sul suono guida. |
+| **Chorus / Pompa** | *Chorus* allarga il suono; *Pompa* è la profondità del **sidechain**: lo abbassa come un sidechain sulla cassa, così senti il riff come suonerà nel mix. Solo sul suono guida. |
+| **Sidechain / Ritmo / Rilascio** | Da dove arriva l'abbassamento. **Tempo (interno)**: a tempo mentre suona il groove, ogni **Ritmo** (1/4 = ogni battito, 1/8, 1/2, 1/16). **Ingresso sidechain (esterno)**: segue una traccia che mandi all'**ingresso sidechain** del plug-in (di solito la cassa): in Logic il menu *Side Chain* in alto nella finestra del plug-in, in Ableton *Sidechain* nel device, in Cubase attiva il side-chain e manda la traccia, in FL Studio instrada la traccia del mixer al plug-in. **Rilascio**: quanto velocemente torna su il suono. |
 
 ### Esporta MIDI
 
