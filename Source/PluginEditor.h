@@ -432,7 +432,8 @@ class IconButton : public juce::Button
 {
 public:
     enum class Icon { none, play, pause, stop, rewind, dice, piano, bass, pencil, arrow, eraser, magnet, quantize,
-                      zoomIn, zoomOut, fit, follow, undo, redo, gear, close, fullScreen, exitFullScreen, eye, reset };
+                      zoomIn, zoomOut, fit, follow, undo, redo, gear, close, fullScreen, exitFullScreen, eye, reset,
+                      speaker, speakerOff };
 
     explicit IconButton (Icon i = Icon::none, Icon second = Icon::none) : juce::Button ({}), icon (i), icon2 (second) {}
 
@@ -545,7 +546,7 @@ private:
     IconButton snapToggle { IconButton::Icon::magnet }, quantizeButton { IconButton::Icon::quantize };
     juce::TextButton snapButton;
     IconButton showPianoButton { IconButton::Icon::eye, IconButton::Icon::piano }, showBassButton { IconButton::Icon::eye, IconButton::Icon::bass };
-    IconButton hearPianoButton { IconButton::Icon::piano }, hearBassButton { IconButton::Icon::bass };
+    IconButton hearPianoButton { IconButton::Icon::speaker, IconButton::Icon::piano }, hearBassButton { IconButton::Icon::speaker, IconButton::Icon::bass };
     IconButton zoomOut { IconButton::Icon::zoomOut }, zoomIn { IconButton::Icon::zoomIn }, fitButton { IconButton::Icon::fit },
                followButton { IconButton::Icon::follow };
     IconButton generatedButton { IconButton::Icon::reset }, closeButton { IconButton::Icon::close };
@@ -771,9 +772,10 @@ private:
     double rollLength = 8.0;
     void updatePianoRoll (const sgk::GrooveSettings&);
     // What you hear: the piano and / or the bass (lit = you hear it).
-    IconButton hearPianoButton { IconButton::Icon::piano }, hearBassButton { IconButton::Icon::bass };
+    IconButton hearPianoButton { IconButton::Icon::speaker }, hearBassButton { IconButton::Icon::speaker };
     void hearPart (bool bass);
-    IconButton rndPianoButton { IconButton::Icon::dice, IconButton::Icon::piano }, rndBassButton { IconButton::Icon::dice, IconButton::Icon::bass };
+    std::vector<std::pair<juce::Rectangle<int>, juce::String>> gridCaptions;   // captions over the groups of the grid header
+    IconButton rndPianoButton { IconButton::Icon::dice }, rndBassButton { IconButton::Icon::dice };
     juce::TextButton myGroovesButton { "MY GROOVES" };
     juce::OwnedArray<juce::ComboBox> segmentBoxes;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ComboBoxAttachment> segmentAttachments;

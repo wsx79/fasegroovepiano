@@ -741,6 +741,9 @@ namespace
         { "Hear the bass (lit) or switch it off", "Senti il basso (acceso) o lo spegni", "Escucha el bajo (encendido) o apágalo", "Écouter la basse (allumée) ou la couper", "Bass hören (an) oder ausschalten", "Ouvir o baixo (aceso) ou desligá-lo" },
         { "Show or hide the piano notes (hidden notes are greyed out and can't be touched)", "Mostra o nascondi le note del piano (quelle nascoste sono grigie e non si toccano)", "Muestra u oculta las notas del piano (las ocultas quedan en gris y no se tocan)", "Afficher ou masquer les notes du piano (masquées : grisées et intouchables)", "Klaviernoten zeigen oder ausblenden (ausgeblendete sind grau und gesperrt)", "Mostrar ou ocultar as notas do piano (as ocultas ficam cinza e não se tocam)" },
         { "Show or hide the bass notes (hidden notes are greyed out and can't be touched)", "Mostra o nascondi le note del basso (quelle nascoste sono grigie e non si toccano)", "Muestra u oculta las notas del bajo (las ocultas quedan en gris y no se tocan)", "Afficher ou masquer les notes de la basse (masquées : grisées et intouchables)", "Bassnoten zeigen oder ausblenden (ausgeblendete sind grau und gesperrt)", "Mostrar ou ocultar as notas do baixo (as ocultas ficam cinza e não se tocam)" },
+        { "View", "Vista", "Vista", "Vue", "Ansicht", "Vista" },
+        { "New rhythm", "Nuovo ritmo", "Nuevo ritmo", "Nouveau rythme", "Neuer Rhythmus", "Novo ritmo" },
+        { "RANDOM", "CASUALE", "ALEATORIO", "ALÉATOIRE", "ZUFALL", "ALEATÓRIO" },
     };
     // clang-format on
 

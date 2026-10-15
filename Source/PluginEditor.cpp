@@ -2369,6 +2369,23 @@ namespace
                 p.addCentredArc (0.5f, 0.5f, 0.32f, 0.32f, 0.0f, 0.6f, juce::MathConstants<float>::twoPi - 0.2f, true);
                 p.startNewSubPath (0.5f, 0.06f); p.lineTo (0.5f, 0.24f); p.lineTo (0.66f, 0.16f);
                 break;
+            case I::speaker:
+            case I::speakerOff:
+                // A loudspeaker; sound waves when on, a cross when muted.
+                p.startNewSubPath (0.1f, 0.38f); p.lineTo (0.26f, 0.38f); p.lineTo (0.48f, 0.18f);
+                p.lineTo (0.48f, 0.82f); p.lineTo (0.26f, 0.62f); p.lineTo (0.1f, 0.62f); p.closeSubPath();
+                if (icon == I::speaker)
+                {
+                    p.addCentredArc (0.5f, 0.5f, 0.16f, 0.16f, 0.0f, 0.75f, 2.4f, true);
+                    p.addCentredArc (0.5f, 0.5f, 0.32f, 0.32f, 0.0f, 0.7f, 2.45f, true);
+                }
+                else
+                {
+                    p.startNewSubPath (0.62f, 0.36f); p.lineTo (0.88f, 0.64f);
+                    p.startNewSubPath (0.88f, 0.36f); p.lineTo (0.62f, 0.64f);
+                }
+                strokeWidth = 0.08f;
+                break;
             case I::none:
             default: break;
         }
@@ -2505,7 +2522,7 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
     for (auto* b : { &bassPartButton, &hearBassButton, &showBassButton })
         b->onColour = Palette::accent2;
     playButton.onColour = Palette::accent2;
-    for (auto* b : { &showPianoButton, &showBassButton, &hearPianoButton, &hearBassButton })
+    for (auto* b : { &showPianoButton, &showBassButton })
         b->mutedWhenOff = true;
     for (auto* b : { &showPianoButton, &showBassButton })
         b->onColour = Palette::panelEdge.brighter (0.5f);
@@ -2608,6 +2625,8 @@ void PianoRollEditor::refreshText()
     const int now = listening();
     hearPianoButton.setToggleState (now != 2, juce::dontSendNotification);
     hearBassButton.setToggleState (now != 1, juce::dontSendNotification);
+    hearPianoButton.setIcon (now != 2 ? IconButton::Icon::speaker : IconButton::Icon::speakerOff, IconButton::Icon::piano);
+    hearBassButton.setIcon (now != 1 ? IconButton::Icon::speaker : IconButton::Icon::speakerOff, IconButton::Icon::bass);
     hearPianoButton.setTooltip (tr ("Hear the piano (lit) or mute it: exported clips keep everything"));
     hearBassButton.setTooltip (tr ("Hear the bass (lit) or switch it off"));
 
@@ -2888,7 +2907,7 @@ void PianoRollEditor::resized()
     group (tr ("Draws"),     { { &pianoPartButton, sq }, { &bassPartButton, sq } });
     group (tr ("Grid"),      { { &snapToggle, sq }, { &snapButton, 50 }, { &quantizeButton, sq } });
     group (tr ("Show"),      { { &showPianoButton, 50 }, { &showBassButton, 50 } });
-    group (tr ("Hear"),      { { &hearPianoButton, sq }, { &hearBassButton, sq } });
+    group (tr ("Hear"),      { { &hearPianoButton, 50 }, { &hearBassButton, 50 } });
     group (tr ("Zoom"),      { { &zoomOut, sq }, { &zoomIn, sq }, { &fitButton, sq } });
     group (tr ("Follow"),    { { &followButton, sq } });
 
@@ -3262,6 +3281,8 @@ void PianoRollEditor::timerCallback()
         const int now = listening();
         hearPianoButton.setToggleState (now != 2, juce::dontSendNotification);
         hearBassButton.setToggleState (now != 1, juce::dontSendNotification);
+        hearPianoButton.setIcon (now != 2 ? IconButton::Icon::speaker : IconButton::Icon::speakerOff, IconButton::Icon::piano);
+        hearBassButton.setIcon (now != 1 ? IconButton::Icon::speaker : IconButton::Icon::speakerOff, IconButton::Icon::bass);
     }
 
     // Undo, a preset or BACK TO GENERATED from outside: show what plays now.
@@ -4351,10 +4372,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     hearBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
     hearBassButton.onColour = Palette::accent2;
     for (auto* b : { &hearPianoButton, &hearBassButton })
-    {
-        b->mutedWhenOff = true;
         addAndMakeVisible (b);
-    }
 
     // Piano roll (what plays) or rhythm grid (what you edit).
     rollTab.setConnectedEdges (juce::Button::ConnectedOnRight);
@@ -4983,7 +5001,7 @@ void FaseGroovePianoEditor::applyLanguage()
         clipPart.changeItemText (i + 1, tr (parts[i]));
     clipPart.setSelectedId (selectedPart, juce::dontSendNotification);
 
-    diceProgression.setButtonText ({});
+    diceProgression.setButtonText (tr ("RANDOM"));
     newRiffButton.setButtonText (tr ("NEW RIFF"));
     syncButton.setButtonText (tr ("SYNC DAW"));
     optionsButton.setButtonText (tr ("OPTIONS"));
@@ -5024,10 +5042,10 @@ void FaseGroovePianoEditor::applyLanguage()
     patternView.setTooltip (tr ("Click a step: hit > accent > ghost > rest.  Right-click: more options"));
     hearPianoButton.setTooltip (tr ("Hear the piano (lit) or mute it: exported clips keep everything"));
     hearBassButton.setTooltip (tr ("Hear the bass (lit) or switch it off"));
-    rndPianoButton.setButtonText ({});
+    rndPianoButton.setButtonText (tr ("PIANO"));
     myGroovesButton.setButtonText (tr ("MY GROOVES"));
     myGroovesButton.setTooltip (tr ("Save the rhythm grid as your own groove, or load one you saved (Documents/Fase Groove Piano/Grooves)"));
-    rndBassButton.setButtonText ({});
+    rndBassButton.setButtonText (tr ("BASS"));
     rndPianoButton.setTooltip (tr ("New random rhythm for the piano (chords) only: the bass stays"));
     rndBassButton.setTooltip (tr ("New random rhythm for the bass only: the piano stays"));
 
@@ -5447,8 +5465,13 @@ void FaseGroovePianoEditor::timerCallback()
         songOverlay.songTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("Song"));
 
     feelStyleButton.setButtonText (tr ("Feel") + ": " + tr (sgk::humanizeStyleName (juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::humanizeStyle)->load()))) + "  " + juce::String::fromUTF8 ("\xe2\x96\xbe"));
-    hearPianoButton.setToggleState (! processor.chordsMuted.load() || ! bassOn, juce::dontSendNotification);
-    hearBassButton.setToggleState (bassOn, juce::dontSendNotification);
+    {
+        const bool pianoHeard = ! processor.chordsMuted.load() || ! bassOn;
+        hearPianoButton.setToggleState (pianoHeard, juce::dontSendNotification);
+        hearBassButton.setToggleState (bassOn, juce::dontSendNotification);
+        hearPianoButton.setIcon (pianoHeard ? IconButton::Icon::speaker : IconButton::Icon::speakerOff);
+        hearBassButton.setIcon (bassOn ? IconButton::Icon::speaker : IconButton::Icon::speakerOff);
+    }
     {
         // Transport: play shows pause while the preview runs.
         const bool previewing = processor.previewOn.load();
@@ -5563,6 +5586,14 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
     drawPanel (g, groovePanel, tr ("GROOVE"));
     drawPanel (g, soundPanel, tr ("GUIDE SOUND & MIDI OUT"));
     drawPanel (g, gridPanel, {});
+    {
+        auto f = font (9.5f, true);
+        f.setExtraKerningFactor (0.1f);
+        g.setFont (f);
+        g.setColour (Palette::dim);
+        for (const auto& [area, caption] : gridCaptions)
+            g.drawText (Localisation::upper (caption), area.withWidth (juce::jmax (area.getWidth(), 110)), juce::Justification::centredLeft);
+    }
     drawPanel (g, clipPanel, tr ("EXPORT MIDI"));
 
     // FEEL: a small heading with a line, so the knobs read as their own group.
@@ -5709,7 +5740,7 @@ void FaseGroovePianoEditor::layoutFull()
         auto presetRow = leftCol.removeFromTop (28);
         learnButton.setBounds (presetRow.removeFromRight (58));
         presetRow.removeFromRight (4);
-        diceProgression.setBounds (presetRow.removeFromRight (34));
+        diceProgression.setBounds (presetRow.removeFromRight (92));
         presetBox.setBounds (presetRow.withTrimmedRight (6));
         leftCol.removeFromTop (4);
         progLength.setBounds (leftCol.removeFromLeft (114));
@@ -5831,24 +5862,28 @@ void FaseGroovePianoEditor::layoutFull()
         auto inner = gridPanel.reduced (12, 8);
         {
             // Left: what you look at (piano roll / grid) and what you hear; right: groove tools.
-            auto header = inner.removeFromTop (24).withTrimmedBottom (2);
-            rollTab.setBounds (header.removeFromLeft (80));
-            gridTab.setBounds (header.removeFromLeft (70));
-            header.removeFromLeft (6);
-            expandRollButton.setBounds (header.removeFromLeft (96));
-            header.removeFromLeft (10);
-            hearPianoButton.setBounds (header.removeFromLeft (84));
-            hearBassButton.setBounds (header.removeFromLeft (84));
-
-            dnaButton.setBounds (header.removeFromRight (44));
-            header.removeFromRight (5);
-            morphButton.setBounds (header.removeFromRight (60));
-            header.removeFromRight (5);
-            myGroovesButton.setBounds (header.removeFromRight (92));
-            header.removeFromRight (8);
-            rndBassButton.setBounds (header.removeFromRight (52));
-            header.removeFromRight (5);
-            rndPianoButton.setBounds (header.removeFromRight (52));
+            // Groups of buttons with a caption above each: view | hear | new rhythm | groove tools.
+            auto captions = inner.removeFromTop (13);
+            auto header = inner.removeFromTop (24);
+            gridCaptions.clear();
+            auto group = [&] (const juce::String& caption, std::initializer_list<std::pair<juce::Component*, int>> items)
+            {
+                const int x = header.getX();
+                for (const auto& [c, w] : items)
+                    c->setBounds (header.removeFromLeft (w));
+                gridCaptions.push_back ({ juce::Rectangle<int> (x, captions.getY(), header.getX() - x, captions.getHeight()), caption });
+                header.removeFromLeft (12);
+            };
+            group (tr ("View"), { { &rollTab, 78 }, { &gridTab, 64 }, { &expandRollButton, 96 } });
+            group (tr ("Hear"), { { &hearPianoButton, 82 }, { &hearBassButton, 82 } });
+            group (tr ("New rhythm"), { { &rndPianoButton, 76 }, { &rndBassButton, 76 } });
+            group (tr ("Groove"), { { &myGroovesButton, 92 }, { &morphButton, 60 }, { &dnaButton, header.getWidth() - 152 } });
+            expandRollButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+            gridTab.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
+            hearPianoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
+            hearBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+            rndPianoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
+            rndBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
         }
         inner.removeFromTop (6);
 
