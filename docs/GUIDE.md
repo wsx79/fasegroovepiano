@@ -281,6 +281,8 @@ by hand**:
 - **Click** a step: it cycles hit → accent → ghost note → rest.
 - **Right-click** (or Ctrl+click on Mac): a menu with *Hit*, *Accent*, *Ghost note*, *Push*
   (plays the next chord early), *Hold* (holds the previous note), *Rest*.
+- A **hold** is drawn as a short tail joined to the note before: it is not a new note (and not a
+  ghost note), the note before just rings longer. On the VELOCITY page it shows that note's level.
 - On your first edit the groove becomes the **User pattern**: the original preset is untouched
   and your version is saved with the project.
 
@@ -350,7 +352,7 @@ stays exactly as it was. Press them a few times until the two hands lock togethe
 | Solid medium | normal hit |
 | Solid faint | ghost note (very soft hit) |
 | Pink | **push / anticipation**: plays the next chord early and ties it over the downbeat |
-| Thin bar | held note |
+| Tail joined to the note before | held note (the note before rings on) |
 | White outline | current position |
 
 ### Guide sound & MIDI out
@@ -359,6 +361,7 @@ stays exactly as it was. Press them a few times until the two hands lock togethe
 |---|---|
 | **Guide sound** | Turns the built-in sound on/off. Turn it off if you only use the MIDI. |
 | **Sound** | *Rhodes (FM)* electric piano, *Soulful Grand* acoustic piano, *House Piano (M1 style)* – the bright '90s house piano – *House Organ* for jackin' organ stabs, *Wurlitzer* (reedy, a little driven), *Gospel Organ (Leslie)* (full drawbars through a rotating speaker) or *Warm Pad* (soft detuned pad for breaks). |
+| **Sequencer** (Transport, top right) | On (default): the groove plays with the DAW. **Off**: it doesn't, e.g. when you dragged the MIDI clip onto the plug-in's own track and play that (otherwise you hear it twice). Incoming MIDI still plays the guide sound; ▶ still previews. |
 | **▶ (Transport, top)** | Plays the groove even with the DAW stopped (also the **space bar**; a plug-in can't start the DAW's own transport). **HEAR** in VARIANTS and in the voicing coach starts it by itself when nothing is playing. |
 | **MIDI out** | *All on channel 1* or *Bass on channel 2* (to send the bass to a different instrument). |
 | **Play mode** (in the Groove panel) | *Host transport*: plays with the DAW's Play. *Hold a key*: plays while you hold a MIDI key, and **that key sets the key** (great for live jamming and in the Standalone app). |

@@ -51,6 +51,7 @@ namespace ParamIDs
     inline constexpr const char* pumpSource  = "pumpSource";    // 0 = tempo (internal), 1 = sidechain input
     inline constexpr const char* pumpRate    = "pumpRate";      // 1/4, 1/8, 1/2, 1/16
     inline constexpr const char* pumpRelease = "pumpRelease";
+    inline constexpr const char* sequencer   = "sequencer";     // off: the groove doesn't play with the DAW
     inline constexpr const char* riffSeed    = "riffSeed";
     inline constexpr const char* riffDensity = "riffDensity";
     inline constexpr const char* sound       = "sound";

@@ -505,6 +505,15 @@ void PatternView::setState (const sgk::GroovePattern& newPattern, int step, bool
     repaint();
 }
 
+juce::String PatternView::getTooltip()
+{
+    // On a hold, say what it is: it looks small, but it is the note before ringing on.
+    const auto& line = hoverBass ? pattern.leftHand : pattern.rightHand;
+    if (hoverStep >= 0 && hoverStep < (int) line.size() && line[(size_t) hoverStep] == '=')
+        return tr ("Hold: the note before keeps ringing (no new note). Its velocity is the one of that note.");
+    return SettableTooltipClient::getTooltip();
+}
+
 bool PatternView::cellAt (juce::Point<float> p, bool& bassRow, int& step) const
 {
     const int len = pattern.length();
@@ -621,8 +630,10 @@ void PatternView::paint (juce::Graphics& g)
             }
             else if (c == '=')
             {
-                g.setColour (colour.withAlpha (0.35f));
-                g.fillRoundedRectangle (cell.withSizeKeepingCentre (cell.getWidth() + 3.0f, cell.getHeight() * 0.45f), 2.0f);
+                // Hold: the note before rings on. Drawn as its tail, joined to it (not a new note).
+                auto tail = cell.withSizeKeepingCentre (cell.getWidth() + 3.0f, juce::jmax (3.0f, cell.getHeight() * 0.22f)).withTrimmedLeft (-3.0f);
+                g.setColour (colour.withAlpha (0.6f));
+                g.fillRect (tail);
             }
 
             if (s == currentStep)
@@ -697,9 +708,17 @@ int VelocityView::levelAt (bool bassRow, float y) const
     return juce::jlimit (1, 127, juce::roundToInt (1.0f + 126.0f * t));
 }
 
+int VelocityView::ownerOf (int row, int step) const
+{
+    const auto& line = rows[row].line;
+    while (step > 0 && step < (int) line.size() && line[(size_t) step] == '=')
+        --step;
+    return step;
+}
+
 void VelocityView::setFrom (juce::Point<float> p)
 {
-    const int step = stepAt (p.x);
+    const int step = ownerOf (dragBass ? 1 : 0, stepAt (p.x));
     const auto& row = rows[dragBass ? 1 : 0];
     if (step < 0 || step >= (int) row.line.size() || ! row.enabled || ! isHit (row.line[(size_t) step]))
         return;
@@ -759,7 +778,7 @@ void VelocityView::mouseUp (const juce::MouseEvent&)
 void VelocityView::mouseDoubleClick (const juce::MouseEvent& e)
 {
     const bool bassRow = e.position.y >= rowArea (true).getY();
-    const int step = stepAt (e.position.x);
+    const int step = ownerOf (bassRow ? 1 : 0, stepAt (e.position.x));
     auto& row = rows[bassRow ? 1 : 0];
     if (step < 0 || ! row.enabled || step >= (int) row.line.size() || ! isHit (row.line[(size_t) step]))
         return;
@@ -846,10 +865,16 @@ void VelocityView::paint (juce::Graphics& g)
 
             if (! isHit (c))
             {
-                if (c == '=')
+                // A hold rings at the level of its note: a faint continuation of that fader.
+                if (const int owner = ownerOf (r, s); c == '=' && owner != s && isHit (row.line[(size_t) owner]))
                 {
-                    g.setColour (Palette::level.withAlpha (0.18f));
-                    g.fillRect (cell.withSizeKeepingCentre (cell.getWidth() + 3.0f, 3.0f).withY (cell.getBottom() - 6.0f));
+                    const int set = owner < (int) row.levels.size() ? row.levels[(size_t) owner] : 0;
+                    const float top = yFor (set > 0 ? set : automaticLevel (row.line[(size_t) owner]));
+                    const auto tail = cell.withTop (top).withTrimmedLeft (-juce::jmin (3.0f, cellW * 0.18f) - 1.0f);
+                    g.setColour (Palette::level.withAlpha (0.14f));
+                    g.fillRect (tail);
+                    g.setColour (Palette::level.withAlpha (0.5f));
+                    g.fillRect (tail.withHeight (2.0f));
                 }
                 continue;
             }
@@ -4439,6 +4464,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         slots[i]->onDegreePicked = [this, i] { processor.setFreeChord (i, sgk::noFreeChord); };
 
     // Tempo: "SYNC DAW" on = follow the DAW; off = set the BPM by hand.
+    sequencerAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, ParamIDs::sequencer, sequencerToggle);
+    addAndMakeVisible (sequencerToggle);
     syncButton.setClickingTogglesState (true);
     syncButton.setColour (juce::TextButton::buttonColourId, Palette::background);
     syncButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent);
@@ -5290,6 +5317,8 @@ void FaseGroovePianoEditor::applyLanguage()
     diceProgression.setButtonText (tr ("RANDOM"));
     newRiffButton.setButtonText (tr ("NEW RIFF"));
     syncButton.setButtonText (tr ("SYNC DAW"));
+    sequencerToggle.setButtonText (tr ("Sequencer"));
+    sequencerToggle.setTooltip (tr ("Off: the groove doesn't play with the DAW, e.g. when the dragged MIDI clip plays on this track (no doubled notes). Incoming MIDI still plays the guide sound; the play button still previews."));
     optionsButton.setButtonText (tr ("OPTIONS"));
     styleMenuButton.setButtonText (tr ("STYLE"));
     styleMenuButton.setTooltip (tr ("Ready-made setups by genre: progression, voicing, groove, feel and sound in one click (the key stays)"));
@@ -6089,6 +6118,7 @@ void FaseGroovePianoEditor::layoutFull()
     chordLab.setBounds (0, 0, baseWidth, baseHeight);
     {
         // Transport: to the start, play / pause, stop; then the tempo.
+        sequencerToggle.setBounds (tempoArea.reduced (12, 6).removeFromTop (18).removeFromRight (104));
         auto controls = tempoArea.reduced (12, 8).withTrimmedTop (22);
         rewindButton.setBounds (controls.removeFromLeft (34));
         playButton.setBounds (controls.removeFromLeft (40));

@@ -943,6 +943,44 @@ namespace
         CHECK (loudness (1, true) < dry * 0.4);                   // a loud sidechain ducks hard
         CHECK (std::abs (loudness (1, false) - dry) < dry * 0.01);   // a silent one does nothing
     }
+
+    void testSequencerOff()
+    {
+        // Sequencer off: with the DAW playing nothing is generated, incoming MIDI still passes.
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::sequencer, 0.0f);
+        PlayHead head;
+        p.setPlayHead (&head);
+        p.prepareToPlay (44100.0, 512);
+        int generated = 0, passed = 0;
+        for (int block = 0; block < 200; ++block)
+        {
+            juce::AudioBuffer<float> buffer (2, 512);
+            juce::MidiBuffer midi;
+            if (block == 10) midi.addEvent (juce::MidiMessage::noteOn (1, 61, (juce::uint8) 100), 0);
+            if (block == 20) midi.addEvent (juce::MidiMessage::noteOff (1, 61), 0);
+            p.processBlock (buffer, midi);
+            head.ppq += 512.0 / 44100.0 * head.bpm / 60.0;
+            for (const auto m : midi)
+                if (m.getMessage().isNoteOn())
+                    (m.getMessage().getNoteNumber() == 61 && block == 10 ? passed : generated) += 1;
+        }
+        CHECK (generated == 0 && passed == 1);
+
+        // On again: the groove plays.
+        p.setParameterFromUI (ParamIDs::sequencer, 1.0f);
+        for (int block = 0; block < 100; ++block)
+        {
+            juce::AudioBuffer<float> buffer (2, 512);
+            juce::MidiBuffer midi;
+            p.processBlock (buffer, midi);
+            head.ppq += 512.0 / 44100.0 * head.bpm / 60.0;
+            for (const auto m : midi)
+                if (m.getMessage().isNoteOn()) ++generated;
+        }
+        CHECK (generated > 0);
+        p.setPlayHead (nullptr);
+    }
 }
 
 int main()
@@ -967,6 +1005,7 @@ int main()
     testRandomPianoKeepsBass();
     testStepVelocities();
     testSidechain();
+    testSequencerOff();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

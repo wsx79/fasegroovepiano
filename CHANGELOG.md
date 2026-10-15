@@ -14,6 +14,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   whose velocities play in each half bar (e.g. *A A A A*), each part has its own 🎲 and LOCK.
 - A **sidechain meter** next to the Sidechain menu shows the signal arriving (and *Pump 0%* when
   the depth is at zero).
+- **Sequencer** switch (Transport & tempo panel): off, the groove doesn't play with the DAW, so the
+  MIDI clip you dragged onto the plug-in's own track doesn't play twice. Incoming MIDI still plays
+  the guide sound (and the tempo pump still follows the DAW); ▶ still previews.
+
+### Changed
+- **Holds** (a note that rings on, not a new one) look like a tail joined to their note in the grid,
+  with their own tooltip. On the VELOCITY page they show their note's level, and dragging them sets
+  that note's velocity.
 
 ### Fixed
 - The **external sidechain** did not show up in Ableton Live (VST3): the input is now a real

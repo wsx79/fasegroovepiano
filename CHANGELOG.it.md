@@ -15,6 +15,14 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
   suo 🎲 e il suo BLOCCA.
 - Un **indicatore del sidechain** accanto al menu Sidechain mostra il segnale che arriva (e
   *Pompa 0%* quando la profondità è a zero).
+- Interruttore **Sequencer** (pannello Trasporto e tempo): spento, il groove non suona con la DAW,
+  così la clip MIDI trascinata sulla traccia stessa del plug-in non suona doppia. Il MIDI in
+  ingresso suona comunque il suono guida (e la pompa a tempo segue la DAW); ▶ fa ancora l'anteprima.
+
+### Modificato
+- Le **note tenute** (la nota che continua a suonare, non una nota nuova) nella griglia sono una
+  coda attaccata alla loro nota, con il loro suggerimento. Nella pagina VELOCITY mostrano il livello
+  della loro nota, e trascinandole si regola la velocity di quella nota.
 
 ### Corretto
 - Il **sidechain esterno** non compariva in Ableton Live (VST3): l'ingresso ora è un vero bus

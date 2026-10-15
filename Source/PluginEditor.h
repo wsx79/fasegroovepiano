@@ -167,6 +167,7 @@ public:
 
     void setState (const sgk::GroovePattern& pattern, int step, bool bassOn);
     void paint (juce::Graphics&) override;
+    juce::String getTooltip() override;
     void mouseDown (const juce::MouseEvent&) override;
     void mouseMove (const juce::MouseEvent&) override;
     void mouseExit (const juce::MouseEvent&) override;
@@ -219,6 +220,7 @@ private:
     int stepAt (float x) const;
     int levelAt (bool bassRow, float y) const;
     void setFrom (juce::Point<float>);
+    int ownerOf (int row, int step) const;   // a hold belongs to the hit before it
 
     Row rows[2];
     int currentStep = -1, hoverStep = -1, dragStep = -1;
@@ -882,6 +884,8 @@ private:
 
     // Tempo
     juce::TextButton syncButton { "SYNC DAW" };
+    juce::ToggleButton sequencerToggle { "Sequencer" };
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> sequencerAttachment;
     juce::Slider tempoSlider;
     juce::Label dawTempo;
     juce::AudioProcessorValueTreeState::ButtonAttachment syncAttachment;

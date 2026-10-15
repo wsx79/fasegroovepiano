@@ -290,6 +290,9 @@ La griglia mostra la riga **CHORDS** (mano destra) e la riga **BASS** (mano sini
 - **Clic** su un passo: cambia in colpo → accento → ghost note → pausa.
 - **Clic destro** (o Ctrl+clic su Mac): menu con *Hit*, *Accent*, *Ghost note*, *Push* (anticipo
   dell'accordo successivo), *Hold* (tieni la nota precedente), *Rest*.
+- Una **nota tenuta** è disegnata come una codina attaccata alla nota prima: non è una nota nuova
+  (e non è una ghost note), è la nota prima che suona più a lungo. Nella pagina VELOCITY mostra il
+  livello di quella nota.
 - Alla prima modifica il groove diventa **User pattern**: il preset originale resta intatto, la
   tua versione viene salvata nel progetto.
 
@@ -364,7 +367,7 @@ identico. Premili qualche volta finché le due mani non si incastrano.
 | Piena media | colpo normale |
 | Piena tenue | ghost note (colpo leggerissimo) |
 | Rosa | **push / anticipo**: suona in anticipo l'accordo successivo e lo lega sul battere |
-| Barretta sottile | nota tenuta |
+| Codina attaccata alla nota prima | nota tenuta (la nota prima continua a suonare) |
 | Bordo bianco | posizione attuale |
 
 ### Guide sound & MIDI out
@@ -373,6 +376,7 @@ identico. Premili qualche volta finché le due mani non si incastrano.
 |---|---|
 | **Guide sound** | Accende/spegne il suono interno. Spegnilo se usi solo il MIDI. |
 | **Sound** | *Rhodes (FM)* (piano elettrico), *Soulful Grand* (pianoforte acustico), *House Piano (M1 style)* (il piano brillante della house anni '90) *House Organ* (organo per gli stab jackin'), *Wurlitzer* (ancioso, un po' saturato), *Gospel Organ (Leslie)* (tiranti pieni con altoparlante rotante) o *Warm Pad* (pad morbido e detunato per i break). |
+| **Sequencer** (Trasporto, in alto a destra) | Acceso (default): il groove suona con la DAW. **Spento**: non suona, ad es. quando hai trascinato la clip MIDI sulla traccia stessa del plug-in e suoni quella (altrimenti la senti doppia). Il MIDI in ingresso suona comunque il suono guida; ▶ fa ancora l'anteprima. |
 | **▶ (Trasporto, in alto)** | Fa suonare il groove anche a DAW ferma (anche la **barra spaziatrice**; un plug-in non può avviare il Play della DAW). **ASCOLTA** in VARIANTI e nel coach dei voicing lo avvia da solo quando non suona niente. |
 | **MIDI out** | *All on channel 1* oppure *Bass on channel 2* (per mandare il basso a uno strumento diverso). |
 | **Play mode** (nel riquadro Groove) | *Host transport*: suona col Play della DAW. *Hold a key*: suona mentre tieni premuto un tasto MIDI, e **il tasto sceglie la tonalità** (ottimo per jam dal vivo e nello Standalone). |

@@ -153,6 +153,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::pumpSource, "Sidechain Source", { "Tempo (internal)", "Sidechain input (external)" }, 0);
     choice (ParamIDs::pumpRate, "Sidechain Rate", { "1/4", "1/8", "1/2", "1/16" }, 0);
     unitFloat (ParamIDs::pumpRelease, "Sidechain Release", 0.0f, 0.5f);
+    add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::sequencer, 1 }, "Internal Sequencer", true));
     group ("sound", "Guide sound");
     return layout;
 }
@@ -1159,7 +1160,11 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     buffer.clear();
 
     auto settings = currentSettings();
-    const bool holdMode = juce::roundToInt (raw (ParamIDs::playMode)) == 1;
+
+    // Sequencer off: the groove doesn't play with the DAW (e.g. the dragged clip plays on this
+    // track); incoming MIDI still passes through and plays the guide sound. ▶ still previews.
+    const bool sequencerOn = raw (ParamIDs::sequencer) > 0.5f;
+    const bool holdMode = sequencerOn && juce::roundToInt (raw (ParamIDs::playMode)) == 1;
 
     // ---- MIDI in: in hold mode keys pick the root, otherwise they pass through ----
     outMidi.clear();
@@ -1267,7 +1272,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     // Hold mode plays while a key is down; otherwise it follows the host, and
     // Preview lets the groove run on its own clock while the host is stopped.
-    const bool running = holdMode ? (heldCount > 0 || preview) : (hostPlaying || preview);
+    const bool running = holdMode ? (heldCount > 0 || preview) : ((sequencerOn && hostPlaying) || preview);
 
     double startPpq = 0.0;
     if (followHost)
@@ -1351,7 +1356,9 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
         // Pump: the classic house sidechain duck. Internal: on the tempo (every beat, 8th, ...)
         // while the groove runs. External: following the track sent to the sidechain input.
-        if (const float pumpAmount = raw (ParamIDs::pump); pumpAmount > 0.001f && (externalPump || running))
+        // (With the sequencer off it still pumps on the DAW's beat, for the clip playing on this track.)
+        const double pumpPpq = running ? startPpq : hostPpq;
+        if (const float pumpAmount = raw (ParamIDs::pump); pumpAmount > 0.001f && (externalPump || running || hostPlaying))
         {
             static constexpr double cycleBeats[] = { 1.0, 0.5, 2.0, 0.25 };
             const double cycle = cycleBeats[juce::jlimit (0, 3, juce::roundToInt (raw (ParamIDs::pumpRate)))];
@@ -1367,7 +1374,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                 }
                 else
                 {
-                    const double beat = (startPpq + i / samplesPerBeat) / cycle;
+                    const double beat = (pumpPpq + i / samplesPerBeat) / cycle;
                     const double recover = juce::jmin (1.0, (beat - std::floor (beat)) / recoverTime);
                     duck = 0.8f * (float) ((1.0 - recover) * (1.0 - recover));
                 }
