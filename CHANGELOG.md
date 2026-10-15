@@ -13,6 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   bass, sound and feel, all at once. Undo with ↶, RESET to start over.
 
 ### Changed
+- Launchpad / Push: the four lower buttons of the right column are now **NEW RIFF** (they were LOCK).
 - **Lighter on the CPU**: the guide sound's voices use table sines and running envelopes instead of
   per-sample sin / exp / tanh, about **2.3× faster** on average (Rhodes, organs and Wurlitzer up to
   3-4×), with the same sound. The sidechain input is only analysed when it is the pump's source.

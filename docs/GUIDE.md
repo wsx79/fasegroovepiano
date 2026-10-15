@@ -394,7 +394,7 @@ stays on for all your projects); the line below says whether it is connected.
 | **Bottom 4 rows** | The **bass**, the same way, in cyan (blue = push, dark blue = hold). |
 | A **pad** | Edits that step like a click on the grid: rest → hit → accent → ghost → rest. The white pad is the playhead; grey pads mark the beats. |
 | Round buttons, **top row** (left to right) | ▶ play / pause · ■ stop · 🎲 PIANO · 🎲 BASS · NEW RIFF · **Sequencer** on/off (green / red) · HEAR PIANO · HEAR BASS |
-| **Right column** | Top four: a new rhythm for part **A, B, C, D**. Bottom four: **LOCK** part A, B, C, D (cyan = locked). |
+| **Right column** | Top four: a new rhythm for part **A, B, C, D**. Bottom four: **NEW RIFF** (parts locked in the plug-in stay). |
 
 - The plug-in talks to the Launchpad directly, so it works with the window closed; one Fase Groove
   Piano at a time drives it.

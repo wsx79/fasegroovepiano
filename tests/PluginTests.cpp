@@ -1023,9 +1023,17 @@ namespace
         CHECK (p.apvts.getRawParameterValue (ParamIDs::sequencer)->load() < 0.5f);
         pads.handlePress (96, true);
         CHECK (p.apvts.getRawParameterValue (ParamIDs::sequencer)->load() > 0.5f);
-        pads.handlePress (49, true);
-        CHECK (p.isSegmentLocked (p.segmentAtStep (0)));
-        CHECK (pads.computeLeds().side[4] != pads.computeLeds().side[5]);
+        // Right column, bottom four: NEW RIFF (a new random groove).
+        const auto grooveBefore = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+        bool newRiff = false;
+        for (int tries = 0; tries < 5 && ! newRiff; ++tries)
+        {
+            pads.handlePress (49, true);
+            const auto now = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+            newRiff = now.rightHand != grooveBefore.rightHand || now.leftHand != grooveBefore.leftHand;
+        }
+        CHECK (newRiff);
+        CHECK (! p.isSegmentLocked (p.segmentAtStep (0)));
         CHECK (PadController::enabled() == false || pads.status() != PadController::Status::taken);
 
         // Push (User mode): pads 36 (bottom left) .. 99 (top right); the same steps and buttons.
@@ -1036,8 +1044,15 @@ namespace
         CHECK (afterPush == (beforePush == 'x' ? 'X' : beforePush == 'X' ? 'g' : beforePush == 'g' ? '.' : 'x'));
         pads.handlePushPress (107, true);   // sixth button above the display = sequencer
         CHECK (p.apvts.getRawParameterValue (ParamIDs::sequencer)->load() < 0.5f);
-        pads.handlePushPress (39, true);    // scene button 5 = lock part A
-        CHECK (! p.isSegmentLocked (p.segmentAtStep (0)));
+        const auto beforeScene = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+        bool pushRiff = false;
+        for (int tries = 0; tries < 5 && ! pushRiff; ++tries)
+        {
+            pads.handlePushPress (39, true);   // scene button 5 = NEW RIFF
+            const auto now = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+            pushRiff = now.rightHand != beforeScene.rightHand || now.leftHand != beforeScene.leftHand;
+        }
+        CHECK (pushRiff);
     }
 
     void testTotalRandom()

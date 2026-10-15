@@ -190,9 +190,8 @@ PadController::Leds PadController::computeLeds() const
 
     for (int i = 0; i < sgk::numSegments; ++i)
     {
-        leds.side[(size_t) i] = Colour::violetDim;   // new rhythm for part A..D
-        const bool locked = processor.isSegmentLocked (processor.segmentAtStep (i * sgk::userPatternLength / sgk::numSegments));
-        leds.side[(size_t) (4 + i)] = locked ? Colour::cyan : Colour::beat;
+        leds.side[(size_t) i] = Colour::violetDim;       // new rhythm for part A..D
+        leds.side[(size_t) (4 + i)] = Colour::violet;    // NEW RIFF
     }
     return leds;
 }
@@ -229,12 +228,11 @@ void PadController::pressTop (int index)
 
 void PadController::pressSide (int index)
 {
-    // Top four: a new rhythm for part A..D; bottom four: lock it.
-    const int part = processor.segmentAtStep ((index % 4) * sgk::userPatternLength / sgk::numSegments);
+    // Top four: a new rhythm for part A..D; bottom four: NEW RIFF (parts locked in the plug-in stay).
     if (index < 4)
-        processor.randomizeSegment (part);
+        processor.randomizeSegment (processor.segmentAtStep (index * sgk::userPatternLength / sgk::numSegments));
     else
-        processor.setSegmentLocked (part, ! processor.isSegmentLocked (part));
+        processor.rollNewRiff();
 }
 
 void PadController::handlePress (int number, bool isControlChange)

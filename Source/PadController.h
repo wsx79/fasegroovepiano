@@ -16,7 +16,8 @@ class FaseGroovePianoProcessor;
     hardware rhythm grid. On a Launchpad, in Programmer mode its
     8x8 pads show the groove (chords on the top four rows, bass on the bottom four, 16 steps per two
     rows) with the playhead, a press edits a step like a click on the grid, and the round buttons
-    play / stop, roll new rhythms, switch the sequencer and the parts on and off. On Push the same
+    play / stop, roll new rhythms, switch the sequencer and the parts on and off; the right column
+    rolls parts A-D (top four) or a NEW RIFF (bottom four). On Push the same
     pads, the eight buttons above the display as the Launchpad's top row, the scene buttons as its
     right column, and Play.
 

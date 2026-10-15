@@ -411,7 +411,7 @@ griglia hardware** (resta acceso per tutti i progetti); la riga sotto dice se è
 | **Le 4 file in basso** | Il **basso**, allo stesso modo, in azzurro (blu = anticipo, blu scuro = nota tenuta). |
 | Un **pad** | Modifica quel passo come un clic sulla griglia: pausa → colpo → accento → ghost → pausa. Il pad bianco è la testina; i pad grigi segnano i tempi. |
 | Pulsanti tondi, **fila in alto** (da sinistra) | ▶ play / pausa · ■ stop · 🎲 PIANO · 🎲 BASSO · NUOVO RIFF · **Sequencer** acceso/spento (verde / rosso) · ASCOLTA PIANO · ASCOLTA BASSO |
-| **Colonna a destra** | I primi quattro: nuovo ritmo per la parte **A, B, C, D**. Gli ultimi quattro: **BLOCCA** la parte A, B, C, D (azzurro = bloccata). |
+| **Colonna a destra** | I primi quattro: nuovo ritmo per la parte **A, B, C, D**. Gli ultimi quattro: **NUOVO RIFF** (le parti bloccate nel plug-in restano). |
 
 - Il plug-in parla direttamente col Launchpad, quindi funziona anche con la finestra chiusa; lo
   usa un solo Fase Groove Piano alla volta.
