@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "PluginEditor.h"
+#include "PadController.h"
 
 #include <BinaryData.h>
 
@@ -1129,6 +1130,12 @@ OptionsOverlay::OptionsOverlay() : artist (Branding::artistLogo())
     addChildComponent (updatesToggle);
     checkUpdatesButton.onClick = [this] { if (onCheckUpdates != nullptr) onCheckUpdates(); };
     addChildComponent (checkUpdatesButton);
+    padToggle.onClick = [this] { PadController::setEnabled (padToggle.getToggleState()); };
+    addChildComponent (padToggle);
+    padStatus.setFont (font (11.0f));
+    padStatus.setColour (juce::Label::textColourId, Palette::dim);
+    padStatus.setJustificationType (juce::Justification::topLeft);
+    addChildComponent (padStatus);
 
     refreshText();
     selectTab (false);
@@ -1147,6 +1154,7 @@ void OptionsOverlay::show (bool about, float currentScale, bool shrinkWhileDragg
     shrinkToggle.setToggleState (shrinkWhileDragging, juce::dontSendNotification);
     tipsToggle.setToggleState (Localisation::tipsEnabled(), juce::dontSendNotification);
     updatesToggle.setToggleState (Updater::autoCheckEnabled(), juce::dontSendNotification);
+    padToggle.setToggleState (PadController::enabled(), juce::dontSendNotification);
     selectTab (about);
     setVisible (true);
     toFront (false);
@@ -1168,7 +1176,16 @@ void OptionsOverlay::refreshText()
     tipsToggle.setButtonText (tr ("Show tips when the mouse rests on a control"));
     updatesToggle.setButtonText (tr ("Check for updates automatically (GitHub)"));
     checkUpdatesButton.setButtonText (tr ("CHECK NOW"));
+    padToggle.setButtonText (tr ("Launchpad as a hardware grid (Novation Mini MK3, X, Pro MK3)"));
+    padToggle.setTooltip (tr ("The pads show and edit the groove, the round buttons play, stop and roll new rhythms. Set the Launchpad's control surface to None in your DAW."));
     repaint();
+}
+
+void OptionsOverlay::setPadStatus (const juce::String& text, bool good)
+{
+    if (padStatus.getText() != text)
+        padStatus.setText (text, juce::dontSendNotification);
+    padStatus.setColour (juce::Label::textColourId, good ? Palette::level : Palette::dim);
 }
 
 void OptionsOverlay::selectTab (bool about)
@@ -1178,7 +1195,7 @@ void OptionsOverlay::selectTab (bool about)
     aboutTab.setToggleState (about, juce::dontSendNotification);
 
     for (auto* c : std::initializer_list<juce::Component*> { &languageLabel, &languageBox, &sizeLabel, &sizeBox, &shrinkToggle, &tipsToggle,
-                                                                 &updatesToggle, &checkUpdatesButton })
+                                                                 &updatesToggle, &checkUpdatesButton, &padToggle, &padStatus })
         c->setVisible (! about);
 
     auto showLink = [about] (juce::Component& b, const char* url) { b.setVisible (about && juce::String (url).isNotEmpty()); };
@@ -1224,6 +1241,9 @@ void OptionsOverlay::resized()
         updatesToggle.setBounds (row.removeFromLeft (380));
         checkUpdatesButton.setBounds (row.removeFromLeft (130).reduced (0, 1));
     }
+    settings.removeFromTop (16);
+    padToggle.setBounds (settings.removeFromTop (26).withWidth (500));
+    padStatus.setBounds (settings.removeFromTop (34).withTrimmedLeft (30).withWidth (480));
 
     // About tab: link buttons above the footer
     auto row = inner.withTrimmedBottom (26).removeFromBottom (30);
@@ -1260,7 +1280,7 @@ void OptionsOverlay::paint (juce::Graphics& g)
         g.setColour (Palette::dim);
         g.setFont (font (12.0f));
         g.drawText (tr ("Settings are saved for all your projects."),
-                    juce::Rectangle<float> (r.getX() + 28.0f, r.getY() + 290.0f, r.getWidth() - 28.0f, 18.0f), juce::Justification::centredLeft);
+                    juce::Rectangle<float> (r.getX() + 28.0f, r.getY() + 390.0f, r.getWidth() - 28.0f, 18.0f), juce::Justification::centredLeft);
         g.setFont (font (11.0f));
         g.drawText ("Fase Groove Piano " + juce::String (JucePlugin_VersionString) + dot + tr ("Built with JUCE"),
                     r.removeFromBottom (16.0f), juce::Justification::centred);
@@ -5600,20 +5620,7 @@ void FaseGroovePianoEditor::loadPreset (int index)
 //==============================================================================
 void FaseGroovePianoEditor::hearPart (bool bass)
 {
-    // Lit = you hear it. Switching off the only part you hear switches the other one on.
-    const bool pianoOn = ! processor.chordsMuted.load() || ! processor.isBassOn();
-    const bool bassOn = processor.isBassOn();
-    if (bass)
-    {
-        if (bassOn) { processor.toggleBass(); processor.chordsMuted = false; }   // off (the piano plays)
-        else        processor.toggleBass();
-    }
-    else
-    {
-        if (pianoOn && bassOn)  processor.chordsMuted = true;                       // bass only
-        else if (pianoOn)      { processor.chordsMuted = true; processor.toggleBass(); }
-        else                   processor.chordsMuted = false;
-    }
+    processor.hearPart (bass);
 }
 
 void FaseGroovePianoEditor::showRoll (bool roll)
@@ -5838,6 +5845,18 @@ void FaseGroovePianoEditor::timerCallback()
         currentKey = keyText;
         showingHold = heldRoot >= 0;
         repaint (chordDisplayArea.toFloat().transformedBy (uiTransform()).getSmallestIntegerContainer().expanded (2));
+    }
+
+    if (options.isVisible() && processor.pads != nullptr)
+    {
+        using S = PadController::Status;
+        const auto st = processor.pads->status();
+        options.setPadStatus (st == S::off       ? tr ("Not in use")
+                            : st == S::searching ? tr ("Looking for a Launchpad... (connect it by USB)")
+                            : st == S::connected ? tr ("Connected:") + " " + processor.pads->deviceName()
+                            : st == S::busy      ? tr ("The Launchpad is in use by another program: in your DAW's MIDI settings set its control surface to None and switch off its ports")
+                                                 : tr ("Used by another Fase Groove Piano in this project"),
+                              st == S::connected);
     }
 
     {

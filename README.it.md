@@ -50,6 +50,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,
   randomizzare (RND) e bloccare (LOCK), con una pagina **VELOCITY**: ogni colpo è un fader verde
   per regolarne la velocity a mano.
+- 🎛️ **Novation Launchpad** (Mini MK3, X, Pro MK3) come griglia hardware: vedi e modifichi il groove sui pad.
 - 🔍 **Interfaccia ridimensionabile** e finestra mini durante il trascinamento della clip.
 - 🌍 **Interfaccia in 6 lingue:** English, Italiano, Español, Français, Deutsch, Português
   (**OPZIONI → IMPOSTAZIONI**).

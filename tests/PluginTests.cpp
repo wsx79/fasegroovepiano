@@ -8,9 +8,11 @@
 #include <tuple>
 #include "../Source/PluginProcessor.h"
 #include "../Source/Updater.h"
+#include "../Source/PadController.h"
 
 #include <cstdio>
 #include <map>
+#include <set>
 
 namespace
 {
@@ -981,6 +983,51 @@ namespace
         CHECK (generated > 0);
         p.setPlayHead (nullptr);
     }
+
+    void testLaunchpadLayout()
+    {
+        // Launchpad: pads <-> grid steps, lights for the hits and the playhead, presses edit the groove.
+        CHECK (PadController::padNote (0, 0) == 81 && PadController::padNote (7, 7) == 18);
+        CHECK (PadController::topButton (0) == 91 && PadController::sideButton (0) == 89 && PadController::sideButton (7) == 19);
+
+        std::set<std::pair<bool, int>> seen;
+        for (int row = 0; row < 8; ++row)
+            for (int column = 0; column < 8; ++column)
+            {
+                bool bass = false;
+                int step = 0;
+                PadController::padToStep (row, column, bass, step);
+                CHECK (bass == (row >= 4) && step >= 0 && step < 32);
+                seen.insert ({ bass, step });
+            }
+        CHECK (seen.size() == 64);
+
+        FaseGroovePianoProcessor p;
+        auto& pads = *p.pads;
+        const auto pattern = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+        const auto leds = pads.computeLeds();
+        for (int column = 0; column < 8; ++column)
+        {
+            const char c = pattern.rightHand[(size_t) column];
+            CHECK ((leds.pads[(size_t) column] > 1) == (c != '.'));   // top row = chords, steps 1-8
+        }
+
+        // Pressing the top-left pad cycles step 1 of the chords like a click on the grid.
+        const char before = p.stepSymbol (false, 0);
+        pads.handlePress (81, false);
+        const char after = p.stepSymbol (false, 0);
+        CHECK (after == (before == 'x' ? 'X' : before == 'X' ? 'g' : before == 'g' ? '.' : 'x'));
+
+        // Round buttons: sequencer off / on, lock part A.
+        pads.handlePress (96, true);
+        CHECK (p.apvts.getRawParameterValue (ParamIDs::sequencer)->load() < 0.5f);
+        pads.handlePress (96, true);
+        CHECK (p.apvts.getRawParameterValue (ParamIDs::sequencer)->load() > 0.5f);
+        pads.handlePress (49, true);
+        CHECK (p.isSegmentLocked (p.segmentAtStep (0)));
+        CHECK (pads.computeLeds().side[4] != pads.computeLeds().side[5]);
+        CHECK (PadController::enabled() == false || pads.status() != PadController::Status::taken);
+    }
 }
 
 int main()
@@ -1006,6 +1053,7 @@ int main()
     testStepVelocities();
     testSidechain();
     testSequencerOff();
+    testLaunchpadLayout();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

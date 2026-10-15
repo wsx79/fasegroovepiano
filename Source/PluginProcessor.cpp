@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "PluginProcessor.h"
+#include "PadController.h"
 #include "GuideVoice.h"
 #include "PluginEditor.h"
 
@@ -199,6 +200,30 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     // Edits made in the piano roll follow the settings: a change carries them over to the new notes.
     editRefresher.callback = [this] { refreshEditedLoop(); };
     editRefresher.startTimer (150);
+
+    pads = std::make_unique<PadController> (*this);
+}
+
+FaseGroovePianoProcessor::~FaseGroovePianoProcessor()
+{
+    pads.reset();   // lights off, the Launchpad back to its own mode
+}
+
+void FaseGroovePianoProcessor::hearPart (bool bass)
+{
+    const bool bassOn = isBassOn();
+    const bool pianoOn = ! chordsMuted.load() || ! bassOn;
+    if (bass)
+    {
+        if (bassOn) { toggleBass(); chordsMuted = false; }   // off (the piano plays)
+        else        toggleBass();
+    }
+    else
+    {
+        if (pianoOn && bassOn)  chordsMuted = true;                    // bass only
+        else if (pianoOn)      { chordsMuted = true; toggleBass(); }
+        else                   chordsMuted = false;
+    }
 }
 
 void FaseGroovePianoProcessor::resetUserPattern()

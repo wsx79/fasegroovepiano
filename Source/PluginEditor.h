@@ -333,6 +333,7 @@ public:
 
     void show (bool aboutTab, float currentScale, bool shrinkWhileDragging);
     void refreshText();
+    void setPadStatus (const juce::String& text, bool good);
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -348,7 +349,8 @@ private:
     juce::TextButton sourceButton, kofiButton, paypalButton, spotifyButton;
     juce::Label languageLabel, sizeLabel;
     juce::ComboBox languageBox, sizeBox;
-    juce::ToggleButton shrinkToggle, tipsToggle, updatesToggle;
+    juce::ToggleButton shrinkToggle, tipsToggle, updatesToggle, padToggle;
+    juce::Label padStatus;
 };
 
 /** The browser for grooves and progressions: genres on the left, the items of that genre on the

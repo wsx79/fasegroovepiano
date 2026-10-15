@@ -399,6 +399,28 @@ Il suono guida si abbassa solo se **Suono guida** è acceso e **Pompa** è sopra
 
 L'app standalone non ha l'ingresso sidechain (usa *Tempo (interno)*).
 
+### Launchpad come griglia hardware
+
+Un **Novation Launchpad** (Mini MK3, X o Pro MK3) può diventare la griglia ritmica sotto le tue
+dita. Accendilo in **OPZIONI → IMPOSTAZIONI → Launchpad come griglia hardware** (resta acceso per
+tutti i progetti); la riga sotto dice se è collegato.
+
+| Sul Launchpad | Cosa fa |
+|---|---|
+| **Le 4 file di pad in alto** | Gli **accordi**: file 1-2 = passi 1-16, file 3-4 = passi 17-32. Arancio = colpo (acceso = accento, scuro = ghost note), giallo = anticipo, rosso scuro = nota tenuta. |
+| **Le 4 file in basso** | Il **basso**, allo stesso modo, in azzurro (blu = anticipo, blu scuro = nota tenuta). |
+| Un **pad** | Modifica quel passo come un clic sulla griglia: pausa → colpo → accento → ghost → pausa. Il pad bianco è la testina; i pad grigi segnano i tempi. |
+| Pulsanti tondi, **fila in alto** (da sinistra) | ▶ play / pausa · ■ stop · 🎲 PIANO · 🎲 BASSO · NUOVO RIFF · **Sequencer** acceso/spento (verde / rosso) · ASCOLTA PIANO · ASCOLTA BASSO |
+| **Colonna a destra** | I primi quattro: nuovo ritmo per la parte **A, B, C, D**. Gli ultimi quattro: **BLOCCA** la parte A, B, C, D (azzurro = bloccata). |
+
+- Il plug-in parla direttamente col Launchpad, quindi funziona anche con la finestra chiusa; lo
+  usa un solo Fase Groove Piano alla volta.
+- Nella DAW il Launchpad deve essere libero: in **Ableton Live** imposta la sua *Control Surface* su
+  *Nessuna* (Impostazioni → Link, Tempo & MIDI) e spegni *Track* / *Remote* sulle sue porte; su
+  Windows una porta MIDI la può usare un solo programma alla volta.
+- Spegnendo l'opzione il Launchpad torna nella sua modalità normale.
+- Ableton Push e altri controller non sono supportati (Push parla solo con Live).
+
 ### Esporta MIDI
 
 Vedi il prossimo capitolo.

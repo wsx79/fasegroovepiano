@@ -50,6 +50,7 @@ Rhodes or synth.
 - 🎼 **Piano roll** of every note that plays (chords, bass, fills) with the chord names and the playhead, which opens big to **edit the notes one by one** (zoom, velocity lane), and **BOTH / PIANO / BASS** to choose what you hear.
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and
   lock (LOCK), with a **VELOCITY** page: every hit as a green fader to set its velocity by hand.
+- 🎛️ **Novation Launchpad** (Mini MK3, X, Pro MK3) as a hardware grid: see and edit the groove on the pads.
 - 🔍 **Resizable UI** and a mini window while you drag a clip.
 - 🌍 **Interface in 6 languages:** English, Italiano, Español, Français, Deutsch, Português
   (**OPTIONS → SETTINGS**).

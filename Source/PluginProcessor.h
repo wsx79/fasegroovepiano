@@ -64,11 +64,19 @@ namespace ParamIDs
     inline juce::String inversion (int index) { return "inversion" + juce::String (index + 1); }
 }
 
+class PadController;
+
 class FaseGroovePianoProcessor : public juce::AudioProcessor
 {
 public:
     FaseGroovePianoProcessor();
-    ~FaseGroovePianoProcessor() override = default;
+    ~FaseGroovePianoProcessor() override;
+
+    /** A Launchpad as a hardware grid (see PadController); off unless switched on in OPTIONS. */
+    std::unique_ptr<PadController> pads;
+
+    /** HEAR PIANO / HEAR BASS: lit = you hear it; switching off the only part heard switches the other on. */
+    void hearPart (bool bass);
 
     juce::VST3ClientExtensions* getVST3ClientExtensions() override { return &vst3Extensions; }
 

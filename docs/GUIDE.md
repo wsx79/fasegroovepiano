@@ -382,6 +382,28 @@ The guide sound is ducked only when **Guide sound** is on and **Pump** is above 
 
 The standalone app has no sidechain input (use *Tempo (internal)*).
 
+### Launchpad as a hardware grid
+
+A **Novation Launchpad** (Mini MK3, X or Pro MK3) can be the rhythm grid in your hands. Switch it on
+in **OPTIONS → SETTINGS → Launchpad as a hardware grid** (it stays on for all your projects); the line
+below says whether it is connected.
+
+| On the Launchpad | What it does |
+|---|---|
+| **Top 4 rows of pads** | The **chords**: rows 1-2 = steps 1-16, rows 3-4 = steps 17-32. Amber = hit (bright = accent, dark = ghost note), yellow = push, dark red = hold. |
+| **Bottom 4 rows** | The **bass**, the same way, in cyan (blue = push, dark blue = hold). |
+| A **pad** | Edits that step like a click on the grid: rest → hit → accent → ghost → rest. The white pad is the playhead; grey pads mark the beats. |
+| Round buttons, **top row** (left to right) | ▶ play / pause · ■ stop · 🎲 PIANO · 🎲 BASS · NEW RIFF · **Sequencer** on/off (green / red) · HEAR PIANO · HEAR BASS |
+| **Right column** | Top four: a new rhythm for part **A, B, C, D**. Bottom four: **LOCK** part A, B, C, D (cyan = locked). |
+
+- The plug-in talks to the Launchpad directly, so it works with the window closed; one Fase Groove
+  Piano at a time drives it.
+- In your DAW the Launchpad must be free: in **Ableton Live** set its *Control Surface* to *None*
+  (Settings → Link, Tempo & MIDI) and switch off *Track* / *Remote* for its ports; on Windows a MIDI
+  port can be used by one program at a time.
+- Switching the option off puts the Launchpad back in its normal mode.
+- Ableton Push and other controllers are not supported (Push only talks to Live).
+
 ### Export MIDI
 
 See the next chapter.
