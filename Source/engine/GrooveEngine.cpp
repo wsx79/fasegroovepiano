@@ -794,6 +794,25 @@ namespace
         return rotation[(size_t) (((bar * 5 + 2) % n + n) % n)];
     }
 
+    /** A fill that suits the groove ("Mix" and the evolution's own fill): a busy groove gets short
+        fills (stabs, chops, a roll), a sparse one runs and glissandos, the rest something in
+        between; a different one on each fill bar. */
+    FillStyle contextualFillStyle (const std::string& rightHand, long long bar) noexcept
+    {
+        int hits = 0;
+        for (char c : rightHand)
+            hits += (c == 'X' || c == 'x' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D') ? 1 : 0;
+        const double perTwoBars = rightHand.empty() ? 0.0 : hits * 32.0 / (double) rightHand.size();
+
+        static constexpr FillStyle busy[]   { FillStyle::pushStabs, FillStyle::chordChops, FillStyle::chordRoll };
+        static constexpr FillStyle sparse[] { FillStyle::pentatonicUp, FillStyle::gospelRun, FillStyle::glissando, FillStyle::chromaticWalk };
+        static constexpr FillStyle middle[] { FillStyle::gospelThirds, FillStyle::bluesLick, FillStyle::pentatonicDown, FillStyle::chordRoll };
+        auto pick = [bar] (const FillStyle* list, long long n) { return list[(size_t) (((bar * 5 + 2) % n + n) % n)]; };
+        if (perTwoBars >= 14.0) return pick (busy, 3);
+        if (perTwoBars <= 9.0)  return pick (sparse, 4);
+        return pick (middle, 4);
+    }
+
     /** Notes of a scale (given as semitones above the key) between low and high, ascending. */
     NoteSet notesOf (int keyRoot, const int* degrees, int count, int low, int high) noexcept
     {
@@ -1355,8 +1374,12 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     const int stepInBar = mod (step, 16);
     auto fillStyle = effectiveFillStyle (s.fillStyle, bar);
     bool fillBar = s.fillEveryBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1;
-    if (s.evolveBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.evolveBars) == s.evolveBars - 1)
+    const bool evolutionFill = s.evolveBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.evolveBars) == s.evolveBars - 1;
+    if (evolutionFill)
         fillBar = true;   // the evolution's last bar leads into the next round
+    // "Mix", and the evolution's fill when the fills are off: a fill that suits this groove.
+    if (s.fillStyle == FillStyle::mix || (evolutionFill && s.fillEveryBars == 0))
+        fillStyle = contextualFillStyle (normalPattern.rightHand, bar);
     if (s.forcedFillBar >= 0)
     {
         // A song section with its own fill: only on its last bar.

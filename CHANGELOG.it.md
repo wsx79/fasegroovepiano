@@ -6,6 +6,17 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.8.0] - 2026-10-15
+
+### Modificato
+- **Riff casuali pieni quanto la loro densità**: al massimo da 12 (scarni) a 20 (pieni) colpi di
+  accordo in due battute, e mai più di 3 colpi di fila (4 quando sono pieni) - il centro di una
+  raffica più lunga diventa una ghost note. I riff scarni non escono più affollati.
+- **Fill che si adattano al groove**: *Mix* (e il fill che chiude un ciclo di *Evoluzione* con i
+  fill spenti) sceglie fill corti per un groove pieno (push stabs, chop, un roll), scale e
+  glissando per uno scarno, qualcosa di intermedio negli altri casi. Uno stile di fill scelto da te
+  viene suonato com'è.
+
 ## [2.7.0] - 2026-10-15
 
 ### Aggiunto

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 
 namespace sgk
 {
@@ -258,7 +259,58 @@ namespace
     }
 }
 
+GroovePattern makeRandomPatternRaw (std::uint32_t seed, float densityIn);
+
+namespace
+{
+    /** The last touch on a random riff: as busy as its density asks, never a long burst.
+        - at most 12 (sparse) .. 20 (busy) chord hits in the two bars: the weakest ones go
+          (an unaccented hit off the beat, not starting a hold or a push);
+        - at most 3 hits in a row (4 when busy): the middle of a longer burst becomes a ghost. */
+    void normaliseRiff (GroovePattern& p, double density)
+    {
+        auto& r = p.rightHand;
+        const int len = (int) r.size();
+        auto strongHit = [] (char c) { return c == 'X' || c == 'x' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D'; };
+
+        const int maxHits = (int) std::lround (12.0 + 8.0 * density) * std::max (1, len / 32);
+        int hits = (int) std::count_if (r.begin(), r.end(), strongHit);
+        for (int pass = 0; pass < 2 && hits > maxHits; ++pass)
+            for (int i = len - 1; i >= 0 && hits > maxHits; --i)
+            {
+                const bool weak = r[(size_t) i] == 'x' && i % 4 != 0
+                               && (i + 1 >= len || (r[(size_t) i + 1] != '=' && r[(size_t) i + 1] != '>'));
+                // first pass: the 16ths between the 8ths; then any weak hit
+                if (weak && (pass == 1 || i % 2 == 1))
+                {
+                    r[(size_t) i] = '.';
+                    --hits;
+                }
+            }
+
+        const int maxRun = density > 0.6 ? 4 : 3;
+        int run = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            run = strongHit (r[(size_t) i]) ? run + 1 : 0;
+            if (run > maxRun && r[(size_t) i - 1] == 'x')
+            {
+                r[(size_t) i - 1] = 'g';   // breathe inside the burst
+                run = 1;
+            }
+        }
+        repairHolds (r);
+    }
+}
+
 GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
+{
+    auto p = makeRandomPatternRaw (seed, densityIn);
+    normaliseRiff (p, std::clamp ((double) densityIn, 0.0, 1.0));
+    return p;
+}
+
+GroovePattern makeRandomPatternRaw (std::uint32_t seed, float densityIn)
 {
     {
         // Most riffs come from the classic piano house loop figures; only busy settings

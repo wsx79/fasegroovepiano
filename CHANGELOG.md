@@ -6,6 +6,16 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.8.0] - 2026-10-15
+
+### Changed
+- **Random riffs as busy as their density**: at most 12 (sparse) to 20 (busy) chord hits in two
+  bars, and never more than 3 hits in a row (4 when busy) - the middle of a longer burst becomes a
+  ghost note. Sparse riffs no longer come out crowded.
+- **Fills that suit the groove**: *Mix* (and the fill that closes an *Evolve* cycle when the fills
+  are off) picks short fills for a busy groove (push stabs, chops, a roll), runs and glissandos for
+  a sparse one, something in between otherwise. A fill style you choose is still played as is.
+
 ## [2.7.0] - 2026-10-15
 
 ### Added

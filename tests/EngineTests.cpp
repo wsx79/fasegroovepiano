@@ -280,6 +280,14 @@ static void testRandomRiffs()
         CHECK (wellFormed (p));
         CHECK (p.length() == 32);
         CHECK (countHits (p.rightHand) >= 6);
+        {
+            // As busy as the density asks, never a long burst.
+            const float density = (seed % 5) / 4.0f;
+            int strong = 0;
+            for (char c : p.rightHand)
+                strong += (c == 'X' || c == 'x' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D') ? 1 : 0;
+            CHECK (strong <= (int) std::lround (12.0 + 8.0 * density));
+        }
         CHECK (p.leftHand[0] == 'x' || p.leftHand[0] == '=');
         distinct.insert (p.rightHand);
 
@@ -899,6 +907,24 @@ static void testChordRange()
     CHECK (changed);
 }
 
+static void testContextualFills()
+{
+    // Fills "Mix": a busy groove gets short fills (no runs), a sparse one runs; the chosen style
+    // is followed when it isn't Mix.
+    auto fillNotes = [] (int pattern, FillStyle style)
+    {
+        GrooveSettings s;
+        s.humanize = 0.0f; s.swing = 0.0f; s.pattern = pattern; s.fillEveryBars = 1; s.fillStyle = style;
+        int n = 0;
+        for (const auto& e : GrooveEngine::renderClip (s, 16.0))
+            if (e.isNoteOn() && e.part == Part::fill) ++n;
+        return n;
+    };
+    for (int p = 0; p < 20; ++p)
+        CHECK (fillNotes (p, FillStyle::mix) > 0);
+    CHECK (fillNotes (1, FillStyle::pentatonicUp) > 0);
+}
+
 static void testEditedLoop()
 {
     // Notes edited in the piano roll replace the groove in the main section and loop at their length.
@@ -1505,6 +1531,7 @@ int main()
     testClearLowRegister();
     testEvolution();
     testChordRange();
+    testContextualFills();
     testEditedLoop();
     testCarryEdits();
     testAutoMovement();
