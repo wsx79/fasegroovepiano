@@ -1039,6 +1039,26 @@ namespace
         pads.handlePushPress (39, true);    // scene button 5 = lock part A
         CHECK (! p.isSegmentLocked (p.segmentAtStep (0)));
     }
+
+    void testTotalRandom()
+    {
+        // TOTAL RANDOM changes the music (key, chords or groove) and stays playable.
+        FaseGroovePianoProcessor p;
+        bool changed = false;
+        for (int round = 0; round < 8; ++round)
+        {
+            const auto before = stateXml (p);
+            p.totalRandom();
+            changed = changed || stateXml (p) != before;
+            const auto s = p.currentSettings();
+            CHECK (s.progressionLength >= 1 && s.progressionLength <= sgk::maxProgressionLength);
+            int notes = 0;
+            for (const auto& e : sgk::GrooveEngine::renderClip (s, 16.0))
+                if (e.isNoteOn()) ++notes;
+            CHECK (notes > 8);
+        }
+        CHECK (changed);
+    }
 }
 
 int main()
@@ -1065,6 +1085,7 @@ int main()
     testSidechain();
     testSequencerOff();
     testLaunchpadLayout();
+    testTotalRandom();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

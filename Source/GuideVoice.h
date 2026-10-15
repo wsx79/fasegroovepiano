@@ -136,6 +136,43 @@ public:
 
 private:
     //==============================================================================
+    // Cheap maths for the per-sample loops (the guide sound runs up to 24 voices):
+
+    /** sin (2 pi x), x in cycles (any value), from a table with linear interpolation. */
+    static double fastSin (double x) noexcept
+    {
+        static constexpr int size = 4096;
+        static const auto table = []
+        {
+            std::array<double, size + 1> t {};
+            for (int i = 0; i <= size; ++i)
+                t[(size_t) i] = std::sin (juce::MathConstants<double>::twoPi * i / size);
+            return t;
+        }();
+        const double p = (x - std::floor (x)) * size;
+        const int i = (int) p;
+        const double f = p - i;
+        return table[(size_t) i] + f * (table[(size_t) i + 1] - table[(size_t) i]);
+    }
+
+    /** exp (-time / seconds), as a value multiplied down each sample instead of an exp per sample. */
+    struct Decay
+    {
+        double value = 1.0, coeff = 1.0;
+        void set (double seconds, double sampleRate) noexcept { value = 1.0; coeff = std::exp (-1.0 / (seconds * sampleRate)); }
+        double next() noexcept { const double v = value; value *= coeff; return v; }
+    };
+
+    /** tanh for the Wurlitzer's soft clipping (a rational approximation, exact enough for |x| < 4). */
+    static double fastTanh (double x) noexcept
+    {
+        if (x > 3.0)  return 1.0;
+        if (x < -3.0) return -1.0;
+        const double x2 = x * x;
+        return x * (27.0 + x2) / (27.0 + 9.0 * x2);
+    }
+
+    //==============================================================================
     // Cheap sine oscillator: a rotating phasor (no std::sin per sample).
     struct Partial
     {
@@ -178,17 +215,20 @@ private:
         modDepth = bright * (0.6 + 2.4 * vel * vel);
         tineDepth = bright * 0.9 * vel;
         gain = 0.16 * (0.2 + 0.8 * std::pow (vel, 1.4));
+        mainDecay.set (decayTime, sr);
+        indexDecay.set (0.28, sr);
+        clickDecay.set (0.018, sr);
     }
 
     double renderRhodes (double& env) noexcept
     {
-        constexpr double twoPi = juce::MathConstants<double>::twoPi;
-        env = juce::jmin (1.0, time / 0.0015) * std::exp (-time / decayTime);
+        constexpr double invTwoPi = 1.0 / juce::MathConstants<double>::twoPi;
+        env = juce::jmin (1.0, time / 0.0015) * mainDecay.next();
 
-        const double index = modDepth * std::exp (-time / 0.28) + 0.18 * modDepth;
-        const double tine = tineDepth * std::exp (-time / 0.018);
-        const double mod = index * std::sin (twoPi * modPhase) + tine * std::sin (twoPi * tinePhase);
-        const double out = std::sin (twoPi * carrierPhase + mod) * env;
+        const double index = modDepth * indexDecay.next() + 0.18 * modDepth;
+        const double tine = tineDepth * clickDecay.next();
+        const double mod = index * fastSin (modPhase) + tine * fastSin (tinePhase);
+        const double out = fastSin (carrierPhase + mod * invTwoPi) * env;
 
         carrierPhase += carrierInc; if (carrierPhase >= 1.0) carrierPhase -= 1.0;
         modPhase     += carrierInc; if (modPhase >= 1.0)     modPhase -= 1.0;
@@ -237,6 +277,9 @@ private:
         hammerLevel = (house ? 0.10 : 0.22) * vel;
         hammerCoeff = 0.15 + 0.6 * vel;   // brighter thump when played harder
         gain = (house ? 0.072 : 0.125) * (0.2 + 0.8 * std::pow (vel, 1.3));
+        clickDecay.set (0.004, sr);
+        indexDecay.set (0.12, sr);
+        mainDecay.set (0.9, sr);
     }
 
     double renderGrand (double& env) noexcept
@@ -250,15 +293,17 @@ private:
                 partials[(size_t) p].normalise();
 
         // Hammer thump: a few ms of low-passed noise.
-        const double hammerEnv = std::exp (-time / 0.004);
-        noiseState += hammerCoeff * (random.nextDouble() * 2.0 - 1.0 - noiseState);
-        out += noiseState * hammerLevel * hammerEnv;
+        if (const double hammerEnv = clickDecay.next(); hammerEnv > 1.0e-4)
+        {
+            noiseState += hammerCoeff * (random.nextDouble() * 2.0 - 1.0 - noiseState);
+            out += noiseState * hammerLevel * hammerEnv;
+        }
 
         if (biteDepth > 0.0)
         {
-            constexpr double twoPi = juce::MathConstants<double>::twoPi;
-            const double index = biteDepth * std::exp (-time / 0.12);
-            out += 0.35 * std::sin (twoPi * bitePhase + index * std::sin (twoPi * 2.0 * bitePhase)) * std::exp (-time / 0.9);
+            constexpr double invTwoPi = 1.0 / juce::MathConstants<double>::twoPi;
+            const double index = biteDepth * indexDecay.next();
+            out += 0.35 * fastSin (bitePhase + index * fastSin (2.0 * bitePhase) * invTwoPi) * mainDecay.next();
             bitePhase += biteInc; if (bitePhase >= 1.0) bitePhase -= 1.0;
         }
 
@@ -287,26 +332,32 @@ private:
         hammerLevel = 0.06 * vel;          // key click
         hammerCoeff = 0.7;
         gain = 0.085 * (0.55 + 0.45 * vel);
+        indexDecay.set (0.22, sr);         // percussion
+        clickDecay.set (0.002, sr);
     }
 
     double renderOrgan (double& env) noexcept
     {
-        constexpr double twoPi = juce::MathConstants<double>::twoPi;
-        const double vibrato = 1.0 + 0.0022 * std::sin (twoPi * lfoPhase);
+        const double vibrato = 1.0 + 0.0022 * fastSin (lfoPhase);
         lfoPhase += 6.2 / sr; if (lfoPhase >= 1.0) lfoPhase -= 1.0;
 
         double out = 0.0;
         for (int i = 0; i < 5; ++i)
         {
-            out += organLevel[(size_t) i] * std::sin (twoPi * organPhase[(size_t) i]);
+            if (organLevel[(size_t) i] > 0.0)
+                out += organLevel[(size_t) i] * fastSin (organPhase[(size_t) i]);
             organPhase[(size_t) i] += organInc[(size_t) i] * vibrato;
             if (organPhase[(size_t) i] >= 1.0) organPhase[(size_t) i] -= 1.0;
         }
 
         // Percussion (2 2/3' harmonic, fast decay) and key click.
-        out += percussion * std::exp (-time / 0.22) * std::sin (twoPi * organPhase[3]);
-        noiseState += hammerCoeff * (random.nextDouble() * 2.0 - 1.0 - noiseState);
-        out += noiseState * hammerLevel * std::exp (-time / 0.002);
+        if (const double perc = indexDecay.next(); perc > 1.0e-4)
+            out += percussion * perc * fastSin (organPhase[3]);
+        if (const double click = clickDecay.next(); click > 1.0e-4)
+        {
+            noiseState += hammerCoeff * (random.nextDouble() * 2.0 - 1.0 - noiseState);
+            out += noiseState * hammerLevel * click;
+        }
 
         const double attack = juce::jmin (1.0, time / 0.005);
         env = attack;
@@ -320,19 +371,22 @@ private:
         modDepth = bright * (0.9 + 2.0 * vel * vel);
         tineDepth = 0.0;
         drive = 1.2 + 2.2 * vel;
+        driveNorm = 1.0 / std::tanh (drive);
         gain = 0.095 * (0.2 + 0.8 * std::pow (vel, 1.4));
+        mainDecay.set (decayTime, sr);
+        indexDecay.set (0.2, sr);
     }
 
     double renderWurli (double& env) noexcept
     {
-        constexpr double twoPi = juce::MathConstants<double>::twoPi;
-        env = juce::jmin (1.0, time / 0.001) * std::exp (-time / decayTime);
+        constexpr double invTwoPi = 1.0 / juce::MathConstants<double>::twoPi;
+        env = juce::jmin (1.0, time / 0.001) * mainDecay.next();
 
         // Odd-harmonic reed tone: the modulator at 1x plus a 3x component, then soft clipping.
-        const double index = modDepth * std::exp (-time / 0.2) + 0.25 * modDepth;
-        const double mod = index * (std::sin (twoPi * modPhase) + 0.3 * std::sin (twoPi * 3.0 * modPhase));
-        const double raw = std::sin (twoPi * carrierPhase + mod) * env;
-        const double out = std::tanh (raw * drive) / std::tanh (drive);
+        const double index = modDepth * indexDecay.next() + 0.25 * modDepth;
+        const double mod = index * (fastSin (modPhase) + 0.3 * fastSin (3.0 * modPhase));
+        const double raw = fastSin (carrierPhase + mod * invTwoPi) * env;
+        const double out = fastTanh (raw * drive) * driveNorm;
 
         carrierPhase += carrierInc; if (carrierPhase >= 1.0) carrierPhase -= 1.0;
         modPhase     += carrierInc; if (modPhase >= 1.0)     modPhase -= 1.0;
@@ -353,7 +407,7 @@ private:
     {
         // Amplitude tremolo of the horn (~6.8 Hz); the organ's vibrato does the pitch part.
         lesliePhase += 6.8 / sr; if (lesliePhase >= 1.0) lesliePhase -= 1.0;
-        return 0.82 + 0.18 * std::sin (juce::MathConstants<double>::twoPi * lesliePhase);
+        return 0.82 + 0.18 * fastSin (lesliePhase);
     }
 
     void startPad()
@@ -419,7 +473,8 @@ private:
     double percussion = 0.0, lfoPhase = 0.0;
 
     // Wurlitzer / Leslie / Pad
-    double drive = 1.0, lesliePhase = 0.0;
+    double drive = 1.0, driveNorm = 1.0, lesliePhase = 0.0;
+    Decay mainDecay, indexDecay, clickDecay;   // the per-sound envelopes (see the start functions)
     std::array<double, 3> padPhase {}, padInc {};
     double padLow = 0.0, padCutoff = 0.1;
 };

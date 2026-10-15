@@ -6,6 +6,17 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.5.0] - 2026-10-15
+
+### Added
+- **🎲 TOTAL** (top, next to PRESETS): random style, key, progression, groove and sometimes harmony,
+  bass, sound and feel, all at once. Undo with ↶, RESET to start over.
+
+### Changed
+- **Lighter on the CPU**: the guide sound's voices use table sines and running envelopes instead of
+  per-sample sin / exp / tanh, about **2.3× faster** on average (Rhodes, organs and Wurlitzer up to
+  3-4×), with the same sound. The sidechain input is only analysed when it is the pump's source.
+
 ## [2.4.0] - 2026-10-15
 
 ### Added

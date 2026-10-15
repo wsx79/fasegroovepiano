@@ -764,6 +764,7 @@ private:
     IconButton optionsButton { IconButton::Icon::gear };
     juce::TextButton styleMenuButton { "STYLE" }, resetButton { "RESET" };
     juce::TextButton presetsButton { "PRESETS" }, learnButton { "LEARN" };
+    IconButton totalRandomButton { IconButton::Icon::dice };
     IconButton undoButton { IconButton::Icon::undo }, redoButton { IconButton::Icon::redo };
     void showPresetMenu();
     void savePresetAs();

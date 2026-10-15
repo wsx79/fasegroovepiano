@@ -471,7 +471,12 @@ come la senti (le due mani, con le parti nell'ordine A B C D che hai scelto) con
 L'elenco la ricarica come *User pattern*, lasciando accordi e tutto il resto com'è. Così ti
 costruisci una libreria di groove tuoi da provare su qualsiasi progressione.
 
-### STILE e RESET
+### STILE, 🎲 TUTTO e RESET
+
+- **🎲 TUTTO** (in alto, accanto a PRESET) rimescola tutto in un colpo: uno stile a caso, poi
+  tonalità, progressione e groove a caso, e a volte anche estensione, voicing, basso, suono guida,
+  fill, swing e humanize. Sempre dentro scelte che suonano bene. Non ti piace? **↶** lo annulla,
+  **RESET** riparte da zero.
 
 - **STILE** apre un menu di impostazioni pronte per genere: *House Piano Loop*, *Classic Deep House*, *Soulful House*,
   *Gospel House*, *Jackin' House*, *'90s Piano House*, *Organ Jack*, *Nu Disco*, *Funky Disco*,

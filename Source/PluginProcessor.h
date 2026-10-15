@@ -173,6 +173,10 @@ public:
         (the key is kept). */
     static juce::StringArray styleNames();
     void applyStyle (int index);
+
+    /** TOTAL RANDOM: a random style, then a random key, progression, groove and sometimes a
+        different harmony, bass, sound and feel. Always inside choices that sound good; undoable. */
+    void totalRandom();
     /** Loads progressionPresets()[index]: scale, length, degrees and any borrowed chords. */
     void applyProgressionPreset (int index);
 

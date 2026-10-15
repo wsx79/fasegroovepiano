@@ -452,7 +452,12 @@ Everything you save goes into **`Documents/Fase Groove Piano/`**, easy to find a
 the *User pattern*, keeping the chords and everything else. Use it to build your own library of
 grooves and try them on any progression.
 
-### STYLE and RESET
+### STYLE, 🎲 TOTAL and RESET
+
+- **🎲 TOTAL** (top, next to PRESETS) shakes up everything at once: a random style, then a random
+  key, progression and groove, and sometimes another extension, voicing, bass, guide sound, fills,
+  swing and humanize. Always inside choices that sound good. Didn't like it? **↶** undoes it,
+  **RESET** starts over.
 
 - **STYLE** opens a menu of ready-made setups by genre: *House Piano Loop*, *Classic Deep House*, *Soulful House*,
   *Gospel House*, *Jackin' House*, *'90s Piano House*, *Organ Jack*, *Nu Disco*, *Funky Disco*,

@@ -824,6 +824,35 @@ void FaseGroovePianoProcessor::applyStyle (int index)
         setParameterFromUI (ParamIDs::segment (i), (float) i);
 }
 
+void FaseGroovePianoProcessor::totalRandom()
+{
+    auto& r = juce::Random::getSystemRandom();
+    auto chance = [&r] (int percent) { return r.nextInt (100) < percent; };
+
+    // A whole style first (harmony, groove, sound and feel that belong together)...
+    applyStyle (r.nextInt (styleNames().size()));
+
+    // ...then shake it up.
+    setParameterFromUI (ParamIDs::key, (float) r.nextInt (12));
+    if (chance (50))
+        applyProgressionPreset (r.nextInt ((int) sgk::progressionPresets().size()));
+    else
+        rollNewProgression();
+
+    if (chance (60))
+        setParameterFromUI (ParamIDs::pattern, (float) r.nextInt ((int) sgk::groovePatterns().size()));
+    else
+        rollNewRiff();
+
+    if (chance (40)) setParameterFromUI (ParamIDs::extension, (float) r.nextInt (sgk::numExtensions));
+    if (chance (40)) setParameterFromUI (ParamIDs::voicing, (float) r.nextInt (sgk::numVoicings));
+    if (chance (35)) setParameterFromUI (ParamIDs::bass, (float) (1 + r.nextInt (sgk::numBassModes - 1)));
+    if (chance (30)) setParameterFromUI (ParamIDs::soundType, (float) r.nextInt (numGuideSounds));
+    if (chance (30)) setParameterFromUI (ParamIDs::fills, (float) r.nextInt (4));
+    setParameterFromUI (ParamIDs::swing, 0.05f + 0.35f * r.nextFloat());
+    setParameterFromUI (ParamIDs::humanize, 0.1f + 0.35f * r.nextFloat());
+}
+
 float FaseGroovePianoProcessor::raw (const char* id) const
 {
     return apvts.getRawParameterValue (id)->load();
@@ -1153,6 +1182,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     // Sidechain input: follow its level before the buffer is used for the output.
     const bool externalPump = juce::roundToInt (raw (ParamIDs::pumpSource)) == 1;
+    if (externalPump)   // (only then: the meter is shown only then too)
     {
         if ((int) sidechainLevel.size() < numSamples)
             sidechainLevel.resize ((size_t) numSamples);
@@ -1393,9 +1423,9 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                 float duck = 0.0f;
                 if (externalPump)
                 {
-                    // -42 dB (nothing) .. -6 dB (full duck)
-                    const float db = juce::Decibels::gainToDecibels (sidechainLevel[(size_t) i], -100.0f);
-                    duck = 0.85f * juce::jlimit (0.0f, 1.0f, (db + 42.0f) / 36.0f);
+                    // -42 dB (nothing) .. -6 dB (full duck); no log below -42 dB (most of the time)
+                    if (const float level = sidechainLevel[(size_t) i]; level > 0.00794f)
+                        duck = 0.85f * juce::jmin (1.0f, (20.0f * std::log10 (level) + 42.0f) / 36.0f);
                 }
                 else
                 {

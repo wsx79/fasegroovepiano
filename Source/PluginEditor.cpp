@@ -4439,8 +4439,10 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     octaveToggle.setTooltip ("Double the top note of every chord an octave higher (bright house piano)");
 
     newRiffButton.setTooltip ("Generate a brand new random funky riff");
-    for (auto* b : { &newRiffButton, &diceProgression, &rndPianoButton, &rndBassButton })
+    for (auto* b : { &newRiffButton, &diceProgression, &rndPianoButton, &rndBassButton, &totalRandomButton })
         b->makeRandomButton();
+    totalRandomButton.onClick = [this] { processor.totalRandom(); presetBox.setSelectedId (0, juce::dontSendNotification); };
+    addAndMakeVisible (totalRandomButton);
     newRiffButton.onClick = [this] { if (onVelocityPage()) processor.randomizeVelocities (true, true); else processor.rollNewRiff(); };
 
     diceProgression.setTooltip ("Random soulful-house progression");
@@ -5344,6 +5346,8 @@ void FaseGroovePianoEditor::applyLanguage()
     styleMenuButton.setTooltip (tr ("Ready-made setups by genre: progression, voicing, groove, feel and sound in one click (the key stays)"));
     resetButton.setButtonText (tr ("RESET"));
     presetsButton.setButtonText (tr ("PRESETS"));
+    totalRandomButton.setButtonText (tr ("TOTAL"));
+    totalRandomButton.setTooltip (tr ("Total random: style, key, progression, groove, harmony, bass, sound and feel all at once (undo with the arrow, RESET to start over)"));
     presetsButton.setTooltip (tr ("Save your own setups and load them in any project"));
     learnButton.setButtonText (tr ("LEARN"));
     learnButton.setTooltip (tr ("Learn: play chords on your MIDI keyboard, they fill the progression slot by slot (press again to stop)"));
@@ -6126,6 +6130,8 @@ void FaseGroovePianoEditor::layoutFull()
         undoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
         redoButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
         topRow.removeFromRight (6);
+        totalRandomButton.setBounds (topRow.removeFromRight (84));
+        topRow.removeFromRight (4);
         presetsButton.setBounds (topRow);
     }
     options.setBounds (0, 0, baseWidth, baseHeight);

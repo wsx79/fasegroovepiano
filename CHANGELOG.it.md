@@ -6,6 +6,18 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.5.0] - 2026-10-15
+
+### Aggiunto
+- **🎲 TUTTO** (in alto, accanto a PRESET): stile, tonalità, progressione, groove e a volte armonia,
+  basso, suono e feel a caso, tutti insieme. Annulla con ↶, RESET per ripartire da zero.
+
+### Modificato
+- **Consuma meno CPU**: le voci del suono guida usano seni da tabella e inviluppi calcolati al volo
+  invece di sin / exp / tanh a ogni campione, in media **2,3 volte più veloci** (Rhodes, organi e
+  Wurlitzer fino a 3-4 volte), con lo stesso suono. L'ingresso sidechain viene analizzato solo
+  quando è la sorgente della pompa.
+
 ## [2.4.0] - 2026-10-15
 
 ### Aggiunto

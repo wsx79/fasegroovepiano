@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v2.5.0: pulsante TUTTO (random totale), suono guida circa 2,3 volte più leggero sulla CPU.
 - v2.4.0: Novation Launchpad (Mini MK3, X, Pro MK3) e Ableton Push 2 / 3 come griglia hardware.
 - v2.3.0: sulla pagina velocity random / A-D / blocca cambiano solo le velocity; ingresso sidechain sistemato per Ableton Live (VST3), indicatore del segnale, interruttore Sequencer, note tenute più chiare.
 - v2.2.0: pagina VELOCITY (fader di velocity per ogni passo), sidechain regolabile (interno / esterno, ritmo, rilascio).
