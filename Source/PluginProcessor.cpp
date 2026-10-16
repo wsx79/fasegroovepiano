@@ -208,6 +208,72 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     editRefresher.startTimer (150);
 
     pads = std::make_unique<PadController> (*this);
+
+    // Live keys pressed in the audio thread run here, on the message thread.
+    liveKeyRunner.callback = [this]
+    {
+        int keys[32];
+        int count = 0;
+        {
+            const auto scope = liveKeyFifo.read (liveKeyFifo.getNumReady());
+            for (int i = 0; i < scope.blockSize1; ++i) keys[count++] = liveKeyBuffer[(size_t) (scope.startIndex1 + i)];
+            for (int i = 0; i < scope.blockSize2; ++i) keys[count++] = liveKeyBuffer[(size_t) (scope.startIndex2 + i)];
+        }
+        for (int i = 0; i < count; ++i)
+            runLiveKey (keys[i]);
+    };
+    liveKeyRunner.startTimer (25);
+    liveKeysEnabled();   // reads the setting now, so the audio thread only reads an atomic
+}
+
+namespace
+{
+    std::atomic<int> liveKeysChoice { -1 };   // -1 = not read yet
+
+    std::unique_ptr<juce::PropertiesFile> openLiveKeySettings()
+    {
+        juce::PropertiesFile::Options o;
+        o.applicationName = "Fase Groove Piano";
+        o.folderName = "Fase Groove Piano";
+        o.filenameSuffix = ".settings";
+        o.osxLibrarySubFolder = "Application Support";
+        return std::make_unique<juce::PropertiesFile> (o);
+    }
+}
+
+bool FaseGroovePianoProcessor::liveKeysEnabled()
+{
+    if (liveKeysChoice.load() < 0)
+        liveKeysChoice = openLiveKeySettings()->getBoolValue ("liveKeys", false) ? 1 : 0;   // (read once, on the message thread)
+    return liveKeysChoice.load() == 1;
+}
+
+void FaseGroovePianoProcessor::setLiveKeysEnabled (bool on)
+{
+    liveKeysChoice = on ? 1 : 0;
+    auto settings = openLiveKeySettings();
+    settings->setValue ("liveKeys", on);
+    settings->saveIfNeeded();
+}
+
+void FaseGroovePianoProcessor::runLiveKey (int key)
+{
+    // White keys: the song sections (the parameter's order: main, intro, break, build-up, drop, outro).
+    switch (key)
+    {
+        case 0:  setParameterFromUI (ParamIDs::section, (float) sgk::Section::intro); break;
+        case 2:  setParameterFromUI (ParamIDs::section, (float) sgk::Section::main); break;
+        case 4:  setParameterFromUI (ParamIDs::section, (float) sgk::Section::breakdown); break;
+        case 5:  setParameterFromUI (ParamIDs::section, (float) sgk::Section::buildup); break;
+        case 7:  setParameterFromUI (ParamIDs::section, (float) sgk::Section::drop); break;
+        case 9:  setParameterFromUI (ParamIDs::section, (float) sgk::Section::outro); break;
+        case 3:  rollNewRiff(); break;
+        case 6:  hearPart (false); break;
+        case 8:  hearPart (true); break;
+        case 10: setParameterFromUI (ParamIDs::sequencer, raw (ParamIDs::sequencer) > 0.5f ? 0.0f : 1.0f); break;
+        case 11: previewToggle(); break;
+        default: break;   // C# (the fill) is played by the audio thread itself
+    }
 }
 
 FaseGroovePianoProcessor::~FaseGroovePianoProcessor()
@@ -772,12 +838,29 @@ sgk::HarmonyAnalysis FaseGroovePianoProcessor::analyzeMidiFile (const juce::File
                 continue;
             const double start = m.getTimeStamp() / ticksPerBeat;
             const double end = ev->noteOffObject != nullptr ? ev->noteOffObject->message.getTimeStamp() / ticksPerBeat : start + 0.25;
-            notes.push_back ({ start, juce::jmax (start + 0.05, end), m.getNoteNumber() });
+            notes.push_back ({ start, juce::jmax (start + 0.05, end), m.getNoteNumber(), (int) m.getVelocity() });
             if (notes.size() > 20000)
                 return {};   // not a loop
         }
     }
-    return sgk::analyzeHarmony (notes, beatsPerBar);
+    auto analysis = sgk::analyzeHarmony (notes, beatsPerBar);
+    analysis.groove = sgk::grooveFromNotes (notes, beatsPerBar);
+    return analysis;
+}
+
+void FaseGroovePianoProcessor::applyGroove (const sgk::GroovePattern& groove)
+{
+    if (groove.length() != sgk::userPatternLength)
+        return;
+
+    // The rhythm becomes the user pattern, played in order; with a bass rhythm in it the bass plays
+    // that rhythm (piano-stab bass on the bass row).
+    for (int i = 0; i < sgk::numSegments; ++i)
+        setParameterFromUI (ParamIDs::segment (i), (float) i);
+    setUserPattern (groove);
+    resetStepVelocities();
+    if (groove.leftHand.find_first_of ("XxgUuDd>") != std::string::npos)
+        setParameterFromUI (ParamIDs::bass, (float) sgk::stabsOwnRhythmMode);
 }
 
 void FaseGroovePianoProcessor::applyAnalysis (const sgk::HarmonyAnalysis& a)
@@ -1247,6 +1330,25 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     {
         const auto m = meta.getMessage();
 
+        // Live keys: the lowest octave plays commands, not notes.
+        if (liveKeysChoice.load() == 1 && m.isNoteOnOrOff()
+            && m.getNoteNumber() >= liveKeysLowest && m.getNoteNumber() < liveKeysLowest + 12)
+        {
+            if (m.isNoteOn())
+            {
+                const int key = m.getNoteNumber() - liveKeysLowest;
+                if (key == 1)
+                    liveFillRequested = true;
+                else if (liveKeyFifo.getFreeSpace() > 0)
+                {
+                    const auto scope = liveKeyFifo.write (1);
+                    if (scope.blockSize1 > 0) liveKeyBuffer[(size_t) scope.startIndex1] = key;
+                    else if (scope.blockSize2 > 0) liveKeyBuffer[(size_t) scope.startIndex2] = key;
+                }
+            }
+            continue;
+        }
+
         if (learnMode.load() && m.isNoteOnOrOff())
         {
             learnDown[(size_t) m.getNoteNumber()] = m.isNoteOn();
@@ -1365,6 +1467,21 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         previewRewind = false;
 
     events.clear();
+
+    // Live key C#: a fill in the next bar (in the fill style chosen, or one that suits the groove).
+    if (liveFillRequested.exchange (false) && running)
+        liveFillBar = (long long) std::floor (startPpq / 4.0) + 1;
+    if (liveFillBar >= 0)
+    {
+        if (std::floor (startPpq / 4.0) > (double) liveFillBar)
+            liveFillBar = -1;
+        else
+        {
+            settings.forcedFillBar = liveFillBar;
+            settings.forcedFillStyle = juce::roundToInt (raw (ParamIDs::fills)) == 0 ? (int) sgk::FillStyle::mix
+                                                                                        : (int) settings.fillStyle;
+        }
+    }
 
     if (running)
     {
@@ -1593,6 +1710,7 @@ void FaseGroovePianoProcessor::applyIntention (int intention, bool keepRhythm, b
                                             if (juce::roundToInt (raw (ParamIDs::fills)) == 0) setParameterFromUI (ParamIDs::fills, 2.0f);
                                             setParameterFromUI (ParamIDs::octaveTop, 1.0f); break;
             case sgk::Intention::sophisticated: nudge (ParamIDs::strum, 0.08f, 0.0f, 1.0f); break;
+            case sgk::Intention::straighter: nudge (ParamIDs::swing, -0.1f, 0.0f, 0.55f); nudge (ParamIDs::humanize, -0.05f, 0.0f, 0.6f); break;
         }
     }
 
@@ -1624,6 +1742,8 @@ void FaseGroovePianoProcessor::applyIntention (int intention, bool keepRhythm, b
                 setParameterFromUI (ParamIDs::voicing, (float) (voicing == (int) sgk::Voicing::drop2 ? sgk::Voicing::drop24 : sgk::Voicing::drop2));
                 if (juce::roundToInt (raw (ParamIDs::approach)) == 0) setParameterFromUI (ParamIDs::approach, 2.0f);
                 break;
+            case sgk::Intention::straighter:
+                break;   // a rhythm move only
         }
     }
 }

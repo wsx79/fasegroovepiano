@@ -925,6 +925,71 @@ static void testContextualFills()
     CHECK (fillNotes (1, FillStyle::pentatonicUp) > 0);
 }
 
+static void testGrooveFromMidi()
+{
+    // A groove played by the engine, read back from its notes: the same chord and bass rhythm.
+    for (int pattern : { 1, 5, 12 })
+    {
+        GrooveSettings s;
+        s.humanize = 0.0f; s.swing = 0.0f; s.pattern = pattern; s.bass = BassMode::withChords;
+        std::vector<AnalyzedNote> notes;
+        std::set<int> chordSteps, bassSteps;
+        for (const auto& e : GrooveEngine::renderClip (s, 32.0))
+            if (e.isNoteOn())
+            {
+                notes.push_back ({ e.ppq, e.ppq + 0.2, e.note, e.velocity });
+                const int step = (int) std::lround (e.ppq * 4.0) % 32;
+                (e.part == Part::bass ? bassSteps : chordSteps).insert (step);
+            }
+        const auto g = grooveFromNotes (notes, 4);
+        CHECK (g.length() == 32);
+        std::set<int> readChords, readBass;
+        for (int i = 0; i < g.length(); ++i)
+        {
+            if (g.rightHand[(size_t) i] != '.' && g.rightHand[(size_t) i] != '=') readChords.insert (i);
+            if (g.leftHand[(size_t) i] != '.' && g.leftHand[(size_t) i] != '=') readBass.insert (i);
+        }
+        CHECK (readChords == chordSteps);
+        CHECK (readBass == bassSteps);
+    }
+    CHECK (grooveFromNotes ({}, 4).length() == 0);
+    CHECK (grooveFromNotes ({ { 0.0, 1.0, 60, 100 } }, 3).length() == 0);
+}
+
+static void testSectionHarmony()
+{
+    // Sections colour the harmony: lighter chords in the intro / outro, fuller in the drop, the
+    // main loop as chosen.
+    GrooveSettings s;
+    s.extension = Extension::ninth;
+    s.section = Section::main;     CHECK (GrooveEngine::sectionExtension (s) == Extension::ninth);
+    s.section = Section::intro;    CHECK (GrooveEngine::sectionExtension (s) == Extension::seventh);
+    s.section = Section::outro;    CHECK (GrooveEngine::sectionExtension (s) == Extension::seventh);
+    s.extension = Extension::seventh;
+    s.section = Section::drop;     CHECK (GrooveEngine::sectionExtension (s) == Extension::ninth);
+    s.section = Section::breakdown; CHECK (GrooveEngine::sectionExtension (s) == Extension::seventh);
+    s.section = Section::intro;
+    CHECK (GrooveEngine::chordForSlot (s, 0).tones.size <= 4);
+}
+
+static void testStraighter()
+{
+    // DNA "Straighter": everything on 8ths, no ghosts, no pushes; the downbeat plays.
+    for (int pattern : { 1, 5, 12, 40 })
+    {
+        GrooveSettings s;
+        s.pattern = pattern;
+        const auto p = applyIntention (GrooveEngine::resolvePattern (s), Intention::straighter, 7u);
+        for (int i = 0; i < p.length(); ++i)
+        {
+            const char r = p.rightHand[(size_t) i];
+            CHECK (r != 'g' && r != '>');
+            if (i % 2 == 1) CHECK (r == '.' || r == '=');
+        }
+        CHECK (p.rightHand[0] != '.');
+    }
+}
+
 static void testEditedLoop()
 {
     // Notes edited in the piano roll replace the groove in the main section and loop at their length.
@@ -1532,6 +1597,9 @@ int main()
     testEvolution();
     testChordRange();
     testContextualFills();
+    testGrooveFromMidi();
+    testSectionHarmony();
+    testStraighter();
     testEditedLoop();
     testCarryEdits();
     testAutoMovement();

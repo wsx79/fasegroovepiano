@@ -6,6 +6,21 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.9.0] - 2026-10-16
+
+### Added
+- **Groove from MIDI**: dropping a .mid file now reads its **rhythm** too (chords on top, low notes
+  as the bass, with accents, ghost notes and holds); choose *Chords + rhythm*, *Chords only* or
+  *Rhythm only*. The rhythm becomes your User pattern.
+- **Live keys** (OPTIONS → SETTINGS): the lowest octave of a MIDI keyboard (notes 24-35) controls
+  the groove - sections on the white keys, a fill in the next bar, new riff, hear piano / bass,
+  sequencer, play / pause on the black ones and B.
+- DNA: **Straighter** - every hit on the 8ths, no ghost notes or pushes, less swing.
+
+### Changed
+- **Sections colour the harmony**: lighter chords in the intro / outro, fuller ones in the drop,
+  the main loop, break and build-up as chosen. Automatic.
+
 ## [2.8.0] - 2026-10-15
 
 ### Changed

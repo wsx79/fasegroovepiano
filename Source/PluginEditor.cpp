@@ -1134,6 +1134,8 @@ OptionsOverlay::OptionsOverlay() : artist (Branding::artistLogo())
     addChildComponent (checkUpdatesButton);
     padToggle.onClick = [this] { PadController::setEnabled (padToggle.getToggleState()); };
     addChildComponent (padToggle);
+    liveKeysToggle.onClick = [this] { FaseGroovePianoProcessor::setLiveKeysEnabled (liveKeysToggle.getToggleState()); };
+    addChildComponent (liveKeysToggle);
     padStatus.setFont (font (11.0f));
     padStatus.setColour (juce::Label::textColourId, Palette::dim);
     padStatus.setJustificationType (juce::Justification::topLeft);
@@ -1157,6 +1159,7 @@ void OptionsOverlay::show (bool about, float currentScale, bool shrinkWhileDragg
     tipsToggle.setToggleState (Localisation::tipsEnabled(), juce::dontSendNotification);
     updatesToggle.setToggleState (Updater::autoCheckEnabled(), juce::dontSendNotification);
     padToggle.setToggleState (PadController::enabled(), juce::dontSendNotification);
+    liveKeysToggle.setToggleState (FaseGroovePianoProcessor::liveKeysEnabled(), juce::dontSendNotification);
     selectTab (about);
     setVisible (true);
     toFront (false);
@@ -1178,8 +1181,10 @@ void OptionsOverlay::refreshText()
     tipsToggle.setButtonText (tr ("Show tips when the mouse rests on a control"));
     updatesToggle.setButtonText (tr ("Check for updates automatically (GitHub)"));
     checkUpdatesButton.setButtonText (tr ("CHECK NOW"));
-    padToggle.setButtonText (tr ("Launchpad / Push as a hardware grid (Launchpad Mini MK3, X, Pro MK3, Push 2, Push 3)"));
+    padToggle.setButtonText (tr ("Launchpad / Push as a hardware grid (Mini MK3, X, Pro MK3, Push 2 / 3)"));
     padToggle.setTooltip (tr ("The pads show and edit the groove, the round buttons play, stop and roll new rhythms. Set the Launchpad's control surface to None in your DAW."));
+    liveKeysToggle.setButtonText (tr ("Live keys: the lowest octave of your keyboard controls the groove (MIDI notes 24-35)"));
+    liveKeysToggle.setTooltip (tr ("White keys: C intro, D main, E break, F build-up, G drop, A outro. Black keys: C# fill in the next bar, D# new riff, F# hear piano, G# hear bass, A# sequencer on/off. B: play / pause."));
     repaint();
 }
 
@@ -1197,7 +1202,7 @@ void OptionsOverlay::selectTab (bool about)
     aboutTab.setToggleState (about, juce::dontSendNotification);
 
     for (auto* c : std::initializer_list<juce::Component*> { &languageLabel, &languageBox, &sizeLabel, &sizeBox, &shrinkToggle, &tipsToggle,
-                                                                 &updatesToggle, &checkUpdatesButton, &padToggle, &padStatus })
+                                                                 &updatesToggle, &checkUpdatesButton, &padToggle, &padStatus, &liveKeysToggle })
         c->setVisible (! about);
 
     auto showLink = [about] (juce::Component& b, const char* url) { b.setVisible (about && juce::String (url).isNotEmpty()); };
@@ -1246,6 +1251,8 @@ void OptionsOverlay::resized()
     settings.removeFromTop (16);
     padToggle.setBounds (settings.removeFromTop (26).withWidth (500));
     padStatus.setBounds (settings.removeFromTop (48).withTrimmedLeft (30).withWidth (480));
+    settings.removeFromTop (4);
+    liveKeysToggle.setBounds (settings.removeFromTop (26).withWidth (520));
 
     // About tab: link buttons above the footer
     auto row = inner.withTrimmedBottom (26).removeFromBottom (30);
@@ -1282,7 +1289,7 @@ void OptionsOverlay::paint (juce::Graphics& g)
         g.setColour (Palette::dim);
         g.setFont (font (12.0f));
         g.drawText (tr ("Settings are saved for all your projects."),
-                    juce::Rectangle<float> (r.getX() + 28.0f, r.getY() + 390.0f, r.getWidth() - 28.0f, 18.0f), juce::Justification::centredLeft);
+                    juce::Rectangle<float> (r.getX() + 28.0f, r.getY() + 500.0f, r.getWidth() - 28.0f, 18.0f), juce::Justification::centredLeft);
         g.setFont (font (11.0f));
         g.drawText ("Fase Groove Piano " + juce::String (JucePlugin_VersionString) + dot + tr ("Built with JUCE"),
                     r.removeFromBottom (16.0f), juce::Justification::centred);
@@ -5157,10 +5164,43 @@ void FaseGroovePianoEditor::chooseMidiToImport()
 void FaseGroovePianoEditor::importMidi (const juce::File& file)
 {
     const auto analysis = FaseGroovePianoProcessor::analyzeMidiFile (file);
-    if (! analysis.ok)
+    const bool chords = analysis.ok, rhythm = analysis.groove.length() == sgk::userPatternLength;
+    if (! chords && ! rhythm)
     {
         juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Fase Groove Piano",
                                                 tr ("No chords found in this MIDI file."));
+        return;
+    }
+
+    // Both found: what to take, the chords, the rhythm or both.
+    if (chords && rhythm)
+    {
+        auto* window = new juce::AlertWindow (file.getFileNameWithoutExtension(),
+                                              tr ("Found in this MIDI file: chords and a rhythm. What do you want to take?"),
+                                              juce::MessageBoxIconType::QuestionIcon);
+        window->addButton (tr ("Chords + rhythm"), 3);
+        window->addButton (tr ("Chords only"), 1);
+        window->addButton (tr ("Rhythm only"), 2);
+        window->addButton (tr ("Cancel"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
+        juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+        window->enterModalState (true, juce::ModalCallbackFunction::create ([safe, file, analysis] (int choice)
+        {
+            if (safe != nullptr && choice > 0)
+                safe->applyImport (file, analysis, (choice & 1) != 0, (choice & 2) != 0);
+        }), true);
+        return;
+    }
+    applyImport (file, analysis, chords, rhythm);
+}
+
+void FaseGroovePianoEditor::applyImport (const juce::File& file, const sgk::HarmonyAnalysis& analysis, bool takeChords, bool takeRhythm)
+{
+    if (takeRhythm)
+        processor.applyGroove (analysis.groove);
+    if (! takeChords)
+    {
+        juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, file.getFileNameWithoutExtension(),
+                                                tr ("The rhythm of the MIDI file is now your groove (User pattern): edit it in the grid. The chords stay yours."));
         return;
     }
 
@@ -5189,6 +5229,8 @@ void FaseGroovePianoEditor::importMidi (const juce::File& file)
          << (analysis.confidence >= 0.8 ? tr ("high") : analysis.confidence >= 0.6 ? tr ("medium") : tr ("low: check the chords"));
     text << "\n\n" << tr ("This is an estimate: inversions and passing notes can mislead it. Fix any chord on the circle, or undo with the arrow.");
 
+    if (takeRhythm)
+        text << "\n" << tr ("Rhythm: taken (User pattern)");
     juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, file.getFileNameWithoutExtension(), text);
 }
 

@@ -18,6 +18,7 @@ struct AnalyzedNote
 {
     double start = 0.0, end = 0.0;   // in beats (quarter notes)
     int note = 60;
+    int velocity = 100;
 };
 
 struct HarmonyAnalysis
@@ -31,8 +32,15 @@ struct HarmonyAnalysis
     double outOfScale = 0.0;         // share of the notes (by duration) outside the scale
     std::array<bool, 12> outsideNotes {};   // pitch classes noticeably outside the scale
     double confidence = 0.0;         // 0..1: how well the chords explain the notes
+    GroovePattern groove;            // the part's rhythm (see grooveFromNotes), length 0 if none
 };
 
 HarmonyAnalysis analyzeHarmony (const std::vector<AnalyzedNote>& notes, int beatsPerBar = 4);
+
+/** The groove of a MIDI part, as a two-bar grid (32 sixteenths, like the user pattern): the
+    chords' rhythm on the right hand, the bass's (low notes under the chords) on the left, with
+    accents, ghost notes and holds. Steps that play in at least half of the two-bar rounds count.
+    Empty (length 0) when it can't be read: not 4/4, or fewer than three chord hits. */
+GroovePattern grooveFromNotes (const std::vector<AnalyzedNote>& notes, int beatsPerBar = 4);
 
 } // namespace sgk

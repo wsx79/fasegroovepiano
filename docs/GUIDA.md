@@ -132,7 +132,7 @@ Con *Play mode → Hold a key* mostra anche "HOLD" e la tonalità scelta col tas
 | **🎲 CASUALE** | Progressione casuale ma musicale, coi movimenti tipici della soulful house (ii–V, IV–iii–ii, quinte discendenti). Mantiene la lunghezza attuale. |
 | **VARIANTI** (accanto al titolo del pannello) | Il **Chord Variation Lab**: alternative della tua progressione nella stessa tonalità e con lo stesso numero di accordi, così il ritmo resta: **Più soulful** (ii prima del V, una dominante secondaria), **Gospel** (la iv presa in prestito, settime di dominante), **Deep** (v minore, vi al posto del I che ritorna) e **Cromatica** (sostituzione di tritono bII7, bVI). **ASCOLTA** passa a una variante mentre il loop suona; **TIENI** o **ANNULLA**. |
 | **LEARN** (IMPARA) | Suona gli accordi sulla **tastiera MIDI**: ogni accordo che suoni (e rilasci) riempie lo slot successivo, partendo dallo slot 1, e la progressione cresce con lui. Gli accordi della scala diventano gradi, gli altri accordi liberi. Premi di nuovo per fermare. |
-| **Importa un file MIDI** | Trascina un file **.mid** in un punto qualsiasi della finestra (oppure usa *Importa un file MIDI…* in fondo al browser delle progressioni): il plug-in **stima la tonalità** (maggiore, dorica o minore), **gli accordi** e **quanto dura ognuno**, trova il loop (fino a 8 accordi) e lo carica come progressione. Una finestra ti mostra cosa ha trovato, le note fuori scala e l'**affidabilità** (alta, media, bassa). La batteria (canale 10) viene ignorata. È una **stima**: rivolti, fondamentali mancanti e note di passaggio possono ingannarla, quindi controlla gli accordi e correggili sul circolo, o annulla con ◀. |
+| **Importa un file MIDI** | Trascina un file **.mid** in un punto qualsiasi della finestra (oppure usa *Importa un file MIDI…* in fondo al browser delle progressioni): il plug-in **stima la tonalità** (maggiore, dorica o minore), **gli accordi** e **quanto dura ognuno**, trova il loop (fino a 8 accordi) e lo carica come progressione. Una finestra ti mostra cosa ha trovato, le note fuori scala e l'**affidabilità** (alta, media, bassa). La batteria (canale 10) viene ignorata. **Anche il ritmo** (v2.9): se il file ha accordi e ritmo scegli **Accordi + ritmo**, **Solo accordi** o **Solo ritmo** - il ritmo (accordi sulla riga in alto, le note basse come basso) diventa il tuo **Pattern utente**, con accenti, ghost note e note tenute, pronto da modificare nella griglia. È una **stima**: rivolti, fondamentali mancanti e note di passaggio possono ingannarla, quindi controlla gli accordi e correggili sul circolo, o annulla con ◀. |
 | **Length** | Quanti accordi (1–8). Quelli oltre la lunghezza appaiono spenti. |
 | **Each chord** | Durata di ogni accordo: ½, 1, 2 o 4 battute. |
 | **Slot 1–8** | Ogni slot è un grado della scala (I…VII). Sopra vedi il nome dell'accordo e il numero romano (maiuscolo = maggiore, minuscolo = minore, ø = semidiminuito). Lo slot che suona si illumina. Una barra colorata in alto in ogni slot mostra quanto quell'accordo suona bene con quelli vicini (verde = benissimo, grigio = stride; passa il mouse per un suggerimento). Uno slot che mostra **Libero** suona un accordo libero scelto dal circolo delle quinte (es. *bVI*); scegli un grado dal suo menu per tornare alla scala. Le piccole **frecce ▲ ▼** negli angoli in alto cambiano il **rivolto** di quell'accordo (fino a tre passi per verso, indicati come +1, -2…) quando la scelta automatica non ti convince. |
@@ -206,7 +206,7 @@ Anello esterno = tonalità maggiori, anello interno = relative minori.
 |---|---|
 | **Groove** | 172 ritmi a due mani su 2 battute divisi per genere (vedi sotto), **Random riff** e **User pattern** (il tuo pattern modificato a mano sulla griglia). Cliccandolo si apre il **browser dei groove**: generi a sinistra, a destra i groove di quel genere con il **disegno del ritmo** (accordi sopra, basso sotto), una casella di ricerca, **I MIEI GROOVE** (quelli salvati da te), **★ Preferiti** (clicca la stella ☆ su un groove) e **Recenti** (gli ultimi dodici che hai provato). Clicca un groove per sentirlo mentre il loop suona, doppio clic (o Invio) per chiudere. Le frecce **◀ ▶** accanto al menu passano al groove precedente / successivo. |
 | **NEW RIFF** | Genera un riff nuovo (accordi + basso), quasi sempre dalle figure classiche dei loop di piano house (la famiglia di crome puntate 3-3-3-3-2-2 e le sue parenti), di solito con la stessa battuta ripetuta come in un loop house e un tocco regolare, sopra una figura di basso semplice che lo segue. Se hai bloccato qualche parte con **LOCK** (vedi *Piano roll e griglia ritmica*), quelle parti restano e cambia solo il resto. Riff e modifiche vengono salvati nel progetto. |
-| **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). |
+| **Song section** | Main, Intro, Break, Build-up, Drop, Outro: trasforma il groove per la sezione del brano (vedi [capitolo 6](#6-costruire-un-brano-intro-break-drop)). Segue anche l'armonia (v2.9): accordi più leggeri in intro e outro (le none diventano settime...), più pieni nel drop (le settime diventano none). |
 | **Fills** | **Spenti (Off)** di default. Ogni battuta, oppure ogni 2/4/8 battute, la fine della battuta diventa un breve fill che porta all'accordo successivo. |
 | **Fill style** | 11 stili, tutti diretti verso la nota alta dell'accordo successivo: *Pentatonic run up* / *down* (scaletta in salita / discesa), *Chord roll* (arpeggio fluido in trentaduesimi dell'accordo successivo, partendo un'ottava sotto), *Gospel run* (otto sedicesimi in salita sulla scala negli ultimi due tempi), *Chromatic walk-up* (quattro semitoni verso l'accordo successivo), *Push stabs* (uno stab, una ghost note, poi l'accordo successivo anticipato sul "e" del 4), *16th chord chops* (quattro chop leggeri in crescendo), *Gospel thirds* (terze parallele in discesa), *Piano glissando* (una spazzata veloce in salita), *Blues lick* (giù per la scala blues) e *Mix*, che a ogni fill ne suona uno diverso, **scelto in base al groove** (v2.8): a un groove pieno fill corti (stab, chop, un roll), a uno scarno scale e glissando. Il fill che chiude un ciclo di *Evoluzione* con i fill spenti viene scelto allo stesso modo. |
 | **Variation** (Variazione) | Ogni 4 o 8 battute l'ultima battuta suona una **variazione** del groove (un colpo spostato, una ghost note, un anticipo, una nota di basso in levare), così un loop lungo non è mai statico. **Evoluzione in 8 / 16 battute** (v2.7): lo stesso groove **cresce** in quattro passi - com'è scritto, poi con le ghost note, poi una variazione con un po' più di energia, e l'ultima battuta suona un fill verso il giro successivo. Anche nella vista semplice. |
@@ -350,7 +350,8 @@ sulla griglia). Sopra ogni parte trovi:
 | **RND** | Nuovo ritmo casuale solo per quella parte. |
 | **LOCK** | Blocca la parte: **NEW RIFF** cambia tutto tranne le parti bloccate. |
 
-**DNA** (in alto sulla griglia) apre **Musical DNA**: cinque pulsanti che portano il tuo groove
+**DNA** (in alto sulla griglia) apre **Musical DNA**: sei pulsanti (v2.9: **Più dritto** - ogni colpo
+sugli ottavi, niente ghost note né anticipi, meno swing) che portano il tuo groove
 **un passo** verso un'intenzione: **Più soulful** (accordi tenuti, un anticipo verso la battuta
 dopo, meno ghost note, none, voicing rootless, accordo di passaggio), **Più funky** (ghost note,
 anticipi di un sedicesimo, note corte, più swing), **Più minimale** (meno note che suonano più a
@@ -446,6 +447,21 @@ pausa.
 - Se i pad restano spenti, premi **User** sul Push. Su **Push 3** prima imposta i pad su *Poly
   Aftertouch* in Control Mode (come consiglia Ableton per la User mode).
 - Push 1 e Push 3 in modalità Standalone non sono supportati.
+
+
+#### Tasti live (v2.9)
+
+**OPZIONI → IMPOSTAZIONI → Tasti live** trasforma l'ottava più bassa della tastiera MIDI (note MIDI
+24-35, l'ottava dal Do1 - Do0 nei nomi di Ableton) in comandi; quei tasti non suonano.
+
+| Tasto | Fa |
+|---|---|
+| Do · Re · Mi · Fa · Sol · La | Sezione: Intro · Main · Break · Build-up · Drop · Outro |
+| Do# | Un fill nella battuta dopo (il tuo stile di fill, o uno adatto al groove) |
+| Re# | Nuovo riff |
+| Fa# · Sol# | Ascolta piano · ascolta basso |
+| La# | Sequencer acceso / spento |
+| Si | Play / pausa |
 
 ### Esporta MIDI
 

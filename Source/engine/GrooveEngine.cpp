@@ -1093,6 +1093,31 @@ int GrooveEngine::slotForStep (long long step, const GrooveSettings& s) noexcept
     return mod (floorDiv (step, std::max (1, s.stepsPerChord)), len);
 }
 
+Extension GrooveEngine::sectionExtension (const GrooveSettings& s) noexcept
+{
+    // The song's sections colour the harmony a little: the intro and the outro play lighter chords
+    // (one step simpler), the drop fuller ones (one step richer); the main loop, the break and the
+    // build-up play the extension as chosen.
+    const auto e = s.extension;
+    if (s.section == Section::intro || s.section == Section::outro)
+        switch (e)
+        {
+            case Extension::ninth:                                    return Extension::seventh;
+            case Extension::eleventh: case Extension::lushEleventh:
+            case Extension::soulThirteenth:                           return Extension::ninth;
+            case Extension::sixNine:                                  return Extension::add9;
+            default:                                                  return e;
+        }
+    if (s.section == Section::drop)
+        switch (e)
+        {
+            case Extension::triad:   return Extension::add9;
+            case Extension::seventh: return Extension::ninth;
+            default:                 return e;
+        }
+    return e;
+}
+
 Chord GrooveEngine::chordForSlot (const GrooveSettings& s, int slot) noexcept
 {
     const int i = std::clamp (slot, 0, maxProgressionLength - 1);
@@ -1101,10 +1126,10 @@ Chord GrooveEngine::chordForSlot (const GrooveSettings& s, int slot) noexcept
     {
         // minor = Dorian i, major = Ionian I, dominant = Mixolydian I
         const int scale = free >= 24 ? 3 : free >= 12 ? 1 : 0;
-        return buildChord ((s.keyRoot + free % 12) % 12, scale, 0, s.extension);
+        return buildChord ((s.keyRoot + free % 12) % 12, scale, 0, sectionExtension (s));
     }
 
-    return buildChord (s.keyRoot, s.scale, s.progression[(size_t) i], s.extension);
+    return buildChord (s.keyRoot, s.scale, s.progression[(size_t) i], sectionExtension (s));
 }
 
 std::string GrooveEngine::numeralForSlot (const GrooveSettings& s, int slot)
@@ -1385,7 +1410,9 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         // A song section with its own fill: only on its last bar.
         fillBar = bar == s.forcedFillBar && s.forcedFillStyle >= 0;
         if (fillBar)
-            fillStyle = effectiveFillStyle ((FillStyle) std::clamp (s.forcedFillStyle, 0, numFillStyles - 1), bar);
+            fillStyle = s.forcedFillStyle == (int) FillStyle::mix
+                            ? contextualFillStyle (normalPattern.rightHand, bar)
+                            : effectiveFillStyle ((FillStyle) std::clamp (s.forcedFillStyle, 0, numFillStyles - 1), bar);
     }
     const int fillStart = fillStartStep (fillStyle);
     const bool inFill = fillBar && stepInBar >= fillStart;

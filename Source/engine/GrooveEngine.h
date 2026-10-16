@@ -313,6 +313,9 @@ public:
     static std::vector<ProgressionVariant> progressionVariants (const GrooveSettings& s);
 
     /** Chord (and its voicing) for every slot of the progression, voice-led in order. */
+    /** The extension a song section plays: lighter in the intro / outro, fuller in the drop. */
+    static Extension sectionExtension (const GrooveSettings& s) noexcept;
+
     static void voiceProgression (const GrooveSettings& s,
                                   std::array<Chord, maxProgressionLength>& chords,
                                   std::array<VoicedChord, maxProgressionLength>& voiced) noexcept;

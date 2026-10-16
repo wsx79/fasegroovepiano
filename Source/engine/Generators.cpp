@@ -469,7 +469,7 @@ GroovePattern morphPatterns (const GroovePattern& a, const GroovePattern& b, dou
 
 const char* intentionName (int i) noexcept
 {
-    static const char* const names[numIntentions] { "More soulful", "Funkier", "More minimal", "More energy", "More sophisticated" };
+    static const char* const names[numIntentions] { "More soulful", "Funkier", "More minimal", "More energy", "More sophisticated", "Straighter" };
     return names[std::clamp (i, 0, numIntentions - 1)];
 }
 
@@ -579,6 +579,33 @@ GroovePattern applyIntention (const GroovePattern& source, Intention intention, 
             for (int i = 0; i < len; ++i)
                 if (isHit (lh[(size_t) i]) && i % 2 == 1 && chance (i, 14) < 0.6)
                     lh[(size_t) i] = '.';
+            break;
+        }
+
+        case Intention::straighter:
+        {
+            // On the grid's strong points: hits on the "e" / "a" 16ths move to the nearest 8th,
+            // ghost notes and pushes go, the bar starts on its downbeat.
+            for (auto* line : { &rh, &lh })
+            {
+                auto& l = *line;
+                for (int i = 0; i < len; ++i)
+                {
+                    char& c = l[(size_t) i];
+                    if (c == 'g') { c = '.'; continue; }
+                    if (c == '>') { c = 'x'; }
+                    if (i % 2 == 1 && isHit (c))
+                    {
+                        const char moved = c;
+                        c = '.';
+                        if (empty (at (l, i - 1)))      at (l, i - 1) = moved;   // a 16th earlier...
+                        else if (empty (at (l, i + 1))) at (l, i + 1) = moved;   // ...or later
+                    }
+                }
+                for (int bar = 0; bar < len / 16; ++bar)
+                    if (empty (at (l, bar * 16)) && line == &rh)
+                        at (l, bar * 16) = 'X';
+            }
             break;
         }
 

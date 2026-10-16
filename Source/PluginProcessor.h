@@ -80,6 +80,17 @@ public:
     /** HEAR PIANO / HEAR BASS: lit = you hear it; switching off the only part heard switches the other on. */
     void hearPart (bool bass);
 
+    //==============================================================================
+    // Live keys: the lowest octave of a MIDI keyboard (notes 24..35) as controls, when switched on
+    // in OPTIONS (global, like the language). White keys pick the song section (C intro, D main,
+    // E break, F build-up, G drop, A outro); C# plays a fill in the next bar, D# a new riff,
+    // F# / G# hear piano / bass, A# the sequencer on / off, B play / pause.
+    static constexpr int liveKeysLowest = 24;
+    static bool liveKeysEnabled();
+    static void setLiveKeysEnabled (bool);
+    /** Runs a live key's command (message thread). */
+    void runLiveKey (int key);
+
     juce::VST3ClientExtensions* getVST3ClientExtensions() override { return &vst3Extensions; }
 
     /** Peak level arriving at the sidechain input (for the meter in the UI). */
@@ -187,6 +198,8 @@ public:
     static sgk::HarmonyAnalysis analyzeMidiFile (const juce::File&);
     /** Sets key, scale, progression and chord length from an analysis. */
     void applyAnalysis (const sgk::HarmonyAnalysis&);
+    /** A rhythm read from a MIDI file (HarmonyAnalysis::groove) becomes the user pattern. */
+    void applyGroove (const sgk::GroovePattern&);
     /** Index in progressionPresets() that a style loads, or -1. */
     static int stylePreset (int index);
 
@@ -339,6 +352,13 @@ private:
 
     // Sidechain: the level of the sidechain input, per sample of the block, and its follower.
     std::vector<float> sidechainLevel, lastOutput;
+
+    // Live keys pressed on the audio thread, run on the message thread (lock-free).
+    juce::AbstractFifo liveKeyFifo { 32 };
+    std::array<int, 32> liveKeyBuffer {};
+    std::atomic<bool> liveFillRequested { false };
+    long long liveFillBar = -1;
+    Refresher liveKeyRunner;
     float sidechainEnvelope = 0.0f;
     static BusesProperties makeBuses();
 

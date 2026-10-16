@@ -349,7 +349,7 @@ private:
     juce::TextButton sourceButton, kofiButton, paypalButton, spotifyButton;
     juce::Label languageLabel, sizeLabel;
     juce::ComboBox languageBox, sizeBox;
-    juce::ToggleButton shrinkToggle, tipsToggle, updatesToggle, padToggle;
+    juce::ToggleButton shrinkToggle, tipsToggle, updatesToggle, padToggle, liveKeysToggle;
     juce::Label padStatus;
 };
 
@@ -782,6 +782,7 @@ private:
     void filesDropped (const juce::StringArray&, int, int) override;
     void chooseMidiToImport();
     void importMidi (const juce::File&);
+    void applyImport (const juce::File&, const sgk::HarmonyAnalysis&, bool takeChords, bool takeRhythm);
     void showSaveMenu();
     void saveAllParts();
     void undo();

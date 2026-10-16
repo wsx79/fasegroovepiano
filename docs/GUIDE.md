@@ -129,7 +129,7 @@ With *Play mode → Hold a key* it also shows "HOLD" and the key chosen with you
 | **🎲 RANDOM** | A random but musical progression, using typical soulful house moves (ii–V, IV–iii–ii, falling fifths). Keeps the current length. |
 | **VARIANTS** (next to the panel title) | The **Chord Variation Lab**: alternatives of your progression in the same key and with the same number of chords, so the rhythm stays: **More soulful** (ii before V, a secondary dominant), **Gospel** (the borrowed iv, dominant 7ths), **Deep** (minor v, vi instead of a returning I) and **Chromatic** (tritone substitution bII7, bVI). **HEAR** switches to one while the loop plays; **KEEP** or **CANCEL**. |
 | **LEARN** | Play chords on your **MIDI keyboard**: each chord you play (and release) fills the next slot, starting from slot 1, and the progression grows with it. Chords of the scale become degrees, the others free chords. Press LEARN again to stop. |
-| **Import a MIDI file** | Drop a **.mid** file anywhere on the window (or use *Import a MIDI file…* at the bottom of the progression browser): the plug-in **estimates the key** (major, Dorian or minor), **the chords** and **how long each lasts**, finds the loop (up to 8 chords) and loads it as your progression. A window shows what it found, the notes outside the scale and a **reliability** (high, medium, low). Drums (channel 10) are ignored. It is an **estimate**: inversions, missing roots and passing notes can mislead it, so check the chords and fix them on the circle, or undo with ◀. |
+| **Import a MIDI file** | Drop a **.mid** file anywhere on the window (or use *Import a MIDI file…* at the bottom of the progression browser): the plug-in **estimates the key** (major, Dorian or minor), **the chords** and **how long each lasts**, finds the loop (up to 8 chords) and loads it as your progression. A window shows what it found, the notes outside the scale and a **reliability** (high, medium, low). Drums (channel 10) are ignored. **The rhythm too** (v2.9): when the file has chords and a rhythm, you choose **Chords + rhythm**, **Chords only** or **Rhythm only** - the rhythm (chords on the upper row, the low notes as the bass) becomes your **User pattern**, with accents, ghost notes and held notes, ready to edit in the grid. It is an **estimate**: inversions, missing roots and passing notes can mislead it, so check the chords and fix them on the circle, or undo with ◀. |
 | **Length** | How many chords (1–8). Slots beyond the length are greyed out. |
 | **Each chord** | How long each chord lasts: ½, 1, 2 or 4 bars. |
 | **Slots 1–8** | Each slot is a scale degree (I…VII). Above it you see the chord name and the Roman numeral (upper case = major, lower case = minor, ø = half-diminished). The playing slot lights up. A coloured bar on top of each slot shows how well that chord sounds with the chords next to it (green = great, grey = clashes; hover for a hint). A slot that shows **Free** plays a free chord set from the circle of fifths (e.g. *bVI*); pick a degree from its menu to go back to the scale. The small **▲ ▼ arrows** in the top corners change the **inversion** of that chord (up to three steps each way, shown as +1, -2…) when the automatic choice doesn't convince you. |
@@ -200,7 +200,7 @@ Outer ring = major keys, inner ring = relative minors.
 |---|---|
 | **Groove** | 172 two-hand, two-bar rhythms grouped by genre (see below), **Random riff** and **User pattern** (your hand-edited grid). Clicking it opens the **groove browser**: genres on the left, the grooves of that genre on the right with a **picture of their rhythm** (chords on top, bass below), a search box, **MY GROOVES** (your saved ones), **★ Favourites** (click the ☆ star on any groove) and **Recent** (the last twelve you tried). Click a groove to hear it while the loop plays, double-click (or Enter) to close. The **◀ ▶** arrows next to the menu step to the previous / next groove. |
 | **NEW RIFF** | Generates a new riff (chords + bass), mostly from the classic piano house loop figures (the dotted-8th 3-3-3-3-2-2 family and its relatives), usually the same bar twice like a house loop, with a steady touch, over a simple bass figure that locks to it. If you locked some parts with **LOCK** (see *Piano roll and rhythm grid*), those parts stay and only the rest changes. Riffs and edits are saved with your project. |
-| **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). |
+| **Song section** | Main, Intro, Break, Build-up, Drop, Outro: reshapes the groove for that part of the track (see [chapter 6](#6-building-a-track-intro-break-drop)). The harmony follows too (v2.9): lighter chords in the intro and outro (9ths become 7ths...), fuller ones in the drop (7ths become 9ths). |
 | **Fills** | **Off** by default. Every bar, or every 2/4/8 bars, the end of the bar becomes a short fill leading into the next chord. |
 | **Fill style** | 11 styles, all aimed at the top note of the next chord: *Pentatonic run up* / *down*, *Chord roll* (a flowing 32nd-note arpeggio of the next chord, from an octave below), *Gospel run* (eight 16ths up the scale over the last two beats), *Chromatic walk-up* (four semitones into the next chord), *Push stabs* (a stab, a ghost, then the next chord pushed in on the "&" of 4), *16th chord chops* (four light chops with a crescendo), *Gospel thirds* (parallel thirds walking down), *Piano glissando* (a fast sweep up), *Blues lick* (down the blues scale) and *Mix*, which plays a different one at every fill, **chosen for the groove** (v2.8): a busy groove gets short fills (stabs, chops, a roll), a sparse one runs and glissandos. The fill that closes an *Evolve* cycle with the fills off is chosen the same way. |
 | **Variation** | Every 4 or 8 bars the last bar plays a **variation** of the groove (a hit moved, a ghost note, a push into the next bar, a bass pick-up), so a long loop never sounds static. **Evolve over 8 / 16 bars** (v2.7): the same groove **grows** in four steps - as written, then with ghost notes, then a variation with a little more energy, and the last bar plays a fill into the next round. In the simple view too. |
@@ -336,7 +336,8 @@ grid). Above each part you'll find:
 | **RND** | A new random rhythm for that part only. |
 | **LOCK** | Locks the part: **NEW RIFF** changes everything except the locked parts. |
 
-**DNA** (top of the grid) opens **Musical DNA**: five buttons that each take your groove **one
+**DNA** (top of the grid) opens **Musical DNA**: six buttons (v2.9: **Straighter** - every hit on the
+8ths, no ghost notes or pushes, less swing) that each take your groove **one
 step** towards an intention: **More soulful** (held chords, a push into the next bar, fewer ghost
 notes, 9ths, rootless voicing, a passing chord), **Funkier** (ghost notes, 16th anticipations,
 short notes, more swing), **More minimal** (fewer notes that ring longer, shell voicing, no fills),
@@ -428,6 +429,20 @@ row, the **8 scene buttons** on the right its right column, and **Play** plays /
 - If the pads stay dark, press **User** on Push. On **Push 3** first set the pads to *Poly Aftertouch*
   in Control Mode (Ableton's advice for User mode).
 - Push 1 and Push 3 in Standalone mode are not supported.
+
+#### Live keys (v2.9)
+
+**OPTIONS → SETTINGS → Live keys** turns the lowest octave of your MIDI keyboard (MIDI notes
+24-35, the octave from C1 - C0 in Ableton's names) into controls; those keys don't sound.
+
+| Key | Does |
+|---|---|
+| C · D · E · F · G · A | Section: Intro · Main · Break · Build-up · Drop · Outro |
+| C# | A fill in the next bar (your fill style, or one that suits the groove) |
+| D# | New riff |
+| F# · G# | Hear piano · hear bass |
+| A# | Sequencer on / off |
+| B | Play / pause |
 
 ### Export MIDI
 

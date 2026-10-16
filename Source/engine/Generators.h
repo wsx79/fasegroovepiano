@@ -61,8 +61,8 @@ GroovePattern addGhostNotes (const GroovePattern& source, std::uint32_t seed);
 GroovePattern morphPatterns (const GroovePattern& a, const GroovePattern& b, double amount, std::uint32_t seed);
 
 /** Musical DNA: one step of a variation guided by an intention. */
-enum class Intention { soulful = 0, funky, minimal, energetic, sophisticated };
-constexpr int numIntentions = 5;
+enum class Intention { soulful = 0, funky, minimal, energetic, sophisticated, straighter };
+constexpr int numIntentions = 6;
 const char* intentionName (int) noexcept;
 GroovePattern applyIntention (const GroovePattern&, Intention, std::uint32_t seed);
 

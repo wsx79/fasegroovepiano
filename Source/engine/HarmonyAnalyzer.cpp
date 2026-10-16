@@ -342,4 +342,99 @@ HarmonyAnalysis analyzeHarmony (const std::vector<AnalyzedNote>& notes, int beat
     return result;
 }
 
+//==============================================================================
+GroovePattern grooveFromNotes (const std::vector<AnalyzedNote>& notes, int beatsPerBar)
+{
+    constexpr int steps = 32;                      // two bars of 16ths
+    if (beatsPerBar != 4 || notes.empty())
+        return {};
+
+    // Onsets on the 16th grid; within each onset (notes starting together) the bass is a low
+    // note well under the others (or anything very low).
+    struct Onset { int step; bool bass; int velocity; double length; };
+    std::vector<Onset> onsets;
+    {
+        auto sorted = notes;
+        std::sort (sorted.begin(), sorted.end(), [] (const AnalyzedNote& a, const AnalyzedNote& b)
+                   { return a.start != b.start ? a.start < b.start : a.note < b.note; });
+        for (size_t i = 0; i < sorted.size();)
+        {
+            size_t j = i;
+            while (j < sorted.size() && sorted[j].start - sorted[i].start < 0.06)   // a chord (even rolled a little)
+                ++j;
+            const int step = (int) std::lround (sorted[i].start * 4.0);
+            const bool lowAlone = j - i >= 2 && sorted[i].note < 52 && sorted[i + 1].note - sorted[i].note >= 5;
+            for (size_t k = i; k < j; ++k)
+            {
+                const bool bass = sorted[k].note < 45 || (k == i && lowAlone) || (j - i == 1 && sorted[k].note < 50);
+                onsets.push_back ({ step, bass, sorted[k].velocity, sorted[k].end - sorted[k].start });
+            }
+            i = j;
+        }
+    }
+    if (onsets.empty())
+        return {};
+
+    // Fold the part into two-bar rounds and keep what plays in at least half of them.
+    const int lastStep = std::max_element (onsets.begin(), onsets.end(), [] (const Onset& a, const Onset& b) { return a.step < b.step; })->step;
+    const int firstRound = std::min_element (onsets.begin(), onsets.end(), [] (const Onset& a, const Onset& b) { return a.step < b.step; })->step / steps;
+    const int rounds = std::max (1, lastStep / steps - firstRound + 1);
+    const bool oneBar = lastStep - firstRound * steps < 16;   // a one-bar loop: both bars the same
+
+    struct Cell { std::vector<int> roundsSeen; double velocity = 0.0; double length = 0.0; int count = 0; };
+    std::array<Cell, steps> chordCells, bassCells;
+    int maxVelocity = 1;
+    for (const auto& o : onsets)
+    {
+        const int local = o.step - firstRound * steps;
+        if (local < 0)
+            continue;
+        const int round = local / steps;
+        const int at = local % steps;
+        auto& cell = (o.bass ? bassCells : chordCells)[(size_t) at];
+        if (std::find (cell.roundsSeen.begin(), cell.roundsSeen.end(), round) == cell.roundsSeen.end())
+            cell.roundsSeen.push_back (round);
+        cell.velocity += o.velocity;
+        cell.length += o.length;
+        ++cell.count;
+        if (! o.bass) maxVelocity = std::max (maxVelocity, o.velocity);
+    }
+
+    auto line = [&] (std::array<Cell, steps>& cells, int peak)
+    {
+        std::string out (steps, '.');
+        for (int i = 0; i < steps; ++i)
+        {
+            const auto& c = cells[(size_t) (oneBar ? i % 16 : i)];
+            if (c.count == 0 || (int) c.roundsSeen.size() * 2 < rounds)
+                continue;
+            const double velocity = c.velocity / c.count;
+            out[(size_t) i] = velocity < 0.55 * peak ? 'g' : velocity >= 0.9 * peak ? 'X' : 'x';
+        }
+        // Holds: a note that rings on to the next steps (until the next hit).
+        for (int i = 0; i < steps; ++i)
+        {
+            const auto& c = cells[(size_t) (oneBar ? i % 16 : i)];
+            if (out[(size_t) i] == '.' || out[(size_t) i] == 'g' || c.count == 0)
+                continue;
+            const int length = (int) std::lround (c.length / c.count * 4.0);
+            for (int k = 1; k < length && i + k < steps && out[(size_t) (i + k)] == '.'; ++k)
+                out[(size_t) (i + k)] = '=';
+        }
+        return out;
+    };
+
+    int bassPeak = 1;
+    for (const auto& o : onsets)
+        if (o.bass) bassPeak = std::max (bassPeak, o.velocity);
+
+    GroovePattern p;
+    p.name = "From MIDI";
+    p.rightHand = line (chordCells, maxVelocity);
+    p.leftHand = line (bassCells, bassPeak);
+    if (std::count_if (p.rightHand.begin(), p.rightHand.end(), [] (char c) { return c == 'x' || c == 'X'; }) < 3)
+        return {};
+    return p;
+}
+
 } // namespace sgk

@@ -6,6 +6,21 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.9.0] - 2026-10-16
+
+### Aggiunto
+- **Groove dal MIDI**: trascinando un file .mid ora si legge anche il **ritmo** (accordi sopra, note
+  basse come basso, con accenti, ghost note e note tenute); scegli *Accordi + ritmo*, *Solo
+  accordi* o *Solo ritmo*. Il ritmo diventa il tuo Pattern utente.
+- **Tasti live** (OPZIONI → IMPOSTAZIONI): l'ottava più bassa di una tastiera MIDI (note 24-35)
+  comanda il groove - le sezioni sui tasti bianchi, fill nella battuta dopo, nuovo riff, ascolta
+  piano / basso, sequencer, play / pausa sui neri e sul Si.
+- DNA: **Più dritto** - ogni colpo sugli ottavi, niente ghost note né anticipi, meno swing.
+
+### Modificato
+- **Le sezioni colorano l'armonia**: accordi più leggeri in intro / outro, più pieni nel drop;
+  main, break e build-up come li hai scelti. Automatico.
+
 ## [2.8.0] - 2026-10-15
 
 ### Modificato

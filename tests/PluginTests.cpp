@@ -1100,6 +1100,55 @@ namespace
         p.setStateInformation (simple.getData(), (int) simple.getSize());
         CHECK (! p.advancedView);
     }
+
+    void testGrooveFromMidiFile()
+    {
+        // A MIDI clip exported by the plug-in, imported back: its rhythm becomes the user pattern.
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::pattern, 5.0f);
+        p.setParameterFromUI (ParamIDs::humanize, 0.0f);
+        p.setParameterFromUI (ParamIDs::swing, 0.0f);
+        const auto before = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+        const auto file = p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::all);
+        const auto analysis = FaseGroovePianoProcessor::analyzeMidiFile (file);
+        CHECK (analysis.groove.length() == sgk::userPatternLength);
+
+        p.setParameterFromUI (ParamIDs::pattern, 1.0f);
+        p.applyGroove (analysis.groove);
+        CHECK (juce::roundToInt (value (p, ParamIDs::pattern)) == sgk::userPatternIndex());
+        const auto after = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+        int same = 0, total = 0;
+        for (int i = 0; i < 32; ++i)
+        {
+            const bool a = before.rightHand[(size_t) i] != '.' && before.rightHand[(size_t) i] != '=';
+            const bool b = after.rightHand[(size_t) i] != '.' && after.rightHand[(size_t) i] != '=';
+            same += (a == b) ? 1 : 0;
+            ++total;
+        }
+        CHECK (same >= total - 2);   // the same chord rhythm (a push may land a step apart)
+    }
+
+    void testLiveKeys()
+    {
+        // Live keys: the lowest octave picks the section (and doesn't sound); off, it is just notes.
+        FaseGroovePianoProcessor p;
+        const bool before = FaseGroovePianoProcessor::liveKeysEnabled();
+        FaseGroovePianoProcessor::setLiveKeysEnabled (true);
+        p.prepareToPlay (44100.0, 256);
+        juce::AudioBuffer<float> buffer (2, 256);
+        juce::MidiBuffer midi;
+        midi.addEvent (juce::MidiMessage::noteOn (1, FaseGroovePianoProcessor::liveKeysLowest + 7, (juce::uint8) 100), 0);   // G = drop
+        p.processBlock (buffer, midi);
+        bool passed = false;
+        for (const auto m : midi)
+            passed = passed || (m.getMessage().isNoteOn() && m.getMessage().getNoteNumber() == FaseGroovePianoProcessor::liveKeysLowest + 7);
+        CHECK (! passed);
+        p.runLiveKey (7);
+        CHECK (juce::roundToInt (value (p, ParamIDs::section)) == (int) sgk::Section::drop);
+        p.runLiveKey (0);
+        CHECK (juce::roundToInt (value (p, ParamIDs::section)) == (int) sgk::Section::intro);
+        FaseGroovePianoProcessor::setLiveKeysEnabled (before);
+    }
 }
 
 int main()
@@ -1128,6 +1177,8 @@ int main()
     testLaunchpadLayout();
     testTotalRandom();
     testViewModeRestore();
+    testGrooveFromMidiFile();
+    testLiveKeys();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

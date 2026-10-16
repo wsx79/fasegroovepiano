@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v2.9.0: groove dal MIDI, tasti live, DNA Più dritto, le sezioni colorano l'armonia.
 - v2.8.0: riff casuali pieni quanto la loro densità, fill che si adattano al groove.
 - v2.7.0: evoluzione del groove (8 / 16 battute), basso e accordi separati in automatico, range accordi.
 - v2.6.0: vista semplice / avanzata dei pannelli, pulsante SFOGLIA per le progressioni.
