@@ -29,5 +29,7 @@ jobs:
       - name: Update the release text only
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release edit "${{ inputs.tag }}" --notes-file release-notes.md --title "Fase Groove Piano ${{ inputs.tag }}" \
-            ${{ inputs.latest && '--latest' || '' }}
+        run: |
+          args=(--notes-file release-notes.md --title "Fase Groove Piano ${{ inputs.tag }}")
+          if [ "${{ inputs.latest }}" = "true" ]; then args+=(--latest); fi
+          gh release edit "${{ inputs.tag }}" "${args[@]}"
