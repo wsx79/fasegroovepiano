@@ -184,7 +184,7 @@ public:
 
     // Editor preferences, saved with the project.
     float editorScale = 1.0f;
-    bool shrinkWhileDragging = true;
+    bool shrinkWhileDragging = false;   // the mini window while dragging a clip (off: it got in the way in the DAW)
     bool advancedView = false;   // the panels show every control (ADVANCED) or only the main ones
 
     /** Replaces the progression with a random soulful-house one of the current length. */

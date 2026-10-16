@@ -100,7 +100,7 @@ use all the time. **ADVANCED** (top right of each of them) shows every control o
 
 | Panel | Simple view | Only in ADVANCED |
 |---|---|---|
-| Harmony & Scales | Key, Scale, Extensions, Voicing, Left-hand bass, Strings, Register (v2.13: the captions in the colour of the instrument they change: amber the piano only, cyan the bass, red the strings; key, scale and extensions change all of them) | Top +8va, Approach chord, Top line, Movement, Strum, Chord range |
+| Harmony & Scales | On top, what all instruments share: Key, Scale, Extensions. Below, one tab per instrument (v2.14), framed in its colour: **PIANO** (Voicing, Register), **BASS** (Left-hand bass), **STRINGS** (Strings) | Approach chord (shared); in the PIANO tab: Top line, Movement, Strum and its direction, Top +8va, Chord range |
 | Groove | Groove + NEW RIFF, Song section, Fills, Variation, Swing, Gate, Velocity, Humanize | Groove length, Fill style, Feel style / NEW FEEL, Density |
 | Guide sound | On/off, Sound, Reverb, Volume, Pump | Tone, Chorus, MIDI out, Play mode, Sidechain, Rate, Release |
 
@@ -515,7 +515,7 @@ to go back):
     Português**. The change is immediate and is remembered for all your projects. The first time,
     the plug-in picks your computer's language.
   - **Interface size:** 60% to 200%, the same as dragging the corner.
-  - **Mini window while dragging:** the plug-in window shrinks to a small tile while you drag a clip.
+  - **Mini window while dragging:** the plug-in window shrinks to a small tile while you drag a clip. **Off** by default (v2.14: it got in the way when dropping on the DAW).
   - **Show tips when the mouse rests on a control:** on by default. Rest the mouse on any knob,
     menu or button for a moment and a tip explains what it does. Switch it off once you know
     the plug-in.
@@ -570,9 +570,10 @@ In the **EXPORT MIDI** panel:
 
 4. **FULL SONG…** opens the song window (chapter 6): there you drag or save the **whole song**.
 
-With **Mini window while dragging** on (in **OPTIONS → SETTINGS**; it works for the whole song too), the plug-in window shrinks to a small tile while you drag,
-so you can see the DAW and drop the clip where you want. It comes back when you release. If your
-DAW doesn't handle plug-in resizing well, turn this option off.
+Dragging leaves the plug-in window as it is. If you want it to shrink to a small tile while you
+drag (it works for the whole song too), turn **Mini window while dragging** on in **OPTIONS →
+SETTINGS**: off by default since v2.14, because the tile stays where the window was and can get
+in the way when you drop the clip in the DAW.
 
 Every dragged clip is also saved in `Documents/Fase Groove Piano/MIDI clips/` with a name describing
 chords, groove, length and BPM, for example `Am9-D9 Soulful Push 4bars 124bpm.mid`.

@@ -468,7 +468,7 @@ void FaseGroovePianoProcessor::resetToDefaults()
     freeCircle = false;
     previewOn = false;
     editorScale = 1.0f;
-    shrinkWhileDragging = true;
+    shrinkWhileDragging = false;
 }
 
 //==============================================================================
@@ -765,7 +765,7 @@ juce::String FaseGroovePianoProcessor::snapshot()
         return {};
 
     xml->removeAttribute ("editorScale");
-    xml->removeAttribute ("shrinkWhileDragging");
+    xml->removeAttribute ("miniWhileDragging");
     return xml->toString (juce::XmlElement::TextFormat().singleLine());
 }
 
@@ -776,7 +776,7 @@ void FaseGroovePianoProcessor::restoreSnapshot (const juce::String& text)
         return;
 
     xml->setAttribute ("editorScale", editorScale);
-    xml->setAttribute ("shrinkWhileDragging", shrinkWhileDragging);
+    xml->setAttribute ("miniWhileDragging", shrinkWhileDragging);
 
     juce::MemoryBlock data;
     copyXmlToBinary (*xml, data);
@@ -2207,7 +2207,8 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
         state.setProperty ("songVariations", variations.joinIntoString (","), nullptr);
     }
     state.setProperty ("editorScale", editorScale, nullptr);
-    state.setProperty ("shrinkWhileDragging", shrinkWhileDragging, nullptr);
+    // (a new name: the mini window is off for everyone from v2.14, also in projects saved with it on)
+    state.setProperty ("miniWhileDragging", shrinkWhileDragging, nullptr);
     state.setProperty ("advancedView", advancedView, nullptr);
 
     juce::StringArray free;
@@ -2311,7 +2312,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
         }
     }
     editorScale = juce::jlimit (0.6f, 2.0f, (float) state.getProperty ("editorScale", 1.0f));
-    shrinkWhileDragging = (bool) state.getProperty ("shrinkWhileDragging", true);
+    shrinkWhileDragging = (bool) state.getProperty ("miniWhileDragging", false);
     advancedView = (bool) state.getProperty ("advancedView", false);
 
     const auto free = juce::StringArray::fromTokens (state.getProperty ("freeChords").toString(), ",", {});

@@ -6,6 +6,19 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.14.0] - 2026-10-16
+
+### Cambiato
+- **Armonia e scale rifatto**: in alto quello che vale per tutti gli strumenti (tonalità, scala,
+  estensioni, accordo di passaggio); sotto tre linguette colorate **PIANO** | **BASSO** | **ARCHI**,
+  ognuna con solo i controlli di quello strumento in una cornice del suo colore (basso e archi con
+  una riga su cosa fanno e il loro canale MIDI). La direzione dell'arpeggiato si legge
+  *ARPEGGIATO ↑ / ↓ / ↕*.
+- Frecce **annulla / ripeti** ridisegnate: la classica freccia curva con la punta chiara.
+- **Niente più mini finestra durante il trascinamento** di una clip: restava dov'era la finestra
+  del plug-in e dava fastidio quando rilasci nella DAW. Resta disponibile in OPZIONI, ora spenta di
+  default (anche nei progetti salvati con l'opzione accesa).
+
 ## [2.13.0] - 2026-10-16
 
 ### Aggiunto

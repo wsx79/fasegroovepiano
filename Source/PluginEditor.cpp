@@ -2760,9 +2760,14 @@ namespace
             case I::undo:
             case I::redo:
             {
+                // The classic undo arrow: a line going back, turning down in a half circle, with a
+                // clear arrowhead (redo is its mirror image).
                 juce::Path a;
-                a.addCentredArc (0.5f, 0.56f, 0.28f, 0.24f, 0.0f, -2.2f, 1.6f, true);
-                a.startNewSubPath (0.12f, 0.24f); a.lineTo (0.24f, 0.42f); a.lineTo (0.42f, 0.3f);
+                a.startNewSubPath (0.16f, 0.36f);
+                a.lineTo (0.6f, 0.36f);
+                a.addCentredArc (0.6f, 0.57f, 0.21f, 0.21f, 0.0f, 0.0f, juce::MathConstants<float>::pi, false);
+                a.lineTo (0.34f, 0.78f);
+                a.startNewSubPath (0.34f, 0.18f); a.lineTo (0.16f, 0.36f); a.lineTo (0.34f, 0.54f);
                 if (icon == I::redo)
                     a.applyTransform (juce::AffineTransform::scale (-1.0f, 1.0f).translated (1.0f, 0.0f));
                 p = a;
@@ -5087,6 +5092,19 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     // What each control changes, in the instruments' colours (the same as PIANO / BASS / STRINGS
     // under Hear and the notes of the piano roll): amber the piano only, cyan the bass, red the
     // strings; key, scale, extensions and the approach chord (all of them) stay neutral.
+    const sgk::Part tabParts[] { sgk::Part::chords, sgk::Part::bass, sgk::Part::strings };
+    for (int i = 0; i < 3; ++i)
+    {
+        auto& t = harmonyTabs[(size_t) i];
+        t.setColour (juce::TextButton::buttonColourId, Palette::field);
+        t.setColour (juce::TextButton::buttonOnColourId, partColour (tabParts[i]));
+        t.setColour (juce::TextButton::textColourOffId, partColour (tabParts[i]));
+        t.setColour (juce::TextButton::textColourOnId, Palette::background);
+        t.setConnectedEdges ((i > 0 ? juce::Button::ConnectedOnLeft : 0) | (i < 2 ? juce::Button::ConnectedOnRight : 0)
+                             | juce::Button::ConnectedOnBottom);
+        t.onClick = [this, i] { harmonyTab = i; updateHarmonyTab(); };
+        addAndMakeVisible (t);
+    }
     bass.setAccent (Palette::accent2);
     strings.setAccent (Palette::strings);
     for (auto* c : { &voicing, &topLine, &movement })
@@ -5591,6 +5609,12 @@ void FaseGroovePianoEditor::buildPresetMenu()
 
 void FaseGroovePianoEditor::applyLanguage()
 {
+    harmonyTabs[0].setButtonText (tr ("PIANO"));
+    harmonyTabs[1].setButtonText (tr ("BASS"));
+    harmonyTabs[2].setButtonText (tr ("STRINGS"));
+    harmonyTabs[0].setTooltip (tr ("The piano's own controls: voicing, register, strum, top line, movement, range"));
+    harmonyTabs[1].setTooltip (tr ("The bass: what the left hand plays under the chords"));
+    harmonyTabs[2].setTooltip (tr ("The strings: a pad or stabs that follow the chords, on MIDI channel 3"));
     pianoRoll.showPart (pianoRoll.shownPart());   // its PIANO / BASS / STRINGS buttons
     for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump, &pumpRelease })
         k->refreshText();
@@ -6127,8 +6151,9 @@ void FaseGroovePianoEditor::timerCallback()
         slots[i]->setInversion (s.inversions[(size_t) i]);
 
     {
-        static const char* const directions[] { "Up", "Down", "Alternate" };
-        const auto text = Localisation::upper (tr (directions[juce::jlimit (0, 2, s.strumDirection)]));
+        // "STRUM" and an arrow: up, down, or both (alternate).
+        static const char* const arrows[] { "\xe2\x86\x91", "\xe2\x86\x93", "\xe2\x86\x95" };
+        const auto text = Localisation::upper (tr ("Strum")) + " " + juce::String::fromUTF8 (arrows[juce::jlimit (0, 2, s.strumDirection)]);
         if (strumDirButton.getButtonText() != text)
             strumDirButton.setButtonText (text);
     }
@@ -6353,6 +6378,26 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
     drawPanel (g, tempoArea, tr ("TRANSPORT & TEMPO"));
     drawPanel (g, progressionPanel, tr ("PROGRESSION"));
     drawPanel (g, harmonyPanel, tr ("HARMONY & SCALES"));
+    if (! harmonyTabArea.isEmpty())
+    {
+        // The frame of the instrument tab, in its colour, joined to its tab.
+        const sgk::Part tabParts[] { sgk::Part::chords, sgk::Part::bass, sgk::Part::strings };
+        const auto colour = partColour (tabParts[juce::jlimit (0, 2, harmonyTab)]);
+        const auto frame = harmonyTabArea.toFloat();
+        g.setColour (colour.withAlpha (0.06f));
+        g.fillRoundedRectangle (frame, 6.0f);
+        g.setColour (colour.withAlpha (0.7f));
+        g.drawRoundedRectangle (frame.reduced (0.5f), 6.0f, 1.2f);
+        if (harmonyTab > 0)
+        {
+            g.setColour (Palette::dim);
+            g.setFont (font (11.5f));
+            g.drawFittedText (harmonyTab == 1
+                                  ? tr ("What the left hand plays under the chords. MIDI channel 1, or channel 2 with MIDI out set to Bass on channel 2.")
+                                  : tr ("Strings that follow the chords, for body and volume: a pad held on every chord, or stabs with the piano. Always on MIDI channel 3."),
+                              harmonyHintArea.withHeight (juce::jmin (harmonyHintArea.getHeight(), 80)), juce::Justification::topLeft, 5);
+        }
+    }
     drawPanel (g, circlePanel, tr ("CIRCLE OF FIFTHS"));
     drawPanel (g, groovePanel, tr ("GROOVE"));
     drawPanel (g, soundPanel, tr ("GUIDE SOUND & MIDI OUT"));
@@ -6479,12 +6524,27 @@ std::vector<juce::Component*> FaseGroovePianoEditor::advancedOnly()
              &tone, &chorus, &bassChannel, &playMode, &pumpSource, &pumpRate, &pumpRelease };
 }
 
+void FaseGroovePianoEditor::updateHarmonyTab()
+{
+    const bool all = processor.advancedView, piano = harmonyTab == 0;
+    for (int i = 0; i < 3; ++i)
+        harmonyTabs[(size_t) i].setToggleState (i == harmonyTab, juce::dontSendNotification);
+    for (auto* c : std::initializer_list<juce::Component*> { &voicing, &coachButton, &registerKnob })
+        c->setVisible (piano);
+    for (auto* c : std::initializer_list<juce::Component*> { &strumKnob, &strumDirButton, &octaveToggle, &topLine, &movement, &rangeSlider, &rangeLabel })
+        c->setVisible (all && piano);
+    bass.setVisible (harmonyTab == 1);
+    strings.setVisible (harmonyTab == 2);
+    repaint();
+}
+
 void FaseGroovePianoEditor::applyViewMode()
 {
     const bool all = processor.advancedView;
     shownAdvanced = all ? 1 : 0;
     for (auto* c : advancedOnly())
         c->setVisible (all);
+    updateHarmonyTab();
     for (auto& b : advancedButtons)
     {
         b.setToggleState (all, juce::dontSendNotification);
@@ -6598,37 +6658,63 @@ void FaseGroovePianoEditor::layoutFull()
         auto inner = harmonyPanel.reduced (14, 8);
         advancedButtons[0].setBounds (harmonyPanel.getRight() - 78, harmonyPanel.getY() + 6, 66, 17);
         inner.removeFromTop (22);
+
+        // Shared by every instrument.
         split (row (inner, 44), key, scale, 80);
-        split (row (inner, 44), extension, voicing, 125);
-        coachButton.setBounds (voicing.getRight() - 34, voicing.getY(), 34, 15);
+        if (all)
+            split (row (inner, 44), extension, approach, 125);
+        else
+            extension.setBounds (row (inner, 44).withWidth (125));
+
+        // One tab per instrument, its controls inside a frame of its colour.
+        {
+            auto tabs = inner.removeFromTop (24);
+            const int w = tabs.getWidth() / 3;
+            for (int i = 0; i < 3; ++i)
+                harmonyTabs[(size_t) i].setBounds (i < 2 ? tabs.removeFromLeft (w) : tabs);
+        }
+        harmonyTabArea = inner;
+        auto content = inner.reduced (8, 8);
+        harmonyHintArea = {};
+
+        // Piano.
         if (! all)
         {
-            // Simple: the bass and the strings, then the register big in the middle.
-            split (row (inner, 44), bass, strings, (inner.getWidth() - 10) * 11 / 20);
-            registerKnob.setBounds (inner.withSizeKeepingCentre (130, juce::jmin (inner.getHeight(), 150)));
+            voicing.setBounds (content.removeFromTop (44));
+            content.removeFromTop (4);
+            registerKnob.setBounds (content.withSizeKeepingCentre (110, content.getHeight()));
         }
         else
         {
-        // Left: what plays with the chords (bass, strings, approach, top line), four rows.
-        auto last = inner;
-        auto leftCol = last.removeFromLeft (124);
-        for (auto* c : std::initializer_list<juce::Component*> { &bass, &strings, &approach, &topLine })
-        {
-            c->setBounds (leftCol.removeFromTop (42));
-            leftCol.removeFromTop (4);
+            auto top = content.removeFromTop (44);
+            voicing.setBounds (top.removeFromLeft (150));
+            top.removeFromLeft (8);
+            topLine.setBounds (top);
+            content.removeFromTop (4);
+            // The chords' range on one line at the bottom: its caption, then the slider.
+            auto range = content.removeFromBottom (18);
+            rangeLabel.setBounds (range.removeFromLeft (108).withSizeKeepingCentre (108, 13));
+            rangeSlider.setBounds (range);
+            content.removeFromBottom (4);
+            auto right = content.removeFromRight (104);
+            movement.setBounds (right.removeFromTop (42));
+            right.removeFromTop (4);
+            octaveToggle.setBounds (right.removeFromTop (20));
+            right.removeFromTop (3);
+            strumDirButton.setBounds (right.removeFromTop (18).withTrimmedLeft (4));
+            const int kw = content.getWidth() / 2;
+            registerKnob.setBounds (content.removeFromLeft (kw));
+            strumKnob.setBounds (content);
         }
-        last.removeFromLeft (6);
-        octaveToggle.setBounds (last.removeFromTop (22).withTrimmedLeft (4));
-        movement.setBounds (last.removeFromBottom (44));
-        last.removeFromBottom (6);
-        rangeSlider.setBounds (last.removeFromBottom (16));
-        rangeLabel.setBounds (last.removeFromBottom (13));
-        last.removeFromBottom (24);   // room for the strum direction under the knob
-        const int kw = last.getWidth() / 2;
-        const int kh = juce::jmin (kw + 34, last.getHeight());
-        registerKnob.setBounds (last.removeFromLeft (kw).withSizeKeepingCentre (kw, kh));
-        strumKnob.setBounds (last.withSizeKeepingCentre (kw, kh));
-        strumDirButton.setBounds (strumKnob.getBounds().getCentreX() - 34, strumKnob.getBottom() + 2, 68, 18);
+        coachButton.setBounds (voicing.getRight() - 34, voicing.getY(), 34, 15);
+
+        // Bass and strings: their menu, and a line on what they do.
+        {
+            auto c = harmonyTabArea.reduced (8, 8);
+            bass.setBounds (c.removeFromTop (44));
+            strings.setBounds (bass.getBounds());
+            c.removeFromTop (8);
+            harmonyHintArea = c;
         }
     }
 

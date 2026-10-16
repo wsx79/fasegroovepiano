@@ -6,6 +6,18 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.14.0] - 2026-10-16
+
+### Changed
+- **Harmony & Scales redone**: on top what every instrument shares (key, scale, extensions,
+  approach chord); below, three coloured tabs **PIANO** | **BASS** | **STRINGS**, each showing only
+  that instrument's controls in a frame of its colour (bass and strings with a line on what they do
+  and their MIDI channel). The strum direction reads *STRUM ↑ / ↓ / ↕*.
+- **Undo / redo** arrows redrawn: the classic curved arrow with a clear head.
+- **No more mini window while dragging** a clip: it stayed where the plug-in window was and got in
+  the way when dropping on the DAW. Still available in OPTIONS, now off by default (also for
+  projects saved with it on).
+
 ## [2.13.0] - 2026-10-16
 
 ### Added

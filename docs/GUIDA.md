@@ -103,7 +103,7 @@ usano sempre. **AVANZATE** (in alto a destra di ciascuno) mostra tutti i comandi
 
 | Pannello | Vista semplice | Solo in AVANZATE |
 |---|---|---|
-| Armonia e scale | Tonalità, Scala, Estensioni, Voicing, Basso mano sinistra, Archi, Registro (v2.13: le didascalie nel colore dello strumento che cambiano: ambra solo il piano, azzurro il basso, rosso gli archi; tonalità, scala ed estensioni cambiano tutti) | Ottava sopra, Accordo di passaggio, Linea in alto, Movimento, Arpeggiato, Range accordi |
+| Armonia e scale | In alto quello che vale per tutti gli strumenti: Tonalità, Scala, Estensioni. Sotto una linguetta per strumento (v2.14), incorniciata nel suo colore: **PIANO** (Voicing, Registro), **BASSO** (Basso mano sinistra), **ARCHI** (Archi) | Accordo di passaggio (per tutti); nella linguetta PIANO: Linea in alto, Movimento, Arpeggiato e la sua direzione, Ottava sopra, Range accordi |
 | Groove | Groove + NUOVO RIFF, Sezione del brano, Fill, Variazione, Swing, Gate, Dinamica, Umanizza | Lunghezza groove, Stile fill, Stile feel / NUOVO FEEL, Densità |
 | Suono guida | Acceso/spento, Suono, Riverbero, Volume, Pompa | Timbro, Chorus, Uscita MIDI, Modalità play, Sidechain, Ritmo, Rilascio |
 
@@ -536,7 +536,7 @@ o su **CHIUDI** per tornare indietro):
     Português**. Il cambio è immediato e vale per tutti i tuoi progetti. La prima volta il plugin
     usa la lingua del computer.
   - **Dimensione interfaccia:** dal 60% al 200%, come trascinando l'angolo.
-  - **Finestra mini durante il drag:** la finestra del plug-in si riduce a un piccolo riquadro mentre trascini una clip.
+  - **Finestra mini durante il drag:** la finestra del plug-in si riduce a un piccolo riquadro mentre trascini una clip. **Spenta** di default (v2.14: dava fastidio quando rilasci nella DAW).
   - **Mostra i suggerimenti quando il mouse resta fermo su un comando:** attivo di default.
     Tieni il mouse fermo un attimo su una manopola, un menu o un pulsante e un suggerimento ti
     spiega a cosa serve. Spegnilo quando conosci il plugin.
@@ -593,9 +593,10 @@ Nel riquadro **ESPORTA MIDI**:
 
 4. **BRANO INTERO…** apre la finestra del brano (capitolo 6): lì trascini o salvi il **brano intero**.
 
-Con **Mini window while dragging** attivo (in **OPZIONI → IMPOSTAZIONI**; vale anche per il brano intero), durante il trascinamento la finestra del plugin si
-riduce a un piccolo riquadro, così vedi bene la DAW dove rilasciare la clip. Al rilascio torna
-come prima. Se la tua DAW non gestisce bene il ridimensionamento dei plugin, disattiva l'opzione.
+Il trascinamento lascia la finestra del plug-in com'è. Se vuoi che si riduca a un piccolo riquadro
+mentre trascini (vale anche per il brano intero), attiva **Finestra mini durante il drag** in
+**OPZIONI → IMPOSTAZIONI**: spenta di default dalla v2.14, perché il riquadro resta dov'era la
+finestra e può dare fastidio quando rilasci la clip nella DAW.
 
 Ogni clip trascinata viene salvata anche in `Documenti/Fase Groove Piano/MIDI clips/` con un nome che
 descrive accordi, groove, lunghezza e BPM, per esempio

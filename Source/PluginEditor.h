@@ -806,6 +806,12 @@ private:
 
     // Simple view: the panels show their main controls; ADVANCED (in each panel's header) shows all.
     std::array<juce::TextButton, 3> advancedButtons;   // harmony, groove, sound
+    // Harmony & Scales: what all instruments share on top, then one tab per instrument
+    // (PIANO / BASS / STRINGS) with only its own controls, framed in its colour.
+    std::array<juce::TextButton, 3> harmonyTabs;
+    int harmonyTab = 0;
+    juce::Rectangle<int> harmonyTabArea, harmonyHintArea;
+    void updateHarmonyTab();
     void applyViewMode();
     int shownAdvanced = -1;   // the view the controls show (-1 = not applied yet)
     std::vector<juce::Component*> advancedOnly() ;
