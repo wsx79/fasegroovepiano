@@ -5945,6 +5945,8 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
 
 void FaseGroovePianoEditor::timerCallback()
 {
+    keepWindowOnScreen();
+
     if (miniMode)
     {
         // Safety net: leave mini mode once the drag is over, even if the host never told us.
@@ -6293,31 +6295,53 @@ void FaseGroovePianoEditor::resized()
 bool FaseGroovePianoEditor::isFullScreen() const
 {
     if (auto* window = findParentComponentOfClass<juce::ResizableWindow>())
-        return window->isFullScreen();
+        if (window->isFullScreen())
+            return true;
     return ! sizeBeforeFullScreen.isEmpty();
 }
 
 void FaseGroovePianoEditor::toggleFullScreen()
 {
-    // The standalone app: the real full screen. In a DAW the plug-in fills the screen instead
-    // (the DAW owns its window).
-    if (auto* window = findParentComponentOfClass<juce::ResizableWindow>())
-    {
-        window->setFullScreen (! window->isFullScreen());
-        return;
-    }
+    // Full screen = the screen's usable area: on Windows that leaves the taskbar visible (the
+    // system's own maximise put the standalone window under it, cutting the bottom off).
+    // Standalone app: its window fills that area. In a DAW (the DAW owns the window) the plug-in
+    // grows to fit in it, with room for the DAW's title bar.
+    auto* window = findParentComponentOfClass<juce::ResizableWindow>();
     if (! sizeBeforeFullScreen.isEmpty())
     {
-        setSize (sizeBeforeFullScreen.getWidth(), sizeBeforeFullScreen.getHeight());
+        if (window != nullptr)
+            window->setBounds (sizeBeforeFullScreen);
+        else
+            setSize (sizeBeforeFullScreen.getWidth(), sizeBeforeFullScreen.getHeight());
         sizeBeforeFullScreen = {};
         return;
     }
     if (const auto* display = juce::Desktop::getInstance().getDisplays().getDisplayForRect (getScreenBounds()))
     {
+        if (window != nullptr)
+        {
+            sizeBeforeFullScreen = window->getBounds();
+            window->setBounds (display->userArea);
+            return;
+        }
         sizeBeforeFullScreen = getBounds();
         const auto area = display->userArea.reduced (8).withTrimmedTop (30);
         const float scale = juce::jmin (area.getWidth() / (float) baseWidth, area.getHeight() / (float) baseHeight, 2.0f);
         setSize (juce::roundToInt (baseWidth * scale), juce::roundToInt (baseHeight * scale));
+    }
+}
+
+void FaseGroovePianoEditor::keepWindowOnScreen()
+{
+    // The standalone window maximised by the system (a double-click on its title bar) covers the
+    // taskbar: make it our own full screen instead, inside the usable area.
+    if (auto* window = findParentComponentOfClass<juce::ResizableWindow>(); window != nullptr && window->isFullScreen())
+    {
+        window->setFullScreen (false);
+        if (sizeBeforeFullScreen.isEmpty())
+            toggleFullScreen();
+        else if (const auto* display = juce::Desktop::getInstance().getDisplays().getDisplayForRect (window->getScreenBounds()))
+            window->setBounds (display->userArea);
     }
 }
 

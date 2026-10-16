@@ -474,7 +474,8 @@ Il **pulsante con i quattro angoli** (accanto a STILE) mette l'interfaccia a sch
 per tornare. Dentro una DAW la finestra del plug-in diventa grande quanto lo schermo (la finestra è
 della DAW). Nell'app standalone la finestra si può anche massimizzare o mettere a schermo intero
 con qualsiasi forma: l'interfaccia mantiene le proporzioni, centrata, e resta sempre dentro lo
-schermo (v2.12).
+schermo; lo schermo intero riempie l'area utile, così la barra delle applicazioni di Windows resta
+visibile e in basso non si taglia niente (v2.12.1).
 
 ### Dimensione della finestra
 

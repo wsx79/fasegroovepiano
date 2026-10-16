@@ -6,6 +6,13 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.12.1] - 2026-10-16
+
+### Fixed
+- **Full screen in the standalone app** still cut off the bottom on Windows: the system's maximise
+  put the window under the taskbar. Full screen (the corners button, or a double-click on the title
+  bar) now fills the screen's usable area, above the taskbar.
+
 ## [2.12.0] - 2026-10-16
 
 ### Added

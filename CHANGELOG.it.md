@@ -6,6 +6,14 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.12.1] - 2026-10-16
+
+### Corretto
+- **Schermo intero nell'app standalone**: su Windows tagliava ancora la parte bassa, perché il
+  massimizza del sistema metteva la finestra sotto la barra delle applicazioni. Lo schermo intero
+  (il pulsante con i quattro angoli, o un doppio clic sulla barra del titolo) ora riempie l'area
+  utile dello schermo, sopra la barra.
+
 ## [2.12.0] - 2026-10-16
 
 ### Aggiunto

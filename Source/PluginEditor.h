@@ -898,6 +898,7 @@ private:
     IconButton fullScreenButton { IconButton::Icon::fullScreen };
     bool isFullScreen() const;
     void toggleFullScreen();
+    void keepWindowOnScreen();
     void applySizeLimits();
     juce::Rectangle<int> sizeBeforeFullScreen;
     bool miniMode = false;

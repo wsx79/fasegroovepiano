@@ -454,7 +454,8 @@ See the next chapter.
 The **corners button** (next to STYLE) puts the interface full screen; click it again to come back.
 Inside a DAW the plug-in window grows to the size of the screen (the DAW owns its window). In the
 standalone app the window can also be maximised or go full screen with any shape: the interface
-keeps its proportions, centred, and always stays inside the screen (v2.12).
+keeps its proportions, centred, and always stays inside the screen; full screen fills the usable
+area, so the Windows taskbar stays visible and nothing is cut off at the bottom (v2.12.1).
 
 ### Window size
 
