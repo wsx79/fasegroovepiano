@@ -93,6 +93,9 @@ public:
 
     juce::VST3ClientExtensions* getVST3ClientExtensions() override { return &vst3Extensions; }
 
+    /** True while a MIDI clock drives the tempo (SYNC DAW in the standalone app). */
+    std::atomic<bool> clockSync { false };
+
     /** Peak level arriving at the sidechain input (for the meter in the UI). */
     std::atomic<float> sidechainMeter { 0.0f };
 
@@ -302,6 +305,9 @@ public:
 
     /** Writes the clip into Documents/Fase Groove Piano and returns the file. */
     juce::File writeMidiClip (int bars, ClipPart part) const;
+    /** One section of the song (songArrangementParts()[partIndex]) as a clip, named after it:
+        "Piano Intro - ...", "Piano Main groove - ..." (empty file if that section is left out). */
+    juce::File writeSongSectionClip (int partIndex, ClipPart part) const;
     juce::String clipFileName (int bars, ClipPart part) const;
     int clipLengthInBars (int bars) const;
 
@@ -352,6 +358,12 @@ private:
 
     // Sidechain: the level of the sidechain input, per sample of the block, and its follower.
     std::vector<float> sidechainLevel, lastOutput;
+
+    // MIDI clock (the standalone app has no DAW: a DAW can send it its clock): tempo, start / stop
+    // and song position, used when the host gives no position.
+    juce::int64 samplesProcessed = 0, lastClockSample = -1;
+    double clockInterval = 0.0, clockPpq = 0.0;   // samples per tick (smoothed), beats since start
+    bool clockRunning = false;
 
     // Live keys pressed on the audio thread, run on the message thread (lock-free).
     juce::AbstractFifo liveKeyFifo { 32 };

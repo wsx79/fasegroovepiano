@@ -6,6 +6,20 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.11.0] - 2026-10-16
+
+### Aggiunto
+- **Trascina una sola sezione del brano**: nella finestra Brano clicca una sezione sulla linea del
+  tempo e trascinala con **TRASCINA LA SEZIONE**; la clip prende il suo nome (*Piano Intro*, *Piano
+  Groove principale*, *Piano Drop*...). Il brano intero ha il suo riquadro **TRASCINA IL BRANO**.
+- Le clip trascinate e salvate prendono prima il nome dello strumento e della sezione del brano
+  (*Piano Intro - Am9-D9 ...*, *Bass Drop - ...*).
+
+### Corretto
+- **SYNC DAW nell'app standalone** mostrava sempre 120 BPM: l'app non ha una DAW da leggere. Ora
+  segue il **MIDI clock** (tempo, start / stop, posizione) mandato dalla DAW, e scrive *Niente DAW*
+  quando non ne arriva.
+
 ## [2.10.0] - 2026-10-16
 
 ### Aggiunto

@@ -1327,9 +1327,28 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     // ---- MIDI in: in hold mode keys pick the root, otherwise they pass through ----
     outMidi.clear();
+    const double clockPpqAtStart = clockPpq;
     for (const auto meta : midi)
     {
         const auto m = meta.getMessage();
+
+        // MIDI clock: 24 ticks per beat give the tempo; start / continue / stop and the song
+        // position drive the transport (they are not passed on).
+        if (m.isMidiClock())
+        {
+            const auto at = samplesProcessed + meta.samplePosition;
+            if (lastClockSample >= 0)
+                if (const double gap = (double) (at - lastClockSample); gap > 0.0 && gap < sampleRate * 0.25)
+                    clockInterval = clockInterval <= 0.0 ? gap : clockInterval * 0.92 + gap * 0.08;
+            lastClockSample = at;
+            if (clockRunning)
+                clockPpq += 1.0 / 24.0;
+            continue;
+        }
+        if (m.isMidiStart())             { clockRunning = true; clockPpq = 0.0; continue; }
+        if (m.isMidiContinue())          { clockRunning = true; continue; }
+        if (m.isMidiStop())              { clockRunning = false; continue; }
+        if (m.isSongPositionPointer())   { clockPpq = m.getSongPositionPointerMidiBeat() / 4.0; continue; }
 
         // Live keys: the lowest octave plays commands, not notes.
         if (liveKeysChoice.load() == 1 && m.isNoteOnOrOff()
@@ -1433,6 +1452,19 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             hostPlaying = pos->getIsPlaying();
         }
     }
+
+    // No position from a host (the standalone app): a MIDI clock, when one arrives, is the DAW.
+    const bool clockAlive = lastClockSample >= 0 && clockInterval > 0.0
+                         && (double) (samplesProcessed - lastClockSample) < sampleRate * 0.5;
+    const bool useClock = ! haveHostPpq && clockAlive;
+    if (useClock)
+    {
+        dawBpm = juce::roundToInt (600.0 * sampleRate / (24.0 * clockInterval)) / 10.0;
+        hostPlaying = clockRunning;
+        hostPpq = clockPpqAtStart;
+        haveHostPpq = clockRunning;
+    }
+    clockSync = useClock;
 
     // Synced: the DAW's tempo and position. Unsynced: our own BPM and clock,
     // still started/stopped by the DAW's play button.
@@ -1604,6 +1636,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             std::fill (lastOutput.begin(), lastOutput.begin() + numSamples, 0.0f);
     }
 
+    samplesProcessed += numSamples;
     midi.swapWith (outMidi);
 }
 
@@ -2029,7 +2062,10 @@ juce::String FaseGroovePianoProcessor::clipFileName (int bars, ClipPart part) co
 
     const juce::String partName = part == ClipPart::chords ? " chords" : part == ClipPart::bass ? " bass" : part == ClipPart::tracks ? " tracks" : "";
     const juce::String length = bars == songArrangement ? juce::String ("Song ") : juce::String();
-    const auto name = chords.joinIntoString ("-") + " " + juce::String (pattern.name) + partName + " " + length
+    // Named after the instrument and the part of the song first: "Piano Intro - ...", "Piano Song - ...".
+    const juce::String instrument = part == ClipPart::bass ? "Bass" : "Piano";
+    const juce::String songPart = bars == songArrangement ? tr ("Song") : tr (sgk::sectionName ((int) s.section));
+    const auto name = instrument + " " + songPart + " - " + chords.joinIntoString ("-") + " " + juce::String (pattern.name) + partName + " " + length
                     + juce::String (clipLengthInBars (bars)) + "bars " + juce::String (juce::roundToInt (exportBpm())) + "bpm";
 
     return juce::File::createLegalFileName (name) + ".mid";
@@ -2049,6 +2085,32 @@ juce::File FaseGroovePianoProcessor::writeMidiClip (int bars, ClipPart part) con
         return {};
 
     createMidiClip (bars, part).writeTo (stream);
+    return file;
+}
+
+juce::File FaseGroovePianoProcessor::writeSongSectionClip (int partIndex, ClipPart part) const
+{
+    const auto parts = songArrangementParts();
+    if (! juce::isPositiveAndBelow (partIndex, (int) parts.size()) || parts[(size_t) partIndex].bars <= 0)
+        return {};
+
+    auto folder = clipFolder();
+    if (! folder.createDirectory())
+        folder = juce::File::getSpecialLocation (juce::File::tempDirectory);
+
+    const auto& section = parts[(size_t) partIndex];
+    std::vector<sgk::GrooveEngine::Marker> markers;
+    const auto events = sgk::GrooveEngine::renderArrangement (currentSettings(), { section }, &markers);
+    const juce::String instrument = part == ClipPart::bass ? "Bass" : "Piano";
+    const auto title = instrument + " " + tr (sgk::sectionName ((int) section.section));
+    const auto midi = midiFromEvents (events, section.bars * 4.0, &markers, part, title);
+
+    auto file = folder.getChildFile (juce::File::createLegalFileName (title + " - " + juce::String (section.bars) + "bars "
+                                                                      + juce::String (juce::roundToInt (exportBpm())) + "bpm") + ".mid");
+    file.deleteFile();
+    juce::FileOutputStream stream (file);
+    if (! stream.openedOk() || ! midi.writeTo (stream))
+        return {};
     return file;
 }
 

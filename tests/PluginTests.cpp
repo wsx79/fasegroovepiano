@@ -9,6 +9,7 @@
 #include "../Source/PluginProcessor.h"
 #include "../Source/Updater.h"
 #include "../Source/PadController.h"
+#include "../Source/Localisation.h"
 
 #include <cstdio>
 #include <map>
@@ -1149,6 +1150,58 @@ namespace
         CHECK (juce::roundToInt (value (p, ParamIDs::section)) == (int) sgk::Section::intro);
         FaseGroovePianoProcessor::setLiveKeysEnabled (before);
     }
+
+    void testMidiClock()
+    {
+        // No host position (the standalone app): a MIDI clock at 124 BPM sets the tempo and,
+        // with Start, plays the groove.
+        FaseGroovePianoProcessor p;
+        p.setPlayHead (nullptr);
+        p.prepareToPlay (44100.0, 256);
+        const double samplesPerTick = 44100.0 * 60.0 / 124.0 / 24.0;
+        double nextTick = 0.0;
+        juce::int64 now = 0;
+        int notes = 0;
+        for (int block = 0; block < 400; ++block)
+        {
+            juce::AudioBuffer<float> buffer (2, 256);
+            juce::MidiBuffer midi;
+            if (block == 2) midi.addEvent (juce::MidiMessage::midiStart(), 0);
+            while (nextTick < (double) (now + 256))
+            {
+                midi.addEvent (juce::MidiMessage::midiClock(), (int) (nextTick - (double) now));
+                nextTick += samplesPerTick;
+            }
+            p.processBlock (buffer, midi);
+            for (const auto m : midi)
+            {
+                CHECK (! m.getMessage().isMidiClock());
+                if (m.getMessage().isNoteOn()) ++notes;
+            }
+            now += 256;
+        }
+        CHECK (p.clockSync.load());
+        CHECK (std::abs (p.hostBpm.load() - 124.0) < 0.3);
+        CHECK (notes > 0);
+    }
+
+    void testSongSectionClip()
+    {
+        // One section of the song as its own clip, named after it.
+        FaseGroovePianoProcessor p;
+        const auto parts = p.songArrangementParts();
+        int intro = -1;
+        for (int i = 0; i < (int) parts.size(); ++i)
+            if (parts[(size_t) i].section == sgk::Section::intro && parts[(size_t) i].bars > 0) intro = i;
+        CHECK (intro >= 0);
+        const auto file = p.writeSongSectionClip (intro, FaseGroovePianoProcessor::ClipPart::all);
+        CHECK (file.existsAsFile());
+        CHECK (file.getFileName().startsWith ("Piano " + Localisation::tr ("Intro")));
+        const auto clip = readClip (file, true);
+        CHECK (clip.noteOns > 0);
+        CHECK (! p.writeSongSectionClip (99, FaseGroovePianoProcessor::ClipPart::all).existsAsFile());
+        CHECK (p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::all).getFileName().startsWith ("Piano "));
+    }
 }
 
 int main()
@@ -1179,6 +1232,8 @@ int main()
     testViewModeRestore();
     testGrooveFromMidiFile();
     testLiveKeys();
+    testMidiClock();
+    testSongSectionClip();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

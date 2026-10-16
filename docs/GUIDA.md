@@ -114,7 +114,7 @@ Le progressioni pronte si aprono con **SFOGLIA...** (mostra il nome di quella ch
 | Controllo | Cosa fa |
 |---|---|
 | **⏮ ▶/❚❚ ■** | Il **trasporto** del suono guida, per sentire il groove senza avviare la DAW: torna all'inizio, play / pausa (azzurro mentre suona), stop (il play successivo riparte dall'inizio). La **barra spaziatrice** fa play / pausa quando la finestra del plug-in è attiva. Con la DAW in play, il groove segue la DAW. |
-| **SYNC DAW** acceso | Il groove segue BPM e posizione della DAW (consigliato). Accanto vedi il tempo della DAW. |
+| **SYNC DAW** acceso | Il groove segue BPM e posizione della DAW (consigliato). Accanto vedi il tempo della DAW. **App standalone** (v2.11): non ha una DAW, quindi segue il **MIDI clock** - nella DAW manda il MIDI clock (Ableton: *Impostazioni → Link, Tempo & MIDI*, *Sync* acceso su una porta di uscita) a una porta che l'app ascolta (su Windows una porta virtuale come loopMIDI, su macOS il bus IAC; attivala nelle *Opzioni → Impostazioni audio/MIDI* dell'app): tempo, play, stop e posizione seguono. Senza clock compare *Niente DAW*. |
 | **SYNC DAW** spento | Compare la barra dei BPM (60–180): trascinala o fai doppio clic per scrivere il valore. Il groove gira al suo tempo ma parte/si ferma comunque col Play della DAW o con ▶. |
 
 Il tempo scelto viene usato anche nelle clip MIDI esportate.
@@ -639,10 +639,13 @@ Due modi di usarla:
   il groove di **una sola sezione** (per esempio un Drop diverso) mentre le altre restano,
   **ORIGINALE** per tornare indietro, e il **fill** che chiude ogni sezione (come impostato nel
   pannello Groove, nessuno, o uno stile a scelta: lo senti mentre quella *Sezione del brano* gira). L'arrangiamento vale per *Lunghezza clip → Brano*, per la
-  *Sezione del brano* mentre suoni e per l'esportazione in fondo: **TRASCINA MIDI NELLA DAW** (il
-  brano intero, con i marker delle sezioni, in una sola clip), **SALVA BRANO .MID…** e **UN .MID PER
-  SEZIONE…** (un file MIDI per sezione da mettere su clip separate), tutti con la parte scelta in
-  *Note* di ESPORTA MIDI. La durata totale è mostrata in battute e minuti. Si salva nel progetto.
+  *Sezione del brano* mentre suoni e per l'esportazione in fondo: **TRASCINA IL BRANO** (il brano
+  intero, con i marker delle sezioni, in una sola clip), **TRASCINA LA SEZIONE** (v2.11: clicca una
+  sezione sulla linea del tempo - si contorna di bianco - e trascina solo quella: la clip prende il
+  suo nome, *Piano Intro*, *Piano Groove principale*, *Piano Drop*...), **SALVA BRANO .MID…** e **UN
+  .MID PER SEZIONE…** (un file MIDI per sezione da mettere su clip separate), tutti con la parte
+  scelta in *Note* di ESPORTA MIDI. Anche le clip trascinate dalla finestra principale prendono il
+  nome dello strumento e della *Sezione del brano* (*Piano Intro - ...*). La durata totale è mostrata in battute e minuti. Si salva nel progetto.
 - **Automazione:** ogni manopola, menu e interruttore è un parametro della DAW, quindi puoi
   automatizzare tutto: sezione del brano, groove, fill, gate, swing, accordi della progressione,
   suono… Nella lista di automazione della DAW i parametri sono raggruppati (*Harmony*,

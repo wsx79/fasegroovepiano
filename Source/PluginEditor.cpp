@@ -1378,8 +1378,8 @@ void MidiDragTile::paint (juce::Graphics& g)
 
     g.setColour (Palette::background);
     g.setFont (juce::Font (juce::FontOptions (15.0f).withStyle ("Bold")));
-    auto title = subtitle.isEmpty() ? content : content.removeFromTop (content.getHeight() * 0.55f);
-    g.drawFittedText (tr ("DRAG MIDI TO DAW"), title.toNearestInt(), subtitle.isEmpty() ? juce::Justification::centred : juce::Justification::centredBottom, 1, 0.8f);
+    auto titleArea = subtitle.isEmpty() ? content : content.removeFromTop (content.getHeight() * 0.55f);
+    g.drawFittedText (title.isNotEmpty() ? title : tr ("DRAG MIDI TO DAW"), titleArea.toNearestInt(), subtitle.isEmpty() ? juce::Justification::centred : juce::Justification::centredBottom, 1, 0.8f);
     if (subtitle.isNotEmpty())
     {
         g.setColour (Palette::background.withAlpha (0.75f));
@@ -2294,6 +2294,7 @@ SongOverlay::SongOverlay (FaseGroovePianoProcessor& p) : processor (p)
     saveSongButton.onClick = [this] { if (onSaveSong != nullptr) onSaveSong(); };
     addAndMakeVisible (saveSongButton);
     addAndMakeVisible (songTile);
+    addAndMakeVisible (sectionTile);
     closeButton.onClick = [this] { setVisible (false); };
     addAndMakeVisible (closeButton);
     refreshText();
@@ -2316,6 +2317,10 @@ void SongOverlay::refreshText()
     saveButton.setButtonText (tr ("ONE .MID PER SECTION..."));
     saveSongButton.setButtonText (tr ("SAVE SONG .MID..."));
     songTile.setTooltip (tr ("Drag the whole song (every section, with markers) onto a track in your DAW"));
+    sectionTile.setTooltip (tr ("Drag only the section picked on the timeline above (click a section to pick it)"));
+    sectionTile.setTitle (tr ("DRAG THIS SECTION"));
+    songTile.setTitle (tr ("DRAG THE WHOLE SONG"));
+    updateSectionTile();
     closeButton.setButtonText (tr ("CLOSE"));
     repaint();
 }
@@ -2328,8 +2333,54 @@ void SongOverlay::show()
     toFront (true);
 }
 
+void SongOverlay::updateSectionTile()
+{
+    const auto parts = processor.songArrangementParts();
+    if (! juce::isPositiveAndBelow (selected, (int) parts.size()) || parts[(size_t) selected].bars <= 0)
+    {
+        selected = -1;
+        for (int i = 0; i < (int) parts.size() && selected < 0; ++i)
+            if (parts[(size_t) i].bars > 0)
+                selected = i;
+    }
+    sectionTile.setSubtitle (selected >= 0 ? tr ("Section") + ": " + tr (sgk::sectionName ((int) parts[(size_t) selected].section))
+                                           : tr ("No section"));
+    sectionTile.setEnabled (selected >= 0);
+}
+
+void SongOverlay::mouseDown (const juce::MouseEvent& e)
+{
+    // Pick a section: click its block on the timeline.
+    const auto line = timelineArea();
+    if (! line.contains (e.position))
+        return;
+    const auto parts = processor.songArrangementParts();
+    int total = 0;
+    for (const auto& part : parts)
+        total += juce::jmax (0, part.bars);
+    if (total == 0)
+        return;
+    float x = line.getX() + 3.0f;
+    const float width = line.getWidth() - 6.0f;
+    for (int i = 0; i < (int) parts.size(); ++i)
+    {
+        if (parts[(size_t) i].bars <= 0)
+            continue;
+        const float w = width * (float) parts[(size_t) i].bars / (float) total;
+        if (e.position.x >= x && e.position.x < x + w)
+        {
+            selected = i;
+            updateSectionTile();
+            repaint();
+            return;
+        }
+        x += w;
+    }
+}
+
 void SongOverlay::refresh()
 {
+    updateSectionTile();
     const auto parts = processor.songArrangementParts();
     for (int i = 0; i < (int) parts.size() && i < barBoxes.size(); ++i)
     {
@@ -2364,12 +2415,12 @@ juce::Rectangle<int> SongOverlay::rowArea (int part) const
     return inner.removeFromTop (46 * (part + 1)).removeFromBottom (46).reduced (0, 4);
 }
 
-void SongOverlay::setMini (bool shouldBeMini)
+void SongOverlay::setMini (bool shouldBeMini, juce::Component* tile)
 {
     mini = shouldBeMini;
+    miniTile = tile != nullptr ? tile : &songTile;
     for (auto* c : getChildren())
-        if (c != &songTile)
-            c->setVisible (! mini);
+        c->setVisible (! mini || c == miniTile);
     resized();
     repaint();
 }
@@ -2378,7 +2429,7 @@ void SongOverlay::resized()
 {
     if (mini)
     {
-        songTile.setBounds (getLocalBounds().reduced (10).withTrimmedBottom (14));
+        (miniTile != nullptr ? miniTile : &songTile)->setBounds (getLocalBounds().reduced (10).withTrimmedBottom (14));
         return;
     }
 
@@ -2402,7 +2453,9 @@ void SongOverlay::resized()
     bottom.removeFromRight (8);
     saveSongButton.setBounds (bottom.removeFromRight (170).withSizeKeepingCentre (170, 32));
     bottom.removeFromRight (8);
-    songTile.setBounds (bottom.removeFromRight (230));
+    songTile.setBounds (bottom.removeFromRight (200));
+    bottom.removeFromRight (8);
+    sectionTile.setBounds (bottom.removeFromRight (200));
 }
 
 void SongOverlay::paint (juce::Graphics& g)
@@ -2429,7 +2482,7 @@ void SongOverlay::paint (juce::Graphics& g)
     g.drawText (Localisation::upper (tr ("Song arrangement")), inner.removeFromTop (28.0f), juce::Justification::centredLeft);
     g.setColour (Palette::dim);
     g.setFont (font (12.0f));
-    g.drawFittedText (tr ("Bars of each section (- leaves it out), its own variation of the groove and the fill that leads out of it. Then drag or save the whole song."),
+    g.drawFittedText (tr ("Bars of each section (- leaves it out), its own variation of the groove and the fill that leads out of it. Drag the whole song, or click a section on the timeline and drag just that one."),
                       inner.removeFromTop (30.0f).toNearestInt(), juce::Justification::topLeft, 2);
 
     const auto parts = processor.songArrangementParts();
@@ -2455,6 +2508,11 @@ void SongOverlay::paint (juce::Graphics& g)
             const auto colour = colours[(size_t) juce::jlimit (0, 5, (int) part.section)];
             g.setColour (colour.withAlpha (part.variation != 0 ? 1.0f : 0.8f));
             g.fillRoundedRectangle (block, 6.0f);
+            if (&part - parts.data() == selected)
+            {
+                g.setColour (Palette::text);
+                g.drawRoundedRectangle (block.reduced (1.0f), 6.0f, 2.5f);   // the section the tile drags
+            }
             g.setColour (Palette::background);
             g.setFont (font (12.0f, true));
             auto text = block.reduced (6.0f, 3.0f);
@@ -2498,7 +2556,7 @@ void SongOverlay::paint (juce::Graphics& g)
     const int seconds = bpm > 0.0 ? juce::roundToInt (total * 4 * 60.0 / bpm) : 0;
     g.setColour (Palette::text);
     g.setFont (font (14.0f, true));
-    auto info = c.reduced (28.0f, 20.0f).removeFromBottom (52.0f).withWidth (220.0f);
+    auto info = c.reduced (28.0f, 20.0f).withTrimmedBottom (60.0f).removeFromBottom (44.0f).withWidth (260.0f);
     g.drawText (tr ("Total") + ": " + juce::String (total) + " " + tr ("bars"), info.removeFromTop (26.0f), juce::Justification::bottomLeft);
     g.setColour (Palette::dim);
     g.setFont (font (11.5f));
@@ -4421,6 +4479,20 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
             juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->enterMiniMode (&safe->songOverlay); });
         }
     };
+    songOverlay.sectionTile.createFile = [this] { return processor.writeSongSectionClip (songOverlay.selectedSection(), selectedClipPart()); };
+    songOverlay.sectionTile.onDragStart = [this]
+    {
+        if (processor.shrinkWhileDragging)
+        {
+            juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+            juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->enterMiniMode (&safe->songOverlay, &safe->songOverlay.sectionTile); });
+        }
+    };
+    songOverlay.sectionTile.onDragEnd = [this]
+    {
+        juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+        juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->exitMiniMode(); });
+    };
     songOverlay.songTile.onDragEnd = [this]
     {
         juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
@@ -5655,7 +5727,7 @@ void FaseGroovePianoEditor::cellClicked (bool bassRow, int step, const juce::Mou
     processor.editStep (bassRow, step, next);
 }
 
-void FaseGroovePianoEditor::enterMiniMode (juce::Component* keep)
+void FaseGroovePianoEditor::enterMiniMode (juce::Component* keep, juce::Component* songTile)
 {
     if (miniMode)
         return;
@@ -5663,7 +5735,7 @@ void FaseGroovePianoEditor::enterMiniMode (juce::Component* keep)
     miniMode = true;
     miniKeep = keep != nullptr ? keep : &dragTile;
     if (miniKeep == &songOverlay)
-        songOverlay.setMini (true);
+        songOverlay.setMini (true, songTile);
     fullSize = { getWidth(), getHeight() };
     miniStartedAt = juce::Time::getMillisecondCounter();
 
@@ -6049,7 +6121,14 @@ void FaseGroovePianoEditor::timerCallback()
     const bool synced = syncButton.getToggleState();
     tempoSlider.setVisible (! synced);
     dawTempo.setVisible (synced);
-    dawTempo.setText (juce::String (processor.hostBpm.load(), 1) + " BPM  " + tr ("(DAW)"), juce::dontSendNotification);
+    // The standalone app has no DAW: its tempo comes from a MIDI clock, when one is sent to it.
+    const bool standalone = processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone;
+    dawTempo.setText (processor.clockSync.load() ? juce::String (processor.hostBpm.load(), 1) + " BPM  " + tr ("(MIDI clock)")
+                      : standalone ? tr ("No DAW: send it MIDI clock")
+                                   : juce::String (processor.hostBpm.load(), 1) + " BPM  " + tr ("(DAW)"),
+                      juce::dontSendNotification);
+    dawTempo.setTooltip (standalone ? tr ("The standalone app can't read your DAW's tempo. In your DAW send MIDI clock to the port the app listens to (enable it in the app's Options > Audio/MIDI settings), or turn SYNC DAW off and set the BPM.")
+                                    : juce::String());
 }
 
 void FaseGroovePianoEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& title)

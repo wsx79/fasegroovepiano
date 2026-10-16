@@ -304,6 +304,7 @@ public:
     std::function<juce::File()> createFile;
     std::function<void()> onDragStart, onDragEnd;
     void setSubtitle (const juce::String& text)  { if (text != subtitle) { subtitle = text; repaint(); } }
+    void setTitle (const juce::String& text)     { if (text != title) { title = text; repaint(); } }   // empty: DRAG MIDI TO DAW
 
     void paint (juce::Graphics&) override;
     void mouseEnter (const juce::MouseEvent&) override { hover = true; repaint(); }
@@ -313,7 +314,7 @@ public:
 
 private:
     bool hover = false, dragStarted = false;
-    juce::String subtitle;
+    juce::String subtitle, title;
 };
 
 /** OPTIONS page with two tabs: SETTINGS (language, interface size, mini window)
@@ -473,15 +474,21 @@ public:
     void refreshText();
     std::function<void()> onSaveSections, onSaveSong;
     MidiDragTile songTile;   // the whole song as one clip (set up by the editor)
-    /** While the song is dragged the window shrinks: only the tile is shown. */
-    void setMini (bool);
+    MidiDragTile sectionTile;   // the section picked on the timeline, as its own clip
+    int selectedSection() const { return selected; }
+    /** While a clip is dragged the window shrinks: only that tile is shown. */
+    void setMini (bool, juce::Component* tile = nullptr);
 
     void paint (juce::Graphics&) override;
     void resized() override;
     void mouseUp (const juce::MouseEvent&) override;
+    void mouseDown (const juce::MouseEvent&) override;
 
 private:
     juce::Rectangle<float> card() const { return getLocalBounds().toFloat().withSizeKeepingCentre (960.0f, 640.0f); }
+    int selected = -1;                       // the section picked on the timeline (part index)
+    juce::Component* miniTile = nullptr;     // the tile shown in the mini window
+    void updateSectionTile();
     juce::Rectangle<int> rowArea (int part) const;
     juce::Rectangle<float> timelineArea() const;
     void refresh();
@@ -743,7 +750,7 @@ public:
     void resized() override;
 
     /** Mini window shown while a clip is being dragged to the DAW. */
-    void enterMiniMode (juce::Component* keep = nullptr);   // keep: the component being dragged from (default: the clip tile)
+    void enterMiniMode (juce::Component* keep = nullptr, juce::Component* songTile = nullptr);   // keep: the component being dragged from (default: the clip tile); songTile: which song-window tile
     void exitMiniMode();
 
 private:

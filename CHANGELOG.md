@@ -6,6 +6,20 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.11.0] - 2026-10-16
+
+### Added
+- **Drag one section of the song**: in the song window click a section on the timeline and drag it
+  with **DRAG THIS SECTION**; the clip is named after it (*Piano Intro*, *Piano Main groove*,
+  *Piano Drop*...). The whole song has its own **DRAG THE WHOLE SONG** tile.
+- Dragged and saved clips are named after the instrument and the song section first
+  (*Piano Intro - Am9-D9 ...*, *Bass Drop - ...*).
+
+### Fixed
+- **SYNC DAW in the standalone app** always showed 120 BPM: the app has no DAW to read. It now
+  follows a **MIDI clock** (tempo, start / stop, song position) sent from your DAW, and says *No
+  DAW* when none arrives.
+
 ## [2.10.0] - 2026-10-16
 
 ### Added

@@ -111,7 +111,7 @@ Ready-made progressions open with **BROWSE...** (it shows the name of the one yo
 | Control | What it does |
 |---|---|
 | **⏮ ▶/❚❚ ■** | The **transport** of the guide sound, to hear the groove without starting the DAW: back to the start, play / pause (cyan while it plays), stop (the next play starts from the top). The **space bar** is play / pause when the plug-in window is active. With the DAW playing, the groove follows the DAW. |
-| **SYNC DAW** on | The groove follows the DAW's tempo and position (recommended). The DAW tempo is shown next to it. |
+| **SYNC DAW** on | The groove follows the DAW's tempo and position (recommended). The DAW tempo is shown next to it. **Standalone app** (v2.11): it has no DAW, so it follows a **MIDI clock** - in your DAW send MIDI clock (Ableton: *Settings → Link, Tempo & MIDI*, *Sync* on for an output port) to a port the app listens to (on Windows a virtual port such as loopMIDI, on macOS the IAC bus; enable it in the app's *Options → Audio/MIDI settings*): tempo, play, stop and position follow. Without a clock it says *No DAW*. |
 | **SYNC DAW** off | A BPM bar appears (60–180): drag it or double-click to type a value. The groove runs at its own tempo but still starts/stops with the DAW's Play or with ▶. |
 
 The chosen tempo is also used for exported MIDI clips.
@@ -616,9 +616,12 @@ Two ways to use it:
   and the **fill** that closes each section (as set in the Groove panel, none, or any fill style:
   you hear it while that *Song section* loops).
   The arrangement is used by *Clip length → Song*, by *Song section* while you play, and by
-  the export at the bottom: **DRAG MIDI TO DAW** (the whole song, with section markers, as one
-  clip), **SAVE SONG .MID…** and **ONE .MID PER SECTION…** (one MIDI file per section to drop on
-  separate clips), all with the *Notes* part chosen in EXPORT MIDI. The total length is shown in
+  the export at the bottom: **DRAG THE WHOLE SONG** (with section markers, as one clip), **DRAG
+  THIS SECTION** (v2.11: click a section on the timeline - it gets a white outline - and drag just
+  that one: the clip is named after it, *Piano Intro*, *Piano Main groove*, *Piano Drop*...),
+  **SAVE SONG .MID…** and **ONE .MID PER SECTION…** (one MIDI file per section to drop on
+  separate clips), all with the *Notes* part chosen in EXPORT MIDI. Clips dragged from the main
+  window are named after the instrument and the *Song section* too (*Piano Intro - ...*). The total length is shown in
   bars and minutes. It is saved with the project.
 - **Automation:** every knob, menu and switch is a DAW parameter, so you can automate anything:
   song section, groove, fills, gate, swing, chords of the progression, sound… In the DAW's
