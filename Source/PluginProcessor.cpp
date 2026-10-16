@@ -69,8 +69,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
     choice (ParamIDs::key, "Key", noteNames(), 9);
     choice (ParamIDs::scale, "Scale", namesFrom (sgk::numScales, sgk::scaleName), 1);
     choice (ParamIDs::extension, "Extensions", namesFrom (sgk::numExtensions, sgk::extensionName), 2);
-    choice (ParamIDs::voicing, "Voicing", namesFrom (sgk::numVoicings, sgk::voicingName), 2);   // rootless: the house piano sound
-    add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::registerPos, 1 }, "Register", 48, 76, 61,
+    // Upper triad: the compact, classic house stab (3 notes within a 9th, around F4).
+    choice (ParamIDs::voicing, "Voicing", namesFrom (sgk::numVoicings, sgk::voicingName), (int) sgk::Voicing::upperTriad);
+    add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::registerPos, 1 }, "Register", 48, 76, 60,
                     AudioParameterIntAttributes().withStringFromValueFunction ([] (int v, int)
                     {
                         return String (sgk::noteName (v)) + String (v / 12 - 1);
@@ -487,7 +488,7 @@ namespace
     //       7.. bass lines: 7 Disco Octave Gallop 8 Disco Octave Push 11 Funk Sixteenths 18 Gospel Walk (see sgk::bassLines)   approach: 0 off 1 above 2 below
     // sound: 0 Rhodes 1 Soulful Grand 2 House Piano 3 House Organ
     const Style styles[] {
-        { "House Piano Loop",     "Minor Flow  i - VI - III - VII",    "Dotted House Stabs",   2, 2, 6, 0, 2, 61, 0.25f, 0.65f, 0.15f, 0.00f, false, 0, 0 },
+        { "House Piano Loop",     "Minor Flow  i - VI - III - VII",    "Dotted House Stabs",   2, 8, 6, 0, 2, 60, 0.25f, 0.65f, 0.15f, 0.00f, false, 0, 0 },
         { "Classic Deep House",   "Dorian Vamp  i - IV",               "Deep Chords",          2, 2, 1, 0, 0, 62, 0.20f, 0.60f, 0.25f, 0.10f, false },
         { "Soulful House",        "Turnaround  I - vi - ii - V",       "Soulful Sunday",       7, 1, 1, 1, 1, 64, 0.25f, 0.55f, 0.30f, 0.20f, false, 3, 7 },
         { "Gospel House",         "Gospel Lift  IV - V - vi - I",      "Gospel Shout",         7, 0, 18, 1, 1, 64, 0.30f, 0.50f, 0.30f, 0.15f, true, 2, 3 },
@@ -507,12 +508,12 @@ namespace
         { "Sunday Soulful",       "Sunday Gospel  IV - iii - vi - ii - V", "Sunday Keys Push", 9, 9, 1, 1, 1, 62, 0.25f, 0.60f, 0.30f, 0.15f, false, 3, 3 },
         { "Deep Night Pads",      "Late Night Minor  i - v - VI - iv", "Deep Offbeat Pads",    8, 10, 14, 0, 0, 60, 0.20f, 0.80f, 0.25f, 0.10f, false },
         { "Chicago Jack",         "Jack Vamp  I7 - IV7 - I7 - V7",     "Chicago Stab Jack",    10, 0, 2, 0, 3, 64, 0.45f, 0.35f, 0.20f, 0.00f, true, 2, 5, 0 },
-        { "Piano House Anthem",   "Sunrise  I - V - vi - IV",          "Anthem Offbeats Push", 2, 2, 6, 0, 2, 64, 0.10f, 0.45f, 0.15f, 0.00f, true, 3, 8 },
+        { "Piano House Anthem",   "Sunrise  I - V - vi - IV",          "Anthem Offbeats Push", 2, 8, 6, 0, 2, 62, 0.10f, 0.45f, 0.15f, 0.00f, true, 3, 8 },
         { "Vocal House",          "Soul Cycle  I - iii - vi - IV",     "Vocal House Offbeats", 2, 8, 6, 0, 1, 64, 0.20f, 0.55f, 0.25f, 0.10f, false, 3, 7 },
         { "Deep Soul Keys",       "Deep Soul  ii - V - I - IV",        "Midnight Rhodes",      8, 2, 14, 0, 0, 62, 0.25f, 0.65f, 0.30f, 0.15f, false },
         { "Gospel Chops",         "Church Turn  I - I7 - IV - iv",     "Gospel Chop Comp",     7, 1, 18, 1, 1, 64, 0.30f, 0.45f, 0.30f, 0.10f, false, 2, 3 },
         { "Jackin' Funk",         "Funk Turn  I7 - bVII7 - IV7 - I7",  "Jack Bounce 16ths",    10, 5, 11, 0, 4, 64, 0.35f, 0.30f, 0.20f, 0.00f, false, 2, 6, 0 },
-        { "Classic Piano House",  "Classic Soul  I - IV - ii - V",     "Classic Dotted Loop",  2, 2, 6, 0, 2, 63, 0.15f, 0.60f, 0.15f, 0.00f, false, 3, 0 },
+        { "Classic Piano House",  "Classic Soul  I - IV - ii - V",     "Classic Dotted Loop",  1, 0, 6, 0, 2, 60, 0.15f, 0.60f, 0.15f, 0.00f, false, 3, 0 },
         { "Deep Minimal",         "Minor Two  i - ii",                 "Deep Minimal Stab",    8, 4, 15, 0, 0, 62, 0.20f, 0.50f, 0.20f, 0.00f, false },
         { "Soulful Lift",         "Two-Five Lift  ii - V - iii - vi",  "Soulful Sway Comp",    9, 2, 17, 0, 0, 63, 0.30f, 0.60f, 0.30f, 0.15f, false, 3, 3 },
         { "Jackin' Piano Chicago", "Chicago Shuffle  I - vi - IV - V", "Jackin' Piano Hook",   1, 0, 6, 0, 2, 66, 0.50f, 0.35f, 0.20f, 0.00f, true, 2, 5, 0 },

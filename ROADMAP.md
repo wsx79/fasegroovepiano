@@ -11,6 +11,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 
 ## Done
 
+- v2.10.0: 7 new piano grooves, 18 Dorian progressions, compact house-stab sound by default.
 - v2.9.0: groove from MIDI, live keys, DNA Straighter, sections colour the harmony.
 - v2.8.0: random riffs as busy as their density, fills that suit the groove.
 - v2.7.0: groove evolution (8 / 16 bars), bass and chords kept clear automatically, chord range.

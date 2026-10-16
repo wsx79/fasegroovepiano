@@ -6,6 +6,23 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.10.0] - 2026-10-16
+
+### Aggiunto
+- **7 nuovi groove di piano** (179 in tutto), sulle figure classiche del piano house e del
+  jackin' piano: *Rolling 16th Keys*, *Late Dotted Stabs*, *Double Hit Stabs*, *Pocket
+  Three Stabs*, *Offbeat Run Chops*, *Front Loaded Hook*, *Answer Run Keys*.
+- **18 nuove progressioni doriche** (112 in tutto), in *Deep house*: *Dorian Climb i - VII - ii -
+  IV*, *Dorian Return i - v - IV - i*, *Dorian Bloom i - VII - III - IV*, *Dorian Arrival III - IV -
+  v - i* e altre.
+
+### Modificato
+- **Un suono piano house più autentico**: accordi compatti
+  (3 note dentro una nona, la più alta intorno al Fa4). Il plug-in ora parte col voicing
+  **Upper triad (house stab)** e un registro un po' più basso, e gli stili *House Piano Loop*,
+  *Piano House Anthem* e *Classic Piano House* usano stab compatti. I progetti salvati mantengono il
+  loro suono.
+
 ## [2.9.0] - 2026-10-16
 
 ### Aggiunto

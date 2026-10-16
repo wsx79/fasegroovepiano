@@ -11,6 +11,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 
 ## Fatto
 
+- v2.10.0: 7 nuovi groove di piano, 18 progressioni doriche, suono house stab compatto di default.
 - v2.9.0: groove dal MIDI, tasti live, DNA Più dritto, le sezioni colorano l'armonia.
 - v2.8.0: riff casuali pieni quanto la loro densità, fill che si adattano al groove.
 - v2.7.0: evoluzione del groove (8 / 16 battute), basso e accordi separati in automatico, range accordi.
