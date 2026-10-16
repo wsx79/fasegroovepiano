@@ -162,6 +162,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
                                               AudioParameterIntAttributes().withStringFromValueFunction (noteText)));
     add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::chordHigh, 1 }, "Chord Range High", 60, 108, 108,
                                               AudioParameterIntAttributes().withStringFromValueFunction (noteText)));
+    // The strings: a third part for body (appended, so saved projects keep their settings).
+    choice (ParamIDs::strings, "Strings", namesFrom (sgk::numStringsModes, sgk::stringsModeName), 0);
     group ("sound", "Guide sound");
     return layout;
 }
@@ -185,10 +187,11 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     auto& toneParam = *apvts.getRawParameterValue (ParamIDs::tone);
     auto& soundParam = *apvts.getRawParameterValue (ParamIDs::soundType);
 
-    for (int i = 0; i < 24; ++i)
+    for (int i = 0; i < 32; ++i)
         synth.addVoice (new GuideVoice (toneParam, soundParam));
 
-    synth.addSound (new GuideSoundTag());
+    synth.addSound (new GuideSoundTag (stringsChannel));
+    synth.addSound (new GuideStringsTag (stringsChannel));
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         slotParams[(size_t) i] = apvts.getRawParameterValue (ParamIDs::slot (i));
@@ -459,6 +462,7 @@ void FaseGroovePianoProcessor::resetToDefaults()
     resetUserPattern();
     segmentLocked.fill (false);
     lastBassMode = 1;
+    lastStringsMode = 1;
     chordsMuted = false;
     resetSong();
     freeCircle = false;
@@ -940,6 +944,7 @@ void FaseGroovePianoProcessor::totalRandom()
     if (chance (40)) setParameterFromUI (ParamIDs::voicing, (float) r.nextInt (sgk::numVoicings));
     if (chance (35)) setParameterFromUI (ParamIDs::bass, (float) (1 + r.nextInt (sgk::numBassModes - 1)));
     if (chance (30)) setParameterFromUI (ParamIDs::soundType, (float) r.nextInt (numGuideSounds));
+    if (chance (35)) setParameterFromUI (ParamIDs::strings, (float) r.nextInt (sgk::numStringsModes));
     if (chance (30)) setParameterFromUI (ParamIDs::fills, (float) r.nextInt (4));
     setParameterFromUI (ParamIDs::swing, 0.05f + 0.35f * r.nextFloat());
     setParameterFromUI (ParamIDs::humanize, 0.1f + 0.35f * r.nextFloat());
@@ -963,6 +968,7 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.rangeLow = asInt (ParamIDs::chordLow);
     s.rangeHigh = juce::jmax (asInt (ParamIDs::chordHigh), s.rangeLow + 12);   // at least an octave
     s.bass = (sgk::BassMode) asInt (ParamIDs::bass);
+    s.strings = (sgk::StringsMode) juce::jlimit (0, sgk::numStringsModes - 1, asInt (ParamIDs::strings));
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
         s.progression[(size_t) i] = juce::roundToInt (slotParams[(size_t) i]->load());
@@ -1212,6 +1218,30 @@ void FaseGroovePianoProcessor::toggleBass()
     {
         setParameterFromUI (ParamIDs::bass, (float) juce::jmax (1, lastBassMode));
     }
+}
+
+bool FaseGroovePianoProcessor::isStringsOn() const
+{
+    return juce::roundToInt (raw (ParamIDs::strings)) != (int) sgk::StringsMode::off;
+}
+
+void FaseGroovePianoProcessor::toggleStrings()
+{
+    const int mode = juce::roundToInt (raw (ParamIDs::strings));
+    if (mode != (int) sgk::StringsMode::off)
+    {
+        lastStringsMode = mode;
+        setParameterFromUI (ParamIDs::strings, 0.0f);
+    }
+    else
+    {
+        setParameterFromUI (ParamIDs::strings, (float) juce::jmax (1, lastStringsMode));
+    }
+}
+
+juce::String FaseGroovePianoProcessor::instrumentName (ClipPart part)
+{
+    return part == ClipPart::bass ? "Bass" : part == ClipPart::strings ? "Strings" : "Piano";
 }
 
 void FaseGroovePianoProcessor::setFreeChord (int slot, int code)
@@ -1547,11 +1577,11 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     const bool muteChords = chordsMuted.load();
     for (const auto& e : events)
     {
-        if (muteChords && e.isNoteOn() && e.part != sgk::Part::bass)
-            continue;   // SOLO BASS (note-offs still pass, so nothing hangs)
+        if (muteChords && e.isNoteOn() && e.part != sgk::Part::bass && e.part != sgk::Part::strings)
+            continue;   // the piano muted (note-offs still pass, so nothing hangs)
 
         const int pos = juce::jlimit (0, numSamples - 1, (int) std::floor ((e.ppq - startPpq) * samplesPerBeat));
-        const int channel = (bassOnChannel2 && e.part == sgk::Part::bass) ? 2 : 1;
+        const int channel = e.part == sgk::Part::strings ? stringsChannel : (bassOnChannel2 && e.part == sgk::Part::bass) ? 2 : 1;
         outMidi.addEvent (e.isNoteOn() ? juce::MidiMessage::noteOn (channel, e.note, (juce::uint8) e.velocity)
                                        : juce::MidiMessage::noteOff (channel, e.note),
                           pos);
@@ -1939,6 +1969,7 @@ std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengt
     auto s = currentSettings();
     s.editedLoop = nullptr;
     s.section = sgk::Section::main;
+    s.strings = sgk::StringsMode::off;   // the piano roll edits piano and bass; the strings follow the chords by themselves
     const double toRelative = 118.0 / juce::jmax (1, s.velocity);
 
     std::vector<sgk::LoopNote> notes;
@@ -2005,7 +2036,7 @@ juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::
         {
             if (! wanted (e.part))
                 continue;
-            const int channel = (useBassChannel && e.part == sgk::Part::bass) ? 2 : 1;
+            const int channel = e.part == sgk::Part::strings ? stringsChannel : (useBassChannel && e.part == sgk::Part::bass) ? 2 : 1;
             const double tick = std::round (juce::jlimit (0.0, beats, e.ppq) * ticksPerQuarter);
             track.addEvent (e.isNoteOn() ? juce::MidiMessage::noteOn (channel, e.note, (juce::uint8) e.velocity)
                                          : juce::MidiMessage::noteOff (channel, e.note),
@@ -2023,11 +2054,15 @@ juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::
         // One file, one track per part: the DAW puts piano, bass and fills on separate tracks.
         header.addEvent (juce::MidiMessage::endOfTrack(), beats * ticksPerQuarter);
         file.addTrack (header);
-        const bool anyFill = std::any_of (clipEvents.begin(), clipEvents.end(), [] (const sgk::NoteEvent& e) { return e.part == sgk::Part::fill; });
-        struct Lane { const char* name; sgk::Part part; };
-        for (const auto& lane : { Lane { "Piano", sgk::Part::chords }, Lane { "Bass", sgk::Part::bass }, Lane { "Fills", sgk::Part::fill } })
+        auto any = [&clipEvents] (sgk::Part p)
         {
-            if (lane.part == sgk::Part::fill && ! anyFill)
+            return std::any_of (clipEvents.begin(), clipEvents.end(), [p] (const sgk::NoteEvent& e) { return e.part == p; });
+        };
+        struct Lane { const char* name; sgk::Part part; };
+        for (const auto& lane : { Lane { "Piano", sgk::Part::chords }, Lane { "Bass", sgk::Part::bass }, Lane { "Fills", sgk::Part::fill },
+                                  Lane { "Strings", sgk::Part::strings } })
+        {
+            if ((lane.part == sgk::Part::fill || lane.part == sgk::Part::strings) && ! any (lane.part))
                 continue;
             juce::MidiMessageSequence track;
             track.addEvent (juce::MidiMessage::textMetaEvent (3, lane.name), 0.0);
@@ -2037,10 +2072,13 @@ juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::
         return file;
     }
 
-    // A single track: all parts, or chords (with their fills) only, or bass only.
+    // A single track: all parts, or chords (with their fills) only, or bass only, or strings only.
     notesOf (header, [part] (sgk::Part p)
     {
-        return part == ClipPart::all || (part == ClipPart::bass ? p == sgk::Part::bass : p != sgk::Part::bass);
+        if (part == ClipPart::bass)    return p == sgk::Part::bass;
+        if (part == ClipPart::strings) return p == sgk::Part::strings;
+        if (part == ClipPart::chords)  return p == sgk::Part::chords || p == sgk::Part::fill;
+        return true;
     }, bassOnChannel2);
     file.addTrack (header);
     return file;
@@ -2060,10 +2098,11 @@ juce::String FaseGroovePianoProcessor::clipFileName (int bars, ClipPart part) co
     if (s.progressionLength > 4)
         chords.add ("etc");
 
-    const juce::String partName = part == ClipPart::chords ? " chords" : part == ClipPart::bass ? " bass" : part == ClipPart::tracks ? " tracks" : "";
+    const juce::String partName = part == ClipPart::chords ? " chords" : part == ClipPart::bass ? " bass" : part == ClipPart::tracks ? " tracks"
+                                : part == ClipPart::strings ? " strings" : "";
     const juce::String length = bars == songArrangement ? juce::String ("Song ") : juce::String();
     // Named after the instrument and the part of the song first: "Piano Intro - ...", "Piano Song - ...".
-    const juce::String instrument = part == ClipPart::bass ? "Bass" : "Piano";
+    const juce::String instrument = instrumentName (part);
     const juce::String songPart = bars == songArrangement ? tr ("Song") : tr (sgk::sectionName ((int) s.section));
     const auto name = instrument + " " + songPart + " - " + chords.joinIntoString ("-") + " " + juce::String (pattern.name) + partName + " " + length
                     + juce::String (clipLengthInBars (bars)) + "bars " + juce::String (juce::roundToInt (exportBpm())) + "bpm";
@@ -2101,7 +2140,7 @@ juce::File FaseGroovePianoProcessor::writeSongSectionClip (int partIndex, ClipPa
     const auto& section = parts[(size_t) partIndex];
     std::vector<sgk::GrooveEngine::Marker> markers;
     const auto events = sgk::GrooveEngine::renderArrangement (currentSettings(), { section }, &markers);
-    const juce::String instrument = part == ClipPart::bass ? "Bass" : "Piano";
+    const juce::String instrument = instrumentName (part);
     const auto title = instrument + " " + tr (sgk::sectionName ((int) section.section));
     const auto midi = midiFromEvents (events, section.bars * 4.0, &markers, part, title);
 

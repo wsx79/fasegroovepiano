@@ -12,6 +12,8 @@
 //  - Wurlitzer:     reedy FM electric piano with a little drive ("bark")
 //  - Gospel Organ:  full drawbars through a rotating speaker (tremolo + vibrato)
 //  - Warm Pad:      three detuned saws through a soft low-pass, slow attack
+// The strings (their own MIDI channel) always play a string ensemble: wider detuned saws with
+// vibrato, a slow bow-like attack and a long release.
 
 #include <juce_audio_basics/juce_audio_basics.h>
 
@@ -31,8 +33,19 @@ inline const char* guideSoundName (int sound) noexcept
 
 struct GuideSoundTag : public juce::SynthesiserSound
 {
+    explicit GuideSoundTag (int stringsChannel = 0) : strings (stringsChannel) {}
     bool appliesToNote (int) override    { return true; }
-    bool appliesToChannel (int) override { return true; }
+    bool appliesToChannel (int c) override { return c != strings; }
+    int strings;
+};
+
+/** The strings' channel: played with the string ensemble. */
+struct GuideStringsTag : public juce::SynthesiserSound
+{
+    explicit GuideStringsTag (int stringsChannel) : channel (stringsChannel) {}
+    bool appliesToNote (int) override    { return true; }
+    bool appliesToChannel (int c) override { return c == channel; }
+    int channel;
 };
 
 class GuideVoice : public juce::SynthesiserVoice
@@ -41,16 +54,20 @@ public:
     GuideVoice (const std::atomic<float>& toneParam, const std::atomic<float>& soundParam)
         : tone (toneParam), soundChoice (soundParam) {}
 
-    bool canPlaySound (juce::SynthesiserSound* s) override { return dynamic_cast<GuideSoundTag*> (s) != nullptr; }
+    bool canPlaySound (juce::SynthesiserSound* s) override
+    {
+        return dynamic_cast<GuideSoundTag*> (s) != nullptr || dynamic_cast<GuideStringsTag*> (s) != nullptr;
+    }
 
     using SynthesiserVoice::renderNextBlock;
     void pitchWheelMoved (int) override {}
     void controllerMoved (int, int) override {}
 
-    void startNote (int note, float velocity, juce::SynthesiserSound*, int) override
+    void startNote (int note, float velocity, juce::SynthesiserSound* playing, int) override
     {
         sr = getSampleRate();
         sound = (GuideSound) juce::jlimit (0, numGuideSounds - 1, juce::roundToInt (soundChoice.load()));
+        strings = dynamic_cast<GuideStringsTag*> (playing) != nullptr;
         freq = juce::MidiMessage::getMidiNoteInHertz (note);
         vel = velocity;
         bright = 0.35f + 1.3f * tone.load();
@@ -75,6 +92,8 @@ public:
             case GuideSound::rhodes:
             default:                     startRhodes (note);       break;
         }
+        if (strings)
+            startStrings();
     }
 
     void stopNote (float, bool allowTailOff) override
@@ -86,7 +105,8 @@ public:
         }
 
         releasing = true;
-        const double releaseSeconds = sound == GuideSound::organ || sound == GuideSound::gospelOrgan ? 0.06
+        const double releaseSeconds = strings ? 0.7
+                                    : sound == GuideSound::organ || sound == GuideSound::gospelOrgan ? 0.06
                                     : sound == GuideSound::pad ? 0.6
                                     : sound == GuideSound::rhodes || sound == GuideSound::wurlitzer ? 0.09 : 0.14;
         releaseCoeff = std::exp (-1.0 / (releaseSeconds * sr));
@@ -105,7 +125,8 @@ public:
             double env = 1.0;
             double sample = 0.0;
 
-            switch (sound)
+            if (strings) sample = renderStrings (env);
+            else switch (sound)
             {
                 case GuideSound::grand:
                 case GuideSound::housePiano: sample = renderGrand (env); break;
@@ -446,6 +467,49 @@ private:
         return padLow * env;
     }
 
+    void startStrings()
+    {
+        // A section: three bows a little out of tune with each other, darker than the pad.
+        static constexpr double detune[3] { -0.0085, 0.0015, 0.009 };
+        for (int i = 0; i < 3; ++i)
+        {
+            padInc[(size_t) i] = freq * (1.0 + detune[i]) / sr;
+            padPhase[(size_t) i] = random.nextDouble();
+        }
+        padLow = padLow2 = 0.0;
+        padCutoff = juce::jlimit (0.02, 0.4, (freq * (1.6 + 2.5 * bright) + 500.0) / sr * juce::MathConstants<double>::twoPi);
+        vibratoPhase = random.nextDouble();
+        gain = 0.1 * (0.55 + 0.45 * vel);
+    }
+
+    double renderStrings (double& env) noexcept
+    {
+        auto blep = [] (double t, double dt)
+        {
+            if (t < dt)       { t /= dt; return t + t - t * t - 1.0; }
+            if (t > 1.0 - dt) { t = (t - 1.0) / dt; return t * t + t + t + 1.0; }
+            return 0.0;
+        };
+
+        // A slow vibrato that comes in after the attack, like a player's.
+        vibratoPhase += 5.2 / sr; if (vibratoPhase >= 1.0) vibratoPhase -= 1.0;
+        const double vibrato = 1.0 + 0.0028 * juce::jmin (1.0, time / 0.6) * fastSin (vibratoPhase);
+
+        double saw = 0.0;
+        for (int i = 0; i < 3; ++i)
+        {
+            const double t = padPhase[(size_t) i], dt = padInc[(size_t) i] * vibrato;
+            saw += (2.0 * t - 1.0) - blep (t, dt);
+            padPhase[(size_t) i] += dt; if (padPhase[(size_t) i] >= 1.0) padPhase[(size_t) i] -= 1.0;
+        }
+
+        // Two gentle low-pass stages: soft, no buzz.
+        padLow  += padCutoff * (saw / 3.0 - padLow);
+        padLow2 += padCutoff * (padLow - padLow2);
+        env = juce::jmin (1.0, time / 0.32);
+        return padLow2 * env;
+    }
+
     //==============================================================================
     const std::atomic<float>& tone;
     const std::atomic<float>& soundChoice;
@@ -477,4 +541,8 @@ private:
     Decay mainDecay, indexDecay, clickDecay;   // the per-sound envelopes (see the start functions)
     std::array<double, 3> padPhase {}, padInc {};
     double padLow = 0.0, padCutoff = 0.1;
+
+    // Strings
+    bool strings = false;
+    double padLow2 = 0.0, vibratoPhase = 0.0;
 };

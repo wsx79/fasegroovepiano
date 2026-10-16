@@ -30,6 +30,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 
 ## Funzioni
 
+- 🎻 **Archi (v2.12):** una terza parte per dare corpo e volume, sul canale MIDI 3: un pad con voice leading che tiene ogni accordo (anche alto o largo), oppure string stab insieme al piano. Si esportano da soli (clip *Strings ...*) o come traccia separata.
 - ✨ **Versione 2.0: una nuova interfaccia**, pulita e professionale: aspetto da studio grafite, pulsanti con icone, un vero trasporto (▶ ❚❚ ■), interruttori chiari per sentire il piano o il basso.
 - 🎹 **Armonia:** 12 tonalità × 13 scale/modi (Maggiore, Dorian, Minore, Mixolydian, Lydian,
   Phrygian, Locrian, Minore armonica e melodica, Maggiore armonica, Lidia dominante, Misolidia b6,

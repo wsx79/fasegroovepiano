@@ -4357,6 +4357,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       extension (p.apvts, ParamIDs::extension, "Extensions"),
       voicing (p.apvts, ParamIDs::voicing, "Voicing"),
       bass (p.apvts, ParamIDs::bass, "Left-hand bass"),
+      strings (p.apvts, ParamIDs::strings, "Strings"),
       approach (p.apvts, ParamIDs::approach, "Approach chord"),
       topLine (p.apvts, ParamIDs::topLine, "Top line"),
       movement (p.apvts, ParamIDs::movement, "Movement"),
@@ -4545,7 +4546,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (slots.add (new ChordSlot (p.apvts, i)));
 
     for (juce::Component* c : std::initializer_list<juce::Component*> {
-             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &movement, &variation, &grooveBars, &chorus, &pump, &pumpRelease, &pumpSource, &pumpRate, &sidechainMeter, &registerKnob, &strumKnob,
+             &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &strings, &approach, &topLine, &movement, &variation, &grooveBars, &chorus, &pump, &pumpRelease, &pumpSource, &pumpRate, &sidechainMeter, &registerKnob, &strumKnob,
              &octaveToggle, &circle,
              &diceProgression, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
              &swing, &gate, &velocity, &humanize, &riffDensity,
@@ -4747,7 +4748,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     clipLength.addItemList ({ "Full loop", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars", "32 bars",
                               "Song: intro > drop > outro" }, 1);
     clipLength.setSelectedId (1, juce::dontSendNotification);
-    clipPart.addItemList ({ "Chords + bass", "Chords only", "Bass only", "Separate tracks" }, 1);
+    clipPart.addItemList ({ "Chords + bass", "Chords only", "Bass only", "Separate tracks", "Strings only" }, 1);
     clipPart.setSelectedId (1, juce::dontSendNotification);
 
     dragTile.createFile = [this] { return processor.writeMidiClip (selectedClipBars(), selectedClipPart()); };
@@ -4779,10 +4780,13 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     // What you hear: two switches, the piano and the bass (lit = you hear it; never both off).
     hearPianoButton.onClick = [this] { hearPart (false); };
     hearBassButton.onClick  = [this] { hearPart (true); };
+    hearStringsButton.onClick = [this] { processor.toggleStrings(); };
     hearPianoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
-    hearBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+    hearBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
+    hearStringsButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
     hearBassButton.onColour = Palette::accent2;
-    for (auto* b : { &hearPianoButton, &hearBassButton })
+    hearStringsButton.onColour = Palette::strings;
+    for (auto* b : { &hearPianoButton, &hearBassButton, &hearStringsButton })
         addAndMakeVisible (b);
 
     // Piano roll (what plays) or rhythm grid (what you edit).
@@ -4976,8 +4980,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     // Read the saved size first: setting the limits resizes (and re-saves) the window.
     const float savedScale = juce::jlimit (0.6f, 2.0f, processor.editorScale);
     setResizable (true, true);
-    setResizeLimits ((int) (baseWidth * 0.6f), (int) (baseHeight * 0.6f), baseWidth * 2, baseHeight * 2);
-    getConstrainer()->setFixedAspectRatio ((double) baseWidth / baseHeight);
+    applySizeLimits();
     setSize (juce::roundToInt (baseWidth * savedScale), juce::roundToInt (baseHeight * savedScale));
     startTimerHz (30);
     timerCallback();
@@ -5406,14 +5409,18 @@ void FaseGroovePianoEditor::saveAllParts()
                                       return;
 
                                   // The loop (in the clip length you chose) and the whole song, each as
-                                  // full, chords only and bass only: ready to drop on separate tracks.
+                                  // full, chords only, bass only (and strings only): ready to drop on separate tracks.
                                   juce::Array<int> lengths { selectedClipBars() };
                                   if (selectedClipBars() != FaseGroovePianoProcessor::songArrangement)
                                       lengths.add (FaseGroovePianoProcessor::songArrangement);
 
+                                  std::vector<FaseGroovePianoProcessor::ClipPart> parts { FaseGroovePianoProcessor::ClipPart::all,
+                                                                                          FaseGroovePianoProcessor::ClipPart::chords,
+                                                                                          FaseGroovePianoProcessor::ClipPart::bass };
+                                  if (processor.isStringsOn())
+                                      parts.push_back (FaseGroovePianoProcessor::ClipPart::strings);
                                   for (int bars : lengths)
-                                      for (auto part : { FaseGroovePianoProcessor::ClipPart::all, FaseGroovePianoProcessor::ClipPart::chords,
-                                                         FaseGroovePianoProcessor::ClipPart::bass })
+                                      for (auto part : parts)
                                       {
                                           auto file = folder.getChildFile (processor.clipFileName (bars, part));
                                           file.deleteFile();
@@ -5467,7 +5474,7 @@ void FaseGroovePianoEditor::applyLanguage()
     for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump, &pumpRelease })
         k->refreshText();
 
-    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &approach, &topLine, &movement, &variation, &grooveBars, &pattern, &section,
+    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &strings, &approach, &topLine, &movement, &variation, &grooveBars, &pattern, &section,
                      &fills, &fillStyle, &playMode, &bassChannel, &soundType, &pumpSource, &pumpRate })
         c->refreshText();
 
@@ -5483,7 +5490,7 @@ void FaseGroovePianoEditor::applyLanguage()
         clipLength.changeItemText (i + 1, tr (lengths[i]));
     clipLength.setSelectedId (selectedLength, juce::dontSendNotification);
 
-    static const char* const parts[] { "Chords + bass", "Chords only", "Bass only", "Separate tracks" };
+    static const char* const parts[] { "Chords + bass", "Chords only", "Bass only", "Separate tracks", "Strings only" };
     const int selectedPart = clipPart.getSelectedId();
     for (int i = 0; i < clipPart.getNumItems(); ++i)
         clipPart.changeItemText (i + 1, tr (parts[i]));
@@ -5534,6 +5541,8 @@ void FaseGroovePianoEditor::applyLanguage()
     patternView.setTooltip (tr ("Click a step: hit > accent > ghost > rest.  Right-click: more options"));
     hearPianoButton.setTooltip (tr ("Hear the piano (lit) or mute it: exported clips keep everything"));
     hearBassButton.setTooltip (tr ("Hear the bass (lit) or switch it off"));
+    hearStringsButton.setTooltip (tr ("Strings on (lit) or off: they hold the chords for body, on MIDI channel 3"));
+    strings.box.setTooltip (tr ("The strings: a pad that holds each chord, higher, wider, or stabs with the piano. MIDI channel 3"));
     rndPianoButton.setButtonText (tr ("PIANO"));
     myGroovesButton.setButtonText (tr ("MY GROOVES"));
     myGroovesButton.setTooltip (tr ("Save the rhythm grid as your own groove, or load one you saved (Documents/Fase Groove Piano/Grooves)"));
@@ -5583,6 +5592,7 @@ void FaseGroovePianoEditor::applyLanguage()
     gridTab.setTooltip (tr ("The rhythm grid: click the steps to write your own groove"));
     hearPianoButton.setButtonText (tr ("PIANO"));
     hearBassButton.setButtonText (tr ("BASS"));
+    hearStringsButton.setButtonText (tr ("STRINGS"));
     morphButton.setButtonText (tr ("MORPH"));
     songButton.setTooltip (tr ("The whole song: arrange the sections, then drag or save it as one .mid, or one .mid per section"));
     morphButton.setTooltip (tr ("Morph the groove step by step towards another one (locked parts stay)"));
@@ -5626,7 +5636,7 @@ void FaseGroovePianoEditor::applyLanguage()
     presetBrowseButton.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
     rangeSlider.setTooltip (tr ("The chords' range: no chord note goes below the left thumb or above the right one (notes outside move by an octave)"));
     clipLength.setTooltip (tr ("How long the exported MIDI clip is"));
-    clipPart.setTooltip (tr ("Which notes go into the clip: chords and bass, chords only or bass only"));
+    clipPart.setTooltip (tr ("Which notes go into the clip: everything, chords only, bass only, separate tracks or strings only"));
     dragTile.setTooltip (tr ("Drag this onto a track in your DAW to drop the groove as a MIDI clip"));
     saveButton.setTooltip (tr ("Save the clip, or every part at once, as .mid files"));
     optionsButton.setTooltip (tr ("Language, interface size, tips and credits"));
@@ -5656,7 +5666,7 @@ int FaseGroovePianoEditor::selectedClipBars() const
 
 FaseGroovePianoProcessor::ClipPart FaseGroovePianoEditor::selectedClipPart() const
 {
-    return (FaseGroovePianoProcessor::ClipPart) juce::jlimit (0, 3, clipPart.getSelectedItemIndex());
+    return (FaseGroovePianoProcessor::ClipPart) juce::jlimit (0, 4, clipPart.getSelectedItemIndex());
 }
 
 void FaseGroovePianoEditor::saveClip()
@@ -5770,9 +5780,19 @@ void FaseGroovePianoEditor::exitMiniMode()
             c->setVisible (true);
     hiddenForMini.clear();
 
-    setResizeLimits ((int) (baseWidth * 0.6f), (int) (baseHeight * 0.6f), baseWidth * 2, baseHeight * 2);
-    getConstrainer()->setFixedAspectRatio ((double) baseWidth / baseHeight);
+    applySizeLimits();
     setSize (fullSize.x, fullSize.y);
+}
+
+void FaseGroovePianoEditor::applySizeLimits()
+{
+    // In a DAW the window keeps the interface's shape. The standalone app's window can be
+    // maximised or go full screen with the screen's shape: there a fixed shape made it taller
+    // than the screen. resized() keeps the interface's proportions, centred, in any window.
+    const bool standalone = processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone;
+    setResizeLimits ((int) (baseWidth * 0.6f), (int) (baseHeight * 0.6f),
+                     standalone ? 16384 : baseWidth * 2, standalone ? 16384 : baseHeight * 2);
+    getConstrainer()->setFixedAspectRatio (standalone ? 0.0 : (double) baseWidth / baseHeight);
 }
 
 void FaseGroovePianoEditor::loadPreset (int index)
@@ -5893,7 +5913,9 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
 
     std::vector<PianoRollView::Note> notes;
     {
-        const auto events = sgk::GrooveEngine::renderClip (s, rollLength);
+        auto rollSettings = s;
+        rollSettings.strings = sgk::StringsMode::off;   // the roll edits piano and bass: the strings follow the chords
+        const auto events = sgk::GrooveEngine::renderClip (rollSettings, rollLength);
         std::map<int, std::pair<double, int>> open;   // note -> start, velocity (per part)
         std::map<int, sgk::Part> parts;
         for (const auto& e : events)
@@ -6083,6 +6105,9 @@ void FaseGroovePianoEditor::timerCallback()
         hearBassButton.setToggleState (bassOn, juce::dontSendNotification);
         hearPianoButton.setIcon (pianoHeard ? IconButton::Icon::speaker : IconButton::Icon::speakerOff);
         hearBassButton.setIcon (bassOn ? IconButton::Icon::speaker : IconButton::Icon::speakerOff);
+        const bool stringsOn = processor.isStringsOn();
+        hearStringsButton.setToggleState (stringsOn, juce::dontSendNotification);
+        hearStringsButton.setIcon (stringsOn ? IconButton::Icon::speaker : IconButton::Icon::speakerOff);
     }
     {
         // Transport: play shows pause while the preview runs.
@@ -6435,22 +6460,22 @@ void FaseGroovePianoEditor::layoutFull()
         coachButton.setBounds (voicing.getRight() - 34, voicing.getY(), 34, 15);
         if (! all)
         {
-            // Simple: the bass, then the register big in the middle.
-            bass.setBounds (row (inner, 44));
+            // Simple: the bass and the strings, then the register big in the middle.
+            split (row (inner, 44), bass, strings, (inner.getWidth() - 10) * 11 / 20);
             registerKnob.setBounds (inner.withSizeKeepingCentre (130, juce::jmin (inner.getHeight(), 150)));
         }
         else
         {
+        // Left: what plays with the chords (bass, strings, approach, top line), four rows.
         auto last = inner;
         auto leftCol = last.removeFromLeft (124);
-        bass.setBounds (leftCol.removeFromTop (44));
-        leftCol.removeFromTop (8);
-        octaveToggle.setBounds (leftCol.removeFromTop (24));
-        leftCol.removeFromTop (10);
-        approach.setBounds (leftCol.removeFromTop (44));
-        leftCol.removeFromTop (6);
-        topLine.setBounds (leftCol.removeFromTop (44));
+        for (auto* c : std::initializer_list<juce::Component*> { &bass, &strings, &approach, &topLine })
+        {
+            c->setBounds (leftCol.removeFromTop (42));
+            leftCol.removeFromTop (4);
+        }
         last.removeFromLeft (6);
+        octaveToggle.setBounds (last.removeFromTop (22).withTrimmedLeft (4));
         movement.setBounds (last.removeFromBottom (44));
         last.removeFromBottom (6);
         rangeSlider.setBounds (last.removeFromBottom (16));
@@ -6576,16 +6601,17 @@ void FaseGroovePianoEditor::layoutFull()
                 gridCaptions.push_back ({ juce::Rectangle<int> (x, captions.getY(), header.getX() - x, captions.getHeight()), caption });
                 header.removeFromLeft (12);
             };
-            group (tr ("View"), { { &rollTab, 78 }, { &gridTab, 64 }, { &expandRollButton, 96 } });
-            group (tr ("Hear"), { { &hearPianoButton, 82 }, { &hearBassButton, 82 } });
-            group (onVelocityPage() ? tr ("New velocity") : tr ("New rhythm"), { { &rndPianoButton, 76 }, { &rndBassButton, 76 } });
+            group (tr ("View"), { { &rollTab, 76 }, { &gridTab, 62 }, { &expandRollButton, 90 } });
+            group (tr ("Hear"), { { &hearPianoButton, 68 }, { &hearBassButton, 60 }, { &hearStringsButton, 78 } });
+            group (onVelocityPage() ? tr ("New velocity") : tr ("New rhythm"), { { &rndPianoButton, 66 }, { &rndBassButton, 62 } });
             group (tr ("Groove"), { { &myGroovesButton, 92 }, { &morphButton, 60 }, { &dnaButton, header.getWidth() - 152 } });
             velocityTab.setBounds (expandRollButton.getBounds());
             velocityTab.setConnectedEdges (juce::Button::ConnectedOnLeft);
             expandRollButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
             gridTab.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
             hearPianoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
-            hearBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
+            hearBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
+            hearStringsButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
             rndPianoButton.setConnectedEdges (juce::Button::ConnectedOnRight);
             rndBassButton.setConnectedEdges (juce::Button::ConnectedOnLeft);
         }

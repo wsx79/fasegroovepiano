@@ -129,11 +129,18 @@ constexpr int numApproachStyles = 3;
 const char* approachStyleName (int style) noexcept;
 const char* bassModeName (int mode) noexcept;
 
+/** The strings: a third part under / around the piano for body. Pads hold each chord until the
+    next one (voice-led, close to the piano's middle), the high pad sits an octave up, the wide
+    pad adds the root and fifth an octave above the bass, stabs double the piano's chord hits. */
+enum class StringsMode { off = 0, pad, highPad, widePad, stabs };
+constexpr int numStringsModes = 5;
+const char* stringsModeName (int mode) noexcept;
+
 /** Humanize per voice: Even, Pianist (top note sings, a hair early), Laid-back bass, Tight bass. */
 constexpr int numHumanizeStyles = 4;
 const char* humanizeStyleName (int) noexcept;
 
-enum class Part { chords = 0, bass = 1, fill = 2 };   // fill: the right hand during a fill (exported on its own track)
+enum class Part { chords = 0, bass = 1, fill = 2, strings = 3 };   // fill: the right hand during a fill (exported on its own track)
 
 /** A note of a loop edited by hand in the piano roll (times in beats from the loop start). */
 struct LoopNote
@@ -164,6 +171,7 @@ struct GrooveSettings
     Voicing voicing = Voicing::close;
     int centre = 64;                       // middle of the right hand (MIDI note)
     BassMode bass = BassMode::root;
+    StringsMode strings = StringsMode::off;
 
     std::array<int, maxProgressionLength> progression { 0, 3, 0, 3, 0, 3, 0, 3 };
     int progressionLength = 2;
@@ -320,6 +328,10 @@ public:
                                   std::array<Chord, maxProgressionLength>& chords,
                                   std::array<VoicedChord, maxProgressionLength>& voiced) noexcept;
 
+    /** The strings' notes for every slot (empty when they are off), voice-led from chord to chord. */
+    static void voiceStrings (const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,
+                              std::array<NoteSet, maxProgressionLength>& out) noexcept;
+
 private:
     struct PendingOn { double ppq; int note; int velocity; double duration; bool tie = false; Part part = Part::chords; };
 
@@ -332,10 +344,17 @@ private:
                       const std::array<VoicedChord, maxProgressionLength>& voiced);
     void collectBassLine (long long step, const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,
                           const std::string& line);
+    void collectStrings (long long step, const GrooveSettings& s, double startPpq, double endPpq);
+    static int stringsVelocity (const GrooveSettings& s) noexcept;
     void flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out);
 
-    std::array<double, 128> offTime {};    // < 0 when the note is not sounding
-    std::array<Part, 128> partOf {};
+    // Per note (0..127), and again for the strings (128..255): they have their own channel, so a
+    // string note can hold under the same piano note.
+    static constexpr int numTracked = 256;
+    static int trackIndex (int note, Part part) noexcept { return note + (part == Part::strings ? 128 : 0); }
+    std::array<double, numTracked> offTime {};    // < 0 when the note is not sounding
+    std::array<Part, numTracked> partOf {};
+    double stringsUntil = -1.0;                   // when the strings' current pad ends
     std::vector<PendingOn> pending;
     std::vector<int> scratch;
     std::string stabLine;   // reused: no allocation on the audio thread once it has grown
@@ -356,6 +375,8 @@ private:
     bool harmonyCached = false;
     std::array<Chord, maxProgressionLength> cachedChords {};
     std::array<VoicedChord, maxProgressionLength> cachedVoiced {};
+    std::array<NoteSet, maxProgressionLength> cachedStrings {};
+    int cachedStringsMode = -1;
 
     // Cache of the resolved pattern, rebuilt only when its inputs change.
     GroovePattern cachedPattern, cachedVariation;

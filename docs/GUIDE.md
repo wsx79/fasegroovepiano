@@ -100,7 +100,7 @@ use all the time. **ADVANCED** (top right of each of them) shows every control o
 
 | Panel | Simple view | Only in ADVANCED |
 |---|---|---|
-| Harmony & Scales | Key, Scale, Extensions, Voicing, Left-hand bass, Register | Top +8va, Approach chord, Top line, Movement, Strum, Chord range |
+| Harmony & Scales | Key, Scale, Extensions, Voicing, Left-hand bass, Strings, Register | Top +8va, Approach chord, Top line, Movement, Strum, Chord range |
 | Groove | Groove + NEW RIFF, Song section, Fills, Variation, Swing, Gate, Velocity, Humanize | Groove length, Fill style, Feel style / NEW FEEL, Density |
 | Guide sound | On/off, Sound, Reverb, Volume, Pump | Tone, Chorus, MIDI out, Play mode, Sidechain, Rate, Release |
 
@@ -147,6 +147,7 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Left-hand bass** | The left hand: Off, Root, Octaves, Root + 5th, **Walking** (root, 5th, octave on the beats and a chromatic step into the next chord) **Syncopated octaves** (the offbeats jump up an octave: the pumping house bass) or **Piano stabs (bass in every chord)** (the default): the root plays with every chord hit, low and full, plus the bass's own hits in between, but never a 16th before or after a chord (that would sound like a flam). The accented stab and the push get the **octave** (root + root an octave up), the others a single root, like a pianist's left hand. It is how house piano loops are played: one big stab, bass included. The menu also has a **library of bass lines** (each with its own rhythm and notes, following your chords): *Disco* (Disco Octave Gallop, Disco Octave Push, Philly Walk, Boogie Line), *Funky* (Funk Sixteenths, Slap & Pop, Dead Note Groove: with dead notes), *House* (Deep House Root, Offbeat House, Garage Skip) and *Soulful* (Soulful Walk, Gospel Walk). They use 3rds, 5ths, 6ths, 7ths, octaves and **approach notes** that lead by a semitone into the next chord, like a bass player. The grid shows the line's rhythm; editing a bass cell turns it into your own rhythm on the roots. |
 | **Top line** | The melody drawn by the top notes of the chords. **House pedal** (the default) is the classic house piano way: the chords share **one top note** (their 5th, 7th or 3rd) and step only to the nearest chord tone when a chord doesn't have it; the top note doesn't jump around inside the bar. Every second bar, the last stab before the end of the bar makes the **hook**: the top note steps to the next note of the scale (down when that stab is written as ▼) and comes back on the next bar. *Smooth (auto)* moves as little as possible, *Steady* aims for one height, *Rising*, *Falling* or *Arch* shape it across the progression. |
 | **Movement** | **Voicing movement** for every groove: *Off* repeats the same chord on every hit, *Subtle* (default) moves the answer half-bars an inversion up, *Lively* makes every half-bar dance (chord, up, chord, down, mirrored in the answer). Grooves that already move keep their own figure; the break stays still. |
+| **Strings** (v2.12) | A third part for **body and volume**: strings that follow your chords, always on **MIDI channel 3**. *Off* (the default, so old projects sound the same), **Pad** (each chord held until the next one: 3rd, 7th, 5th and root in close position around the middle of the keyboard, voice-led so the notes move as little as possible), **High pad** (three voices an octave up: air over the piano), **Wide pad** (the pad plus root and 5th an octave above the bass: the fullest) or **Stabs with the piano** (the strings double the piano's chord hits, ghost notes excluded: the classic house string stab). They sit a little under the piano's level; in the break they come up. Starting the loop in the middle of a chord, the pad comes in at once. **STRINGS** next to PIANO and BASS (under *Hear*) switches them on and off and remembers the last kind. The guide sound plays them with a string ensemble. |
 | **Approach chord** | The gospel **slide**: on the last 16th before each chord change the next chord (and its bass note) is played a half step **from above** or **from below**, then resolves. Only where the hand is already playing, so a muted bass stays muted. |
 | **Top +8va** | Doubles the top note of every chord an octave higher: the bright, ringing classic house piano sound. |
 | **Strum** | Rolls the chord like a real pianist instead of hitting all the notes at once. The roll is a real time (up to about 90 ms at 100%, whatever the tempo), slightly accelerating like a hand, never longer than half the note, and ghost notes are never rolled. The small button under the knob sets the **direction**: *Up* (low to high), *Down* (high to low) or *Alternate* (up on the beat, down off it, the gospel way). 20–40% sounds natural. |
@@ -379,7 +380,7 @@ stays exactly as it was. Press them a few times until the two hands lock togethe
 | **Sound** | *Rhodes (FM)* electric piano, *Soulful Grand* acoustic piano, *House Piano (M1 style)* – the bright '90s house piano – *House Organ* for jackin' organ stabs, *Wurlitzer* (reedy, a little driven), *Gospel Organ (Leslie)* (full drawbars through a rotating speaker) or *Warm Pad* (soft detuned pad for breaks). |
 | **Sequencer** (Transport, top right) | On (default): the groove plays with the DAW. **Off**: it doesn't, e.g. when you dragged the MIDI clip onto the plug-in's own track and play that (otherwise you hear it twice). Incoming MIDI still plays the guide sound; ▶ still previews. |
 | **▶ (Transport, top)** | Plays the groove even with the DAW stopped (also the **space bar**; a plug-in can't start the DAW's own transport). **HEAR** in VARIANTS and in the voicing coach starts it by itself when nothing is playing. |
-| **MIDI out** | *All on channel 1* or *Bass on channel 2* (to send the bass to a different instrument). |
+| **MIDI out** | *All on channel 1* or *Bass on channel 2* (to send the bass to a different instrument). The **strings** are always on **channel 3**: in Ableton Live add a MIDI track with a string instrument, set *MIDI From* to this track and the channel to *Ch. 3* (and on the piano track, *Ch. 1*, so it doesn't play the strings too). |
 | **Play mode** (in the Groove panel) | *Host transport*: plays with the DAW's Play. *Hold a key*: plays while you hold a MIDI key, and **that key sets the key** (great for live jamming and in the Standalone app). |
 | **Tone / Reverb / Volume** | Brightness (or drawbars for the organ), reverb and volume of the guide sound (they don't affect the MIDI). |
 | **Chorus / Pump** | *Chorus* widens the sound; *Pump* is the **sidechain** depth: it ducks the sound like a kick sidechain, so the riff sounds the way it will in the mix. Guide sound only. |
@@ -451,7 +452,9 @@ See the next chapter.
 ### Full screen
 
 The **corners button** (next to STYLE) puts the interface full screen; click it again to come back.
-Inside a DAW the plug-in window grows to the size of the screen (the DAW owns its window).
+Inside a DAW the plug-in window grows to the size of the screen (the DAW owns its window). In the
+standalone app the window can also be maximised or go full screen with any shape: the interface
+keeps its proportions, centred, and always stays inside the screen (v2.12).
 
 ### Window size
 
@@ -554,7 +557,7 @@ In the **EXPORT MIDI** panel:
      (computed automatically, e.g. 4 one-bar chords with fills every 8 bars → 8 bars).
    - *1–32 bars*: a fixed length.
    - *Song: intro > drop > outro*: a full 60-bar arrangement (see chapter 6).
-2. **Notes**: *Chords + bass*, *Chords only*, *Bass only* or **Separate tracks** (one MIDI file with a Piano track, a Bass track (on channel 2 when *MIDI out* is set to *Bass on channel 2*) and, if there are fills, a Fills track, plus tempo and section markers: most DAWs open it as separate tracks).
+2. **Notes**: *Chords + bass* (everything, strings included when on), *Chords only*, *Bass only*, **Strings only** (v2.12: clips named *Strings ...*) or **Separate tracks** (one MIDI file with a Piano track, a Bass track (on channel 2 when *MIDI out* is set to *Bass on channel 2*), a Strings track when they are on and, if there are fills, a Fills track, plus tempo and section markers: most DAWs open it as separate tracks).
 3. **Drag** the **DRAG MIDI TO DAW** tile onto a track or the DAW timeline (the tile shows what
    it holds, e.g. *Chords + bass · Full loop*).
    Or use **SAVE .MID…**: *Save this clip as .mid…* saves the file wherever you want, and

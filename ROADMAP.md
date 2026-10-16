@@ -12,6 +12,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 ## Done
 
 - v2.11.0: drag one song section (named clips), MIDI clock sync in the standalone app.
+- v2.12.0: strings (pad, high pad, wide pad, stabs) on MIDI channel 3; standalone full screen fixed.
 - v2.10.0: 7 new piano grooves, 18 Dorian progressions, compact house-stab sound by default.
 - v2.9.0: groove from MIDI, live keys, DNA Straighter, sections colour the harmony.
 - v2.8.0: random riffs as busy as their density, fills that suit the groove.

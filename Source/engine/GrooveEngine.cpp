@@ -936,6 +936,12 @@ const char* bassModeName (int m) noexcept
     return m < numBassPatternModes ? names[m] : bassLines()[(size_t) (m - numBassPatternModes)].name;
 }
 
+const char* stringsModeName (int m) noexcept
+{
+    static const char* const names[numStringsModes] { "Off", "Pad", "High pad", "Wide pad", "Stabs with the piano" };
+    return names[std::clamp (m, 0, numStringsModes - 1)];
+}
+
 //==============================================================================
 GrooveEngine::GrooveEngine()
 {
@@ -1704,6 +1710,14 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             if (firstNote == 0)
                 for (int i = 0; i < v.leftHand.size; ++i)
                     pending.push_back ({ t, v.leftHand[i], hitVelocity (symbol, 0.85, 80 + i), len, tie });
+
+            // Strings stabs: the chord hits doubled by the strings (not the ghost notes).
+            if (s.strings == StringsMode::stabs && symbol != 'g')
+            {
+                const auto& strings = cachedStrings[(size_t) slotFor (symbol)];
+                for (int i = 0; i < strings.size; ++i)
+                    pending.push_back ({ t, strings[i], hitVelocity (symbol, 0.78, 60 + i), len, tie, Part::strings });
+            }
         }
     }
 
@@ -2077,10 +2091,116 @@ std::vector<GrooveEngine::ProgressionVariant> GrooveEngine::progressionVariants 
     return out;
 }
 
+int GrooveEngine::stringsVelocity (const GrooveSettings& s) noexcept
+{
+    // Under the piano, not over it; the break leans on them a little more.
+    const double lift = s.section == Section::breakdown ? 1.2 : 1.0;
+    return std::clamp ((int) std::lround (s.velocity * 0.72 * sectionVelocityScale (s.section) * lift), 1, 127);
+}
+
+void GrooveEngine::voiceStrings (const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,
+                                 std::array<NoteSet, maxProgressionLength>& out) noexcept
+{
+    for (auto& n : out)
+        n = {};
+    if (s.strings == StringsMode::off)
+        return;
+
+    const int len = std::clamp (s.progressionLength, 1, maxProgressionLength);
+    const bool high = s.strings == StringsMode::highPad, wide = s.strings == StringsMode::widePad;
+    const int low = high ? 64 : wide ? 57 : 55;   // the lowest note of the close voicing starts here (or up to an octave above)
+    const int voices = high ? 3 : 4;
+
+    NoteSet previous;
+    for (int slot = 0; slot < len; ++slot)
+    {
+        const auto& c = chords[(size_t) slot];
+
+        // The colours first: the 3rd, the 7th (or 6th, or 9th), the 5th, then the root.
+        std::array<int, 4> pcs {};
+        int count = 0;
+        auto addInterval = [&] (int interval)
+        {
+            if (interval < 0 || count >= voices)
+                return;
+            const int pc = mod (c.rootPc + interval, 12);
+            for (int i = 0; i < count; ++i)
+                if (pcs[(size_t) i] == pc)
+                    return;
+            pcs[(size_t) count++] = pc;
+        };
+        addInterval (c.third);
+        addInterval (c.seventh >= 0 ? c.seventh : c.sixth >= 0 ? c.sixth : c.ninth);
+        addInterval (c.fifth);
+        addInterval (0);
+
+        // Close position, every inversion in the octave above `low`: the one that moves least
+        // from the previous chord (and stays near the middle of the range).
+        NoteSet best;
+        double bestCost = 1.0e9;
+        for (int base = low; base < low + 12; ++base)
+        {
+            if (std::find (pcs.begin(), pcs.begin() + count, mod (base, 12)) == pcs.begin() + count)
+                continue;
+            NoteSet v;
+            for (int i = 0; i < count; ++i)
+                v.add (base + mod (pcs[(size_t) i] - base, 12));
+            v.sort();
+
+            double cost = 0.4 * std::abs (v.mean() - (low + 9.0));
+            if (previous.size == v.size)
+                for (int i = 0; i < v.size; ++i)
+                    cost += std::abs (v[i] - previous[i]);
+            else if (previous.size > 0)
+                cost += std::abs (v.mean() - previous.mean()) * v.size;
+            if (cost < bestCost)
+            {
+                bestCost = cost;
+                best = v;
+            }
+        }
+        previous = best;
+
+        if (wide && best.size > 0)
+        {
+            // The root and its fifth an octave above the bass, under the pad.
+            int root = 48 + c.rootPc;
+            if (root > best.lowest() - 3)
+                root -= 12;
+            NoteSet full;
+            full.add (root);
+            if (root + 7 < best.lowest() - 2)
+                full.add (root + 7);
+            for (int i = 0; i < best.size; ++i)
+                full.add (best[i]);
+            best = full;
+        }
+        out[(size_t) slot] = best;
+    }
+}
+
+void GrooveEngine::collectStrings (long long step, const GrooveSettings& s, double startPpq, double endPpq)
+{
+    // The pads: each chord held until the next one (stabs are played with the piano's hits;
+    // over a loop edited by hand they hold like a pad).
+    if (s.strings == StringsMode::off || (s.strings == StringsMode::stabs && ! s.playsEditedLoop()))
+        return;
+    const int spc = std::max (1, s.stepsPerChord);
+    const double t = (double) step * stepLength;
+    if (mod (step, spc) != 0 || t < startPpq || t >= endPpq)
+        return;
+
+    const auto& notes = cachedStrings[(size_t) slotForStep (step, s)];
+    const double len = spc * stepLength;
+    for (int i = 0; i < notes.size; ++i)
+        pending.push_back ({ t, notes[i], stringsVelocity (s), len - 0.02, false, Part::strings });
+    stringsUntil = t + len;
+}
+
 void GrooveEngine::flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out)
 {
     scratch.clear();
-    for (int n = 0; n < 128; ++n)
+    for (int n = 0; n < numTracked; ++n)
     {
         const double t = offTime[(size_t) n];
         if (t >= 0.0 && (t < ppq || (inclusive && t <= ppq)))
@@ -2092,7 +2212,7 @@ void GrooveEngine::flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEv
 
     for (int n : scratch)
     {
-        out.push_back ({ offTime[(size_t) n], n, 0, partOf[(size_t) n] });
+        out.push_back ({ offTime[(size_t) n], n & 127, 0, partOf[(size_t) n] });
         offTime[(size_t) n] = -1.0;
     }
 }
@@ -2111,6 +2231,12 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
         voiceProgression (s, cachedChords, cachedVoiced);
         cachedHarmony = harmony;
         harmonyCached = true;
+        cachedStringsMode = -1;
+    }
+    if (cachedStringsMode != (int) s.strings)
+    {
+        voiceStrings (s, cachedChords, cachedStrings);
+        cachedStringsMode = (int) s.strings;
     }
     const auto& chords = cachedChords;
     const auto& voiced = cachedVoiced;
@@ -2120,6 +2246,23 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
     // Swing and humanize only ever delay a hit (by < 2 steps), so look back a little.
     const auto firstStep = (long long) std::floor (startPpq / stepLength) - 2;
     const auto lastStep  = (long long) std::floor (endPpq / stepLength);
+
+    // The strings' pad starts with each chord; starting (or turning them on) in the middle of a
+    // chord, it comes in at once for the rest of it.
+    if (s.strings != StringsMode::off && (s.strings != StringsMode::stabs || s.playsEditedLoop()) && stringsUntil < startPpq - 1.0e-6)
+    {
+        const int spc = std::max (1, s.stepsPerChord);
+        const auto now = (long long) std::floor (startPpq / stepLength + 1.0e-9);
+        const double chordEnd = (double) (floorDiv (now, spc) + 1) * spc * stepLength;
+        if (std::abs ((double) now * stepLength - startPpq) > 1.0e-9 || mod (now, spc) != 0)
+            if (chordEnd - startPpq > stepLength)
+            {
+                const auto& notes = cachedStrings[(size_t) slotForStep (now, s)];
+                for (int i = 0; i < notes.size; ++i)
+                    pending.push_back ({ startPpq, notes[i], stringsVelocity (s), chordEnd - startPpq - 0.02, false, Part::strings });
+                stringsUntil = chordEnd;
+            }
+    }
 
     if (s.playsEditedLoop())
     {
@@ -2133,12 +2276,17 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
                     pending.push_back ({ (double) k * length + n.start, n.note,
                                          std::clamp ((int) std::lround (n.velocity * scale), 1, 127),
                                          std::max (0.02, n.length), false, n.part });
+        for (auto step = firstStep; step <= lastStep; ++step)
+            collectStrings (step, s, startPpq, endPpq);
     }
     else
     {
         const auto& pattern = patternFor (s);
         for (auto step = firstStep; step <= lastStep; ++step)
+        {
             collectStep (step, s, pattern, cachedVariation, chords, voiced);
+            collectStrings (step, s, startPpq, endPpq);
+        }
     }
 
     pending.erase (std::remove_if (pending.begin(), pending.end(),
@@ -2149,30 +2297,31 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
     std::stable_sort (pending.begin(), pending.end(),
                       [] (const PendingOn& a, const PendingOn& b) { return a.ppq < b.ppq; });
 
-    std::array<double, 128> onTime;
+    std::array<double, numTracked> onTime;
     onTime.fill (-1.0);
 
     for (const auto& p : pending)
     {
         flushOffsUpTo (p.ppq, true, out);
 
-        auto& off = offTime[(size_t) p.note];
+        const auto k = (size_t) trackIndex (p.note, p.part);
+        auto& off = offTime[k];
 
         if (off >= 0.0)
         {
-            if (p.tie || onTime[(size_t) p.note] == p.ppq)   // tied, or same note twice at once: extend
+            if (p.tie || onTime[k] == p.ppq)   // tied, or same note twice at once: extend
             {
                 off = std::max (off, p.ppq + p.duration);
                 continue;
             }
 
-            out.push_back ({ p.ppq, p.note, 0, partOf[(size_t) p.note] });  // retrigger
+            out.push_back ({ p.ppq, p.note, 0, partOf[k] });  // retrigger
         }
 
         out.push_back ({ p.ppq, p.note, p.velocity, p.part });
-        partOf[(size_t) p.note] = p.part;
+        partOf[k] = p.part;
         off = p.ppq + p.duration;
-        onTime[(size_t) p.note] = p.ppq;
+        onTime[k] = p.ppq;
     }
 
     flushOffsUpTo (endPpq, false, out);
@@ -2180,14 +2329,15 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
 
 void GrooveEngine::allNotesOff (double ppq, std::vector<NoteEvent>& out)
 {
-    for (int n = 0; n < 128; ++n)
+    for (int n = 0; n < numTracked; ++n)
     {
         if (offTime[(size_t) n] >= 0.0)
         {
-            out.push_back ({ ppq, n, 0, partOf[(size_t) n] });
+            out.push_back ({ ppq, n & 127, 0, partOf[(size_t) n] });
             offTime[(size_t) n] = -1.0;
         }
     }
+    stringsUntil = -1.0;
 }
 
 

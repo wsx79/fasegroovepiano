@@ -21,6 +21,7 @@ namespace Palette
     const juce::Colour field      { 0xff0f1216 };   // menus, displays
     const juce::Colour accent     { 0xffffa94d };   // amber: the piano, the main actions
     const juce::Colour accent2    { 0xff4cc3f0 };   // cyan: the bass, pushes, playing
+    const juce::Colour strings    { 0xffb99af5 };   // violet: the strings
     const juce::Colour fill       { 0xffb69cff };   // violet: fills
     const juce::Colour level      { 0xff5fd68a };   // green: velocity
     const juce::Colour text       { 0xffe7e9ec };
@@ -833,7 +834,7 @@ private:
     juce::OwnedArray<ChordSlot> slots;
 
     // Harmony
-    Choice key, scale, extension, voicing, bass, approach, topLine, movement;
+    Choice key, scale, extension, voicing, bass, strings, approach, topLine, movement;
     Knob registerKnob, strumKnob;
     juce::TextButton strumDirButton;
     juce::ToggleButton octaveToggle { "Top +8va" };
@@ -872,7 +873,8 @@ private:
     double rollLength = 8.0;
     void updatePianoRoll (const sgk::GrooveSettings&);
     // What you hear: the piano and / or the bass (lit = you hear it).
-    IconButton hearPianoButton { IconButton::Icon::speaker }, hearBassButton { IconButton::Icon::speaker };
+    IconButton hearPianoButton { IconButton::Icon::speaker }, hearBassButton { IconButton::Icon::speaker },
+               hearStringsButton { IconButton::Icon::speaker };
     void hearPart (bool bass);
     std::vector<std::pair<juce::Rectangle<int>, juce::String>> gridCaptions;   // captions over the groups of the grid header
     IconButton rndPianoButton { IconButton::Icon::dice }, rndBassButton { IconButton::Icon::dice };
@@ -896,6 +898,7 @@ private:
     IconButton fullScreenButton { IconButton::Icon::fullScreen };
     bool isFullScreen() const;
     void toggleFullScreen();
+    void applySizeLimits();
     juce::Rectangle<int> sizeBeforeFullScreen;
     bool miniMode = false;
     juce::Point<int> fullSize;

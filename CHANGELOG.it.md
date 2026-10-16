@@ -6,6 +6,26 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.12.0] - 2026-10-16
+
+### Aggiunto
+- **Archi**: una terza parte, accanto a piano e basso, per dare corpo e volume. Sempre sul **canale
+  MIDI 3**. **Pad** tiene ogni accordo fino al successivo (3a, 7a, 5a e fondamentale, con voice
+  leading così le note si muovono il meno possibile), **Pad alto** sta un'ottava sopra, **Pad
+  largo** aggiunge fondamentale e quinta un'ottava sopra il basso, **Stab col piano** raddoppia i
+  colpi di accordo del piano. Spenti di default, così i progetti esistenti suonano uguale.
+- Interruttore **ARCHI** accanto a PIANO e BASSO (sotto *Ascolta*): acceso / spento, ricorda
+  l'ultimo tipo.
+- Il suono guida suona gli archi con un suo ensemble d'archi (attacco lento come un arco, vibrato,
+  rilascio lungo).
+- Export: clip **Solo archi** (*Strings Intro - ...*), una traccia Strings in *Tracce separate*, e
+  gli archi nelle clip con tutto. Il random TOTALE può accenderli.
+
+### Corretto
+- **Schermo intero nell'app standalone**: l'interfaccia diventava più grande dello schermo. La
+  finestra teneva la forma dell'interfaccia, quindi uno schermo largo la forzava più alta. Ora
+  prende qualsiasi forma e l'interfaccia resta dentro, centrata.
+
 ## [2.11.0] - 2026-10-16
 
 ### Aggiunto

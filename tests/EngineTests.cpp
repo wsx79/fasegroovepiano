@@ -1572,6 +1572,73 @@ static void testVariationsHumanizeFills()
     CHECK (firstFill >= 12.0 && lastFill < 16.0);   // only in bar 4 of the first section, none in the drop
 }
 
+static void testStrings()
+{
+    GrooveSettings s;
+    s.keyRoot = 9; s.scale = 1; s.progressionLength = 4;
+    s.progression = { 0, 3, 4, 6, 0, 0, 0, 0 };
+    s.pattern = 1;
+
+    auto strings = [] (const std::vector<NoteEvent>& events, bool on)
+    {
+        std::vector<NoteEvent> out;
+        for (const auto& e : events) if (e.part == Part::strings && e.isNoteOn() == on) out.push_back (e);
+        return out;
+    };
+
+    // Off: no strings, and the piano and bass don't change.
+    const auto plain = GrooveEngine::renderClip (s, 16.0);
+    CHECK (strings (plain, true).empty());
+
+    // Pad: every chord held (4 voices, mid register), all notes closed, piano and bass unchanged.
+    s.strings = StringsMode::pad;
+    const auto pad = GrooveEngine::renderClip (s, 16.0);
+    const auto ons = strings (pad, true), offs = strings (pad, false);
+    CHECK (ons.size() == 16 && offs.size() == 16);
+    for (const auto& e : ons) CHECK (e.note >= 55 && e.note <= 79 && std::fmod (e.ppq, 4.0) == 0.0);
+    for (const auto& e : offs) CHECK (std::fmod (e.ppq + 0.02, 4.0) < 1.0e-6);
+    size_t piano = 0;
+    for (const auto& e : pad) if (e.part != Part::strings) ++piano;
+    CHECK (piano == plain.size());
+    // Voice-led: the pad's notes move a little from chord to chord.
+    std::array<NoteSet, maxProgressionLength> chordsNotes;
+    std::array<Chord, maxProgressionLength> chords;
+    std::array<VoicedChord, maxProgressionLength> voiced;
+    GrooveEngine::voiceProgression (s, chords, voiced);
+    GrooveEngine::voiceStrings (s, chords, chordsNotes);
+    for (int i = 1; i < 4; ++i)
+        CHECK (std::abs (chordsNotes[(size_t) i].mean() - chordsNotes[(size_t) i - 1].mean()) <= 4.0);
+
+    // Wide pad: root and fifth under it, above the bass; high pad: three voices an octave up.
+    s.strings = StringsMode::widePad;
+    for (const auto& e : strings (GrooveEngine::renderClip (s, 16.0), true)) CHECK (e.note >= 41 && e.note <= 80);
+    s.strings = StringsMode::highPad;
+    const auto high = strings (GrooveEngine::renderClip (s, 16.0), true);
+    CHECK (high.size() == 12);
+    for (const auto& e : high) CHECK (e.note >= 64);
+
+    // Stabs: on the piano's chord hits only.
+    s.strings = StringsMode::stabs;
+    const auto stabs = GrooveEngine::renderClip (s, 16.0);
+    std::set<double> chordTimes;
+    for (const auto& e : stabs) if (e.isNoteOn() && e.part == Part::chords) chordTimes.insert (e.ppq);
+    const auto stabOns = strings (stabs, true);
+    CHECK (! stabOns.empty());
+    for (const auto& e : stabOns) CHECK (chordTimes.count (e.ppq) > 0 || std::any_of (chordTimes.begin(), chordTimes.end(),
+                                                                                       [&] (double t) { return std::abs (t - e.ppq) < 0.01; }));
+
+    // Starting in the middle of a chord, the pad comes in at once for the rest of it.
+    s.strings = StringsMode::pad;
+    GrooveEngine engine;
+    std::vector<NoteEvent> live;
+    engine.render (1.0, 1.5, s, live);
+    const auto late = strings (live, true);
+    CHECK (late.size() == 4 && late.front().ppq == 1.0);
+    live.clear();
+    engine.render (1.5, 4.5, s, live);
+    CHECK (strings (live, true).size() == 4);   // the next chord, once
+}
+
 int main()
 {
     testChordNames();
@@ -1613,6 +1680,7 @@ int main()
     testMorphAndSections();
     testMusicalDna();
     testVariationsHumanizeFills();
+    testStrings();
 
     if (failures == 0)
         std::printf ("All engine tests passed.\n");

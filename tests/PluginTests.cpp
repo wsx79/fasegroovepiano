@@ -173,7 +173,7 @@ namespace
     }
 
     //==============================================================================
-    struct ClipCheck { int noteOns = 0, unmatched = 0, markers = 0, onChannel1 = 0, onChannel2 = 0; double lastTick = 0.0; bool ordered = true, channelsOk = true; };
+    struct ClipCheck { int noteOns = 0, unmatched = 0, markers = 0, onChannel1 = 0, onChannel2 = 0, onChannel3 = 0; double lastTick = 0.0; bool ordered = true, channelsOk = true; };
 
     ClipCheck readClip (const juce::File& file, bool bassOnChannel2)
     {
@@ -201,8 +201,9 @@ namespace
                 ++open[m.getChannel() * 128 + m.getNoteNumber()];
                 if (m.getChannel() == 1) ++c.onChannel1;
                 if (m.getChannel() == 2) ++c.onChannel2;
-                if (m.getChannel() > 2) c.channelsOk = false;
-                if (! bassOnChannel2 && m.getChannel() != 1) c.channelsOk = false;
+                if (m.getChannel() == 3) ++c.onChannel3;   // the strings: always their own channel
+                if (m.getChannel() > 3) c.channelsOk = false;
+                if (! bassOnChannel2 && m.getChannel() == 2) c.channelsOk = false;
             }
             else if (m.isNoteOff())
             {
@@ -1202,6 +1203,65 @@ namespace
         CHECK (! p.writeSongSectionClip (99, FaseGroovePianoProcessor::ClipPart::all).existsAsFile());
         CHECK (p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::all).getFileName().startsWith ("Piano "));
     }
+    void testStrings()
+    {
+        FaseGroovePianoProcessor p;
+        CHECK (! p.isStringsOn());   // off by default: old projects sound the same
+        CHECK (readClip (p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::all), false).onChannel3 == 0);
+
+        // On / off remembers the mode.
+        p.toggleStrings();
+        CHECK (juce::roundToInt (value (p, ParamIDs::strings)) == (int) sgk::StringsMode::pad);
+        p.setParameterFromUI (ParamIDs::strings, (float) sgk::StringsMode::widePad);
+        p.toggleStrings();
+        CHECK (! p.isStringsOn());
+        p.toggleStrings();
+        CHECK (juce::roundToInt (value (p, ParamIDs::strings)) == (int) sgk::StringsMode::widePad);
+
+        // Clips: everything (strings on channel 3), chords only without them, strings only.
+        const auto all = readClip (p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::all), false);
+        CHECK (all.onChannel3 > 0 && all.unmatched == 0 && all.channelsOk);
+        CHECK (readClip (p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::chords), false).onChannel3 == 0);
+        const auto stringsFile = p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::strings);
+        CHECK (stringsFile.getFileName().startsWith ("Strings "));
+        const auto only = readClip (stringsFile, false);
+        CHECK (only.noteOns > 0 && only.noteOns == only.onChannel3 && only.unmatched == 0);
+        const auto song = readClip (p.writeMidiClip (FaseGroovePianoProcessor::songArrangement, FaseGroovePianoProcessor::ClipPart::strings), false);
+        CHECK (song.noteOns > 0 && song.unmatched == 0);
+        {
+            juce::FileInputStream in (p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::tracks));
+            juce::MidiFile mf;
+            CHECK (mf.readFrom (in));
+            bool stringsTrack = false;
+            for (int t = 0; t < mf.getNumTracks(); ++t)
+                for (auto* ev : *mf.getTrack (t))
+                    if (ev->message.isTextMetaEvent() && ev->message.getTextFromTextMetaEvent() == "Strings") stringsTrack = true;
+            CHECK (stringsTrack);
+        }
+
+        // Playing: the strings come out on channel 3, and muting the piano leaves them on.
+        p.chordsMuted = true;
+        PlayHead head;
+        p.setPlayHead (&head);
+        p.prepareToPlay (44100.0, 512);
+        int onThree = 0, onOne = 0;
+        for (int block = 0; block < 200; ++block)
+        {
+            juce::AudioBuffer<float> buffer (2, 512);
+            juce::MidiBuffer midi;
+            p.processBlock (buffer, midi);
+            head.ppq += 512.0 / 44100.0 * head.bpm / 60.0;
+            for (const auto m : midi)
+                if (m.getMessage().isNoteOn())
+                    (m.getMessage().getChannel() == 3 ? onThree : onOne) += 1;
+        }
+        CHECK (onThree > 0);
+        p.setPlayHead (nullptr);
+
+        // The piano roll edits piano and bass only.
+        for (const auto& n : p.generatedLoop (8.0))
+            CHECK (n.part != sgk::Part::strings);
+    }
 }
 
 int main()
@@ -1234,6 +1294,7 @@ int main()
     testLiveKeys();
     testMidiClock();
     testSongSectionClip();
+    testStrings();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

@@ -12,6 +12,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 ## Fatto
 
 - v2.11.0: trascina una sola sezione (clip con il nome), sync col MIDI clock nell'app standalone.
+- v2.12.0: archi (pad, pad alto, pad largo, stab) sul canale MIDI 3; schermo intero dell'app standalone corretto.
 - v2.10.0: 7 nuovi groove di piano, 18 progressioni doriche, suono house stab compatto di default.
 - v2.9.0: groove dal MIDI, tasti live, DNA Più dritto, le sezioni colorano l'armonia.
 - v2.8.0: riff casuali pieni quanto la loro densità, fill che si adattano al groove.

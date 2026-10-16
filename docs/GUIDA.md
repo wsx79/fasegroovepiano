@@ -103,7 +103,7 @@ usano sempre. **AVANZATE** (in alto a destra di ciascuno) mostra tutti i comandi
 
 | Pannello | Vista semplice | Solo in AVANZATE |
 |---|---|---|
-| Armonia e scale | Tonalità, Scala, Estensioni, Voicing, Basso mano sinistra, Registro | Ottava sopra, Accordo di passaggio, Linea in alto, Movimento, Arpeggiato, Range accordi |
+| Armonia e scale | Tonalità, Scala, Estensioni, Voicing, Basso mano sinistra, Archi, Registro | Ottava sopra, Accordo di passaggio, Linea in alto, Movimento, Arpeggiato, Range accordi |
 | Groove | Groove + NUOVO RIFF, Sezione del brano, Fill, Variazione, Swing, Gate, Dinamica, Umanizza | Lunghezza groove, Stile fill, Stile feel / NUOVO FEEL, Densità |
 | Suono guida | Acceso/spento, Suono, Riverbero, Volume, Pompa | Timbro, Chorus, Uscita MIDI, Modalità play, Sidechain, Ritmo, Rilascio |
 
@@ -150,6 +150,7 @@ I gradi sono relativi alla scala: cambiando tonalità o modo, la progressione si
 | **Left-hand bass** | La mano sinistra: Off, Root (fondamentale), Octaves (ottave), Root + 5th, **Walking** (fondamentale, quinta e ottava sui tempi e un passo cromatico verso l'accordo successivo) **Syncopated octaves** (i controtempi saltano all'ottava: il basso house che pompa) o **Stab di piano (basso in ogni accordo)** (il default): la fondamentale suona con ogni colpo di accordo, bassa e piena, più i colpi propri del basso nel mezzo, ma mai un sedicesimo prima o dopo un accordo (suonerebbe come un flam). Lo stab accentato e l'anticipo hanno l'**ottava** (fondamentale + fondamentale un'ottava sopra), gli altri la sola fondamentale, come la mano sinistra di un pianista. È così che si suonano i loop di piano house: un unico stab grosso, basso compreso. Il menu ha anche una **libreria di linee di basso** (ognuna col suo ritmo e le sue note, che seguono i tuoi accordi): *Disco* (Disco Octave Gallop, Disco Octave Push, Philly Walk, Boogie Line), *Funky* (Funk Sixteenths, Slap & Pop, Dead Note Groove: con le note stoppate), *House* (Deep House Root, Offbeat House, Garage Skip) e *Soulful* (Soulful Walk, Gospel Walk). Usano terze, quinte, seste, settime, ottave e **note di passaggio** che portano di un semitono all'accordo successivo, come un bassista. La griglia mostra il ritmo della linea; modificando una casella del basso diventa un ritmo tuo sulle fondamentali. |
 | **Top line** (Linea in alto) | La melodia disegnata dalle note alte degli accordi. **Pedale house** (il default) è il modo classico del piano house: gli accordi condividono **una sola nota in alto** (la loro quinta, settima o terza) e si spostano solo sulla nota dell'accordo più vicina quando un accordo non ce l'ha; la nota in alto non salta qua e là dentro la battuta. Ogni due battute l'ultimo stab prima della fine della battuta fa il **gancio**: la nota in alto passa alla nota vicina della scala (in giù se quello stab è scritto ▼) e torna alla battuta dopo. *Smooth (auto)* si muove il meno possibile, *Steady* punta a un'altezza fissa, *Rising*, *Falling* o *Arch* la fanno salire, scendere o andare ad arco lungo la progressione. |
 | **Movement** (Movimento) | **Movimento dei rivolti** per tutti i groove: *Spento* ripete lo stesso accordo a ogni colpo, *Leggero* (di default) sposta di un rivolto in su le mezze battute di risposta, *Vivace* fa ballare ogni mezza battuta (accordo, su, accordo, giù, al contrario nella risposta). I groove che si muovono già tengono la loro figura; il break resta fermo. |
+| **Strings** (Archi, v2.12) | Una terza parte per dare **corpo e volume**: archi che seguono i tuoi accordi, sempre sul **canale MIDI 3**. *Off* (il default, così i progetti vecchi suonano uguale), **Pad** (ogni accordo tenuto fino al successivo: 3a, 7a, 5a e fondamentale in posizione stretta a metà tastiera, con voice leading così le note si muovono il meno possibile), **Pad alto** (tre voci un'ottava sopra: aria sopra il piano), **Pad largo** (il pad più fondamentale e quinta un'ottava sopra il basso: il più pieno) o **Stab col piano** (gli archi raddoppiano i colpi di accordo del piano, ghost note escluse: il classico string stab house). Stanno un po' sotto il livello del piano; nel break salgono. Se fai partire il loop a metà di un accordo, il pad entra subito. **ARCHI** accanto a PIANO e BASSO (sotto *Ascolta*) li accende e spegne e ricorda l'ultimo tipo. Il suono guida li suona con un ensemble d'archi. |
 | **Approach chord** (Accordo di passaggio) | Lo **slide** gospel: sull'ultimo sedicesimo prima di ogni cambio d'accordo suona l'accordo successivo (e la sua nota di basso) mezzo tono **sopra** (*From above*) o **sotto** (*From below*), che poi risolve. Solo dove quella mano sta già suonando: un basso spento resta spento. |
 | **Top +8va** | Raddoppia all'ottava superiore la nota più alta di ogni accordo: il classico suono di piano house brillante. |
 | **Strum** (Arpeggiato) | Arpeggia l'accordo come un pianista vero invece di suonare tutte le note insieme. L'arpeggio dura un tempo reale (fino a circa 90 ms al 100%, a qualsiasi BPM), accelera leggermente come una mano, non supera mai metà della nota e non tocca mai le ghost note. Il piccolo pulsante sotto la manopola sceglie la **direzione**: *Su* (dal basso), *Giù* (dall'alto) o *Alternato* (su sui tempi, giù sui controtempi, alla gospel). Tra 20% e 40% suona naturale. |
@@ -394,7 +395,7 @@ identico. Premili qualche volta finché le due mani non si incastrano.
 | **Sound** | *Rhodes (FM)* (piano elettrico), *Soulful Grand* (pianoforte acustico), *House Piano (M1 style)* (il piano brillante della house anni '90) *House Organ* (organo per gli stab jackin'), *Wurlitzer* (ancioso, un po' saturato), *Gospel Organ (Leslie)* (tiranti pieni con altoparlante rotante) o *Warm Pad* (pad morbido e detunato per i break). |
 | **Sequencer** (Trasporto, in alto a destra) | Acceso (default): il groove suona con la DAW. **Spento**: non suona, ad es. quando hai trascinato la clip MIDI sulla traccia stessa del plug-in e suoni quella (altrimenti la senti doppia). Il MIDI in ingresso suona comunque il suono guida; ▶ fa ancora l'anteprima. |
 | **▶ (Trasporto, in alto)** | Fa suonare il groove anche a DAW ferma (anche la **barra spaziatrice**; un plug-in non può avviare il Play della DAW). **ASCOLTA** in VARIANTI e nel coach dei voicing lo avvia da solo quando non suona niente. |
-| **MIDI out** | *All on channel 1* oppure *Bass on channel 2* (per mandare il basso a uno strumento diverso). |
+| **MIDI out** | *All on channel 1* oppure *Bass on channel 2* (per mandare il basso a uno strumento diverso). Gli **archi** sono sempre sul **canale 3**: in Ableton Live aggiungi una traccia MIDI con uno strumento ad archi, metti *MIDI From* su questa traccia e il canale su *Ch. 3* (e sulla traccia del piano *Ch. 1*, così non suona anche gli archi). |
 | **Play mode** (nel riquadro Groove) | *Host transport*: suona col Play della DAW. *Hold a key*: suona mentre tieni premuto un tasto MIDI, e **il tasto sceglie la tonalità** (ottimo per jam dal vivo e nello Standalone). |
 | **Tone / Reverb / Volume** | Brillantezza (per l'organo: i tiranti), riverbero e volume del suono guida (non influiscono sul MIDI). |
 | **Chorus / Pompa** | *Chorus* allarga il suono; *Pompa* è la profondità del **sidechain**: lo abbassa come un sidechain sulla cassa, così senti il riff come suonerà nel mix. Solo sul suono guida. |
@@ -471,7 +472,9 @@ Vedi il prossimo capitolo.
 
 Il **pulsante con i quattro angoli** (accanto a STILE) mette l'interfaccia a schermo intero; riclicca
 per tornare. Dentro una DAW la finestra del plug-in diventa grande quanto lo schermo (la finestra è
-della DAW).
+della DAW). Nell'app standalone la finestra si può anche massimizzare o mettere a schermo intero
+con qualsiasi forma: l'interfaccia mantiene le proporzioni, centrata, e resta sempre dentro lo
+schermo (v2.12).
 
 ### Dimensione della finestra
 
@@ -577,7 +580,7 @@ Nel riquadro **ESPORTA MIDI**:
      (calcolata in automatico, es. 4 accordi da 1 battuta con fill ogni 8 battute → 8 battute).
    - *1–32 bars*: lunghezza fissa.
    - *Song: intro > drop > outro*: un arrangiamento completo di 60 battute (vedi capitolo 6).
-2. **Notes**: *Chords + bass*, *Chords only*, *Bass only* o **Tracce separate** (un solo file MIDI con una traccia Piano, una traccia Bass (sul canale 2 se *Uscita MIDI* è su *Basso sul canale 2*) e, se ci sono fill, una traccia Fills, più tempo e marker delle sezioni: quasi tutte le DAW lo aprono come tracce separate).
+2. **Notes**: *Chords + bass* (tutto, archi compresi se accesi), *Chords only*, *Bass only*, **Solo archi** (v2.12: clip chiamate *Strings ...*) o **Tracce separate** (un solo file MIDI con una traccia Piano, una traccia Bass (sul canale 2 se *Uscita MIDI* è su *Basso sul canale 2*), una traccia Strings se sono accesi e, se ci sono fill, una traccia Fills, più tempo e marker delle sezioni: quasi tutte le DAW lo aprono come tracce separate).
 3. **Trascina** il riquadro **TRASCINA MIDI NELLA DAW** sulla traccia o sulla timeline della DAW
    (il riquadro mostra cosa contiene, es. *Accordi + basso · Loop completo*).
    In alternativa **SALVA .MID…**: *Salva questa clip come .mid…* salva il file dove vuoi, e

@@ -6,6 +6,25 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.12.0] - 2026-10-16
+
+### Added
+- **Strings**: a third part, next to the piano and the bass, for body and volume. Always on **MIDI
+  channel 3**. **Pad** holds every chord until the next one (3rd, 7th, 5th and root, voice-led so
+  the notes move as little as possible), **High pad** sits an octave up, **Wide pad** adds the root
+  and fifth an octave above the bass, **Stabs with the piano** doubles the piano's chord hits. Off by
+  default, so existing projects sound the same.
+- **STRINGS** switch next to PIANO and BASS (under *Hear*): on / off, remembering the last kind.
+- The guide sound plays the strings with its own string ensemble (slow bow attack, vibrato, long
+  release).
+- Export: **Strings only** clips (*Strings Intro - ...*), a Strings track in *Separate tracks*, and
+  the strings in the clips with everything. TOTAL random can switch them on.
+
+### Fixed
+- **Full screen in the standalone app** made the interface larger than the screen: the window kept
+  the interface's shape, so a wide screen forced it taller. It now takes any shape and the
+  interface stays inside, centred.
+
 ## [2.11.0] - 2026-10-16
 
 ### Added

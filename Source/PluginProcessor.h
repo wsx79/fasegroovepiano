@@ -60,6 +60,7 @@ namespace ParamIDs
     inline constexpr const char* tone        = "tone";
     inline constexpr const char* reverb      = "reverb";
     inline constexpr const char* volume      = "volume";
+    inline constexpr const char* strings     = "strings";       // the strings (StringsMode), MIDI channel 3
 
     inline juce::String slot (int index)    { return "slot" + juce::String (index + 1); }
     inline juce::String segment (int index) { return "segment" + juce::String (index + 1); }
@@ -174,6 +175,13 @@ public:
     void toggleBass();
     bool isBassOn() const;
 
+    /** The strings on / off, remembering the last strings mode (Pad the first time). */
+    void toggleStrings();
+    bool isStringsOn() const;
+
+    /** The strings always play on their own MIDI channel. */
+    static constexpr int stringsChannel = 3;
+
     // Editor preferences, saved with the project.
     float editorScale = 1.0f;
     bool shrinkWhileDragging = true;
@@ -269,7 +277,8 @@ public:
     bool freeCircle = false;                         // circle of fifths accepts any chord (saved with the project)
 
     //==============================================================================
-    enum class ClipPart { all = 0, chords, bass, tracks };   // tracks: one MIDI file, piano / bass / fills on separate tracks
+    enum class ClipPart { all = 0, chords, bass, tracks, strings };   // tracks: one MIDI file, piano / bass / fills / strings on separate tracks
+    static juce::String instrumentName (ClipPart);   // "Piano", "Bass", "Strings": the first word of a clip's name
 
     /** Pass as `bars` to export the whole song: intro, main, break, build-up, drop, outro. */
     static constexpr int songArrangement = -1;
@@ -395,6 +404,7 @@ private:
     std::array<std::atomic<int>, sgk::maxProgressionLength> freeChords;
     void resetUserPattern();
     int lastBassMode = 1;
+    int lastStringsMode = 1;
 
     sgk::GrooveEngine engine;
     std::vector<sgk::NoteEvent> events;
