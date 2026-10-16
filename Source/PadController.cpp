@@ -155,7 +155,7 @@ PadController::Leds PadController::computeLeds() const
     const auto s = processor.currentSettings();
     const auto pattern = sgk::GrooveEngine::resolvePattern (s);
     const int length = juce::jmin (pattern.length(), sgk::userPatternLength);
-    const bool bassOn = processor.isBassOn();
+    const bool bassOn = processor.isBassHeard();
     const auto bassLine = s.bass == sgk::BassMode::withChords ? sgk::stabBassLine (pattern) : pattern.leftHand;
     const int playing = processor.uiStep.load() >= 0 ? processor.uiStep.load() % sgk::userPatternLength : -1;
 
@@ -204,7 +204,7 @@ void PadController::pressPad (int row, int column)
     padToStep (row, column, bassRow, step);
     if (step >= sgk::GrooveEngine::resolvePattern (processor.currentSettings()).length())
         return;
-    if (! bassRow && processor.chordsMuted.load() && processor.isBassOn())
+    if (! bassRow && processor.chordsMuted.load() && processor.isBassHeard())
         return;   // the piano is off: its rows are dark
 
     // Like a click on the grid: rest -> hit -> accent -> ghost -> rest.

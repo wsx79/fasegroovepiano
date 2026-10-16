@@ -971,10 +971,12 @@ void PianoRollView::fitKeyboard()
     highNote = juce::jmin (127, high);
 }
 
-void PianoRollView::setContent (std::vector<Note> newNotes, std::vector<ChordSpan> newChords, double lengthInBeats, bool chordsMuted)
+void PianoRollView::setContent (std::vector<Note> newNotes, std::vector<ChordSpan> newChords, double lengthInBeats, bool chordsMuted, bool bassMuted)
 {
-    if (newNotes == allNotes && newChords == chords && juce::approximatelyEqual (lengthInBeats, length) && chordsMuted == mutedChords)
+    if (newNotes == allNotes && newChords == chords && juce::approximatelyEqual (lengthInBeats, length) && chordsMuted == mutedChords
+        && bassMuted == mutedBass)
         return;
+    mutedBass = bassMuted;
 
     allNotes = std::move (newNotes);
     chords = std::move (newChords);
@@ -1078,7 +1080,7 @@ void PianoRollView::paint (juce::Graphics& g)
         auto r = juce::Rectangle<float> (x0, yOf (n.note), juce::jmax (2.0f, x1 - x0), rowH).reduced (0.5f, rowH > 5.0f ? 0.75f : 0.25f);
         juce::Colour c = partColour (n.part);
         float alpha = 0.55f + 0.45f * juce::jlimit (0.0f, 1.0f, (n.velocity - 40) / 87.0f);
-        if (mutedChords && (n.part == sgk::Part::chords || n.part == sgk::Part::fill))
+        if ((mutedChords && (n.part == sgk::Part::chords || n.part == sgk::Part::fill)) || (mutedBass && n.part == sgk::Part::bass))
             alpha *= 0.3f;
         const bool sounding = playhead >= n.start && playhead < n.start + n.length;
         g.setColour (sounding ? c.brighter (0.5f) : c.withAlpha (alpha));
@@ -3280,14 +3282,16 @@ void PianoRollEditor::editPart (sgk::Part part)
 
 int PianoRollEditor::listening() const
 {
-    return ! processor.isBassOn() ? 1 : processor.chordsMuted.load() ? 2 : 0;
+    return ! processor.isBassHeard() ? 1 : processor.chordsMuted.load() ? 2 : 0;
 }
 
 void PianoRollEditor::setListening (int which)
 {
     // The same as BOTH / PIANO / BASS under the main piano roll.
+    // Mutes only: the notes stay as they are.
     processor.chordsMuted = which == 2;
-    if ((which == 1) == processor.isBassOn())
+    processor.bassMuted = which == 1;
+    if (which != 1 && ! processor.isBassOn())
         processor.toggleBass();
     refreshText();
 }
@@ -5844,7 +5848,7 @@ void FaseGroovePianoEditor::saveClip()
 
 void FaseGroovePianoEditor::cellClicked (bool bassRow, int step, const juce::MouseEvent& e)
 {
-    if (! bassRow && processor.chordsMuted.load() && processor.isBassOn())
+    if (! bassRow && processor.chordsMuted.load() && processor.isBassHeard())
         return;   // the piano is off: its row is hidden
 
     const char current = processor.stepSymbol (bassRow, step);
@@ -5906,9 +5910,11 @@ void FaseGroovePianoEditor::enterMiniMode (juce::Component* keep, juce::Componen
         c->setVisible (false);
     }
 
+    // The dragged tile stays (the drag belongs to it) but is invisible: the strip says what to do.
+    miniKeep->setAlpha (0.0f);
     getConstrainer()->setFixedAspectRatio (0.0);
     setResizeLimits (miniWidth / 2, miniHeight / 2, baseWidth * 2, baseHeight * 2);
-    setSize (juce::roundToInt (miniWidth * uiScale), juce::roundToInt (miniHeight * uiScale));
+    setSize (miniWidth, miniHeight);
 }
 
 void FaseGroovePianoEditor::exitMiniMode()
@@ -5919,6 +5925,8 @@ void FaseGroovePianoEditor::exitMiniMode()
     miniMode = false;
     if (miniKeep == &songOverlay)
         songOverlay.setMini (false);
+    if (miniKeep != nullptr)
+        miniKeep->setAlpha (1.0f);
     miniKeep = nullptr;
     for (auto& c : hiddenForMini)
         if (c != nullptr)
@@ -6010,7 +6018,7 @@ void FaseGroovePianoEditor::updateVelocityView (const sgk::GrooveSettings& s)
         bass.levels[(size_t) i] = processor.stepVelocity (true, i);
     }
 
-    if (processor.chordsMuted.load() && processor.isBassOn())
+    if (processor.chordsMuted.load() && processor.isBassHeard())
     {
         chords.enabled = false;
         chords.message = tr ("Piano off  -  click PIANO to turn it back on");
@@ -6019,7 +6027,7 @@ void FaseGroovePianoEditor::updateVelocityView (const sgk::GrooveSettings& s)
     // The bass row shows what the bass plays: with the piano-stab bass, the piano's stabs.
     bass.line = s.bass == sgk::BassMode::withChords ? sgk::stabBassLine (p) : p.leftHand;
     bass.line.resize ((size_t) len, '.');
-    if (! processor.isBassOn())
+    if (! processor.isBassHeard())
     {
         bass.enabled = false;
         bass.message = tr ("Bass off  -  click BASS to turn it back on");
@@ -6080,7 +6088,7 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
     }
 
     auto chordSpans = chordSpansFor (s, rollLength);
-    pianoRoll.setContent (std::move (notes), std::move (chordSpans), rollLength, processor.chordsMuted.load());
+    pianoRoll.setContent (std::move (notes), std::move (chordSpans), rollLength, processor.chordsMuted.load(), processor.bassMuted.load());
     pianoRoll.setEdited (s.playsEditedLoop());
     const double ppq = processor.uiPpq.load();
     pianoRoll.setPlayhead (ppq < 0.0 ? -1.0 : std::fmod (ppq, rollLength));
@@ -6205,7 +6213,7 @@ void FaseGroovePianoEditor::timerCallback()
         processor.sidechainMeter = processor.sidechainMeter.load() * 0.7f;   // falls when nothing arrives
     }
 
-    const bool bassOn = processor.isBassOn();
+    const bool bassOn = processor.isBassHeard();
     patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load(), bassOn,
                           ! processor.chordsMuted.load() || ! bassOn);
     if (velocityShown && ! rollShown)
@@ -6331,10 +6339,12 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
 
     if (miniMode)
     {
-        g.setColour (Palette::dim);
-        g.setFont (font (11.0f));
-        g.drawText (tr ("Drop the clip on a track in your DAW"), juce::Rectangle<int> (0, miniHeight - 22, miniWidth, 18),
-                    juce::Justification::centred);
+        g.setColour (Palette::accent);
+        g.fillRect (0, 0, 4, miniHeight);
+        g.setColour (Palette::text);
+        g.setFont (font (11.0f, true));
+        g.drawFittedText (juce::String::fromUTF8 ("\xe2\x86\x93  ") + tr ("Drop the clip on a track in your DAW"),
+                          juce::Rectangle<int> (10, 0, miniWidth - 14, miniHeight), juce::Justification::centredLeft, 1, 0.7f);
         return;
     }
 
@@ -6436,7 +6446,7 @@ void FaseGroovePianoEditor::resized()
 {
     if (miniMode)
     {
-        uiScale = juce::jmax (0.3f, getHeight() / (float) miniHeight);
+        uiScale = 1.0f;   // the strip is the same small size at any interface size
         layoutMini();
     }
     else
@@ -6514,7 +6524,7 @@ void FaseGroovePianoEditor::layoutMini()
     if (miniKeep == &songOverlay)
         songOverlay.setBounds (0, 0, miniWidth, miniHeight);
     else
-        dragTile.setBounds (juce::Rectangle<int> (0, 0, miniWidth, miniHeight).reduced (10).withTrimmedBottom (14));
+        dragTile.setBounds (0, 0, miniWidth, miniHeight);
 }
 
 std::vector<juce::Component*> FaseGroovePianoEditor::advancedOnly()

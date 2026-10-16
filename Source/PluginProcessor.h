@@ -184,7 +184,7 @@ public:
 
     // Editor preferences, saved with the project.
     float editorScale = 1.0f;
-    bool shrinkWhileDragging = false;   // the mini window while dragging a clip (off: it got in the way in the DAW)
+    bool shrinkWhileDragging = true;    // while dragging a clip the window becomes a thin strip, so the DAW is free
     bool advancedView = false;   // the panels show every control (ADVANCED) or only the main ones
 
     /** Replaces the progression with a random soulful-house one of the current length. */
@@ -219,6 +219,10 @@ public:
     std::atomic<bool> learnMode { false };
     /** SOLO BASS: the chords stay silent (MIDI out and guide sound); the exported clips are not affected. */
     std::atomic<bool> chordsMuted { false };
+    /** HEAR BASS off: the bass is only muted (what you hear); its notes, the piano's voicing, the
+        piano roll and the exports stay the same. */
+    std::atomic<bool> bassMuted { false };
+    bool isBassHeard() const { return isBassOn() && ! bassMuted.load(); }
 
     // Notes edited one by one in the big piano roll. While set, they play (and are exported)
     // instead of the generated notes in the main groove and the drop.

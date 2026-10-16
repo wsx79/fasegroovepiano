@@ -301,7 +301,7 @@ public:
     };
 
     /** The loop to show; repaints only when something changed. */
-    void setContent (std::vector<Note> notes, std::vector<ChordSpan> chords, double lengthInBeats, bool chordsMuted);
+    void setContent (std::vector<Note> notes, std::vector<ChordSpan> chords, double lengthInBeats, bool chordsMuted, bool bassMuted = false);
     /** Playhead in beats from the start of the loop, or -1 when stopped. */
     void setPlayhead (double beat);
     /** The notes were edited by hand (a tag in the corner). */
@@ -329,7 +329,7 @@ private:
     juce::OwnedArray<juce::TextButton> partButtons;   // PIANO, BASS, STRINGS
     std::vector<ChordSpan> chords;
     double length = 8.0, playhead = -1.0;
-    bool mutedChords = false, edited = false;
+    bool mutedChords = false, mutedBass = false, edited = false;
     int lowNote = 36, highNote = 84;
 };
 
@@ -942,7 +942,9 @@ private:
 
     // Scaling (the whole UI is laid out at base size, then scaled) and mini mode.
     static constexpr int baseWidth = 1180, baseHeight = 860;
-    static constexpr int miniWidth = 320, miniHeight = 96;
+    // While a clip is dragged the window becomes a thin strip (at its top-left corner, where the
+    // host keeps it), so the DAW is free to drop on.
+    static constexpr int miniWidth = 240, miniHeight = 28;
     float uiScale = 1.0f;
     juce::Point<float> uiOffset;
     juce::AffineTransform uiTransform() const { return juce::AffineTransform::scale (uiScale).translated (uiOffset); }

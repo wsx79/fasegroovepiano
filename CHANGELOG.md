@@ -6,6 +6,16 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.15.0] - 2026-10-16
+
+### Fixed
+- **HEAR BASS changed the piano's notes**: it switched the bass off, and without a bass the piano
+  voices its chords lower. Now HEAR is only a mute: the notes, the piano roll and the exports stay
+  exactly the same.
+- **Dragging clips to the DAW** again: since v2.14 the plug-in window stayed in the way. While you
+  drag, the window now becomes a **thin strip** in its top-left corner (instead of the big tile),
+  so the DAW is free where you drop.
+
 ## [2.14.0] - 2026-10-16
 
 ### Changed
@@ -80,17 +90,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ## [2.10.0] - 2026-10-16
 
 ### Added
-- **7 new piano grooves** (179 in all), on classic piano house and
-  jackin' piano figures: *Rolling 16th Keys*, *Late Dotted Stabs*, *Double Hit Stabs*, *Pocket Three
+- **7 new piano grooves** (179 in all), on classic piano house and jackin' piano figures: *Rolling 16th Keys*, *Late Dotted Stabs*, *Double Hit Stabs*, *Pocket Three
   Stabs*, *Offbeat Run Chops*, *Front Loaded Hook*, *Answer Run Keys*.
 - **18 new Dorian progressions** (112 in all), in *Deep house*: *Dorian Climb i - VII - ii - IV*,
   *Dorian Return i - v - IV - i*, *Dorian Bloom i - VII - III - IV*, *Dorian Arrival III - IV - v - i*
   and more.
 
 ### Changed
-- **A more authentic piano house sound**: compact chords
-  (3 notes within a 9th, the top around F4). The plug-in now starts with the **Upper triad
-  (house stab)** voicing and a slightly lower register, and the *House Piano Loop*, *Piano House
+- **A more authentic piano house sound**: compact chords (3 notes within a 9th, the top around F4),
+  the classic house stab. The plug-in now starts with the **Upper triad (house stab)** voicing and a slightly lower register, and the *House Piano Loop*, *Piano House
   Anthem* and *Classic Piano House* styles use compact stabs. Saved projects keep their sound.
 
 ## [2.9.0] - 2026-10-16

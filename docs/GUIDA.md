@@ -295,11 +295,11 @@ annullano con ◀.
 Sopra il piano roll i pulsanti sono in quattro gruppi con didascalia:
 
 - **VISTA**: PIANO ROLL / GRIGLIA, poi MODIFICA NOTE (piano roll) o VELOCITY (griglia).
-- **ASCOLTA**: **🔊 PIANO** e **🔊 BASSO**, due interruttori: acceso = lo senti, grigio con **🔇** =
-  muto. Non si spengono tutti e due (spegnendo l'unico che senti si accende l'altro). Zittire il
-  piano cambia solo quello che suona: le clip trascinate e salvate contengono sempre tutto (per
-  esportare una parte sola usa *Note* nel pannello ESPORTA MIDI); spegnendo il basso viene
-  ricordato il tipo di basso che avevi.
+- **ASCOLTA**: **🔊 PIANO**, **🔊 BASSO** e **🔊 ARCHI**: acceso = lo senti, grigio con **🔇** = muto.
+  Piano e basso non si spengono tutti e due (spegnendo l'unico che senti si accende l'altro). Sono
+  **solo dei muti** (v2.15): non cambia nient'altro, né le note, né il voicing del piano, né il
+  piano roll, e le clip trascinate e salvate contengono sempre tutto (per esportare una parte sola
+  usa *Note* nel pannello ESPORTA MIDI). ARCHI accende e spegne gli archi.
 - **NUOVO RITMO**: **🎲 PIANO** e **🎲 BASSO** (vedi sotto).
 - **GROOVE**: I MIEI GROOVE, MORPH, DNA.
 
@@ -536,7 +536,7 @@ o su **CHIUDI** per tornare indietro):
     Português**. Il cambio è immediato e vale per tutti i tuoi progetti. La prima volta il plugin
     usa la lingua del computer.
   - **Dimensione interfaccia:** dal 60% al 200%, come trascinando l'angolo.
-  - **Finestra mini durante il drag:** la finestra del plug-in si riduce a un piccolo riquadro mentre trascini una clip. **Spenta** di default (v2.14: dava fastidio quando rilasci nella DAW).
+  - **Finestra mini durante il drag:** mentre trascini una clip la finestra del plug-in diventa una striscia sottile nel suo angolo in alto a sinistra, così la DAW resta libera (accesa di default; v2.15: una striscia al posto del riquadro grande).
   - **Mostra i suggerimenti quando il mouse resta fermo su un comando:** attivo di default.
     Tieni il mouse fermo un attimo su una manopola, un menu o un pulsante e un suggerimento ti
     spiega a cosa serve. Spegnilo quando conosci il plugin.
@@ -593,10 +593,11 @@ Nel riquadro **ESPORTA MIDI**:
 
 4. **BRANO INTERO…** apre la finestra del brano (capitolo 6): lì trascini o salvi il **brano intero**.
 
-Il trascinamento lascia la finestra del plug-in com'è. Se vuoi che si riduca a un piccolo riquadro
-mentre trascini (vale anche per il brano intero), attiva **Finestra mini durante il drag** in
-**OPZIONI → IMPOSTAZIONI**: spenta di default dalla v2.14, perché il riquadro resta dov'era la
-finestra e può dare fastidio quando rilasci la clip nella DAW.
+Mentre trascini una clip (anche il brano intero) la finestra del plug-in diventa una **striscia
+sottile** nel suo angolo in alto a sinistra (*↓ Rilascia la clip su una traccia della DAW*), così
+la DAW è libera dove rilasci; al rilascio torna com'era (v2.15). Se la tua DAW non gestisce bene il
+ridimensionamento dei plug-in, spegni **Finestra mini durante il drag** in **OPZIONI →
+IMPOSTAZIONI**.
 
 Ogni clip trascinata viene salvata anche in `Documenti/Fase Groove Piano/MIDI clips/` con un nome che
 descrive accordi, groove, lunghezza e BPM, per esempio

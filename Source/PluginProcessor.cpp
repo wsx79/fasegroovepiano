@@ -287,18 +287,26 @@ FaseGroovePianoProcessor::~FaseGroovePianoProcessor()
 
 void FaseGroovePianoProcessor::hearPart (bool bass)
 {
-    const bool bassOn = isBassOn();
-    const bool pianoOn = ! chordsMuted.load() || ! bassOn;
+    // Only what you hear changes (a mute): switching the bass off would change the piano's voicing.
+    const bool bassHeard = isBassHeard();
+    const bool pianoOn = ! chordsMuted.load() || ! bassHeard;
+    auto bassBack = [this]
+    {
+        bassMuted = false;
+        if (! isBassOn())
+            toggleBass();   // a bass that was off (its menu on Off) comes back
+    };
     if (bass)
     {
-        if (bassOn) { toggleBass(); chordsMuted = false; }   // off (the piano plays)
-        else        toggleBass();
+        if (bassHeard) { bassMuted = true; chordsMuted = false; }   // muted (the piano plays)
+        else           bassBack();
     }
     else
     {
-        if (pianoOn && bassOn)  chordsMuted = true;                    // bass only
-        else if (pianoOn)      { chordsMuted = true; toggleBass(); }
-        else                   chordsMuted = false;
+        if (pianoOn && bassHeard)  chordsMuted = true;               // bass only
+        else if (pianoOn)          { chordsMuted = true; bassBack(); }
+        else                       chordsMuted = false;
+    bassMuted = false;
     }
 }
 
@@ -468,7 +476,7 @@ void FaseGroovePianoProcessor::resetToDefaults()
     freeCircle = false;
     previewOn = false;
     editorScale = 1.0f;
-    shrinkWhileDragging = false;
+    shrinkWhileDragging = true;
 }
 
 //==============================================================================
@@ -712,6 +720,7 @@ bool FaseGroovePianoProcessor::loadGroove (const juce::File& file)
         velocityOrder[(size_t) i] = i;
     if (left.containsAnyOf ("XxgUuDd>") && ! isBassOn())
         toggleBass();
+    bassMuted = false;
     return true;
 }
 
@@ -765,7 +774,7 @@ juce::String FaseGroovePianoProcessor::snapshot()
         return {};
 
     xml->removeAttribute ("editorScale");
-    xml->removeAttribute ("miniWhileDragging");
+    xml->removeAttribute ("dragStrip");
     return xml->toString (juce::XmlElement::TextFormat().singleLine());
 }
 
@@ -776,7 +785,7 @@ void FaseGroovePianoProcessor::restoreSnapshot (const juce::String& text)
         return;
 
     xml->setAttribute ("editorScale", editorScale);
-    xml->setAttribute ("miniWhileDragging", shrinkWhileDragging);
+    xml->setAttribute ("dragStrip", shrinkWhileDragging);
 
     juce::MemoryBlock data;
     copyXmlToBinary (*xml, data);
@@ -1126,6 +1135,8 @@ void FaseGroovePianoProcessor::rerollHand (bool bass)
 
     if (bass && ! isBassOn())
         toggleBass();
+    if (bass)
+        bassMuted = false;   // a new bass rhythm: you want to hear it
     setUserPattern (current);
 }
 
@@ -1197,6 +1208,8 @@ void FaseGroovePianoProcessor::editStep (bool bassRow, int displayedStep, char s
 
     if (bassRow && symbol != '.' && ! isBassOn())
         toggleBass();
+    if (bassRow && symbol != '.')
+        bassMuted = false;   // writing the bass: you hear it
 
     setUserPattern (current);
 }
@@ -1574,11 +1587,13 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     const bool bassOnChannel2 = juce::roundToInt (raw (ParamIDs::bassChannel)) == 1;
 
-    const bool muteChords = chordsMuted.load();
+    const bool muteChords = chordsMuted.load(), muteBass = bassMuted.load();
     for (const auto& e : events)
     {
         if (muteChords && e.isNoteOn() && e.part != sgk::Part::bass && e.part != sgk::Part::strings)
             continue;   // the piano muted (note-offs still pass, so nothing hangs)
+        if (muteBass && e.isNoteOn() && e.part == sgk::Part::bass)
+            continue;   // the bass muted
 
         const int pos = juce::jlimit (0, numSamples - 1, (int) std::floor ((e.ppq - startPpq) * samplesPerBeat));
         const int channel = e.part == sgk::Part::strings ? stringsChannel : (bassOnChannel2 && e.part == sgk::Part::bass) ? 2 : 1;
@@ -2194,6 +2209,7 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     }
     state.setProperty ("lastBassMode", lastBassMode, nullptr);
     state.setProperty ("soloBass", chordsMuted.load(), nullptr);
+    state.setProperty ("bassMuted", bassMuted.load(), nullptr);
     {
         juce::StringArray bars, variations, fills;
         for (int i = 0; i < numSongParts; ++i)
@@ -2207,8 +2223,8 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
         state.setProperty ("songVariations", variations.joinIntoString (","), nullptr);
     }
     state.setProperty ("editorScale", editorScale, nullptr);
-    // (a new name: the mini window is off for everyone from v2.14, also in projects saved with it on)
-    state.setProperty ("miniWhileDragging", shrinkWhileDragging, nullptr);
+    // (a new name in v2.15: the strip is on for everyone again, whatever v2.14 saved)
+    state.setProperty ("dragStrip", shrinkWhileDragging, nullptr);
     state.setProperty ("advancedView", advancedView, nullptr);
 
     juce::StringArray free;
@@ -2296,6 +2312,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
 
     lastBassMode = juce::jlimit (1, sgk::numBassModes - 1, (int) state.getProperty ("lastBassMode", 1));
     chordsMuted = (bool) state.getProperty ("soloBass", false);
+    bassMuted = (bool) state.getProperty ("bassMuted", false);
     {
         resetSong();
         const auto bars = juce::StringArray::fromTokens (state.getProperty ("songBars").toString(), ",", {});
@@ -2312,7 +2329,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
         }
     }
     editorScale = juce::jlimit (0.6f, 2.0f, (float) state.getProperty ("editorScale", 1.0f));
-    shrinkWhileDragging = (bool) state.getProperty ("miniWhileDragging", false);
+    shrinkWhileDragging = (bool) state.getProperty ("dragStrip", true);
     advancedView = (bool) state.getProperty ("advancedView", false);
 
     const auto free = juce::StringArray::fromTokens (state.getProperty ("freeChords").toString(), ",", {});

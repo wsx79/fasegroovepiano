@@ -15,6 +15,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 - v2.12.0: strings (pad, high pad, wide pad, stabs) on MIDI channel 3; standalone full screen fixed (v2.12.1: above the Windows taskbar).
 - v2.13.0: strings in the piano roll, one instrument at a time; instrument colours in Harmony; instrument choice in the song window.
 - v2.14.0: Harmony & Scales with PIANO / BASS / STRINGS tabs; new undo / redo arrows; no mini window while dragging.
+- v2.15.0: HEAR is only a mute; a thin strip while dragging clips.
 - v2.10.0: 7 new piano grooves, 18 Dorian progressions, compact house-stab sound by default.
 - v2.9.0: groove from MIDI, live keys, DNA Straighter, sections colour the harmony.
 - v2.8.0: random riffs as busy as their density, fills that suit the groove.

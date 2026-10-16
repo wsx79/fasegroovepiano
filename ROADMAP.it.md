@@ -15,6 +15,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 - v2.12.0: archi (pad, pad alto, pad largo, stab) sul canale MIDI 3; schermo intero dell'app standalone corretto (v2.12.1: sopra la barra di Windows).
 - v2.13.0: archi nel piano roll, uno strumento alla volta; colori degli strumenti in Armonia; scelta dello strumento nella finestra del brano.
 - v2.14.0: Armonia e scale con le linguette PIANO / BASSO / ARCHI; nuove frecce annulla / ripeti; niente mini finestra durante il trascinamento.
+- v2.15.0: ASCOLTA è solo un muto; una striscia sottile mentre trascini le clip.
 - v2.10.0: 7 nuovi groove di piano, 18 progressioni doriche, suono house stab compatto di default.
 - v2.9.0: groove dal MIDI, tasti live, DNA Più dritto, le sezioni colorano l'armonia.
 - v2.8.0: riff casuali pieni quanto la loro densità, fill che si adattano al groove.

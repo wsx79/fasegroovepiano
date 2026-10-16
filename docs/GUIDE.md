@@ -287,10 +287,11 @@ undone with ◀.
 Above the piano roll the buttons are in four captioned groups:
 
 - **VIEW**: PIANO ROLL / GRID, then EDIT NOTES (piano roll) or VELOCITY (grid).
-- **HEAR**: **🔊 PIANO** and **🔊 BASS**, two switches: lit = you hear it, grey with **🔇** = muted.
-  They can't both be off (switching off the only one you hear switches on the other). Muting the
-  piano only affects what plays: dragged and saved clips still contain everything (use *Notes* in
-  the EXPORT MIDI panel to export one part); switching the bass off remembers the bass mode you had.
+- **HEAR**: **🔊 PIANO**, **🔊 BASS** and **🔊 STRINGS**: lit = you hear it, grey with **🔇** = muted.
+  Piano and bass can't both be off (switching off the only one you hear switches on the other).
+  They are **only mutes** (v2.15): nothing else changes, not the notes, not the piano's voicing,
+  not the piano roll, and dragged and saved clips still contain everything (use *Notes* in the
+  EXPORT MIDI panel to export one part). STRINGS switches the strings on and off.
 - **NEW RHYTHM**: **🎲 PIANO** and **🎲 BASS** (see below).
 - **GROOVE**: MY GROOVES, MORPH, DNA.
 
@@ -515,7 +516,7 @@ to go back):
     Português**. The change is immediate and is remembered for all your projects. The first time,
     the plug-in picks your computer's language.
   - **Interface size:** 60% to 200%, the same as dragging the corner.
-  - **Mini window while dragging:** the plug-in window shrinks to a small tile while you drag a clip. **Off** by default (v2.14: it got in the way when dropping on the DAW).
+  - **Mini window while dragging:** while you drag a clip the plug-in window becomes a thin strip in its top-left corner, so the DAW is free (on by default; v2.15: a strip instead of the big tile).
   - **Show tips when the mouse rests on a control:** on by default. Rest the mouse on any knob,
     menu or button for a moment and a tip explains what it does. Switch it off once you know
     the plug-in.
@@ -570,10 +571,10 @@ In the **EXPORT MIDI** panel:
 
 4. **FULL SONG…** opens the song window (chapter 6): there you drag or save the **whole song**.
 
-Dragging leaves the plug-in window as it is. If you want it to shrink to a small tile while you
-drag (it works for the whole song too), turn **Mini window while dragging** on in **OPTIONS →
-SETTINGS**: off by default since v2.14, because the tile stays where the window was and can get
-in the way when you drop the clip in the DAW.
+While you drag a clip (the whole song too), the plug-in window becomes a **thin strip** at its
+top-left corner (*↓ Drop the clip on a track in your DAW*), so the DAW is free where you drop it;
+it comes back when you release (v2.15). If your DAW doesn't handle plug-in resizing well, turn
+**Mini window while dragging** off in **OPTIONS → SETTINGS**.
 
 Every dragged clip is also saved in `Documents/Fase Groove Piano/MIDI clips/` with a name describing
 chords, groove, length and BPM, for example `Am9-D9 Soulful Push 4bars 124bpm.mid`.

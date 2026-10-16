@@ -1272,6 +1272,40 @@ namespace
         CHECK (restored != nullptr && std::any_of (restored->begin(), restored->end(),
                                                    [] (const sgk::LoopNote& n) { return n.part == sgk::Part::strings && n.velocity == 33; }));
     }
+    void testHearIsOnlyAMute()
+    {
+        // HEAR BASS off mutes the bass: the notes (the piano's voicing too), the roll and the
+        // exports stay the same; it comes back as it was.
+        FaseGroovePianoProcessor p;
+        const auto before = p.generatedLoop (8.0);
+        p.hearPart (true);
+        CHECK (p.isBassOn() && ! p.isBassHeard());
+        const auto muted = p.generatedLoop (8.0);
+        CHECK (muted.size() == before.size());
+        bool same = muted.size() == before.size();
+        for (size_t i = 0; same && i < muted.size(); ++i)
+            same = muted[i].note == before[i].note && muted[i].part == before[i].part;
+        CHECK (same);
+
+        PlayHead head;
+        p.setPlayHead (&head);
+        p.prepareToPlay (44100.0, 512);
+        int bassOn = 0, others = 0;
+        for (int block = 0; block < 200; ++block)
+        {
+            juce::AudioBuffer<float> buffer (2, 512);
+            juce::MidiBuffer midi;
+            p.processBlock (buffer, midi);
+            head.ppq += 512.0 / 44100.0 * head.bpm / 60.0;
+            for (const auto m : midi)
+                if (m.getMessage().isNoteOn())
+                    (m.getMessage().getNoteNumber() < 48 ? bassOn : others) += 1;
+        }
+        CHECK (others > 0);
+        p.setPlayHead (nullptr);
+        p.hearPart (true);
+        CHECK (p.isBassHeard());
+    }
 }
 
 int main()
@@ -1305,6 +1339,7 @@ int main()
     testMidiClock();
     testSongSectionClip();
     testStrings();
+    testHearIsOnlyAMute();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

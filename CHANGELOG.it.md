@@ -6,6 +6,15 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.15.0] - 2026-10-16
+
+### Corretto
+- **ASCOLTA BASSO cambiava le note del piano**: spegneva il basso, e senza basso il piano mette gli
+  accordi più in basso. Ora ASCOLTA è solo un muto: note, piano roll ed export restano identici.
+- **Trascinare le clip nella DAW** di nuovo: dalla v2.14 la finestra del plug-in restava in mezzo.
+  Mentre trascini, ora la finestra diventa una **striscia sottile** nel suo angolo in alto a
+  sinistra (al posto del riquadro grande), così la DAW è libera dove rilasci.
+
 ## [2.14.0] - 2026-10-16
 
 ### Cambiato
@@ -83,16 +92,15 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 ## [2.10.0] - 2026-10-16
 
 ### Aggiunto
-- **7 nuovi groove di piano** (179 in tutto), sulle figure classiche del piano house e del
-  jackin' piano: *Rolling 16th Keys*, *Late Dotted Stabs*, *Double Hit Stabs*, *Pocket
+- **7 nuovi groove di piano** (179 in tutto), sulle figure classiche del piano house e del jackin' piano: *Rolling 16th Keys*, *Late Dotted Stabs*, *Double Hit Stabs*, *Pocket
   Three Stabs*, *Offbeat Run Chops*, *Front Loaded Hook*, *Answer Run Keys*.
 - **18 nuove progressioni doriche** (112 in tutto), in *Deep house*: *Dorian Climb i - VII - ii -
   IV*, *Dorian Return i - v - IV - i*, *Dorian Bloom i - VII - III - IV*, *Dorian Arrival III - IV -
   v - i* e altre.
 
 ### Modificato
-- **Un suono piano house più autentico**: accordi compatti
-  (3 note dentro una nona, la più alta intorno al Fa4). Il plug-in ora parte col voicing
+- **Un suono piano house più autentico**: accordi compatti (3 note dentro una nona, la più alta
+  intorno al Fa4), il classico stab house. Il plug-in ora parte col voicing
   **Upper triad (house stab)** e un registro un po' più basso, e gli stili *House Piano Loop*,
   *Piano House Anthem* e *Classic Piano House* usano stab compatti. I progetti salvati mantengono il
   loro suono.
