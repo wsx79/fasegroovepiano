@@ -6,6 +6,25 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.13.0] - 2026-10-16
+
+### Added
+- **The strings in the piano roll**, in red, edited note by note like the piano and the bass.
+- The big piano roll's **EDIT** row: **PIANO** (amber) | **BASS** (cyan) | **STRINGS** (red). Only
+  that instrument's notes can be touched; the other two stay see-through in their colours. It
+  replaces DRAWS and SHOW.
+- **Song window: INSTRUMENT** (**ALL** | **PIANO** | **BASS** | **STRINGS** | **TRACKS**) above the
+  tiles, so a section or the whole song can be dragged for any instrument without leaving it.
+
+### Changed
+- **The small piano roll shows one instrument at a time** (the piano first): PIANO / BASS / STRINGS
+  at its bottom right. Double-clicking it opens the big one on the same instrument.
+- **Harmony & Scales in the instruments' colours**: the captions (and a bar on the menus) say what
+  each control changes: amber the piano only, cyan the bass, red the strings; key, scale and
+  extensions (all of them) stay neutral. The strings' colour is now red everywhere.
+- Export *Notes*: **Everything**, **Piano only**, **Bass only**, **Strings only**, then **Separate
+  tracks**.
+
 ## [2.12.1] - 2026-10-16
 
 ### Fixed

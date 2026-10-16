@@ -909,15 +909,53 @@ void VelocityView::paint (juce::Graphics& g)
 }
 
 //==============================================================================
-void PianoRollView::setContent (std::vector<Note> newNotes, std::vector<ChordSpan> newChords, double lengthInBeats, bool chordsMuted)
+PianoRollView::PianoRollView()
 {
-    if (newNotes == notes && newChords == chords && juce::approximatelyEqual (lengthInBeats, length) && chordsMuted == mutedChords)
-        return;
+    // Which instrument the roll shows: one at a time, in its colour.
+    const sgk::Part parts[] { sgk::Part::chords, sgk::Part::bass, sgk::Part::strings };
+    for (int i = 0; i < 3; ++i)
+    {
+        auto* b = partButtons.add (new juce::TextButton (i == 0 ? "PIANO" : i == 1 ? "BASS" : "STRINGS"));
+        b->setColour (juce::TextButton::buttonColourId, Palette::field.withAlpha (0.85f));
+        b->setColour (juce::TextButton::buttonOnColourId, partColour (parts[i]));
+        b->setColour (juce::TextButton::textColourOnId, Palette::background);
+        b->setColour (juce::TextButton::textColourOffId, partColour (parts[i]));
+        b->setConnectedEdges ((i > 0 ? juce::Button::ConnectedOnLeft : 0) | (i < 2 ? juce::Button::ConnectedOnRight : 0));
+        b->setWantsKeyboardFocus (false);
+        const auto part = parts[i];
+        b->onClick = [this, part] { showPart (part); };
+        addAndMakeVisible (b);
+    }
+    showPart (sgk::Part::chords);
+}
 
-    notes = std::move (newNotes);
-    chords = std::move (newChords);
-    length = juce::jmax (1.0, lengthInBeats);
-    mutedChords = chordsMuted;
+void PianoRollView::resized()
+{
+    auto r = getLocalBounds().removeFromBottom (22).reduced (4, 2);
+    r = r.removeFromRight (210);
+    for (auto* b : partButtons)
+        b->setBounds (r.removeFromLeft (70));
+}
+
+void PianoRollView::showPart (sgk::Part part)
+{
+    partShown = part;
+    const sgk::Part parts[] { sgk::Part::chords, sgk::Part::bass, sgk::Part::strings };
+    for (int i = 0; i < partButtons.size(); ++i)
+    {
+        partButtons[i]->setButtonText (tr (i == 0 ? "PIANO" : i == 1 ? "BASS" : "STRINGS"));
+        partButtons[i]->setToggleState (parts[i] == part, juce::dontSendNotification);
+    }
+    fitKeyboard();
+    repaint();
+}
+
+void PianoRollView::fitKeyboard()
+{
+    notes.clear();
+    for (const auto& n : allNotes)
+        if ((n.part == sgk::Part::fill ? sgk::Part::chords : n.part) == partShown)
+            notes.push_back (n);
 
     // The keyboard follows the notes, with a little room around them (two octaves at least).
     int low = 127, high = 0;
@@ -931,6 +969,18 @@ void PianoRollView::setContent (std::vector<Note> newNotes, std::vector<ChordSpa
     while (high - low < 24) { --low; ++high; }
     lowNote = juce::jmax (0, low);
     highNote = juce::jmin (127, high);
+}
+
+void PianoRollView::setContent (std::vector<Note> newNotes, std::vector<ChordSpan> newChords, double lengthInBeats, bool chordsMuted)
+{
+    if (newNotes == allNotes && newChords == chords && juce::approximatelyEqual (lengthInBeats, length) && chordsMuted == mutedChords)
+        return;
+
+    allNotes = std::move (newNotes);
+    chords = std::move (newChords);
+    length = juce::jmax (1.0, lengthInBeats);
+    mutedChords = chordsMuted;
+    fitKeyboard();
     repaint();
 }
 
@@ -1020,16 +1070,15 @@ void PianoRollView::paint (juce::Graphics& g)
     }
 
     // Notes: piano (orange), bass (pink), fills (blue); brighter while they sound.
-    const juce::Colour fillColour (Palette::fill);
     for (const auto& n : notes)
     {
         if (n.note < lowNote || n.note > highNote)
             continue;
         const float x0 = xOf (n.start), x1 = xOf (juce::jmin (n.start + n.length, length));
         auto r = juce::Rectangle<float> (x0, yOf (n.note), juce::jmax (2.0f, x1 - x0), rowH).reduced (0.5f, rowH > 5.0f ? 0.75f : 0.25f);
-        juce::Colour c = n.part == sgk::Part::bass ? Palette::accent2 : n.part == sgk::Part::fill ? fillColour : Palette::accent;
+        juce::Colour c = partColour (n.part);
         float alpha = 0.55f + 0.45f * juce::jlimit (0.0f, 1.0f, (n.velocity - 40) / 87.0f);
-        if (mutedChords && n.part != sgk::Part::bass)
+        if (mutedChords && (n.part == sgk::Part::chords || n.part == sgk::Part::fill))
             alpha *= 0.3f;
         const bool sounding = playhead >= n.start && playhead < n.start + n.length;
         g.setColour (sounding ? c.brighter (0.5f) : c.withAlpha (alpha));
@@ -2296,12 +2345,38 @@ SongOverlay::SongOverlay (FaseGroovePianoProcessor& p) : processor (p)
     addAndMakeVisible (songTile);
     addAndMakeVisible (sectionTile);
     closeButton.onClick = [this] { setVisible (false); };
+    // The instrument to export, in ClipPart order (all, piano, bass, separate tracks, strings),
+    // each in its colour; shown as ALL | PIANO | BASS | STRINGS | TRACKS.
+    for (int part = 0; part < 5; ++part)
+    {
+        auto* b = partButtons.add (new IconButton());
+        b->setClickingTogglesState (false);
+        b->onColour = part == 2 ? Palette::accent2 : part == 4 ? Palette::strings : part == 1 ? Palette::accent : Palette::text.withAlpha (0.85f);
+        b->onClick = [this, part]
+        {
+            setPart (part);
+            if (onPartChosen != nullptr)
+                onPartChosen (part);
+        };
+        addAndMakeVisible (b);
+    }
+    setPart (0);
     addAndMakeVisible (closeButton);
     refreshText();
 }
 
+void SongOverlay::setPart (int part)
+{
+    for (int i = 0; i < partButtons.size(); ++i)
+        partButtons[i]->setToggleState (i == part, juce::dontSendNotification);
+}
+
 void SongOverlay::refreshText()
 {
+    static const char* const partNames[] { "ALL", "PIANO", "BASS", "TRACKS", "STRINGS" };
+    for (int i = 0; i < partButtons.size(); ++i)
+        partButtons[i]->setButtonText (tr (partNames[i]));
+    partButtons[3]->setTooltip (tr ("Separate tracks"));
     for (auto* b : newButtons)      b->setButtonText (tr ("NEW VARIATION"));
     for (auto* b : originalButtons) b->setButtonText (tr ("ORIGINAL"));
     for (auto* box : fillBoxes)
@@ -2456,6 +2531,18 @@ void SongOverlay::resized()
     songTile.setBounds (bottom.removeFromRight (200));
     bottom.removeFromRight (8);
     sectionTile.setBounds (bottom.removeFromRight (200));
+
+    // Above the tiles: which instrument they drag (and SAVE writes).
+    auto parts = card().toNearestInt().reduced (28, 20).withTrimmedBottom (60).removeFromBottom (30);
+    parts = parts.removeFromRight (sectionTile.getRight() - sectionTile.getX() + 8 + songTile.getWidth() + 8 + saveSongButton.getWidth()).withTrimmedLeft (130);
+    const int order[] { 0, 1, 2, 4, 3 };
+    const int w = parts.getWidth() / 5;
+    for (int k = 0; k < 5; ++k)
+    {
+        auto* b = partButtons[order[k]];
+        b->setBounds (parts.removeFromLeft (k == 4 ? parts.getWidth() : w));
+        b->setConnectedEdges ((k > 0 ? juce::Button::ConnectedOnLeft : 0) | (k < 4 ? juce::Button::ConnectedOnRight : 0));
+    }
 }
 
 void SongOverlay::paint (juce::Graphics& g)
@@ -2549,6 +2636,16 @@ void SongOverlay::paint (juce::Graphics& g)
         g.drawText (parts[(size_t) i].bars <= 0 ? tr ("left out")
                     : parts[(size_t) i].variation != 0 ? tr ("own variation") : tr ("the groove as it is"),
                     label, juce::Justification::topLeft);
+    }
+
+    // The instrument row's caption.
+    if (! partButtons.isEmpty())
+    {
+        g.setColour (Palette::dim);
+        g.setFont (font (10.0f, true));
+        const auto first = partButtons[0]->getBounds().toFloat();
+        g.drawText (Localisation::upper (tr ("Instrument")), juce::Rectangle<float> (first.getX() - 128.0f, first.getY(), 120.0f, first.getHeight()),
+                    juce::Justification::centredRight);
     }
 
     // Length of the whole song.
@@ -2843,8 +2940,8 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
 {
     setWantsKeyboardFocus (true);
     for (juce::Button* b : std::initializer_list<juce::Button*> {
-             &rewindButton, &playButton, &stopButton, &drawTool, &selectTool, &eraseTool, &pianoPartButton, &bassPartButton,
-             &snapToggle, &snapButton, &quantizeButton, &showPianoButton, &showBassButton, &hearPianoButton, &hearBassButton,
+             &rewindButton, &playButton, &stopButton, &drawTool, &selectTool, &eraseTool, &pianoPartButton, &bassPartButton, &stringsPartButton,
+             &snapToggle, &snapButton, &quantizeButton, &hearPianoButton, &hearBassButton, &hearStringsButton,
              &zoomOut, &zoomIn, &fitButton, &followButton, &generatedButton, &closeButton, &helpButton })
     {
         b->setWantsKeyboardFocus (false);
@@ -2864,19 +2961,16 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
     };
     segment ({ &rewindButton, &playButton, &stopButton });
     segment ({ &drawTool, &selectTool, &eraseTool });
-    segment ({ &pianoPartButton, &bassPartButton });
+    segment ({ &pianoPartButton, &bassPartButton, &stringsPartButton });
     segment ({ &snapToggle, &snapButton, &quantizeButton });
-    segment ({ &showPianoButton, &showBassButton });
-    segment ({ &hearPianoButton, &hearBassButton });
+    segment ({ &hearPianoButton, &hearBassButton, &hearStringsButton });
     segment ({ &zoomOut, &zoomIn, &fitButton });
 
-    for (auto* b : { &bassPartButton, &hearBassButton, &showBassButton })
+    for (auto* b : { &bassPartButton, &hearBassButton })
         b->onColour = Palette::accent2;
+    for (auto* b : { &stringsPartButton, &hearStringsButton })
+        b->onColour = Palette::strings;
     playButton.onColour = Palette::accent2;
-    for (auto* b : { &showPianoButton, &showBassButton })
-        b->mutedWhenOff = true;
-    for (auto* b : { &showPianoButton, &showBassButton })
-        b->onColour = Palette::panelEdge.brighter (0.5f);
 
     rewindButton.onClick = [this] { processor.previewToStart(); };
     playButton.onClick = [this] { processor.previewToggle(); };
@@ -2893,26 +2987,11 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
         refreshText();
     };
     // Which part the pencil draws: the colours are the notes' own.
-    pianoPartButton.onClick = [this] { drawPart = sgk::Part::chords; setTool (Tool::draw); refreshText(); };
-    bassPartButton.onClick  = [this] { drawPart = sgk::Part::bass;   setTool (Tool::draw); refreshText(); };
+    pianoPartButton.onClick   = [this] { editPart (sgk::Part::chords); };
+    bassPartButton.onClick    = [this] { editPart (sgk::Part::bass); };
+    stringsPartButton.onClick = [this] { editPart (sgk::Part::strings); };
     followButton.onClick = [this] { follow = ! follow; refreshText(); };
 
-    // What the roll shows (eye): the piano, the bass or both; a hidden part is greyed out and can't be touched.
-    auto toggleView = [this] (bool bass)
-    {
-        const bool pianoVisible = shown != 2, bassVisible = shown != 1;
-        if (bass) shown = bassVisible ? (pianoVisible ? 1 : 2) : 0;
-        else      shown = pianoVisible ? (bassVisible ? 2 : 1) : 0;
-        syncPicks();
-        for (int i = 0; i < (int) notes.size(); ++i)
-            if (! isShown (notes[(size_t) i]))
-                picked[(size_t) i] = 0;
-        if (shown != 0)
-            drawPart = shown == 2 ? sgk::Part::bass : sgk::Part::chords;   // the pencil draws what you see
-        refreshText();
-    };
-    showPianoButton.onClick = [toggleView] { toggleView (false); };
-    showBassButton.onClick  = [toggleView] { toggleView (true); };
 
     // What you hear (lit = you hear it), as under the main piano roll.
     hearPianoButton.onClick = [this]
@@ -2925,6 +3004,7 @@ PianoRollEditor::PianoRollEditor (FaseGroovePianoProcessor& p) : processor (p)
         const int now = listening();
         setListening (now == 0 ? 1 : now == 2 ? 1 : 0);
     };
+    hearStringsButton.onClick = [this] { processor.toggleStrings(); refreshText(); };
     helpButton.setButtonText ("?");
 
     drawTool.onClick   = [this] { setTool (Tool::draw); };
@@ -2963,15 +3043,15 @@ void PianoRollEditor::refreshText()
     snapToggle.setTooltip (tr ("On: notes stick to the grid. Off: move them freely (Alt while dragging does the opposite)"));
     quantizeButton.setTooltip (tr ("Moves the selected note (or every note, when none is selected) onto the grid"));
 
-    pianoPartButton.setToggleState (drawPart != sgk::Part::bass, juce::dontSendNotification);
+    pianoPartButton.setToggleState (drawPart == sgk::Part::chords, juce::dontSendNotification);
     bassPartButton.setToggleState (drawPart == sgk::Part::bass, juce::dontSendNotification);
-    pianoPartButton.setTooltip (tr ("The pencil draws piano notes (orange)"));
-    bassPartButton.setTooltip (tr ("The pencil draws bass notes (pink, exported on the bass track)"));
-
-    showPianoButton.setToggleState (shown != 2, juce::dontSendNotification);
-    showBassButton.setToggleState (shown != 1, juce::dontSendNotification);
-    showPianoButton.setTooltip (tr ("Show or hide the piano notes (hidden notes are greyed out and can't be touched)"));
-    showBassButton.setTooltip (tr ("Show or hide the bass notes (hidden notes are greyed out and can't be touched)"));
+    stringsPartButton.setToggleState (drawPart == sgk::Part::strings, juce::dontSendNotification);
+    pianoPartButton.setButtonText (tr ("PIANO"));
+    bassPartButton.setButtonText (tr ("BASS"));
+    stringsPartButton.setButtonText (tr ("STRINGS"));
+    pianoPartButton.setTooltip (tr ("Edit the piano (yellow): only its notes can be touched, the others are see-through"));
+    bassPartButton.setTooltip (tr ("Edit the bass (blue): only its notes can be touched, the others are see-through"));
+    stringsPartButton.setTooltip (tr ("Edit the strings (red): only their notes can be touched, the others are see-through"));
 
     const int now = listening();
     hearPianoButton.setToggleState (now != 2, juce::dontSendNotification);
@@ -2980,6 +3060,11 @@ void PianoRollEditor::refreshText()
     hearBassButton.setIcon (now != 1 ? IconButton::Icon::speaker : IconButton::Icon::speakerOff, IconButton::Icon::bass);
     hearPianoButton.setTooltip (tr ("Hear the piano (lit) or mute it: exported clips keep everything"));
     hearBassButton.setTooltip (tr ("Hear the bass (lit) or switch it off"));
+    const bool stringsOn = processor.isStringsOn();
+    hearStringsButton.setToggleState (stringsOn, juce::dontSendNotification);
+    hearStringsButton.setIcon (stringsOn ? IconButton::Icon::speaker : IconButton::Icon::speakerOff);
+    hearStringsButton.setButtonText (tr ("STRINGS"));
+    hearStringsButton.setTooltip (tr ("Strings on (lit) or off: they hold the chords for body, on MIDI channel 3"));
 
     followButton.setToggleState (follow, juce::dontSendNotification);
     followButton.setTooltip (tr ("The view follows the playhead while the loop plays"));
@@ -3174,6 +3259,20 @@ void PianoRollEditor::sortNotes()
     picked = std::move (sortedPicks);
 }
 
+void PianoRollEditor::editPart (sgk::Part part)
+{
+    drawPart = part;
+    syncPicks();
+    for (int i = 0; i < (int) notes.size(); ++i)
+        if (! isShown (notes[(size_t) i]))
+            picked[(size_t) i] = 0;   // a selection only holds the instrument being edited
+    if (selected >= 0 && selected < (int) notes.size() && ! isShown (notes[(size_t) selected]))
+        selected = -1;
+    setTool (Tool::draw);
+    refreshText();
+    repaint();
+}
+
 int PianoRollEditor::listening() const
 {
     return ! processor.isBassOn() ? 1 : processor.chordsMuted.load() ? 2 : 0;
@@ -3255,10 +3354,9 @@ void PianoRollEditor::resized()
     const int sq = 32;
     group (tr ("Transport"), { { &rewindButton, sq }, { &playButton, sq + 6 }, { &stopButton, sq } });
     group (tr ("Tools"),     { { &drawTool, sq }, { &selectTool, sq }, { &eraseTool, sq } });
-    group (tr ("Draws"),     { { &pianoPartButton, sq }, { &bassPartButton, sq } });
+    group (tr ("Edit"),      { { &pianoPartButton, 82 }, { &bassPartButton, 74 }, { &stringsPartButton, 70 } });
     group (tr ("Grid"),      { { &snapToggle, sq }, { &snapButton, 50 }, { &quantizeButton, sq } });
-    group (tr ("Show"),      { { &showPianoButton, 50 }, { &showBassButton, 50 } });
-    group (tr ("Hear"),      { { &hearPianoButton, 50 }, { &hearBassButton, 50 } });
+    group (tr ("Hear"),      { { &hearPianoButton, 50 }, { &hearBassButton, 50 }, { &hearStringsButton, 80 } });
     group (tr ("Zoom"),      { { &zoomOut, sq }, { &zoomIn, sq }, { &fitButton, sq } });
     group (tr ("Follow"),    { { &followButton, sq } });
 
@@ -3634,6 +3732,9 @@ void PianoRollEditor::timerCallback()
         hearBassButton.setToggleState (now != 1, juce::dontSendNotification);
         hearPianoButton.setIcon (now != 2 ? IconButton::Icon::speaker : IconButton::Icon::speakerOff, IconButton::Icon::piano);
         hearBassButton.setIcon (now != 1 ? IconButton::Icon::speaker : IconButton::Icon::speakerOff, IconButton::Icon::bass);
+        const bool stringsOn = processor.isStringsOn();
+        hearStringsButton.setToggleState (stringsOn, juce::dontSendNotification);
+        hearStringsButton.setIcon (stringsOn ? IconButton::Icon::speaker : IconButton::Icon::speakerOff);
     }
 
     // Undo, a preset or BACK TO GENERATED from outside: show what plays now.
@@ -3766,18 +3867,18 @@ void PianoRollEditor::paint (juce::Graphics& g)
         }
 
         // Notes.
-        const juce::Colour fillColour (Palette::fill);
         for (int i = 0; i < (int) notes.size(); ++i)
         {
             const auto& n = notes[(size_t) i];
             if (n.note < lowNote || n.note > highNote)
                 continue;
             auto r = juce::Rectangle<float> (xOf (n.start), yOf (n.note), juce::jmax (3.0f, (float) (n.length * pixelsPerBeat)), rowH).reduced (0.5f, 1.0f);
-            const auto colour = n.part == sgk::Part::bass ? Palette::accent2 : n.part == sgk::Part::fill ? fillColour : Palette::accent;
+            const auto colour = partColour (n.part);
             const bool sounding = playhead >= n.start && playhead < n.start + n.length;
             if (! isShown (n))
             {
-                g.setColour (Palette::dim.withAlpha (0.18f));
+                // Another instrument: see-through, in its own colour, not touchable.
+                g.setColour ((sounding ? colour.brighter (0.3f) : colour).withAlpha (0.24f));
                 g.fillRoundedRectangle (r, 3.0f);
                 continue;
             }
@@ -3841,7 +3942,7 @@ void PianoRollEditor::paint (juce::Graphics& g)
                 continue;
             const float x = xOf (n.start);
             const float h = lane.getHeight() * (float) n.velocity / 127.0f;
-            const auto colour = n.part == sgk::Part::bass ? Palette::accent2 : Palette::accent;
+            const auto colour = partColour (n.part);
             g.setColour (isPicked (i) ? Palette::text : colour.withAlpha (0.8f));
             g.fillRect (x - 1.0f, lane.getBottom() - h, 3.0f, h);
             g.fillEllipse (x - 3.0f, lane.getBottom() - h - 3.0f, 7.0f, 7.0f);
@@ -4450,7 +4551,9 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         b->setColour (juce::TextButton::textColourOffId, Palette::accent);
         addAndMakeVisible (b);
     }
-    songButton.onClick = [this] { songOverlay.show(); };
+    songButton.onClick = [this] { songOverlay.setPart ((int) selectedClipPart()); songOverlay.show(); };
+    // The instrument chosen in the song window is the one of EXPORT MIDI too.
+    songOverlay.onPartChosen = [this] (int part) { clipPart.setSelectedId (part + 1, juce::sendNotificationSync); };
     morphButton.onClick = [this] { morphOverlay.show(); };
     morphOverlay.onChooseTarget = [this] (int current, std::function<void (int)> picked) { grooveBrowser.pickGroove (current, std::move (picked)); };
     dnaButton.onClick = [this] { dnaOverlay.show(); };
@@ -4748,7 +4851,12 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     clipLength.addItemList ({ "Full loop", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars", "32 bars",
                               "Song: intro > drop > outro" }, 1);
     clipLength.setSelectedId (1, juce::dontSendNotification);
-    clipPart.addItemList ({ "Chords + bass", "Chords only", "Bass only", "Separate tracks", "Strings only" }, 1);
+    // Item id = ClipPart + 1; strings only comes before separate tracks.
+    clipPart.addItem ("Everything", 1);
+    clipPart.addItem ("Piano only", 2);
+    clipPart.addItem ("Bass only", 3);
+    clipPart.addItem ("Strings only", 5);
+    clipPart.addItem ("Separate tracks", 4);
     clipPart.setSelectedId (1, juce::dontSendNotification);
 
     dragTile.createFile = [this] { return processor.writeMidiClip (selectedClipBars(), selectedClipPart()); };
@@ -4822,6 +4930,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     {
         updatePianoRoll (processor.currentSettings());
         rollEditor.show (processor.naturalLoopBeats());
+        rollEditor.editPart (pianoRoll.shownPart());   // the big roll opens on the instrument you were looking at
     };
     expandRollButton.onClick = openRollEditor;
     pianoRoll.onDoubleClick = openRollEditor;
@@ -4974,6 +5083,17 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
             const int now = juce::roundToInt (processor.apvts.getRawParameterValue (id)->load());
             processor.setParameterFromUI (id, (float) juce::jlimit (-3, 3, now + delta));
         };
+
+    // What each control changes, in the instruments' colours (the same as PIANO / BASS / STRINGS
+    // under Hear and the notes of the piano roll): amber the piano only, cyan the bass, red the
+    // strings; key, scale, extensions and the approach chord (all of them) stay neutral.
+    bass.setAccent (Palette::accent2);
+    strings.setAccent (Palette::strings);
+    for (auto* c : { &voicing, &topLine, &movement })
+        c->setAccent (Palette::accent);
+    for (auto* k : { &registerKnob, &strumKnob })
+        k->setAccent (Palette::accent);
+    rangeLabel.setColour (juce::Label::textColourId, Palette::accent);
 
     applyLanguage();
 
@@ -5471,6 +5591,7 @@ void FaseGroovePianoEditor::buildPresetMenu()
 
 void FaseGroovePianoEditor::applyLanguage()
 {
+    pianoRoll.showPart (pianoRoll.shownPart());   // its PIANO / BASS / STRINGS buttons
     for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump, &pumpRelease })
         k->refreshText();
 
@@ -5490,10 +5611,10 @@ void FaseGroovePianoEditor::applyLanguage()
         clipLength.changeItemText (i + 1, tr (lengths[i]));
     clipLength.setSelectedId (selectedLength, juce::dontSendNotification);
 
-    static const char* const parts[] { "Chords + bass", "Chords only", "Bass only", "Separate tracks", "Strings only" };
+    static const char* const parts[] { "Everything", "Piano only", "Bass only", "Separate tracks", "Strings only" };   // by ClipPart
     const int selectedPart = clipPart.getSelectedId();
-    for (int i = 0; i < clipPart.getNumItems(); ++i)
-        clipPart.changeItemText (i + 1, tr (parts[i]));
+    for (int id = 1; id <= 5; ++id)
+        clipPart.changeItemText (id, tr (parts[id - 1]));
     clipPart.setSelectedId (selectedPart, juce::dontSendNotification);
 
     diceProgression.setButtonText (tr ("RANDOM"));
@@ -5636,7 +5757,7 @@ void FaseGroovePianoEditor::applyLanguage()
     presetBrowseButton.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
     rangeSlider.setTooltip (tr ("The chords' range: no chord note goes below the left thumb or above the right one (notes outside move by an octave)"));
     clipLength.setTooltip (tr ("How long the exported MIDI clip is"));
-    clipPart.setTooltip (tr ("Which notes go into the clip: everything, chords only, bass only, separate tracks or strings only"));
+    clipPart.setTooltip (tr ("Which notes go into the clip: everything, piano only, bass only, strings only or separate tracks"));
     dragTile.setTooltip (tr ("Drag this onto a track in your DAW to drop the groove as a MIDI clip"));
     saveButton.setTooltip (tr ("Save the clip, or every part at once, as .mid files"));
     optionsButton.setTooltip (tr ("Language, interface size, tips and credits"));
@@ -5666,7 +5787,7 @@ int FaseGroovePianoEditor::selectedClipBars() const
 
 FaseGroovePianoProcessor::ClipPart FaseGroovePianoEditor::selectedClipPart() const
 {
-    return (FaseGroovePianoProcessor::ClipPart) juce::jlimit (0, 4, clipPart.getSelectedItemIndex());
+    return (FaseGroovePianoProcessor::ClipPart) juce::jlimit (0, 4, clipPart.getSelectedId() - 1);
 }
 
 void FaseGroovePianoEditor::saveClip()
@@ -5913,9 +6034,7 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
 
     std::vector<PianoRollView::Note> notes;
     {
-        auto rollSettings = s;
-        rollSettings.strings = sgk::StringsMode::off;   // the roll edits piano and bass: the strings follow the chords
-        const auto events = sgk::GrooveEngine::renderClip (rollSettings, rollLength);
+        const auto events = sgk::GrooveEngine::renderClip (s, rollLength);
         std::map<int, std::pair<double, int>> open;   // note -> start, velocity (per part)
         std::map<int, sgk::Part> parts;
         for (const auto& e : events)

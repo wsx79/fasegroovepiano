@@ -1969,7 +1969,6 @@ std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengt
     auto s = currentSettings();
     s.editedLoop = nullptr;
     s.section = sgk::Section::main;
-    s.strings = sgk::StringsMode::off;   // the piano roll edits piano and bass; the strings follow the chords by themselves
     const double toRelative = 118.0 / juce::jmax (1, s.velocity);
 
     std::vector<sgk::LoopNote> notes;
@@ -2338,7 +2337,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
                 n.length = f[1].getDoubleValue();
                 n.note = f[2].getIntValue();
                 n.velocity = f[3].getIntValue();
-                n.part = (sgk::Part) juce::jlimit (0, 2, f[4].getIntValue());
+                n.part = (sgk::Part) juce::jlimit (0, 3, f[4].getIntValue());
                 n.origin = f.size() == 6 ? f[5].getIntValue() : -1;
                 if (n.start >= 0.0 && n.start < length && n.length > 0.0 && juce::isPositiveAndBelow (n.note, 128)
                     && juce::isPositiveAndBelow (n.velocity, 128) && n.velocity > 0)

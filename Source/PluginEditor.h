@@ -21,11 +21,24 @@ namespace Palette
     const juce::Colour field      { 0xff0f1216 };   // menus, displays
     const juce::Colour accent     { 0xffffa94d };   // amber: the piano, the main actions
     const juce::Colour accent2    { 0xff4cc3f0 };   // cyan: the bass, pushes, playing
-    const juce::Colour strings    { 0xffb99af5 };   // violet: the strings
+    const juce::Colour strings    { 0xffff5a5f };   // red: the strings
     const juce::Colour fill       { 0xffb69cff };   // violet: fills
     const juce::Colour level      { 0xff5fd68a };   // green: velocity
     const juce::Colour text       { 0xffe7e9ec };
     const juce::Colour dim        { 0xff7f8794 };
+}
+
+/** Each instrument's colour, everywhere: piano amber, bass cyan, strings red, fills violet. */
+inline juce::Colour partColour (sgk::Part part)
+{
+    switch (part)
+    {
+        case sgk::Part::bass:    return Palette::accent2;
+        case sgk::Part::strings: return Palette::strings;
+        case sgk::Part::fill:    return Palette::fill;
+        case sgk::Part::chords:
+        default:                 return Palette::accent;
+    }
 }
 
 //==============================================================================
@@ -67,6 +80,8 @@ public:
     void resized() override;
     void refreshText();
     void setTip (const juce::String& tip)  { slider.setTooltip (tip); }
+    /** The caption in an instrument's colour (what the control changes). */
+    void setAccent (juce::Colour c)        { label.setColour (juce::Label::textColourId, c); }
 
 private:
     juce::String caption;
@@ -90,6 +105,16 @@ public:
     struct Group { juce::String heading; std::vector<int> items; bool columnBreakAfter = false; };
     void setGroups (std::vector<Group>);
 
+    /** Marks the control with an instrument's colour (caption and a bar left of the menu): what it changes. */
+    void setAccent (juce::Colour c)  { accent = c; label.setColour (juce::Label::textColourId, c); repaint(); }
+    void paintOverChildren (juce::Graphics& g) override
+    {
+        if (accent.isTransparent())
+            return;
+        g.setColour (accent);
+        g.fillRoundedRectangle (box.getBounds().toFloat().withWidth (3.0f).reduced (0.0f, 3.0f), 1.5f);
+    }
+
     /** A ComboBox whose list can be replaced by a custom browser (the groove menu). */
     struct PopupBox : public juce::ComboBox
     {
@@ -108,6 +133,7 @@ public:
 private:
     void rebuildGroups();
 
+    juce::Colour accent { juce::Colours::transparentBlack };
     juce::String caption;
     juce::StringArray englishItems;   // by parameter index
     juce::Label label;
@@ -280,18 +306,27 @@ public:
     void setPlayhead (double beat);
     /** The notes were edited by hand (a tag in the corner). */
     void setEdited (bool e)  { if (e != edited) { edited = e; repaint(); } }
+    /** One instrument at a time (the piano by default): its notes only, the keyboard fitted to them. */
+    void showPart (sgk::Part);
+    sgk::Part shownPart() const  { return partShown; }
     std::function<void()> onDoubleClick;
     void mouseDoubleClick (const juce::MouseEvent&) override  { if (onDoubleClick != nullptr) onDoubleClick(); }
 
     void paint (juce::Graphics&) override;
+    void resized() override;
 
     static constexpr float keyboardWidth = 34.0f, chordLaneHeight = 20.0f;
+
+    PianoRollView();
 
 private:
     juce::Rectangle<float> noteArea() const;
     float xOf (double beat) const;
+    void fitKeyboard();
 
-    std::vector<Note> notes;
+    std::vector<Note> allNotes, notes;   // every instrument / the one shown
+    sgk::Part partShown = sgk::Part::chords;
+    juce::OwnedArray<juce::TextButton> partButtons;   // PIANO, BASS, STRINGS
     std::vector<ChordSpan> chords;
     double length = 8.0, playhead = -1.0;
     bool mutedChords = false, edited = false;
@@ -465,6 +500,8 @@ private:
     sgk::GrooveEngine::VoicingReport reportA, reportB;
 };
 
+class IconButton;
+
 /** The song arrangement: length of each section, and a NEW VARIATION per section (the rest stays). */
 class SongOverlay : public juce::Component
 {
@@ -474,6 +511,9 @@ public:
     void show();
     void refreshText();
     std::function<void()> onSaveSections, onSaveSong;
+    /** Which instrument the tiles and SAVE export (a ClipPart), chosen here without leaving. */
+    std::function<void (int part)> onPartChosen;
+    void setPart (int part);
     MidiDragTile songTile;   // the whole song as one clip (set up by the editor)
     MidiDragTile sectionTile;   // the section picked on the timeline, as its own clip
     int selectedSection() const { return selected; }
@@ -499,6 +539,7 @@ private:
     juce::OwnedArray<juce::TextButton> newButtons, originalButtons;
     juce::OwnedArray<juce::ComboBox> fillBoxes;
     juce::TextButton saveButton, saveSongButton, closeButton;
+    juce::OwnedArray<IconButton> partButtons;   // in ClipPart order: all, piano, bass, tracks, strings
     bool mini = false;
 };
 
@@ -546,6 +587,8 @@ public:
     /** Opens it on the loop as it plays (`generatedLength`: the loop length when nothing is edited yet). */
     void show (double generatedLength);
     void refreshText();
+    /** The instrument edited (PIANO / BASS / STRINGS): full, the others see-through. */
+    void editPart (sgk::Part);
     std::function<std::vector<PianoRollView::ChordSpan> (double length)> chordSpans;
 
     void paint (juce::Graphics&) override;
@@ -595,8 +638,10 @@ private:
     void setTool (Tool);
     void updateCursor (const juce::MouseEvent&);
     bool follow = true;                            // the view follows the playhead
-    int shown = 0;                                 // 0 everything, 1 piano only, 2 bass only
-    bool isShown (const sgk::LoopNote& n) const    { return shown == 0 || (shown == 2) == (n.part == sgk::Part::bass); }
+    // Only the instrument chosen (PIANO / BASS / STRINGS) is edited: its notes are full, the others
+    // see-through and can't be touched.
+    static sgk::Part laneOf (sgk::Part p)          { return p == sgk::Part::fill ? sgk::Part::chords : p; }
+    bool isShown (const sgk::LoopNote& n) const    { return laneOf (n.part) == drawPart; }
 
     // Selection: several notes at once (rubber-band rectangle, Ctrl / Shift + click, Ctrl + A).
     std::vector<char> picked;                      // one flag per note, in the same order
@@ -623,11 +668,11 @@ private:
     juce::ScrollBar scrollBar { false };
     // Toolbar, in groups: transport | tools | draws | grid | view | hear | zoom.
     IconButton rewindButton { IconButton::Icon::rewind }, playButton { IconButton::Icon::play }, stopButton { IconButton::Icon::stop };
-    IconButton pianoPartButton { IconButton::Icon::piano }, bassPartButton { IconButton::Icon::bass };
+    IconButton pianoPartButton { IconButton::Icon::piano }, bassPartButton { IconButton::Icon::bass }, stringsPartButton;
     IconButton snapToggle { IconButton::Icon::magnet }, quantizeButton { IconButton::Icon::quantize };
     juce::TextButton snapButton;
-    IconButton showPianoButton { IconButton::Icon::eye, IconButton::Icon::piano }, showBassButton { IconButton::Icon::eye, IconButton::Icon::bass };
-    IconButton hearPianoButton { IconButton::Icon::speaker, IconButton::Icon::piano }, hearBassButton { IconButton::Icon::speaker, IconButton::Icon::bass };
+    IconButton hearPianoButton { IconButton::Icon::speaker, IconButton::Icon::piano }, hearBassButton { IconButton::Icon::speaker, IconButton::Icon::bass },
+               hearStringsButton { IconButton::Icon::speaker };
     IconButton zoomOut { IconButton::Icon::zoomOut }, zoomIn { IconButton::Icon::zoomIn }, fitButton { IconButton::Icon::fit },
                followButton { IconButton::Icon::follow };
     IconButton generatedButton { IconButton::Icon::reset }, closeButton { IconButton::Icon::close };

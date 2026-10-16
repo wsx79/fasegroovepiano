@@ -1637,6 +1637,18 @@ static void testStrings()
     live.clear();
     engine.render (1.5, 4.5, s, live);
     CHECK (strings (live, true).size() == 4);   // the next chord, once
+
+    // A loop edited by hand plays its own string notes, none generated on top.
+    auto loop = std::make_shared<std::vector<LoopNote>>();
+    loop->push_back ({ 0.0, 4.0, 60, 100, Part::chords });
+    loop->push_back ({ 0.0, 3.0, 67, 50, Part::strings });
+    s.editedLoop = loop;
+    s.editedLoopLength = 8.0;
+    s.section = Section::main;
+    const auto edited = strings (GrooveEngine::renderClip (s, 8.0), true);
+    CHECK (edited.size() == 1 && edited.front().note == 67);
+    s.strings = StringsMode::off;   // off: the edited strings are silent too
+    CHECK (strings (GrooveEngine::renderClip (s, 8.0), true).empty());
 }
 
 int main()

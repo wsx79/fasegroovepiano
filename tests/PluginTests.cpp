@@ -1258,9 +1258,19 @@ namespace
         CHECK (onThree > 0);
         p.setPlayHead (nullptr);
 
-        // The piano roll edits piano and bass only.
-        for (const auto& n : p.generatedLoop (8.0))
-            CHECK (n.part != sgk::Part::strings);
+        // The piano roll shows (and edits) the strings too; edited strings are saved and loaded.
+        auto loop = p.generatedLoop (8.0);
+        CHECK (std::any_of (loop.begin(), loop.end(), [] (const sgk::LoopNote& n) { return n.part == sgk::Part::strings; }));
+        for (auto& n : loop)
+            if (n.part == sgk::Part::strings) n.velocity = 33;
+        p.setEditedLoop (loop, 8.0);
+        juce::MemoryBlock state;
+        p.getStateInformation (state);
+        FaseGroovePianoProcessor q;
+        q.setStateInformation (state.getData(), (int) state.getSize());
+        const auto restored = q.editedLoop();
+        CHECK (restored != nullptr && std::any_of (restored->begin(), restored->end(),
+                                                   [] (const sgk::LoopNote& n) { return n.part == sgk::Part::strings && n.velocity == 33; }));
     }
 }
 

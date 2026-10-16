@@ -103,7 +103,7 @@ usano sempre. **AVANZATE** (in alto a destra di ciascuno) mostra tutti i comandi
 
 | Pannello | Vista semplice | Solo in AVANZATE |
 |---|---|---|
-| Armonia e scale | Tonalità, Scala, Estensioni, Voicing, Basso mano sinistra, Archi, Registro | Ottava sopra, Accordo di passaggio, Linea in alto, Movimento, Arpeggiato, Range accordi |
+| Armonia e scale | Tonalità, Scala, Estensioni, Voicing, Basso mano sinistra, Archi, Registro (v2.13: le didascalie nel colore dello strumento che cambiano: ambra solo il piano, azzurro il basso, rosso gli archi; tonalità, scala ed estensioni cambiano tutti) | Ottava sopra, Accordo di passaggio, Linea in alto, Movimento, Arpeggiato, Range accordi |
 | Groove | Groove + NUOVO RIFF, Sezione del brano, Fill, Variazione, Swing, Gate, Dinamica, Umanizza | Lunghezza groove, Stile fill, Stile feel / NUOVO FEEL, Densità |
 | Suono guida | Acceso/spento, Suono, Riverbero, Volume, Pompa | Timbro, Chorus, Uscita MIDI, Modalità play, Sidechain, Ritmo, Rilascio |
 
@@ -242,8 +242,9 @@ con Swing 30–45%, quelli UK garage con 45–55%.
 
 Il pannello grande in basso ha due viste (schede in alto a sinistra):
 
-- **PIANO ROLL** (il default): **tutte le note che suona il plug-in**, su una tastiera: accordi in
-  ambra, basso in azzurro, fill in viola, più luminose mentre suonano. Sopra le note i **nomi
+- **PIANO ROLL** (il default): **le note che suona il plug-in**, su una tastiera, **uno strumento alla
+  volta** (v2.13): **PIANO** (ambra, fill in viola), **BASSO** (azzurro) o **ARCHI** (rosso), con i
+  pulsanti in basso a destra; si parte dal piano. Le note sono più luminose mentre suonano. Sopra le note i **nomi
   degli accordi** del loop (quello che suona è acceso) e la testina bianca. Mostra il loop intero
   (finché groove e progressione tornano insieme, fino a 8 battute) esattamente come verrà esportato.
 - **GRIGLIA**: il ritmo in sedicesimi su 2 battute, da modificare a mano (sotto).
@@ -254,18 +255,20 @@ Il pannello grande in basso ha due viste (schede in alto a sinistra):
 grande**, per modificare le **note una per una**:
 
 La barra strumenti è a gruppi, ognuno con la sua didascalia: **TRASPORTO** (⏮ ▶ ■) | **STRUMENTI** |
-**DISEGNA** | **GRIGLIA** | **MOSTRA** | **ASCOLTA** | **ZOOM** | **SEGUI**; a destra **TORNA AL
+**MODIFICA** | **GRIGLIA** | **ASCOLTA** | **ZOOM** | **SEGUI**; a destra **TORNA AL
 GENERATO** e ✕ (chiudi); **?** (in basso a destra) ricorda i comandi di mouse e tastiera.
 
 - **Strumenti** (ognuno col suo cursore): la **matita** (clic per aggiungere una nota, trascina per
   allungarla; puoi comunque trascinare una nota per spostarla), la **freccia** (trascina una nota
   per spostarla, il suo **bordo destro** per cambiarne la durata) e la **gomma** (clicca una nota,
   o trascina sopra più note, per cancellarle). Anche doppio clic o clic destro eliminano una nota.
-- **DISEGNA** tastiera / chiave di basso (ambra / azzurro, i colori delle note): quale parte disegna
-  la matita.
-- **MOSTRA** (occhio + tastiera, occhio + chiave di basso): nascondi il piano o il basso; la parte
-  nascosta diventa grigia e non si può toccare. **ASCOLTA** (🔊 + tastiera, 🔊 + chiave di basso):
-  acceso = lo senti, 🔇 = muto (come sotto il piano roll principale).
+- **MODIFICA** **PIANO** (ambra) | **BASSO** (azzurro) | **ARCHI** (rosso) (v2.13): lo strumento che
+  modifichi, uno alla volta. Le sue note sono piene e si possono toccare (la matita disegna quelle);
+  gli altri due restano trasparenti nei loro colori, così vedi cosa suonano, ma non si toccano. Si
+  apre sullo strumento mostrato nel piano roll piccolo. Gli **archi** si modificano nota per nota
+  come gli altri.
+- **ASCOLTA** (🔊 + tastiera, 🔊 + chiave di basso, 🔊 ARCHI): acceso = lo senti, 🔇 = muto (come
+  sotto il piano roll principale).
 - **Selezionare più note**: trascina un rettangolo con SPOSTA (o Shift + trascina con la matita),
   Ctrl / Shift + clic per aggiungere o togliere una nota, Ctrl + A per tutte; Esc toglie la
   selezione. Trascinare, le frecce, Canc, QUANTIZZA e la corsia della dinamica lavorano su tutte.
@@ -581,7 +584,7 @@ Nel riquadro **ESPORTA MIDI**:
      (calcolata in automatico, es. 4 accordi da 1 battuta con fill ogni 8 battute → 8 battute).
    - *1–32 bars*: lunghezza fissa.
    - *Song: intro > drop > outro*: un arrangiamento completo di 60 battute (vedi capitolo 6).
-2. **Notes**: *Chords + bass* (tutto, archi compresi se accesi), *Chords only*, *Bass only*, **Solo archi** (v2.12: clip chiamate *Strings ...*) o **Tracce separate** (un solo file MIDI con una traccia Piano, una traccia Bass (sul canale 2 se *Uscita MIDI* è su *Basso sul canale 2*), una traccia Strings se sono accesi e, se ci sono fill, una traccia Fills, più tempo e marker delle sezioni: quasi tutte le DAW lo aprono come tracce separate).
+2. **Note**: *Tutto* (archi compresi se accesi), *Solo piano*, *Solo basso*, **Solo archi** (clip chiamate *Strings ...*) o **Tracce separate** (un solo file MIDI con una traccia Piano, una traccia Bass (sul canale 2 se *Uscita MIDI* è su *Basso sul canale 2*), una traccia Strings se sono accesi e, se ci sono fill, una traccia Fills, più tempo e marker delle sezioni: quasi tutte le DAW lo aprono come tracce separate).
 3. **Trascina** il riquadro **TRASCINA MIDI NELLA DAW** sulla traccia o sulla timeline della DAW
    (il riquadro mostra cosa contiene, es. *Accordi + basso · Loop completo*).
    In alternativa **SALVA .MID…**: *Salva questa clip come .mid…* salva il file dove vuoi, e
@@ -647,8 +650,9 @@ Due modi di usarla:
   intero, con i marker delle sezioni, in una sola clip), **TRASCINA LA SEZIONE** (v2.11: clicca una
   sezione sulla linea del tempo - si contorna di bianco - e trascina solo quella: la clip prende il
   suo nome, *Piano Intro*, *Piano Groove principale*, *Piano Drop*...), **SALVA BRANO .MID…** e **UN
-  .MID PER SEZIONE…** (un file MIDI per sezione da mettere su clip separate), tutti con la parte
-  scelta in *Note* di ESPORTA MIDI. Anche le clip trascinate dalla finestra principale prendono il
+  .MID PER SEZIONE…** (un file MIDI per sezione da mettere su clip separate), tutti con lo strumento
+  scelto nella riga **STRUMENTO** appena sopra (v2.13: **TUTTO** | **PIANO** | **BASSO** | **ARCHI** |
+  **TRACCE**, senza uscire dalla finestra; è la stessa scelta di *Note* in ESPORTA MIDI). Anche le clip trascinate dalla finestra principale prendono il
   nome dello strumento e della *Sezione del brano* (*Piano Intro - ...*). La durata totale è mostrata in battute e minuti. Si salva nel progetto.
 - **Automazione:** ogni manopola, menu e interruttore è un parametro della DAW, quindi puoi
   automatizzare tutto: sezione del brano, groove, fill, gate, swing, accordi della progressione,

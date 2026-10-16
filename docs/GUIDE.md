@@ -100,7 +100,7 @@ use all the time. **ADVANCED** (top right of each of them) shows every control o
 
 | Panel | Simple view | Only in ADVANCED |
 |---|---|---|
-| Harmony & Scales | Key, Scale, Extensions, Voicing, Left-hand bass, Strings, Register | Top +8va, Approach chord, Top line, Movement, Strum, Chord range |
+| Harmony & Scales | Key, Scale, Extensions, Voicing, Left-hand bass, Strings, Register (v2.13: the captions in the colour of the instrument they change: amber the piano only, cyan the bass, red the strings; key, scale and extensions change all of them) | Top +8va, Approach chord, Top line, Movement, Strum, Chord range |
 | Groove | Groove + NEW RIFF, Song section, Fills, Variation, Swing, Gate, Velocity, Humanize | Groove length, Fill style, Feel style / NEW FEEL, Density |
 | Guide sound | On/off, Sound, Reverb, Volume, Pump | Tone, Chorus, MIDI out, Play mode, Sidechain, Rate, Release |
 
@@ -236,8 +236,9 @@ Outer ring = major keys, inner ring = relative minors.
 
 The big panel at the bottom has two views (tabs at the top left):
 
-- **PIANO ROLL** (the default): **every note the plug-in plays**, on a keyboard: chords in amber,
-  bass in cyan, fills in violet, brighter while they sound. Above the notes, the **chord names** of
+- **PIANO ROLL** (the default): **the notes the plug-in plays**, on a keyboard, **one instrument at
+  a time** (v2.13): **PIANO** (amber, fills in violet), **BASS** (cyan) or **STRINGS** (red), the
+  buttons at the bottom right; the piano is shown first. Notes are brighter while they sound. Above the notes, the **chord names** of
   the loop (the playing one lit), and the white playhead. It shows the whole loop (until the groove
   and the progression come round together, up to 8 bars) exactly as it will be exported.
 - **EDIT GRID**: the rhythm in 16th notes over 2 bars, to edit by hand (below).
@@ -247,18 +248,20 @@ The big panel at the bottom has two views (tabs at the top left):
 **EDIT NOTES** (next to the tabs, or double-click the piano roll) opens the piano roll **big**, to
 edit the **notes one by one**:
 
-The toolbar is in groups, each with its caption: **TRANSPORT** (⏮ ▶ ■) | **TOOLS** | **DRAWS** |
-**GRID** | **SHOW** | **HEAR** | **ZOOM** | **FOLLOW**; **BACK TO GENERATED** and ✕ (close) on the
+The toolbar is in groups, each with its caption: **TRANSPORT** (⏮ ▶ ■) | **TOOLS** | **EDIT** |
+**GRID** | **HEAR** | **ZOOM** | **FOLLOW**; **BACK TO GENERATED** and ✕ (close) on the
 right; **?** (bottom right) recalls the mouse and keyboard commands.
 
 - **Tools** (each with its own mouse cursor): the **pencil** (click to add a note, drag to make
   it longer; you can still drag a note to move it), the **arrow** (drag a note to move it, its
   **right edge** to change its length) and the **eraser** (click a note, or drag over several,
   to delete them). Double-click or right-click also deletes a note.
-- **DRAWS** keyboard / bass clef (amber / cyan, the colours of the notes): which part the pencil draws.
-- **SHOW** (eye + keyboard, eye + bass clef): hide the piano or the bass; a hidden part is greyed out
-  and can't be touched. **HEAR** (🔊 + keyboard, 🔊 + bass clef): lit = you hear it, 🔇 = muted
-  (as under the main piano roll).
+- **EDIT** **PIANO** (amber) | **BASS** (cyan) | **STRINGS** (red) (v2.13): the instrument you edit,
+  one at a time. Its notes are full and can be touched (the pencil draws them); the other two stay
+  see-through in their colours, so you see what they play, but can't be touched. It opens on the
+  instrument shown in the small piano roll. The **strings** are edited note by note like the others.
+- **HEAR** (🔊 + keyboard, 🔊 + bass clef, 🔊 STRINGS): lit = you hear it, 🔇 = muted (as under the
+  main piano roll).
 - **Select several notes**: drag a rectangle with MOVE (or Shift + drag with the pencil),
   Ctrl / Shift + click to add or remove a note, Ctrl + A for all; Esc clears the selection. Dragging,
   the arrows, Delete, QUANTIZE and the velocity lane then work on all of them.
@@ -558,7 +561,7 @@ In the **EXPORT MIDI** panel:
      (computed automatically, e.g. 4 one-bar chords with fills every 8 bars → 8 bars).
    - *1–32 bars*: a fixed length.
    - *Song: intro > drop > outro*: a full 60-bar arrangement (see chapter 6).
-2. **Notes**: *Chords + bass* (everything, strings included when on), *Chords only*, *Bass only*, **Strings only** (v2.12: clips named *Strings ...*) or **Separate tracks** (one MIDI file with a Piano track, a Bass track (on channel 2 when *MIDI out* is set to *Bass on channel 2*), a Strings track when they are on and, if there are fills, a Fills track, plus tempo and section markers: most DAWs open it as separate tracks).
+2. **Notes**: *Everything* (strings included when on), *Piano only*, *Bass only*, **Strings only** (clips named *Strings ...*) or **Separate tracks** (one MIDI file with a Piano track, a Bass track (on channel 2 when *MIDI out* is set to *Bass on channel 2*), a Strings track when they are on and, if there are fills, a Fills track, plus tempo and section markers: most DAWs open it as separate tracks).
 3. **Drag** the **DRAG MIDI TO DAW** tile onto a track or the DAW timeline (the tile shows what
    it holds, e.g. *Chords + bass · Full loop*).
    Or use **SAVE .MID…**: *Save this clip as .mid…* saves the file wherever you want, and
@@ -624,7 +627,9 @@ Two ways to use it:
   THIS SECTION** (v2.11: click a section on the timeline - it gets a white outline - and drag just
   that one: the clip is named after it, *Piano Intro*, *Piano Main groove*, *Piano Drop*...),
   **SAVE SONG .MID…** and **ONE .MID PER SECTION…** (one MIDI file per section to drop on
-  separate clips), all with the *Notes* part chosen in EXPORT MIDI. Clips dragged from the main
+  separate clips), all with the instrument chosen in the **INSTRUMENT** row right above them (v2.13:
+  **ALL** | **PIANO** | **BASS** | **STRINGS** | **TRACKS**, without leaving the window; it is the
+  same choice as *Notes* in EXPORT MIDI). Clips dragged from the main
   window are named after the instrument and the *Song section* too (*Piano Intro - ...*). The total length is shown in
   bars and minutes. It is saved with the project.
 - **Automation:** every knob, menu and switch is a DAW parameter, so you can automate anything:

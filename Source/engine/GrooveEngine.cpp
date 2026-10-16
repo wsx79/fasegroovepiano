@@ -2249,7 +2249,12 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
 
     // The strings' pad starts with each chord; starting (or turning them on) in the middle of a
     // chord, it comes in at once for the rest of it.
-    if (s.strings != StringsMode::off && (s.strings != StringsMode::stabs || s.playsEditedLoop()) && stringsUntil < startPpq - 1.0e-6)
+    // A loop edited by hand carries its own string notes (edited in the piano roll); one edited
+    // before the strings were switched on gets them generated.
+    const bool loopHasStrings = s.playsEditedLoop()
+        && std::any_of (s.editedLoop->begin(), s.editedLoop->end(), [] (const LoopNote& n) { return n.part == Part::strings; });
+    if (s.strings != StringsMode::off && ! loopHasStrings && (s.strings != StringsMode::stabs || s.playsEditedLoop())
+        && stringsUntil < startPpq - 1.0e-6)
     {
         const int spc = std::max (1, s.stepsPerChord);
         const auto now = (long long) std::floor (startPpq / stepLength + 1.0e-9);
@@ -2272,12 +2277,14 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
         const double scale = s.velocity / 118.0 * sectionVelocityScale (s.section);
         for (auto k = (long long) std::floor (startPpq / length) - 1; k <= (long long) std::floor (endPpq / length); ++k)
             for (const auto& n : *s.editedLoop)
-                if (n.part != Part::bass || s.bass != BassMode::off)   // bass off (PIANO only) silences the edited bass too
+                if ((n.part != Part::bass || s.bass != BassMode::off)   // bass off (PIANO only) silences the edited bass too
+                    && (n.part != Part::strings || s.strings != StringsMode::off))
                     pending.push_back ({ (double) k * length + n.start, n.note,
                                          std::clamp ((int) std::lround (n.velocity * scale), 1, 127),
                                          std::max (0.02, n.length), false, n.part });
-        for (auto step = firstStep; step <= lastStep; ++step)
-            collectStrings (step, s, startPpq, endPpq);
+        if (! loopHasStrings)
+            for (auto step = firstStep; step <= lastStep; ++step)
+                collectStrings (step, s, startPpq, endPpq);
     }
     else
     {
@@ -2367,6 +2374,8 @@ std::string stabBassLine (const GroovePattern& pattern)
 std::vector<LoopNote> carryEdits (const std::vector<LoopNote>& base, const std::vector<LoopNote>& edited, double baseLength,
                                   const std::vector<LoopNote>& now, double nowLength)
 {
+    // The instrument a note belongs to (a fill is the piano's right hand).
+    auto lane = [] (Part p) { return p == Part::fill ? Part::chords : p; };
     auto same = [] (const LoopNote& a, const LoopNote& b)
     {
         return std::abs (a.start - b.start) < 1.0e-6 && std::abs (a.length - b.length) < 1.0e-6
@@ -2479,7 +2488,7 @@ std::vector<LoopNote> carryEdits (const std::vector<LoopNote>& base, const std::
             double bestDistance = 1.0e9;
             for (size_t i = 0; i < base.size(); ++i)
             {
-                if (match[i] < 0 || (base[i].part == Part::bass) != (e->part == Part::bass))
+                if (match[i] < 0 || lane (base[i].part) != lane (e->part))
                     continue;
                 const double d = std::abs (base[i].start - e->start) * 24.0 + std::abs (base[i].note - e->note);
                 if (d < bestDistance) { bestDistance = d; shift = now[(size_t) match[i]].note - base[i].note; }

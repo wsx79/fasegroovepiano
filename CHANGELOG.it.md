@@ -6,6 +6,25 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.13.0] - 2026-10-16
+
+### Aggiunto
+- **Gli archi nel piano roll**, in rosso, modificabili nota per nota come piano e basso.
+- La riga **MODIFICA** del piano roll grande: **PIANO** (ambra) | **BASSO** (azzurro) | **ARCHI**
+  (rosso). Si toccano solo le note di quello strumento; gli altri due restano trasparenti nei loro
+  colori. Sostituisce DISEGNA e MOSTRA.
+- **Finestra del brano: STRUMENTO** (**TUTTO** | **PIANO** | **BASSO** | **ARCHI** | **TRACCE**) sopra i
+  riquadri, così una sezione o il brano intero si trascinano per qualsiasi strumento senza uscire.
+
+### Cambiato
+- **Il piano roll piccolo mostra uno strumento alla volta** (prima il piano): PIANO / BASSO / ARCHI
+  in basso a destra. Il doppio clic apre quello grande sullo stesso strumento.
+- **Armonia e scale nei colori degli strumenti**: le didascalie (e una barra sui menu) dicono cosa
+  cambia ogni controllo: ambra solo il piano, azzurro il basso, rosso gli archi; tonalità, scala ed
+  estensioni (cambiano tutti) restano neutre. Il colore degli archi ora è rosso ovunque.
+- *Note* dell'export: **Tutto**, **Solo piano**, **Solo basso**, **Solo archi**, poi **Tracce
+  separate**.
+
 ## [2.12.1] - 2026-10-16
 
 ### Corretto
