@@ -406,7 +406,7 @@ private:
     sgk::GroovePattern morphSource;
     std::uint32_t morphSeed = 1;
     juce::MidiFile midiFromEvents (const std::vector<sgk::NoteEvent>&, double beats, const std::vector<sgk::GrooveEngine::Marker>*,
-                                   ClipPart, const juce::String& name) const;
+                                   ClipPart, const juce::String& name, const juce::String& songPart = {}) const;
     std::array<std::atomic<int>, sgk::maxProgressionLength> freeChords;
     void resetUserPattern();
     int lastBassMode = 1;

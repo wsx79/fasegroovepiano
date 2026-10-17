@@ -552,9 +552,10 @@ namespace
         channelsOf (2, b1, b2, bassName);
         if (mf.getNumTracks() == 4) channelsOf (3, f1, f2, fillName);
         CHECK (h1 + h2 == 0);
-        CHECK (pianoName == "Piano" && a1 > 0 && a2 == 0);
-        CHECK (bassName == "Bass" && b2 > 0 && b1 == 0);
-        CHECK (fillName == "Fills" && f1 > 0);
+        // Each track named after its instrument and the part of the song ("Piano Main groove"...).
+        CHECK (pianoName.startsWith ("Piano ") && a1 > 0 && a2 == 0);
+        CHECK (bassName.startsWith ("Bass ") && b2 > 0 && b1 == 0);
+        CHECK (fillName.startsWith ("Fills ") && f1 > 0);
         // The parts add up to the single-track clip.
         const auto all = readClip (q.writeMidiClip (3, FaseGroovePianoProcessor::ClipPart::all), true);
         CHECK (all.noteOns == a1 + b2 + f1);
@@ -1235,7 +1236,7 @@ namespace
             bool stringsTrack = false;
             for (int t = 0; t < mf.getNumTracks(); ++t)
                 for (auto* ev : *mf.getTrack (t))
-                    if (ev->message.isTextMetaEvent() && ev->message.getTextFromTextMetaEvent() == "Strings") stringsTrack = true;
+                    if (ev->message.isTextMetaEvent() && ev->message.getTextFromTextMetaEvent().startsWith ("Strings ")) stringsTrack = true;
             CHECK (stringsTrack);
         }
 
@@ -1360,7 +1361,7 @@ namespace
                 int count = 0;
                 for (auto* ev : *mf.getTrack (t))
                 {
-                    if (ev->message.isTextMetaEvent() && ev->message.getMetaEventType() == 3) name = ev->message.getTextFromTextMetaEvent();
+                    if (ev->message.isTextMetaEvent() && ev->message.getMetaEventType() == 3) name = ev->message.getTextFromTextMetaEvent().upToFirstOccurrenceOf (" ", false, false);
                     if (ev->message.isNoteOn()) ++count;
                 }
                 notes[name] = count;
@@ -1408,6 +1409,24 @@ namespace
             if (parts[(size_t) i].bars > 0)
                 CHECK (juce::approximatelyEqual (lastEvent (p.writeSongSectionClip (i, CP::bass)), lastEvent (p.writeSongSectionClip (i, CP::chords))));
     }
+    void testSectionTrackNames()
+    {
+        // A song section as separate tracks: its tracks are named "Piano Intro", "Bass Intro"...
+        FaseGroovePianoProcessor p;
+        const auto parts = p.songArrangementParts();
+        for (int i = 0; i < (int) parts.size(); ++i)
+        {
+            if (parts[(size_t) i].bars <= 0) continue;
+            const auto sectionText = Localisation::tr (sgk::sectionName ((int) parts[(size_t) i].section));
+            juce::FileInputStream in (p.writeSongSectionClip (i, FaseGroovePianoProcessor::ClipPart::tracks));
+            juce::MidiFile mf;
+            CHECK (mf.readFrom (in));
+            for (int t = 1; t < mf.getNumTracks(); ++t)
+                for (auto* ev : *mf.getTrack (t))
+                    if (ev->message.isTrackNameEvent())
+                        CHECK (ev->message.getTextFromTextMetaEvent().endsWith (" " + sectionText));
+        }
+    }
 }
 
 int main()
@@ -1446,6 +1465,7 @@ int main()
     testSegmentDiceKeepsOthers();
     testSongTracksHaveFills();
     testClipsSameLength();
+    testSectionTrackNames();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

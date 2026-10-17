@@ -1750,7 +1750,8 @@ int FaseGroovePianoProcessor::saveSongSections (const juce::File& folder, ClipPa
         std::vector<sgk::GrooveEngine::Marker> markers;
         const auto events = sgk::GrooveEngine::renderArrangement (settings, { parts[(size_t) i] }, &markers);
         const auto name = juce::String (i + 1) + " " + sgk::sectionName ((int) parts[(size_t) i].section);
-        const auto midi = midiFromEvents (events, parts[(size_t) i].bars * 4.0, &markers, part, name);
+        const auto midi = midiFromEvents (events, parts[(size_t) i].bars * 4.0, &markers, part, name,
+                                          tr (sgk::sectionName ((int) parts[(size_t) i].section)));
         auto file = folder.getChildFile (juce::File::createLegalFileName (name + " - " + clipFileName (parts[(size_t) i].bars, part)));
         file.deleteFile();
         juce::FileOutputStream out (file);
@@ -2029,14 +2030,15 @@ juce::MidiFile FaseGroovePianoProcessor::createMidiClip (int bars, ClipPart part
     {
         std::vector<sgk::GrooveEngine::Marker> markers;
         const auto events = sgk::GrooveEngine::renderArrangement (settings, songArrangementParts(), &markers);
-        return midiFromEvents (events, beats, &markers, part, name);
+        return midiFromEvents (events, beats, &markers, part, name, tr ("Song"));
     }
-    return midiFromEvents (sgk::GrooveEngine::renderClip (settings, beats), beats, nullptr, part, name);
+    return midiFromEvents (sgk::GrooveEngine::renderClip (settings, beats), beats, nullptr, part, name,
+                           tr (sgk::sectionName ((int) settings.section)));
 }
 
 juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::NoteEvent>& clipEvents, double beats,
                                                          const std::vector<sgk::GrooveEngine::Marker>* markers,
-                                                         ClipPart part, const juce::String& name) const
+                                                         ClipPart part, const juce::String& name, const juce::String& songPart) const
 {
     constexpr int ticksPerQuarter = 960;
     const bool bassOnChannel2 = juce::roundToInt (raw (ParamIDs::bassChannel)) == 1;
@@ -2092,7 +2094,9 @@ juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::
             if ((lane.part == sgk::Part::fill || lane.part == sgk::Part::strings) && ! any (lane.part))
                 continue;
             juce::MidiMessageSequence track;
-            track.addEvent (juce::MidiMessage::textMetaEvent (3, lane.name), 0.0);
+            // Named after the instrument and the part of the song ("Piano Intro", "Bass Drop"...).
+            track.addEvent (juce::MidiMessage::textMetaEvent (3, songPart.isEmpty() ? juce::String (lane.name)
+                                                                                    : juce::String (lane.name) + " " + songPart), 0.0);
             notesOf (track, [&lane] (sgk::Part p) { return p == lane.part; }, bassOnChannel2);   // same channel rule as the other exports
             file.addTrack (track);
         }
@@ -2168,8 +2172,10 @@ juce::File FaseGroovePianoProcessor::writeSongSectionClip (int partIndex, ClipPa
     std::vector<sgk::GrooveEngine::Marker> markers;
     const auto events = sgk::GrooveEngine::renderArrangement (currentSettings(), { section }, &markers);
     const juce::String instrument = instrumentName (part);
-    const auto title = instrument + " " + tr (sgk::sectionName ((int) section.section));
-    const auto midi = midiFromEvents (events, section.bars * 4.0, &markers, part, title);
+    const auto sectionText = tr (sgk::sectionName ((int) section.section));
+    // Separate tracks: the file is named after the section, its tracks "Piano Intro", "Bass Intro"...
+    const auto title = part == ClipPart::tracks ? sectionText : instrument + " " + sectionText;
+    const auto midi = midiFromEvents (events, section.bars * 4.0, &markers, part, title, sectionText);
 
     auto file = folder.getChildFile (juce::File::createLegalFileName (title + " - " + juce::String (section.bars) + "bars "
                                                                       + juce::String (juce::roundToInt (exportBpm())) + "bpm") + ".mid");

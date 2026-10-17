@@ -6,6 +6,13 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.17.1] - 2026-10-17
+
+### Fixed
+- **Separate tracks are named after the part of the song** too: *Piano Intro*, *Bass Intro*,
+  *Strings Drop*... (they were only *Piano*, *Bass*), in every export: loop, section, whole song,
+  all sections.
+
 ## [2.17.0] - 2026-10-17
 
 ### Added

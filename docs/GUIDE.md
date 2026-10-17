@@ -628,8 +628,10 @@ Two ways to use it:
   you hear it while that *Song section* loops).
   The arrangement is used by *Clip length → Song*, by *Song section* while you play, and by
   the export at the bottom: **DRAG THE WHOLE SONG** (with section markers, as one clip), **DRAG ALL
-  SECTIONS** (v2.17: every section at once, each as its own clip named after it; the DAW puts them
-  one after another), **DRAG
+  SECTIONS** (v2.17: every section at once, each as its own clip named after it; in Ableton Live's
+  Arrangement view they go one after another on one track, holding Ctrl (Windows) / Cmd (Mac) while
+  you release switches between one track and separate tracks; in the Session view they fill the
+  clip slots of a track, one under the other), **DRAG
   THIS SECTION** (v2.11: click a section on the timeline - it gets a white outline - and drag just
   that one: the clip is named after it, *Piano Intro*, *Piano Main groove*, *Piano Drop*...),
   **SAVE SONG .MID…** and **ONE .MID PER SECTION…** (one MIDI file per section to drop on
