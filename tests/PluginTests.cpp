@@ -1375,6 +1375,39 @@ namespace
             if (fills > 0) CHECK (fillOns > 0);
         }
     }
+    void testClipsSameLength()
+    {
+        // Piano, bass and strings clips of the same export reach exactly the same end, even when
+        // an instrument stops early (the song's outro has no bass): DAWs size the clip by it.
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::strings, (float) sgk::StringsMode::pad);
+        using CP = FaseGroovePianoProcessor::ClipPart;
+        auto lastEvent = [] (const juce::File& f)
+        {
+            juce::FileInputStream in (f);
+            juce::MidiFile mf;
+            mf.readFrom (in);
+            double last = 0.0;
+            for (int t = 0; t < mf.getNumTracks(); ++t)
+                for (auto* ev : *mf.getTrack (t))
+                    if (! ev->message.isMetaEvent())
+                        last = juce::jmax (last, ev->message.getTimeStamp());
+            return last;
+        };
+        for (int bars : { 2, FaseGroovePianoProcessor::songArrangement })
+        {
+            const double piano = lastEvent (p.writeMidiClip (bars, CP::chords));
+            CHECK (piano > 0.0);
+            CHECK (juce::approximatelyEqual (lastEvent (p.writeMidiClip (bars, CP::bass)), piano));
+            CHECK (juce::approximatelyEqual (lastEvent (p.writeMidiClip (bars, CP::strings)), piano));
+            CHECK (juce::approximatelyEqual (lastEvent (p.writeMidiClip (bars, CP::all)), piano));
+        }
+        // One song section too (the outro has no bass at all).
+        const auto parts = p.songArrangementParts();
+        for (int i = 0; i < (int) parts.size(); ++i)
+            if (parts[(size_t) i].bars > 0)
+                CHECK (juce::approximatelyEqual (lastEvent (p.writeSongSectionClip (i, CP::bass)), lastEvent (p.writeSongSectionClip (i, CP::chords))));
+    }
 }
 
 int main()
@@ -1412,6 +1445,7 @@ int main()
     testLastGrooveName();
     testSegmentDiceKeepsOthers();
     testSongTracksHaveFills();
+    testClipsSameLength();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

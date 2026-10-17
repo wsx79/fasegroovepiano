@@ -652,7 +652,9 @@ Due modi di usarla:
   **ORIGINALE** per tornare indietro, e il **fill** che chiude ogni sezione (come impostato nel
   pannello Groove, nessuno, o uno stile a scelta: lo senti mentre quella *Sezione del brano* gira). L'arrangiamento vale per *Lunghezza clip → Brano*, per la
   *Sezione del brano* mentre suoni e per l'esportazione in fondo: **TRASCINA IL BRANO** (il brano
-  intero, con i marker delle sezioni, in una sola clip), **TRASCINA LA SEZIONE** (v2.11: clicca una
+  intero, con i marker delle sezioni, in una sola clip), **TRASCINA TUTTE LE SEZIONI** (v2.17:
+  tutte le sezioni insieme, ognuna come clip a sé col suo nome; la DAW le mette una dopo l'altra),
+  **TRASCINA LA SEZIONE** (v2.11: clicca una
   sezione sulla linea del tempo - si contorna di bianco - e trascina solo quella: la clip prende il
   suo nome, *Piano Intro*, *Piano Groove principale*, *Piano Drop*...), **SALVA BRANO .MID…** e **UN
   .MID PER SEZIONE…** (un file MIDI per sezione da mettere su clip separate), tutti con lo strumento

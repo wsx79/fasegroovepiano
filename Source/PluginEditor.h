@@ -338,6 +338,8 @@ class MidiDragTile : public juce::Component, public juce::SettableTooltipClient
 {
 public:
     std::function<juce::File()> createFile;
+    /** When set, several files are dragged at once (the DAW lays them out one after another). */
+    std::function<juce::StringArray()> createFiles;
     std::function<void()> onDragStart, onDragEnd;
     void setSubtitle (const juce::String& text)  { if (text != subtitle) { subtitle = text; repaint(); } }
     void setTitle (const juce::String& text)     { if (text != title) { title = text; repaint(); } }   // empty: DRAG MIDI TO DAW
@@ -516,6 +518,7 @@ public:
     void setPart (int part);
     MidiDragTile songTile;   // the whole song as one clip (set up by the editor)
     MidiDragTile sectionTile;   // the section picked on the timeline, as its own clip
+    MidiDragTile sectionsTile;  // every section as its own clip, all at once (one after another in the DAW)
     int selectedSection() const { return selected; }
     /** While a clip is dragged the window shrinks: only that tile is shown. */
     void setMini (bool, juce::Component* tile = nullptr);

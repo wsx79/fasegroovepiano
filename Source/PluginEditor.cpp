@@ -1441,19 +1441,23 @@ void MidiDragTile::paint (juce::Graphics& g)
 
 void MidiDragTile::mouseDrag (const juce::MouseEvent& e)
 {
-    if (dragStarted || e.getDistanceFromDragStart() < 4 || createFile == nullptr)
+    if (dragStarted || e.getDistanceFromDragStart() < 4 || (createFile == nullptr && createFiles == nullptr))
         return;
 
     dragStarted = true;
-    const auto file = createFile();
-    if (! file.existsAsFile())
+    juce::StringArray files;
+    if (createFiles != nullptr)
+        files = createFiles();
+    else if (const auto file = createFile(); file.existsAsFile())
+        files.add (file.getFullPathName());
+    if (files.isEmpty())
         return;
 
     if (onDragStart != nullptr)
         onDragStart();
 
     juce::Component::SafePointer<MidiDragTile> safeThis (this);
-    juce::DragAndDropContainer::performExternalDragDropOfFiles ({ file.getFullPathName() }, false, this, [safeThis]
+    juce::DragAndDropContainer::performExternalDragDropOfFiles (files, false, this, [safeThis]
     {
         if (safeThis != nullptr && safeThis->onDragEnd != nullptr)
             safeThis->onDragEnd();
@@ -2346,6 +2350,7 @@ SongOverlay::SongOverlay (FaseGroovePianoProcessor& p) : processor (p)
     addAndMakeVisible (saveSongButton);
     addAndMakeVisible (songTile);
     addAndMakeVisible (sectionTile);
+    addAndMakeVisible (sectionsTile);
     closeButton.onClick = [this] { setVisible (false); };
     // The instrument to export, in ClipPart order (all, piano, bass, separate tracks, strings),
     // each in its colour; shown as ALL | PIANO | BASS | STRINGS | TRACKS.
@@ -2396,6 +2401,9 @@ void SongOverlay::refreshText()
     songTile.setTooltip (tr ("Drag the whole song (every section, with markers) onto a track in your DAW"));
     sectionTile.setTooltip (tr ("Drag only the section picked on the timeline above (click a section to pick it)"));
     sectionTile.setTitle (tr ("DRAG THIS SECTION"));
+    sectionsTile.setTitle (tr ("DRAG ALL SECTIONS"));
+    sectionsTile.setSubtitle (tr ("One clip per section"));
+    sectionsTile.setTooltip (tr ("Drag every section at once, each as its own clip (intro, main groove, break...): the DAW puts them one after another"));
     songTile.setTitle (tr ("DRAG THE WHOLE SONG"));
     updateSectionTile();
     closeButton.setButtonText (tr ("CLOSE"));
@@ -2524,19 +2532,21 @@ void SongOverlay::resized()
     }
     // Bottom: the export of the whole song.
     auto bottom = card().toNearestInt().reduced (28, 20).removeFromBottom (52);
-    closeButton.setBounds (bottom.removeFromRight (90).withSizeKeepingCentre (90, 32));
-    bottom.removeFromRight (12);
-    saveButton.setBounds (bottom.removeFromRight (200).withSizeKeepingCentre (200, 32));
+    closeButton.setBounds (bottom.removeFromRight (72).withSizeKeepingCentre (72, 32));
+    bottom.removeFromRight (10);
+    saveButton.setBounds (bottom.removeFromRight (176).withSizeKeepingCentre (176, 32));
+    bottom.removeFromRight (6);
+    saveSongButton.setBounds (bottom.removeFromRight (146).withSizeKeepingCentre (146, 32));
     bottom.removeFromRight (8);
-    saveSongButton.setBounds (bottom.removeFromRight (170).withSizeKeepingCentre (170, 32));
+    songTile.setBounds (bottom.removeFromRight (162));
     bottom.removeFromRight (8);
-    songTile.setBounds (bottom.removeFromRight (200));
+    sectionsTile.setBounds (bottom.removeFromRight (162));
     bottom.removeFromRight (8);
-    sectionTile.setBounds (bottom.removeFromRight (200));
+    sectionTile.setBounds (bottom.removeFromRight (162));
 
     // Above the tiles: which instrument they drag (and SAVE writes).
     auto parts = card().toNearestInt().reduced (28, 20).withTrimmedBottom (60).removeFromBottom (30);
-    parts = parts.removeFromRight (sectionTile.getRight() - sectionTile.getX() + 8 + songTile.getWidth() + 8 + saveSongButton.getWidth()).withTrimmedLeft (130);
+    parts = parts.withLeft (sectionsTile.getX() + 130).withRight (saveButton.getRight());   // clear of the total on the left
     const int order[] { 0, 1, 2, 4, 3 };
     const int w = parts.getWidth() / 5;
     for (int k = 0; k < 5; ++k)
@@ -4601,6 +4611,30 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
             juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->enterMiniMode (&safe->songOverlay, &safe->songOverlay.sectionTile); });
         }
     };
+    // Every section at once, each its own clip (named after it), in the song's order.
+    songOverlay.sectionsTile.createFiles = [this]
+    {
+        juce::StringArray files;
+        const auto parts = processor.songArrangementParts();
+        for (int i = 0; i < (int) parts.size(); ++i)
+            if (parts[(size_t) i].bars > 0)
+                if (const auto f = processor.writeSongSectionClip (i, selectedClipPart()); f.existsAsFile())
+                    files.add (f.getFullPathName());
+        return files;
+    };
+    songOverlay.sectionsTile.onDragStart = [this]
+    {
+        if (processor.shrinkWhileDragging)
+        {
+            juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+            juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->enterMiniMode (&safe->songOverlay, &safe->songOverlay.sectionsTile); });
+        }
+    };
+    songOverlay.sectionsTile.onDragEnd = [this]
+    {
+        juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
+        juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->exitMiniMode(); });
+    };
     songOverlay.sectionTile.onDragEnd = [this]
     {
         juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
@@ -6281,6 +6315,8 @@ void FaseGroovePianoEditor::timerCallback()
     dragTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + clipLength.getText());
     if (songOverlay.isVisible())
         songOverlay.songTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("Song"));
+    if (songOverlay.isVisible())
+        songOverlay.sectionsTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("One clip per section"));
 
     feelStyleButton.setButtonText (tr ("Feel") + ": " + tr (sgk::humanizeStyleName (juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::humanizeStyle)->load()))) + "  " + juce::String::fromUTF8 ("\xe2\x96\xbe"));
     {

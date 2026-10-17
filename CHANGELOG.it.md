@@ -12,6 +12,8 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 - **6 nuovi tipi di archi** (10 in tutto): *Stab in levare*, *Risposta al piano* (nelle pause del
   piano), *Ottavi pulsanti*, *Pad a mezza battuta*, *Ottave disco* e *Salita negli accordi* (una
   corsa di sedicesimi dentro ogni accordo).
+- **TRASCINA TUTTE LE SEZIONI** nella finestra del brano: tutte le sezioni insieme, ognuna come
+  clip a sé (intro, groove principale, break...), messe dalla DAW una dopo l'altra.
 - **12 nuove linee di basso col loro ritmo** (24 in tutto), non quello del groove: *Pumping Offbeat
   Octaves*, *Chicago Root Drive*, *Jackin' Skip*, *Afro House Groove*, *Deep Sub Hold*, *Deep
   Seventh Answer*, *Garage 2-Step Bounce*, *Speed Garage Octaves*, *Disco Walk Up*, *Nu Disco
@@ -26,6 +28,8 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 - **Arpeggiato** di nuovo come prima della v2.16.
 
 ### Corretto
+- **Le clip dello stesso export hanno la stessa lunghezza** per ogni strumento: uno strumento che
+  finisce prima (l'outro non ha basso, archi lasciati fuori) non dà più una clip più corta nella DAW.
 - **L'app standalone prende la tastiera all'apertura**: la barra spaziatrice fa partire il suono
   subito, senza cliccare prima sulla finestra.
 

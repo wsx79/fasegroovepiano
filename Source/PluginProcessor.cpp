@@ -2052,17 +2052,24 @@ juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::
 
     auto notesOf = [&] (juce::MidiMessageSequence& track, auto&& wanted, bool useBassChannel)
     {
+        int lastChannel = 1;
         for (const auto& e : clipEvents)
         {
             if (! wanted (e.part))
                 continue;
             const int channel = e.part == sgk::Part::strings ? stringsChannel : (useBassChannel && e.part == sgk::Part::bass) ? 2 : 1;
+            lastChannel = channel;
             const double tick = std::round (juce::jlimit (0.0, beats, e.ppq) * ticksPerQuarter);
             track.addEvent (e.isNoteOn() ? juce::MidiMessage::noteOn (channel, e.note, (juce::uint8) e.velocity)
                                          : juce::MidiMessage::noteOff (channel, e.note),
                             tick);
         }
-        track.addEvent (juce::MidiMessage::endOfTrack(), beats * ticksPerQuarter);
+        // Every clip as long as asked, even when its instrument stops early (an outro without
+        // bass, strings left out): many DAWs ignore the end-of-track event and cut a clip after
+        // its last event, so the end gets a silent one (pitch bend in the middle: no change).
+        const double end = beats * ticksPerQuarter;
+        track.addEvent (juce::MidiMessage::pitchWheel (lastChannel, 8192), end);
+        track.addEvent (juce::MidiMessage::endOfTrack(), end);
         track.updateMatchedPairs();
     };
 

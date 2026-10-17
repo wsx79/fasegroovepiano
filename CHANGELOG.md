@@ -12,6 +12,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **6 new kinds of strings** (10 in all): *Offbeat stabs*, *Answer the piano* (in the piano's
   rests), *Pulsing 8ths*, *Half-bar pad*, *Disco octaves* and *Rise into chords* (a run of 16ths
   into each chord).
+- **DRAG ALL SECTIONS** in the song window: every section at once, each as its own clip (intro,
+  main groove, break...), laid out one after another by the DAW.
 - **12 new bass lines with their own rhythm** (24 in all), not the groove's: *Pumping Offbeat
   Octaves*, *Chicago Root Drive*, *Jackin' Skip*, *Afro House Groove*, *Deep Sub Hold*, *Deep
   Seventh Answer*, *Garage 2-Step Bounce*, *Speed Garage Octaves*, *Disco Walk Up*, *Nu Disco
@@ -26,6 +28,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - **Strum** is back to how it was before v2.16.
 
 ### Fixed
+- **Clips of the same export have the same length** for every instrument: an instrument that stops
+  early (the outro has no bass, strings left out) no longer gives a shorter clip in the DAW.
 - **The standalone app takes the keyboard when it opens**: the space bar plays at once, without
   clicking on the window first.
 

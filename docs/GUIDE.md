@@ -627,7 +627,9 @@ Two ways to use it:
   and the **fill** that closes each section (as set in the Groove panel, none, or any fill style:
   you hear it while that *Song section* loops).
   The arrangement is used by *Clip length → Song*, by *Song section* while you play, and by
-  the export at the bottom: **DRAG THE WHOLE SONG** (with section markers, as one clip), **DRAG
+  the export at the bottom: **DRAG THE WHOLE SONG** (with section markers, as one clip), **DRAG ALL
+  SECTIONS** (v2.17: every section at once, each as its own clip named after it; the DAW puts them
+  one after another), **DRAG
   THIS SECTION** (v2.11: click a section on the timeline - it gets a white outline - and drag just
   that one: the clip is named after it, *Piano Intro*, *Piano Main groove*, *Piano Drop*...),
   **SAVE SONG .MID…** and **ONE .MID PER SECTION…** (one MIDI file per section to drop on
