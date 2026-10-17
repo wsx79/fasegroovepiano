@@ -952,6 +952,7 @@ private:
     bool isFullScreen() const;
     void toggleFullScreen();
     void keepWindowOnScreen();
+    int startTicks = 0;   // the standalone app takes the keyboard when it opens (first two seconds)
     void applySizeLimits();
     juce::Rectangle<int> sizeBeforeFullScreen;
     bool miniMode = false;

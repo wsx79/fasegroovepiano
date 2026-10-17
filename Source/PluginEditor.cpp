@@ -6117,6 +6117,20 @@ void FaseGroovePianoEditor::timerCallback()
         return;
     }
 
+    // The standalone app at start: bring its window to the front with the keyboard on the
+    // interface, so the space bar plays at once (without clicking inside first).
+    // (Tried during the first two seconds: the window may not be on screen at the first tick.)
+    if (startTicks < 60 && processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone)
+    {
+        ++startTicks;
+        if (isShowing() && ! hasKeyboardFocus (true))
+        {
+            if (auto* top = getTopLevelComponent())
+                top->toFront (true);
+            grabKeyboardFocus();
+        }
+    }
+
     // Back on the window (Alt+Tab, a click on the title bar): the keys work again at once, so
     // the space bar plays without clicking inside first.
     if (auto* peer = getPeer(); peer != nullptr && peer->isFocused() && isShowing()
@@ -6169,9 +6183,11 @@ void FaseGroovePianoEditor::timerCallback()
         slots[i]->setInversion (s.inversions[(size_t) i]);
 
     {
-        // "STRUM" and an arrow: up, down, or both (alternate).
+        // "STRUM", the direction and an arrow: up, down, or both (alternate).
+        static const char* const directions[] { "Up", "Down", "Alternate" };
         static const char* const arrows[] { "\xe2\x86\x91", "\xe2\x86\x93", "\xe2\x86\x95" };
-        const auto text = Localisation::upper (tr ("Strum")) + " " + juce::String::fromUTF8 (arrows[juce::jlimit (0, 2, s.strumDirection)]);
+        const int d = juce::jlimit (0, 2, s.strumDirection);
+        const auto text = Localisation::upper (tr ("Strum") + ": " + tr (directions[d])) + " " + juce::String::fromUTF8 (arrows[d]);
         if (strumDirButton.getButtonText() != text)
             strumDirButton.setButtonText (text);
     }
@@ -6711,17 +6727,17 @@ void FaseGroovePianoEditor::layoutFull()
             top.removeFromLeft (8);
             topLine.setBounds (top);
             content.removeFromTop (4);
-            // The chords' range on one line at the bottom: its caption, then the slider.
-            auto range = content.removeFromBottom (18);
-            rangeLabel.setBounds (range.removeFromLeft (108).withSizeKeepingCentre (108, 13));
-            rangeSlider.setBounds (range);
+            // Bottom row: Top +8va and the strum direction (a real button, easy to read).
+            auto switches = content.removeFromBottom (24);
+            octaveToggle.setBounds (switches.removeFromLeft (switches.getWidth() / 2));
+            strumDirButton.setBounds (switches.withTrimmedLeft (6));
             content.removeFromBottom (4);
+            // Right: movement, then the chords' range; left: the two knobs, as big as they fit.
             auto right = content.removeFromRight (104);
             movement.setBounds (right.removeFromTop (42));
-            right.removeFromTop (4);
-            octaveToggle.setBounds (right.removeFromTop (20));
-            right.removeFromTop (3);
-            strumDirButton.setBounds (right.removeFromTop (18).withTrimmedLeft (4));
+            right.removeFromTop (6);
+            rangeLabel.setBounds (right.removeFromTop (13));
+            rangeSlider.setBounds (right.removeFromTop (18));
             const int kw = content.getWidth() / 2;
             registerKnob.setBounds (content.removeFromLeft (kw));
             strumKnob.setBounds (content);

@@ -1678,13 +1678,12 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             const int firstNote = symbol == 'g' ? std::max (0, v.rightHand.size - 2)
                                 : fastRepeat    ? std::max (0, v.rightHand.size - 3) : 0;
 
-            // Strum ("Arpeggiato"): a real-time roll (up to ~160 ms at 100%, whatever the tempo;
-            // the knob is stronger at low settings, so 15-20% is already clearly a roll),
-            // slightly accelerating like a pianist's hand, at most most of the note, and never on
-            // ghost notes. Up, down, or alternating (up on the beat, down off it).
+            // Strum ("Arpeggiato"): a real-time roll (up to ~90 ms at 100%, whatever the tempo),
+            // slightly accelerating like a pianist's hand, never longer than half the note, and
+            // never on ghost notes. Up, down, or alternating (up on the beat, down off it).
             const int count = v.rightHand.size - firstNote;
             const double rollBeats = symbol == 'g' ? 0.0
-                                   : std::min (std::pow (std::clamp (s.strum, 0.0f, 1.0f), 0.7f) * 0.16 * std::max (30.0, s.bpm) / 60.0, len * 0.8);
+                                   : std::min (std::clamp (s.strum, 0.0f, 1.0f) * 0.09 * std::max (30.0, s.bpm) / 60.0, len * 0.45);
             const bool rollDown = s.strumDirection == 1 || (s.strumDirection == 2 && mod (pos, 4) != 0);
             auto rollOffset = [&] (int k)
             {

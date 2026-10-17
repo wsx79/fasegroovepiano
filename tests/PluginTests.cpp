@@ -1323,6 +1323,26 @@ namespace
         CHECK (r.lastGrooveName == name);
         FaseGroovePianoProcessor::grooveFolder().getChildFile (name + ".fgg").deleteFile();
     }
+    void testSegmentDiceKeepsOthers()
+    {
+        // The dice of one part (B) changes only that part of the grid.
+        for (int start : { 0, 1, 2 })
+        {
+            FaseGroovePianoProcessor p;
+            if (start == 1) p.rollNewRiff();
+            if (start == 2) p.setParameterFromUI (ParamIDs::pattern, 30.0f);
+            const auto before = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+            p.randomizeSegment (1);
+            const auto after = sgk::GrooveEngine::resolvePattern (p.currentSettings());
+            int changed = 0;
+            for (int i = 0; i < sgk::userPatternLength; ++i)
+                if (i / 8 != 1 && i != 16 && (before.rightHand[(size_t) i] != after.rightHand[(size_t) i] || before.leftHand[(size_t) i] != after.leftHand[(size_t) i]))
+                    ++changed;
+            if (changed != 0)
+                std::printf ("start %d\n%s\n%s\n%s\n%s\n", start, before.rightHand.c_str(), after.rightHand.c_str(), before.leftHand.c_str(), after.leftHand.c_str());
+            CHECK (changed == 0);
+        }
+    }
 }
 
 int main()
@@ -1358,6 +1378,7 @@ int main()
     testStrings();
     testHearIsOnlyAMute();
     testLastGrooveName();
+    testSegmentDiceKeepsOthers();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");
