@@ -755,7 +755,9 @@ static void testHousePedalAndStabBass()
         for (const auto& [step, notes] : chordHits)
         {
             topsPerBar[step / 16].insert (*std::max_element (notes.begin(), notes.end()));
-            CHECK (bassHits.count (step) == 1);
+            // A root under every chord hit, except a fast chop right after another stab (the
+            // bass before still rings there).
+            CHECK (bassHits.count (step) == 1 || chordHits.count (step - 1) == 1);
         }
         bool hooked = false;
         for (const auto& [bar, tops] : topsPerBar)
@@ -1278,7 +1280,7 @@ static void testBassLines()
     {
         GrooveSettings s;
         s.pattern = 1;
-        s.bass = (BassMode) (numBassPatternModes + i);
+        s.bass = (BassMode) bassModeForLine (i);
         s.humanize = 0.0f;
         s.swing = 0.0f;
         s.fillEveryBars = 2;
@@ -1637,6 +1639,42 @@ static void testStrings()
     live.clear();
     engine.render (1.5, 4.5, s, live);
     CHECK (strings (live, true).size() == 4);   // the next chord, once
+
+    // Every kind plays strings, inside the clip; the rhythmic ones where they belong.
+    for (int m = 1; m < numStringsModes; ++m)
+    {
+        GrooveSettings k;
+        k.keyRoot = 9; k.scale = 1; k.progressionLength = 4; k.progression = { 0, 3, 4, 6, 0, 0, 0, 0 };
+        k.pattern = 1; k.humanize = 0.0f; k.swing = 0.0f;
+        k.strings = (StringsMode) m;
+        const auto clip = GrooveEngine::renderClip (k, 16.0);
+        const auto on = strings (clip, true);
+        CHECK (! on.empty());
+        CHECK (on.size() == strings (clip, false).size());
+        for (const auto& e : on) CHECK (e.ppq < 16.0 && e.note >= 36 && e.note <= 96);
+        if (k.strings == StringsMode::offbeatStabs)
+            for (const auto& e : on) CHECK (std::abs (std::fmod (e.ppq, 1.0) - 0.5) < 1.0e-6);
+        if (k.strings == StringsMode::halfBarPad)
+            for (const auto& e : on) CHECK (std::abs (std::fmod (e.ppq, 2.0)) < 1.0e-6);
+        if (k.strings == StringsMode::discoOctaves)
+        {
+            std::map<double, std::vector<int>> at;
+            for (const auto& e : on) at[e.ppq].push_back (e.note);
+            for (const auto& [t, notes] : at) CHECK (notes.size() == 2 && std::abs (notes[0] - notes[1]) == 12);
+        }
+        if (k.strings == StringsMode::riseIntoChords)
+        {
+            int runNotes = 0;
+            for (const auto& e : on) if (std::fmod (e.ppq, 4.0) >= 3.0) ++runNotes;
+            CHECK (runNotes >= 12);   // four 16ths before each of the next chords
+        }
+        if (k.strings == StringsMode::answerStabs)
+        {
+            std::set<double> piano;
+            for (const auto& e : clip) if (e.isNoteOn() && e.part == Part::chords) piano.insert (std::round (e.ppq * 4.0));
+            for (const auto& e : on) CHECK (piano.count (std::round (e.ppq * 4.0)) == 0);
+        }
+    }
 
     // A loop edited by hand plays its own string notes, none generated on top.
     auto loop = std::make_shared<std::vector<LoopNote>>();

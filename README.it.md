@@ -30,7 +30,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 
 ## Funzioni
 
-- 🎻 **Archi (v2.12):** una terza parte per dare corpo e volume, sul canale MIDI 3: un pad con voice leading che tiene ogni accordo (anche alto o largo), oppure string stab insieme al piano. Si esportano da soli (clip *Strings ...*) o come traccia separata.
+- 🎻 **Archi (v2.12):** una terza parte per dare corpo e volume, sul canale MIDI 3: 10 tipi: un pad con voice leading che tiene ogni accordo (anche alto, largo o a mezza battuta), string stab col piano o in levare, risposte nelle pause del piano, ottavi pulsanti, ottave disco e corse dentro ogni accordo. Si esportano da soli (clip *Strings ...*) o come traccia separata.
 - ✨ **Versione 2.0: una nuova interfaccia**, pulita e professionale: aspetto da studio grafite, pulsanti con icone, un vero trasporto (▶ ❚❚ ■), interruttori chiari per sentire il piano o il basso.
 - 🎹 **Armonia:** 12 tonalità × 13 scale/modi (Maggiore, Dorian, Minore, Mixolydian, Lydian,
   Phrygian, Locrian, Minore armonica e melodica, Maggiore armonica, Lidia dominante, Misolidia b6,
@@ -71,7 +71,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 🧬 **Musical DNA:** un clic = un passo più soulful, più funky, più minimale, più energico o più raffinato.
 - 🔀 **Morphing** dal tuo groove a un altro, e **arrangiamento del brano** con una variazione per sezione e un .mid per sezione.
 - 🆎 **Voicing Coach:** confronta due voicing della tua progressione (estensione, movimento delle voci, linea in alto) e passa dall'uno all'altro mentre suona.
-- 🎸 **Libreria di linee di basso:** linee disco, funky, house e soulful con note di passaggio e note stoppate, che seguono i tuoi accordi.
+- 🎸 **Libreria di linee di basso:** 24 linee disco, funky, house, deep, garage e soulful, ognuna col suo ritmo, con note di passaggio e note stoppate, che seguono i tuoi accordi.
 - 🔎 **Analizzatore MIDI:** trascina un file .mid e stima tonalità, accordi e durata degli accordi, poi li carica come progressione.
 - 🔄 **Variazioni** ogni 4 o 8 battute, groove da 1, 2 o 4 battute, basso **walking** e a
   **ottave sincopate**, e crescendo automatico nel build-up.

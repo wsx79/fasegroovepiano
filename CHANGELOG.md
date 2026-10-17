@@ -6,6 +6,29 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.17.0] - 2026-10-17
+
+### Added
+- **6 new kinds of strings** (10 in all): *Offbeat stabs*, *Answer the piano* (in the piano's
+  rests), *Pulsing 8ths*, *Half-bar pad*, *Disco octaves* and *Rise into chords* (a run of 16ths
+  into each chord).
+- **12 new bass lines with their own rhythm** (24 in all), not the groove's: *Pumping Offbeat
+  Octaves*, *Chicago Root Drive*, *Jackin' Skip*, *Afro House Groove*, *Deep Sub Hold*, *Deep
+  Seventh Answer*, *Garage 2-Step Bounce*, *Speed Garage Octaves*, *Disco Walk Up*, *Nu Disco
+  Arpeggio*, *Funky Octave Skip*, *Soulful Hold & Push*. The bass menu groups them by genre.
+
+### Changed
+- **More musical grooves**: in a burst of three or more chords in a row the inner ones are played
+  light (ghost notes), and a bar keeps at most 8 full chords; with the *Piano stabs* bass the bass
+  no longer strikes again on every fast chop. Busy grooves breathe and the low end is cleaner.
+- **Piano tab**: the strum direction is a full-size button (*STRUM: UP ↑*), the chord range sits
+  under Movement and the knobs are bigger.
+- **Strum** is back to how it was before v2.16.
+
+### Fixed
+- **The standalone app takes the keyboard when it opens**: the space bar plays at once, without
+  clicking on the window first.
+
 ## [2.16.0] - 2026-10-17
 
 ### Changed

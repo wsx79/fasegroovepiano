@@ -31,7 +31,7 @@ Rhodes or synth.
 
 ## Features
 
-- 🎻 **Strings (v2.12):** a third part for body and volume, on MIDI channel 3: a voice-led pad that holds every chord (also high or wide), or string stabs with the piano. Exported on their own (*Strings ...* clips) or as a separate track.
+- 🎻 **Strings (v2.12):** a third part for body and volume, on MIDI channel 3: 10 kinds: a voice-led pad that holds every chord (also high, wide or half-bar), string stabs with the piano or on the offbeats, answers in the piano's rests, pulsing 8ths, disco octaves and runs into each chord. Exported on their own (*Strings ...* clips) or as a separate track.
 - ✨ **Version 2.0: a new interface**, clean and professional: graphite studio look, icon buttons, a real transport (▶ ❚❚ ■), clear switches to hear the piano or the bass.
 - 🎹 **Harmony:** 12 keys × 13 scales/modes (Major, Dorian, Minor, Mixolydian, Lydian, Phrygian,
   Locrian, Harmonic and Melodic Minor, Harmonic Major, Lydian Dominant, Mixolydian b6, Phrygian
@@ -70,7 +70,7 @@ Rhodes or synth.
 - 🧬 **Musical DNA:** one click = one step more soulful, funkier, more minimal, more energetic or more sophisticated.
 - 🔀 **Groove morph** from your groove to another one, and a **song arrangement** with a new variation per section and one .mid per section.
 - 🆎 **Voicing Coach:** compare two voicings of your progression (range, voice movement, top line) and switch between them while it plays.
-- 🎸 **Bass line library:** disco, funky, house and soulful lines with approach notes and dead notes, following your chords.
+- 🎸 **Bass line library:** 24 disco, funky, house, deep, garage and soulful lines, each with its own rhythm, approach notes and dead notes, following your chords.
 - 🔎 **MIDI analyzer:** drop a .mid file and it estimates key, chords and chord length, then loads them as the progression.
 - 🔄 **Variations** every 4 or 8 bars, grooves of 1, 2 or 4 bars, **walking** and
   **syncopated-octave** bass, and an automatic crescendo in the build-up.

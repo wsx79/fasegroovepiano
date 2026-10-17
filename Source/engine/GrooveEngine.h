@@ -100,12 +100,25 @@ const char* fillStyleName (int style) noexcept;
 /** The first 7 bass modes follow the groove's left-hand rhythm; after them come the bass lines
     of the library (each one its own rhythm and notes). */
 constexpr int numBassPatternModes = 7;
-constexpr int numBassLines = 12;
-/** Appended after the bass lines (saved projects keep their mode): the piano-stab bass on the
+constexpr int numClassicBassLines = 12;   // the first lines of the library (modes 7..18)
+constexpr int numExtraBassLines = 12;     // appended later, after the "own rhythm" mode
+constexpr int numBassLines = numClassicBassLines + numExtraBassLines;
+/** Appended after the first bass lines (saved projects keep their mode): the piano-stab bass on the
     bass row's own rhythm (what RND PIANO switches to, so the bass doesn't change with the piano). */
-constexpr int stabsOwnRhythmMode = numBassPatternModes + numBassLines;
-constexpr int numBassModes = stabsOwnRhythmMode + 1;
-constexpr bool isBassLine (BassMode m) noexcept { return (int) m >= numBassPatternModes && (int) m < stabsOwnRhythmMode; }
+constexpr int stabsOwnRhythmMode = numBassPatternModes + numClassicBassLines;
+constexpr int numBassModes = stabsOwnRhythmMode + 1 + numExtraBassLines;
+/** The library line a bass mode plays (0..numBassLines-1), or -1 for the modes that follow the groove. */
+constexpr int bassLineIndex (int mode) noexcept
+{
+    return mode >= numBassPatternModes && mode < stabsOwnRhythmMode ? mode - numBassPatternModes
+         : mode > stabsOwnRhythmMode && mode < numBassModes ? numClassicBassLines + mode - stabsOwnRhythmMode - 1 : -1;
+}
+/** The bass mode that plays a library line. */
+constexpr int bassModeForLine (int line) noexcept
+{
+    return line < numClassicBassLines ? numBassPatternModes + line : stabsOwnRhythmMode + 1 + line - numClassicBassLines;
+}
+constexpr bool isBassLine (BassMode m) noexcept { return bassLineIndex ((int) m) >= 0; }
 
 /** A bass line over two bars, one symbol per 16th, relative to the chord playing:
     R root, O octave up, 5 fifth, L fifth below, 3 the chord's 3rd, 7 its 7th, 6 sixth,
@@ -132,8 +145,10 @@ const char* bassModeName (int mode) noexcept;
 /** The strings: a third part under / around the piano for body. Pads hold each chord until the
     next one (voice-led, close to the piano's middle), the high pad sits an octave up, the wide
     pad adds the root and fifth an octave above the bass, stabs double the piano's chord hits. */
-enum class StringsMode { off = 0, pad, highPad, widePad, stabs };
-constexpr int numStringsModes = 5;
+enum class StringsMode { off = 0, pad, highPad, widePad, stabs,
+                         // appended (saved projects keep their mode):
+                         offbeatStabs, answerStabs, pulse8ths, halfBarPad, discoOctaves, riseIntoChords };
+constexpr int numStringsModes = 11;
 const char* stringsModeName (int mode) noexcept;
 
 /** Humanize per voice: Even, Pianist (top note sings, a hair early), Laid-back bass, Tight bass. */
@@ -345,6 +360,8 @@ private:
     void collectBassLine (long long step, const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,
                           const std::string& line);
     void collectStrings (long long step, const GrooveSettings& s, double startPpq, double endPpq);
+    /** The notes the strings hold on a chord (the pad, or the top note in two octaves for disco). */
+    NoteSet heldStrings (int slot, const GrooveSettings& s) const noexcept;
     static int stringsVelocity (const GrooveSettings& s) noexcept;
     void flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out);
 

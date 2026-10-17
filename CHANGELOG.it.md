@@ -6,6 +6,29 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.17.0] - 2026-10-17
+
+### Aggiunto
+- **6 nuovi tipi di archi** (10 in tutto): *Stab in levare*, *Risposta al piano* (nelle pause del
+  piano), *Ottavi pulsanti*, *Pad a mezza battuta*, *Ottave disco* e *Salita negli accordi* (una
+  corsa di sedicesimi dentro ogni accordo).
+- **12 nuove linee di basso col loro ritmo** (24 in tutto), non quello del groove: *Pumping Offbeat
+  Octaves*, *Chicago Root Drive*, *Jackin' Skip*, *Afro House Groove*, *Deep Sub Hold*, *Deep
+  Seventh Answer*, *Garage 2-Step Bounce*, *Speed Garage Octaves*, *Disco Walk Up*, *Nu Disco
+  Arpeggio*, *Funky Octave Skip*, *Soulful Hold & Push*. Il menu del basso le raggruppa per genere.
+
+### Cambiato
+- **Groove più musicali**: in una raffica di tre o più accordi di fila quelli in mezzo si suonano
+  leggeri (ghost note), e una battuta tiene al massimo 8 accordi pieni; col basso *Stab di piano*
+  il basso non ribatte più su ogni colpo veloce. I groove pieni respirano e il basso è più pulito.
+- **Linguetta Piano**: la direzione dell'arpeggiato è un pulsante grande (*ARPEGGIATO: SU ↑*), il
+  range accordi sta sotto Movimento e le manopole sono più grandi.
+- **Arpeggiato** di nuovo come prima della v2.16.
+
+### Corretto
+- **L'app standalone prende la tastiera all'apertura**: la barra spaziatrice fa partire il suono
+  subito, senza cliccare prima sulla finestra.
+
 ## [2.16.0] - 2026-10-17
 
 ### Cambiato

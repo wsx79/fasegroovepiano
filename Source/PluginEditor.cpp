@@ -4771,12 +4771,16 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
             rhythm.items.push_back (i);
         rhythm.items.push_back (sgk::stabsOwnRhythmMode);
         groups.push_back (rhythm);
-        for (int i = 0; i < sgk::numBassLines; ++i)
+        // One heading per genre (lines added later join their genre).
+        juce::StringArray genres;
+        for (const auto& line : sgk::bassLines())
+            genres.addIfNotAlreadyThere (line.genre);
+        for (const auto& genre : genres)
         {
-            const juce::String genre (sgk::bassLines()[(size_t) i].genre);
-            if (groups.back().heading != "Bass lines: " + genre)
-                groups.push_back ({ "Bass lines: " + genre, {}, false });
-            groups.back().items.push_back (sgk::numBassPatternModes + i);
+            groups.push_back ({ "Bass lines: " + genre, {}, false });
+            for (int i = 0; i < sgk::numBassLines; ++i)
+                if (genre == sgk::bassLines()[(size_t) i].genre)
+                    groups.back().items.push_back (sgk::bassModeForLine (i));
         }
         bass.setGroups (std::move (groups));
     }

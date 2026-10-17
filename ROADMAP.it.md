@@ -17,6 +17,7 @@ realizzata, passa nel [CHANGELOG](CHANGELOG.it.md).
 - v2.14.0: Armonia e scale con le linguette PIANO / BASSO / ARCHI; nuove frecce annulla / ripeti; niente mini finestra durante il trascinamento.
 - v2.15.0: ASCOLTA è solo un muto; una striscia sottile mentre trascini le clip.
 - v2.16.0: arpeggiato più chiaro; I MIEI GROOVE ricorda il nome dell'ultimo groove.
+- v2.17.0: 6 nuovi archi, 12 nuove linee di basso, groove più musicali, linguetta piano, barra spaziatrice all'avvio.
 - v2.10.0: 7 nuovi groove di piano, 18 progressioni doriche, suono house stab compatto di default.
 - v2.9.0: groove dal MIDI, tasti live, DNA Più dritto, le sezioni colorano l'armonia.
 - v2.8.0: riff casuali pieni quanto la loro densità, fill che si adattano al groove.

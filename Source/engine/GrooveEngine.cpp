@@ -71,10 +71,39 @@ namespace
 }
 
 //==============================================================================
+namespace
+{
+    /** A pianist doesn't strike a full chord on every 16th: in a burst of three or more chords
+        in a row the inner ones become light ghost notes (the top of the chord), and a bar keeps
+        at most 8 full chords (the weakest 16th offbeats, then 8th offbeats, go light first).
+        Accents, pushes and the top-note moves stay as written. */
+    void polishGroove (GroovePattern& p)
+    {
+        auto& r = p.rightHand;
+        const int n = (int) r.size();
+        auto full = [] (char c) { return isHit (c) && c != 'g'; };
+        auto lighten = [&] (int i) { if (r[(size_t) i] == 'x' && (i + 1 >= n || r[(size_t) i + 1] != '=')) { r[(size_t) i] = 'g'; return true; } return false; };
+
+        for (int i = 1; i + 1 < n; ++i)
+            if (full (r[(size_t) i - 1]) && full (r[(size_t) i]) && full (r[(size_t) i + 1]))
+                lighten (i);
+
+        for (int bar = 0; bar * 16 < n; ++bar)
+        {
+            const int from = bar * 16, to = std::min (n, from + 16);
+            auto count = [&] { int c = 0; for (int i = from; i < to; ++i) c += full (r[(size_t) i]) ? 1 : 0; return c; };
+            for (int pass = 0; pass < 2 && count() > 8; ++pass)
+                for (int i = from + 1; i < to && count() > 8; ++i)
+                    if (pass == 0 ? i % 2 == 1 : i % 4 == 2)
+                        lighten (i);
+        }
+    }
+}
+
 const std::vector<GroovePattern>& groovePatterns()
 {
     //                         |1 e & a 2 e & a 3 e & a 4 e & a |1 ...                 bar 2
-    static const std::vector<GroovePattern> patterns {
+    static const std::vector<GroovePattern> written {
         { "Classic Offbeat Stabs",
           compact ("..X. ..u. ..X. ..d. ..X. ..u. ..X. ..x."),
           compact ("x==. .... x==. .... x==. .... x==. ...."), "'90s Piano House" },
@@ -625,6 +654,13 @@ const std::vector<GroovePattern>& groovePatterns()
           compact ("x..x .... x..x ..x. x..x .... x... x..."), "Jackin' Piano" },
     };
 
+    static const std::vector<GroovePattern> patterns = []
+    {
+        auto list = written;
+        for (auto& p : list)
+            polishGroove (p);
+        return list;
+    }();
     return patterns;
 }
 
@@ -922,6 +958,19 @@ const std::vector<BassLine>& bassLines()
         { "Garage Skip",         "House",  compact ("R..R ...O ..R. .5.. R..R ...O ..R. 7.A.") },
         { "Soulful Walk",        "Soulful", compact ("R... 3... 5... A... R... 3... 5... 6.A.") },
         { "Gospel Walk",         "Soulful", compact ("R..5 O..5 3..R 6..A R..5 O..5 7..6 5.SA") },
+        // Appended (v2.17): their own rhythms, not the groove's.
+        { "Pumping Offbeat Octaves", "House",   compact ("..R. ..O. ..R. ..O. ..R. ..O. ..R. .5O.") },
+        { "Chicago Root Drive",      "House",   compact ("R.R. R.R. R.R. R.O. R.R. R.R. R.R. 5.A.") },
+        { "Jackin' Skip",            "House",   compact ("R..R ..R. .R.. R.O. R..R ..R. .R.. 5.SA") },
+        { "Afro House Groove",       "House",   compact ("R..R .5.. R.R. .O.. R..R .5.. R.R. 7.A.") },
+        { "Deep Sub Hold",           "Deep",    compact ("R=== ===. ..R= .... R=== ===. ..5= ...A") },
+        { "Deep Seventh Answer",     "Deep",    compact ("R... ..7. ..R. .5.. R... ..7. ..R. .3A.") },
+        { "Garage 2-Step Bounce",    "Garage",  compact ("R..O ..R. .5.. R..A R..O ..R. .5.. 7..A") },
+        { "Speed Garage Octaves",    "Garage",  compact ("R.RO .R.O R.RO .R.O R.RO .R.O R.RO .5.A") },
+        { "Disco Walk Up",           "Disco",   compact ("R.O. R.O. R.O. 3.5. R.O. R.O. 5.6. 7.A.") },
+        { "Nu Disco Arpeggio",       "Disco",   compact ("R.3. 5.O. R.3. 5.O. R.3. 5.O. 7.5. 3.A.") },
+        { "Funky Octave Skip",       "Funky",   compact ("R..O G.R. O.GR .O.. R..O G.R. O.GR 5.SA") },
+        { "Soulful Hold & Push",     "Soulful", compact ("R==. ...5 R==. ..O. R==. ...5 6==. ..A.") },
     };
     return lines;
 }
@@ -933,12 +982,14 @@ const char* bassModeName (int m) noexcept
     m = mod (m, numBassModes);
     if (m == stabsOwnRhythmMode)
         return "Piano stabs (own rhythm)";
-    return m < numBassPatternModes ? names[m] : bassLines()[(size_t) (m - numBassPatternModes)].name;
+    return m < numBassPatternModes ? names[m] : bassLines()[(size_t) bassLineIndex (m)].name;
 }
 
 const char* stringsModeName (int m) noexcept
 {
-    static const char* const names[numStringsModes] { "Off", "Pad", "High pad", "Wide pad", "Stabs with the piano" };
+    static const char* const names[numStringsModes] { "Off", "Pad", "High pad", "Wide pad", "Stabs with the piano",
+                                                      "Offbeat stabs", "Answer the piano", "Pulsing 8ths", "Half-bar pad",
+                                                      "Disco octaves", "Rise into chords" };
     return names[std::clamp (m, 0, numStringsModes - 1)];
 }
 
@@ -1026,7 +1077,7 @@ GroovePattern GrooveEngine::resolvePattern (const GrooveSettings& s)
 
     // A bass line from the library has its own rhythm: show that one in the grid.
     if (isBassLine (s.bass) && (s.section == Section::main || s.section == Section::drop))
-        p.leftHand = bassLineRhythm ((int) s.bass - numBassPatternModes, p.length());
+        p.leftHand = bassLineRhythm (bassLineIndex ((int) s.bass), p.length());
 
     if (s.grooveBars == 1 && p.length() > 16)
     {
@@ -1719,6 +1770,20 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
                     pending.push_back ({ t, strings[i], hitVelocity (symbol, 0.78, 60 + i), len, tie, Part::strings });
             }
         }
+        else if (s.strings == StringsMode::answerStabs && pos % 2 == 0 && symbol != '=')
+        {
+            // Strings answering the piano: a short chord on an 8th where the piano rests (and
+            // doesn't play right before or after), so they fill the gaps.
+            const int n = pattern.length();
+            const char before = pattern.rightHand[(size_t) mod (pos - 1, n)], after = pattern.rightHand[(size_t) mod (pos + 1, n)];
+            if (! isHit (before) && ! isHit (after) && before != '=')
+            {
+                const auto& strings = cachedStrings[(size_t) slotForStep (step, s)];
+                const double t = hitTime (5, human * hv.chordTime);
+                for (int i = 0; i < strings.size; ++i)
+                    pending.push_back ({ t, strings[i], hitVelocity ('x', 0.72, 60 + i), 1.6 * stepLength, false, Part::strings });
+            }
+        }
     }
 
     // ---- left hand (bass) ----
@@ -1729,7 +1794,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         // bass, and intro, outro and breakdown have no bass anyway.
         if (s.section == Section::main || s.section == Section::drop)
         {
-            collectBassLine (step, s, chords, bassLines()[(size_t) std::clamp ((int) bassMode - numBassPatternModes, 0, numBassLines - 1)].line);
+            collectBassLine (step, s, chords, bassLines()[(size_t) std::clamp (bassLineIndex ((int) bassMode), 0, numBassLines - 1)].line);
             return;
         }
         bassMode = BassMode::root;
@@ -1758,7 +1823,15 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             const char l = pattern.leftHand[(size_t) i];
             return isHit (l) && ! rhStabAt (i) && ! rhStabAt (i - 1) && ! rhStabAt (i + 1);
         };
-        if (lhHitAt (pos) || rhStabAt (pos))
+        // No new bass note on a fast chop (a stab right after another one) unless it is an
+        // accent or a push: the bass of the stab before keeps ringing (as stabBassLine shows).
+        auto bassUnder = [&] (int i)
+        {
+            const auto n = (int) pattern.rightHand.size();
+            const char r = pattern.rightHand[(size_t) ((i % n + n) % n)];
+            return rhStabAt (i) && ! (rhStabAt (i - 1) && ! (r == 'X' || r == 'U' || r == 'D' || r == '>'));
+        };
+        if (lhHitAt (pos) || bassUnder (pos))
         {
             // Both hands' hits on one line, so a note never rings over the next stab.
             auto& line = stabLine;
@@ -1766,8 +1839,10 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             for (int i = 0; i < (int) line.size() && i < (int) pattern.rightHand.size(); ++i)
             {
                 const char r = pattern.rightHand[(size_t) i];
-                if (rhStabAt (i))
+                if (bassUnder (i))
                     line[(size_t) i] = r == '>' ? 'x' : (r == 'u' || r == 'd') ? 'x' : (r == 'U' || r == 'D') ? 'X' : r;
+                else if (rhStabAt (i))
+                    line[(size_t) i] = '.';
                 else if (isHit (line[(size_t) i]) && ! lhHitAt (i))
                     line[(size_t) i] = '.';
             }
@@ -2179,22 +2254,119 @@ void GrooveEngine::voiceStrings (const GrooveSettings& s, const std::array<Chord
     }
 }
 
+namespace
+{
+    /** Strings that hold a chord (and come in at once when playing starts in the middle of one). */
+    bool stringsHold (StringsMode m) noexcept
+    {
+        return m == StringsMode::pad || m == StringsMode::highPad || m == StringsMode::widePad
+            || m == StringsMode::discoOctaves || m == StringsMode::riseIntoChords;
+    }
+    /** Strings played from the piano's own hits (over a loop edited by hand they hold like a pad). */
+    bool stringsFollowPiano (StringsMode m) noexcept
+    {
+        return m == StringsMode::stabs || m == StringsMode::answerStabs;
+    }
+}
+
+NoteSet GrooveEngine::heldStrings (int slot, const GrooveSettings& s) const noexcept
+{
+    const auto& pad = cachedStrings[(size_t) std::clamp (slot, 0, maxProgressionLength - 1)];
+    if (s.strings != StringsMode::discoOctaves || pad.size == 0)
+        return pad;
+    // Disco strings: the melody note (the pad's top) in two octaves.
+    NoteSet octaves;
+    octaves.add (pad.highest());
+    octaves.add (pad.highest() + 12);
+    return octaves;
+}
+
 void GrooveEngine::collectStrings (long long step, const GrooveSettings& s, double startPpq, double endPpq)
 {
-    // The pads: each chord held until the next one (stabs are played with the piano's hits;
-    // over a loop edited by hand they hold like a pad).
-    if (s.strings == StringsMode::off || (s.strings == StringsMode::stabs && ! s.playsEditedLoop()))
+    auto mode = s.strings;
+    if (mode == StringsMode::off)
         return;
+    if (stringsFollowPiano (mode))
+    {
+        if (! s.playsEditedLoop())
+            return;   // played in collectStep, with the piano's hits
+        mode = StringsMode::pad;
+    }
+
     const int spc = std::max (1, s.stepsPerChord);
     const double t = (double) step * stepLength;
-    if (mod (step, spc) != 0 || t < startPpq || t >= endPpq)
+    if (t < startPpq || t >= endPpq)
         return;
 
-    const auto& notes = cachedStrings[(size_t) slotForStep (step, s)];
-    const double len = spc * stepLength;
-    for (int i = 0; i < notes.size; ++i)
-        pending.push_back ({ t, notes[i], stringsVelocity (s), len - 0.02, false, Part::strings });
-    stringsUntil = t + len;
+    const int slot = slotForStep (step, s);
+    const int inChord = mod (step, spc);
+    const int vel = stringsVelocity (s);
+    auto play = [&] (const NoteSet& notes, double length, int velocity)
+    {
+        for (int i = 0; i < notes.size; ++i)
+            pending.push_back ({ t, notes[i], std::clamp (velocity, 1, 127), std::max (0.05, length), false, Part::strings });
+    };
+
+    switch (mode)
+    {
+        case StringsMode::offbeatStabs:
+            // Short chords on every "&" of the beat, the disco / house string skank.
+            if (mod (step, 4) == 2)
+                play (cachedStrings[(size_t) slot], 1.5 * stepLength, vel + 4);
+            return;
+
+        case StringsMode::pulse8ths:
+            // The chord struck again on every 8th, almost legato; the beats a little louder.
+            if (mod (step, 2) == 0)
+                play (cachedStrings[(size_t) slot], 1.8 * stepLength, mod (step, 4) == 0 ? vel + 6 : vel - 8);
+            return;
+
+        case StringsMode::halfBarPad:
+            // Held, struck again every half bar (beats 1 and 3).
+            if (mod (step, 8) == 0)
+                play (cachedStrings[(size_t) slot], std::min (8, spc - inChord) * stepLength - 0.02, inChord == 0 ? vel : vel - 10);
+            return;
+
+        case StringsMode::riseIntoChords:
+        {
+            // The pad, then on the last beat before the next chord a run of 16ths up to its top note.
+            const bool runs = spc >= 8;
+            if (inChord == 0)
+            {
+                play (cachedStrings[(size_t) slot], (spc - (runs ? 4 : 0)) * stepLength - 0.02, vel);
+                stringsUntil = t + (spc - (runs ? 4 : 0)) * stepLength;
+            }
+            else if (runs && inChord >= spc - 4)
+            {
+                const auto& next = cachedStrings[(size_t) slotForStep (step + spc - inChord, s)];
+                if (next.size > 0)
+                {
+                    // Four notes of the scale climbing into the next chord's top note.
+                    const auto& scale = scaleIntervals (s.scale);
+                    auto inScale = [&] (int n) { return std::find (scale.begin(), scale.end(), mod (n - s.keyRoot, 12)) != scale.end(); };
+                    int n = next.highest();
+                    for (int k = 0; k < spc - inChord; ++k)
+                        do --n; while (! inScale (n));
+                    NoteSet one;
+                    one.add (n);
+                    play (one, 0.9 * stepLength, vel - 6 + 4 * (inChord - (spc - 4)));
+                }
+            }
+            return;
+        }
+
+        case StringsMode::pad:
+        case StringsMode::highPad:
+        case StringsMode::widePad:
+        case StringsMode::discoOctaves:
+        default:
+            if (inChord == 0)
+            {
+                play (heldStrings (slot, s), spc * stepLength - 0.02, mode == StringsMode::discoOctaves ? vel + 4 : vel);
+                stringsUntil = t + spc * stepLength;
+            }
+            return;
+    }
 }
 
 void GrooveEngine::flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out)
@@ -2253,7 +2425,8 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
     // before the strings were switched on gets them generated.
     const bool loopHasStrings = s.playsEditedLoop()
         && std::any_of (s.editedLoop->begin(), s.editedLoop->end(), [] (const LoopNote& n) { return n.part == Part::strings; });
-    if (s.strings != StringsMode::off && ! loopHasStrings && (s.strings != StringsMode::stabs || s.playsEditedLoop())
+    if (s.strings != StringsMode::off && ! loopHasStrings
+        && (stringsHold (s.strings) || (stringsFollowPiano (s.strings) && s.playsEditedLoop()))
         && stringsUntil < startPpq - 1.0e-6)
     {
         const int spc = std::max (1, s.stepsPerChord);
@@ -2262,7 +2435,7 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
         if (std::abs ((double) now * stepLength - startPpq) > 1.0e-9 || mod (now, spc) != 0)
             if (chordEnd - startPpq > stepLength)
             {
-                const auto& notes = cachedStrings[(size_t) slotForStep (now, s)];
+                const auto notes = heldStrings (slotForStep (now, s), s);
                 for (int i = 0; i < notes.size; ++i)
                     pending.push_back ({ startPpq, notes[i], stringsVelocity (s), chordEnd - startPpq - 0.02, false, Part::strings });
                 stringsUntil = chordEnd;
@@ -2362,7 +2535,12 @@ std::string stabBassLine (const GroovePattern& pattern)
     {
         const char r = pattern.rightHand[(size_t) i];
         const bool ownHit = isHit (pattern.leftHand[(size_t) i]) && ! rhStabAt (i) && ! rhStabAt (i - 1) && ! rhStabAt (i + 1);
-        if (rhStabAt (i))
+        // The left hand doesn't strike again on a fast chop (a stab right after another one):
+        // only accents and pushes get the bass there, so busy riffs don't turn into a muddy bass.
+        const bool chop = rhStabAt (i) && rhStabAt (i - 1) && ! (r == 'X' || r == 'U' || r == 'D' || r == '>');
+        if (chop)
+            line[(size_t) i] = '.';
+        else if (rhStabAt (i))
             line[(size_t) i] = r == '>' ? '>' : (r == 'X' || r == 'U' || r == 'D') ? 'X' : (r == 'u' || r == 'd') ? 'x' : r;
         else if (isHit (line[(size_t) i]) && ! ownHit)
             line[(size_t) i] = '.';

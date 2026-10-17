@@ -1105,9 +1105,9 @@ void FaseGroovePianoProcessor::rerollHand (bool bass)
     // With a bass line from the library, RND BASS picks another line.
     if (bass && sgk::isBassLine (s.bass))
     {
-        const int current = (int) s.bass - sgk::numBassPatternModes;
+        const int current = sgk::bassLineIndex ((int) s.bass);
         const int next = (current + 1 + juce::Random::getSystemRandom().nextInt (sgk::numBassLines - 1)) % sgk::numBassLines;
-        setParameterFromUI (ParamIDs::bass, (float) (sgk::numBassPatternModes + next));
+        setParameterFromUI (ParamIDs::bass, (float) sgk::bassModeForLine (next));
         return;
     }
 
@@ -1204,7 +1204,7 @@ void FaseGroovePianoProcessor::editStep (bool bassRow, int displayedStep, char s
     if (bassRow && sgk::isBassLine (currentSettings().bass))
     {
         const auto s = currentSettings();
-        current.leftHand = sgk::bassLineRhythm ((int) s.bass - sgk::numBassPatternModes, sgk::userPatternLength);
+        current.leftHand = sgk::bassLineRhythm (sgk::bassLineIndex ((int) s.bass), sgk::userPatternLength);
         setParameterFromUI (ParamIDs::bass, (float) sgk::BassMode::root);
     }
 
