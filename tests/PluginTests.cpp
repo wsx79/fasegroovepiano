@@ -1343,6 +1343,38 @@ namespace
             CHECK (changed == 0);
         }
     }
+    void testSongTracksHaveFills()
+    {
+        // The whole song as separate tracks: the fills have their own track (when there are fills).
+        for (int fills : { 0, 2 })
+        {
+            FaseGroovePianoProcessor p;
+            p.setParameterFromUI (ParamIDs::fills, (float) fills);
+            juce::FileInputStream in (p.writeMidiClip (FaseGroovePianoProcessor::songArrangement, FaseGroovePianoProcessor::ClipPart::tracks));
+            juce::MidiFile mf;
+            CHECK (mf.readFrom (in));
+            std::map<juce::String, int> notes;
+            for (int t = 1; t < mf.getNumTracks(); ++t)
+            {
+                juce::String name;
+                int count = 0;
+                for (auto* ev : *mf.getTrack (t))
+                {
+                    if (ev->message.isTextMetaEvent() && ev->message.getMetaEventType() == 3) name = ev->message.getTextFromTextMetaEvent();
+                    if (ev->message.isNoteOn()) ++count;
+                }
+                notes[name] = count;
+            }
+            const auto all = sgk::GrooveEngine::renderArrangement (p.currentSettings(), p.songArrangementParts());
+            int fillOns = 0;
+            for (const auto& e : all) if (e.isNoteOn() && e.part == sgk::Part::fill) ++fillOns;
+            std::printf ("fills param %d: engine fill notes %d, tracks:", fills, fillOns);
+            for (const auto& [n, c] : notes) std::printf (" %s=%d", n.toRawUTF8(), c);
+            std::printf ("\n");
+            CHECK (notes["Fills"] == fillOns);
+            if (fills > 0) CHECK (fillOns > 0);
+        }
+    }
 }
 
 int main()
@@ -1379,6 +1411,7 @@ int main()
     testHearIsOnlyAMute();
     testLastGrooveName();
     testSegmentDiceKeepsOthers();
+    testSongTracksHaveFills();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");
