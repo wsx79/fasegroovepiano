@@ -6,6 +6,18 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.16.0] - 2026-10-17
+
+### Changed
+- **Strum is much clearer**: up to ~160 ms at 100% (was 90), stronger at low settings and no
+  longer cut to half the note, so short stabs roll too: 15-20% is already a clear roll, heard and
+  seen in the piano roll.
+
+### Added
+- **MY GROOVES remembers your groove**: the groove you saved or opened last (also with the project)
+  is offered as **Save “its name”** (save over it in one click), ticked in the list, and already
+  written in *Save this groove as…*.
+
 ## [2.15.0] - 2026-10-16
 
 ### Fixed

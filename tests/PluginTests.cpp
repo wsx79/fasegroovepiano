@@ -1306,6 +1306,23 @@ namespace
         p.hearPart (true);
         CHECK (p.isBassHeard());
     }
+    void testLastGrooveName()
+    {
+        // MY GROOVES offers the name of the groove saved or opened last (kept with the project).
+        FaseGroovePianoProcessor p;
+        const juce::String name = "zz test groove name";
+        CHECK (p.saveGroove (name));
+        CHECK (p.lastGrooveName == name);
+        juce::MemoryBlock state;
+        p.getStateInformation (state);
+        FaseGroovePianoProcessor q;
+        q.setStateInformation (state.getData(), (int) state.getSize());
+        CHECK (q.lastGrooveName == name);
+        FaseGroovePianoProcessor r;
+        CHECK (r.loadGroove (FaseGroovePianoProcessor::grooveFolder().getChildFile (name + ".fgg")));
+        CHECK (r.lastGrooveName == name);
+        FaseGroovePianoProcessor::grooveFolder().getChildFile (name + ".fgg").deleteFile();
+    }
 }
 
 int main()
@@ -1340,6 +1357,7 @@ int main()
     testSongSectionClip();
     testStrings();
     testHearIsOnlyAMute();
+    testLastGrooveName();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

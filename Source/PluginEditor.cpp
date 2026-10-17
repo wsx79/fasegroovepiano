@@ -5454,6 +5454,11 @@ void FaseGroovePianoEditor::applyImport (const juce::File& file, const sgk::Harm
 void FaseGroovePianoEditor::showGrooveMenu()
 {
     juce::PopupMenu menu, remove;
+    // The groove you saved or opened last: save over it in one click (or under a new name).
+    const auto last = processor.lastGrooveName;
+    const bool lastExists = last.isNotEmpty() && FaseGroovePianoProcessor::grooveFolder().getChildFile (last + ".fgg").existsAsFile();
+    if (lastExists)
+        menu.addItem (3, tr ("Save") + juce::String::fromUTF8 (" \xe2\x80\x9c") + last + juce::String::fromUTF8 ("\xe2\x80\x9d"));
     menu.addItem (1, tr ("Save this groove as..."));
     menu.addSeparator();
 
@@ -5462,7 +5467,7 @@ void FaseGroovePianoEditor::showGrooveMenu()
         menu.addItem (-1, tr ("No saved grooves yet"), false);
     for (int i = 0; i < files.size(); ++i)
     {
-        menu.addItem (100 + i, files[i].getFileNameWithoutExtension());
+        menu.addItem (100 + i, files[i].getFileNameWithoutExtension(), true, files[i].getFileNameWithoutExtension() == last);
         remove.addItem (1000 + i, files[i].getFileNameWithoutExtension());
     }
 
@@ -5478,6 +5483,8 @@ void FaseGroovePianoEditor::showGrooveMenu()
 
         if (result == 1)
             safe->saveGrooveAs();
+        else if (result == 3)
+            safe->processor.saveGroove (safe->processor.lastGrooveName);
         else if (result == 2)
         {
             FaseGroovePianoProcessor::grooveFolder().createDirectory();
@@ -5493,7 +5500,10 @@ void FaseGroovePianoEditor::showGrooveMenu()
 void FaseGroovePianoEditor::saveGrooveAs()
 {
     auto* window = new juce::AlertWindow (tr ("Save groove"), tr ("Name:"), juce::MessageBoxIconType::NoIcon, this);
-    window->addTextEditor ("name", tr ("My groove"));
+    // The name of the groove saved or opened last, ready to save over (or to change).
+    window->addTextEditor ("name", processor.lastGrooveName.isNotEmpty() ? processor.lastGrooveName : tr ("My groove"));
+    if (auto* field = window->getTextEditor ("name"))
+        field->selectAll();
     window->addButton (tr ("Save"), 1, juce::KeyPress (juce::KeyPress::returnKey));
     window->addButton (tr ("Cancel"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
 

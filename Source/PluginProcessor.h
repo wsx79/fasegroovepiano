@@ -266,6 +266,8 @@ public:
     /** Saves the rhythm grid (both hands, in the A B C D order you hear) as a .fgg file. */
     bool saveGroove (const juce::String& name);
     bool loadGroove (const juce::File&);
+    /** The groove saved or loaded last (its name): SAVE offers it again, saved with the project. */
+    juce::String lastGrooveName;
     static juce::Array<juce::File> presetFiles();
     bool savePreset (const juce::String& name);
     bool loadPreset (const juce::File&);

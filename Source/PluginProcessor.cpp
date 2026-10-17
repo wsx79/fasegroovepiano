@@ -685,7 +685,10 @@ bool FaseGroovePianoProcessor::saveGroove (const juce::String& name)
         xml.setAttribute ("chordLevels", velRight.joinIntoString (","));
         xml.setAttribute ("bassLevels", velLeft.joinIntoString (","));
     }
-    return xml.writeTo (grooveFolder().getChildFile (clean + ".fgg"));
+    const bool ok = xml.writeTo (grooveFolder().getChildFile (clean + ".fgg"));
+    if (ok)
+        lastGrooveName = clean;
+    return ok;
 }
 
 bool FaseGroovePianoProcessor::loadGroove (const juce::File& file)
@@ -705,6 +708,7 @@ bool FaseGroovePianoProcessor::loadGroove (const juce::File& file)
     sgk::GroovePattern p;
     p.rightHand = right.toStdString();
     p.leftHand = left.toStdString();
+    lastGrooveName = file.getFileNameWithoutExtension();
     for (int i = 0; i < sgk::numSegments; ++i)   // saved as heard: play the parts in order
         setParameterFromUI (ParamIDs::segment (i), (float) i);
     setUserPattern (p);
@@ -758,7 +762,9 @@ bool FaseGroovePianoProcessor::loadPreset (const juce::File& file)
     const auto scale = editorScale;
     const auto shrink = shrinkWhileDragging;
     const auto advanced = advancedView;
+    const auto grooveName = lastGrooveName;
     setStateInformation (data.getData(), (int) data.getSize());
+    lastGrooveName = grooveName;
     editorScale = scale;
     shrinkWhileDragging = shrink;
     advancedView = advanced;
@@ -2210,6 +2216,7 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("lastBassMode", lastBassMode, nullptr);
     state.setProperty ("soloBass", chordsMuted.load(), nullptr);
     state.setProperty ("bassMuted", bassMuted.load(), nullptr);
+    state.setProperty ("lastGroove", lastGrooveName, nullptr);
     {
         juce::StringArray bars, variations, fills;
         for (int i = 0; i < numSongParts; ++i)
@@ -2313,6 +2320,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     lastBassMode = juce::jlimit (1, sgk::numBassModes - 1, (int) state.getProperty ("lastBassMode", 1));
     chordsMuted = (bool) state.getProperty ("soloBass", false);
     bassMuted = (bool) state.getProperty ("bassMuted", false);
+    lastGrooveName = state.getProperty ("lastGroove", juce::String()).toString();
     {
         resetSong();
         const auto bars = juce::StringArray::fromTokens (state.getProperty ("songBars").toString(), ",", {});

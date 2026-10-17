@@ -1103,12 +1103,28 @@ static void testStrum()
 
     const auto fast = spread (120.0, 0), slow = spread (60.0, 0);
     const double fastSpan = fast.back().ppq - fast.front().ppq, slowSpan = slow.back().ppq - slow.front().ppq;
-    CHECK (fastSpan > 0.1 && fastSpan < 0.2);            // ~90 ms at 120 BPM = 0.18 beats
+    CHECK (fastSpan > 0.25 && fastSpan < 0.34);          // ~160 ms at 120 BPM = 0.32 beats
     CHECK (std::abs (slowSpan - fastSpan / 2.0) < 0.01);
     CHECK (fast.front().note < fast.back().note);         // up: low note first
 
     const auto down = spread (120.0, 1);
     CHECK (down.front().note > down.back().note);         // down: top note first
+
+    // A short stab at 20% still rolls clearly (more than ~25 ms between first and last note).
+    GrooveSettings st;
+    st.humanize = 0.0f; st.swing = 0.0f; st.bass = BassMode::off; st.pattern = 1; st.strum = 0.2f; st.bpm = 124.0;
+    std::map<double, std::pair<double, double>> chord;   // first hit -> its notes' first / last time
+    double biggest = 0.0;
+    for (const auto& e : GrooveEngine::renderClip (st, 8.0))
+        if (e.isNoteOn() && e.part == Part::chords)
+        {
+            const double bucket = std::floor (e.ppq * 4.0 + 0.001);
+            auto [it, fresh] = chord.try_emplace (bucket, e.ppq, e.ppq);
+            it->second.first = std::min (it->second.first, e.ppq);
+            it->second.second = std::max (it->second.second, e.ppq);
+            biggest = std::max (biggest, it->second.second - it->second.first);
+        }
+    CHECK (biggest * 60.0 / 124.0 > 0.025);
 }
 
 static void testPatternsWellFormed()

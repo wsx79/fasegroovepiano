@@ -150,7 +150,7 @@ Degrees are relative to the scale: change the key or mode and the progression fo
 | **Strings** (v2.12) | A third part for **body and volume**: strings that follow your chords, always on **MIDI channel 3**. *Off* (the default, so old projects sound the same), **Pad** (each chord held until the next one: 3rd, 7th, 5th and root in close position around the middle of the keyboard, voice-led so the notes move as little as possible), **High pad** (three voices an octave up: air over the piano), **Wide pad** (the pad plus root and 5th an octave above the bass: the fullest) or **Stabs with the piano** (the strings double the piano's chord hits, ghost notes excluded: the classic house string stab). They sit a little under the piano's level; in the break they come up. Starting the loop in the middle of a chord, the pad comes in at once. **STRINGS** next to PIANO and BASS (under *Hear*) switches them on and off and remembers the last kind. The guide sound plays them with a string ensemble. |
 | **Approach chord** | The gospel **slide**: on the last 16th before each chord change the next chord (and its bass note) is played a half step **from above** or **from below**, then resolves. Only where the hand is already playing, so a muted bass stays muted. |
 | **Top +8va** | Doubles the top note of every chord an octave higher: the bright, ringing classic house piano sound. |
-| **Strum** | Rolls the chord like a real pianist instead of hitting all the notes at once. The roll is a real time (up to about 90 ms at 100%, whatever the tempo), slightly accelerating like a hand, never longer than half the note, and ghost notes are never rolled. The small button under the knob sets the **direction**: *Up* (low to high), *Down* (high to low) or *Alternate* (up on the beat, down off it, the gospel way). 20–40% sounds natural. |
+| **Strum** | Rolls the chord like a real pianist instead of hitting all the notes at once. The roll is a real time (up to about 160 ms at 100%, whatever the tempo; v2.16: clearly audible and visible already at 15-20%), slightly accelerating like a hand, never longer than most of the note, and ghost notes are never rolled. The small button under the knob sets the **direction**: *Up* (low to high), *Down* (high to low) or *Alternate* (up on the beat, down off it, the gospel way). 15–30% sounds natural. |
 | **Register** | Moves the right hand up or down. Chords automatically pick the inversion closest to the previous one (voice leading), so the progression flows without jumps. Down low the chords keep clear of the bass by themselves (v2.7): below E3 only roots and 5ths, and no chord note under the bass. |
 | **Chord range** (ADVANCED) | A slider with two thumbs: no chord note goes below the left one or above the right one (a note outside moves by an octave). "all" = no limit. |
 
@@ -488,7 +488,9 @@ Everything you save goes into **`Documents/Fase Groove Piano/`**, easy to find a
 **MY GROOVES** (above the rhythm grid): *Save this groove as…* stores the grid as you hear it
 (both hands, parts in the A B C D order you chose) under a name. The list loads it back as
 the *User pattern*, keeping the chords and everything else. Use it to build your own library of
-grooves and try them on any progression.
+grooves and try them on any progression. The plug-in remembers the groove you saved or opened
+last (v2.16, with the project too): the menu offers **Save “its name”** to save over it in one
+click, the list ticks it, and *Save this groove as…* starts with its name.
 
 ### STYLE, 🎲 TOTAL and RESET
 

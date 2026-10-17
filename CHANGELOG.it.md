@@ -6,6 +6,18 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.16.0] - 2026-10-17
+
+### Cambiato
+- **Arpeggiato molto più chiaro**: fino a ~160 ms al 100% (prima 90), più forte già con valori
+  bassi e non più tagliato a metà nota, così si arpeggiano anche gli stab corti: al 15-20% è già
+  un arpeggio chiaro, che si sente e si vede nel piano roll.
+
+### Aggiunto
+- **I MIEI GROOVE ricorda il tuo groove**: il groove salvato o aperto per ultimo (anche nel
+  progetto) ti viene proposto come **Salva “il suo nome”** (sovrascrivi con un clic), è spuntato
+  nell'elenco ed è già scritto in *Salva questo groove come…*.
+
 ## [2.15.0] - 2026-10-16
 
 ### Corretto
