@@ -211,7 +211,7 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     editRefresher.callback = [this] { refreshEditedLoop(); };
     editRefresher.startTimer (150);
     linkRefresher.callback = [this] { updateLink(); };
-    linkRefresher.startTimer (400);
+    linkRefresher.startTimer (150);
 
     pads = std::make_unique<PadController> (*this);
 
@@ -1541,10 +1541,19 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         startPpq = hostPpq;
     else if (running)
     {
-        // Free-running clock: from the start, or where PAUSE left it; REWIND jumps back.
-        startPpq = wasRunning || ! previewFromStart.load() ? internalPpq : 0.0;
-        if (previewRewind.exchange (false))
-            startPpq = 0.0;
+        // Linked: the shared clock, so the linked plug-ins play the same beat at the same time.
+        // Else a free-running clock: from the start, or where PAUSE left it; REWIND jumps back.
+        if (const double anchor = linkAnchor.load(); linkOn.load() && preview && anchor >= 0.0)
+        {
+            startPpq = juce::jmax (0.0, (juce::Time::getMillisecondCounterHiRes() - anchor) * bpm / 60000.0);
+            previewRewind = false;
+        }
+        else
+        {
+            startPpq = wasRunning || ! previewFromStart.load() ? internalPpq : 0.0;
+            if (previewRewind.exchange (false))
+                startPpq = 0.0;
+        }
         if (! wasRunning)
             previewFromStart = true;   // a resume happens once; the next start is from the top again
     }
@@ -2205,9 +2214,9 @@ void FaseGroovePianoProcessor::setLinked (bool on)
     if (on == linkOn.load())
         return;
     linkOn = on;
-    linkSeen = {};
-    linkGenre = -2;
-    linkSwing = -1.0f;
+    linkSeenText = {};
+    linkShared = {};
+    linkAnchor = -1.0;
 }
 
 int FaseGroovePianoProcessor::currentGenre() const
@@ -2223,6 +2232,52 @@ int FaseGroovePianoProcessor::currentGenre() const
     return -1;
 }
 
+FaseGroovePianoProcessor::LinkState FaseGroovePianoProcessor::localLinkState() const
+{
+    LinkState s;
+    s.genre = currentGenre();
+    s.swing = raw (ParamIDs::swing);
+    s.bpm = raw (ParamIDs::tempo);
+    s.sync = raw (ParamIDs::tempoSync) > 0.5f;
+    s.playing = previewOn.load();
+    s.paused = ! s.playing && ! previewFromStart.load();
+    s.anchor = s.playing ? linkAnchor.load() : -1.0;
+    return s;
+}
+
+void FaseGroovePianoProcessor::previewPlay()
+{
+    // Linked: the clock starts now (or where PAUSE left it), and everyone plays from it.
+    if (linkOn.load())
+        linkAnchor = juce::Time::getMillisecondCounterHiRes() - (previewFromStart.load() ? 0.0 : internalPpq * 60000.0 / lastBpm.load());
+    previewOn = true;
+    updateLink();
+}
+
+void FaseGroovePianoProcessor::previewPause()
+{
+    previewOn = false;
+    previewFromStart = false;
+    updateLink();
+}
+
+void FaseGroovePianoProcessor::previewStop()
+{
+    previewOn = false;
+    previewFromStart = true;
+    linkAnchor = -1.0;
+    updateLink();
+}
+
+void FaseGroovePianoProcessor::previewToStart()
+{
+    previewFromStart = true;
+    previewRewind = true;
+    if (linkOn.load() && previewOn.load())
+        linkAnchor = juce::Time::getMillisecondCounterHiRes();
+    updateLink();
+}
+
 void FaseGroovePianoProcessor::updateLink()
 {
     if (! linkOn.load())
@@ -2231,13 +2286,13 @@ void FaseGroovePianoProcessor::updateLink()
     const auto file = linkFile();
     const auto me = juce::String::toHexString ((juce::pointer_sized_int) this);
 
-    // Someone else changed it: take their genre (the first groove of it, unless this one is
-    // already of that genre) and their swing.
-    if (file.existsAsFile() && file.getLastModificationTime() != linkSeen)
-    {
-        linkSeen = file.getLastModificationTime();
-        if (auto xml = juce::parseXML (file))
-            if (xml->getStringAttribute ("instance") != me)
+    // Someone else changed it: take what changed (their genre: the first groove of it, unless
+    // this one is already of that genre).
+    if (file.existsAsFile())
+        if (const auto text = file.loadFileAsString(); text != linkSeenText)
+        {
+            linkSeenText = text;
+            if (auto xml = juce::parseXML (text); xml != nullptr && xml->getStringAttribute ("instance") != me)
             {
                 const auto genre = xml->getStringAttribute ("genre");
                 const auto& genres = sgk::grooveCategories();
@@ -2254,29 +2309,57 @@ void FaseGroovePianoProcessor::updateLink()
                     }
                 if (xml->hasAttribute ("swing"))
                     setParameterFromUI (ParamIDs::swing, juce::jlimit (0.0f, 1.0f, (float) xml->getDoubleAttribute ("swing")));
-                linkGenre = currentGenre();
-                linkSwing = raw (ParamIDs::swing);
+                if (xml->hasAttribute ("bpm"))
+                    setParameterFromUI (ParamIDs::tempo, (float) xml->getDoubleAttribute ("bpm"));
+                if (xml->hasAttribute ("sync"))
+                    setParameterFromUI (ParamIDs::tempoSync, xml->getBoolAttribute ("sync") ? 1.0f : 0.0f);
+                if (xml->hasAttribute ("playing"))
+                {
+                    const double anchor = xml->getDoubleAttribute ("anchor", -1.0);
+                    if (xml->getBoolAttribute ("playing") && anchor >= 0.0)
+                    {
+                        linkAnchor = anchor;
+                        previewOn = true;
+                    }
+                    else
+                    {
+                        previewOn = false;
+                        previewFromStart = ! xml->getBoolAttribute ("paused");
+                        linkAnchor = -1.0;
+                    }
+                }
+                linkShared = localLinkState();
                 return;
             }
-    }
+        }
 
-    // We changed it: tell the others (a random or user groove has no genre: only the swing).
-    const int genre = currentGenre();
-    const float swing = raw (ParamIDs::swing);
-    if (genre != linkGenre || std::abs (swing - linkSwing) > 0.001f)
+    // We changed it: tell the others (a random or user groove has no genre). A new tempo while
+    // playing keeps the position on the clock.
+    auto now = localLinkState();
+    if (now.playing && now.anchor >= 0.0 && linkShared.bpm > 0.0f && std::abs (now.bpm - linkShared.bpm) >= 0.01f && ! now.sync)
     {
-        juce::XmlElement xml ("FaseGrooveLink");
-        xml.setAttribute ("from", JucePlugin_Name);
-        xml.setAttribute ("instance", me);
-        if (genre >= 0)
-            xml.setAttribute ("genre", sgk::grooveCategories()[(size_t) genre]);
-        xml.setAttribute ("swing", swing);   // 0 straight, 1 a triplet shuffle
-        file.getParentDirectory().createDirectory();
-        if (xml.writeTo (file))
-            linkSeen = file.getLastModificationTime();
-        linkGenre = genre;
-        linkSwing = swing;
+        const double t = juce::Time::getMillisecondCounterHiRes();
+        const double beat = (t - now.anchor) * linkShared.bpm / 60000.0;
+        linkAnchor = now.anchor = t - beat * 60000.0 / now.bpm;
     }
+    if (now.sameAs (linkShared))
+        return;
+
+    juce::XmlElement xml ("FaseGrooveLink");
+    xml.setAttribute ("from", JucePlugin_Name);
+    xml.setAttribute ("instance", me);
+    if (now.genre >= 0)
+        xml.setAttribute ("genre", sgk::grooveCategories()[(size_t) now.genre]);
+    xml.setAttribute ("swing", now.swing);   // 0 straight, 1 a triplet shuffle
+    xml.setAttribute ("bpm", now.bpm);
+    xml.setAttribute ("sync", now.sync);
+    xml.setAttribute ("playing", now.playing);
+    xml.setAttribute ("paused", now.paused);
+    xml.setAttribute ("anchor", juce::String (now.anchor, 3));
+    file.getParentDirectory().createDirectory();
+    if (xml.writeTo (file))
+        linkSeenText = file.loadFileAsString();
+    linkShared = now;
 }
 
 //==============================================================================

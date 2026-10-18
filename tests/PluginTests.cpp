@@ -1475,6 +1475,31 @@ namespace
         else
             CHECK (false);
 
+        // The tempo and the play button: the drums started playing a second ago at 120 BPM, so
+        // the piano plays from beat 2 too.
+        drums.setAttribute ("bpm", 120.0);
+        drums.setAttribute ("sync", false);
+        drums.setAttribute ("playing", true);
+        drums.setAttribute ("anchor", juce::String (juce::Time::getMillisecondCounterHiRes() - 1000.0, 3));
+        drums.writeTo (link);
+        p.updateLink();
+        CHECK (p.previewOn.load());
+        CHECK (value (p, ParamIDs::tempoSync) < 0.5f);
+        CHECK (std::abs (value (p, ParamIDs::tempo) - 120.0f) < 0.01f);
+        p.setRateAndBufferSizeDetails (44100.0, 512);
+        p.prepareToPlay (44100.0, 512);
+        {
+            juce::AudioBuffer<float> out (2, 512);
+            juce::MidiBuffer none;
+            p.processBlock (out, none);
+        }
+        CHECK (std::abs (p.uiPpq.load() - 2.0) < 0.05);
+        drums.setAttribute ("playing", false);
+        drums.setAttribute ("anchor", "-1");
+        drums.writeTo (link);
+        p.updateLink();
+        CHECK (! p.previewOn.load());
+
         // Saved with the project.
         juce::MemoryBlock data;
         p.getStateInformation (data);

@@ -5706,7 +5706,7 @@ void FaseGroovePianoEditor::applyLanguage()
     newRiffButton.setButtonText (tr ("NEW RIFF"));
     syncButton.setButtonText (tr ("SYNC DAW"));
     linkButton.setButtonText (tr ("LINK DRUMS"));
-    linkButton.setTooltip (tr ("Link with Fase Groove Drums: the same genre and swing in both (change it in either one)"));
+    linkButton.setTooltip (tr ("Link with Fase Groove Drums: the same genre, swing, tempo and play button in both, on the same beat (change it in either one)"));
     sequencerToggle.setButtonText (tr ("Sequencer"));
     sequencerToggle.setTooltip (tr ("Off: the groove doesn't play with the DAW, e.g. when the dragged MIDI clip plays on this track (no doubled notes). Incoming MIDI still plays the guide sound; the play button still previews."));
     optionsButton.setButtonText (tr ("OPTIONS"));

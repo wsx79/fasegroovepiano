@@ -6,6 +6,13 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.19.0] - 2026-10-18
+
+### Aggiunto
+- **LINK DRUMS condivide anche il trasporto**: tempo, SYNC DAW e i pulsanti play / pausa / stop
+  seguono Fase Groove Drums (dalla 0.9), e suonano lo stesso beat nello stesso momento, anche senza
+  la DAW (condividono un unico orologio).
+
 ## [2.18.0] - 2026-10-18
 
 ### Aggiunto

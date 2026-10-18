@@ -19,6 +19,7 @@ Ideas planned for the next versions of **Fase Groove Piano**. When one ships, it
 - v2.16.0: clearer strum; MY GROOVES remembers the last groove name.
 - v2.17.0: 6 new strings, 12 new bass lines, more musical grooves, piano tab layout, space bar at start.
 - v2.18.0: LINK DRUMS, the same genre and swing as Fase Groove Drums.
+- v2.19.0: LINK DRUMS shares the tempo and the play button, on the same beat.
 - v2.10.0: 7 new piano grooves, 18 Dorian progressions, compact house-stab sound by default.
 - v2.9.0: groove from MIDI, live keys, DNA Straighter, sections colour the harmony.
 - v2.8.0: random riffs as busy as their density, fills that suit the groove.

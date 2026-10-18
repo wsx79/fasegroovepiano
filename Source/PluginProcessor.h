@@ -338,10 +338,11 @@ public:
     std::atomic<bool> previewOn { false };   // play the groove without the host transport
     // Transport of the preview: play resumes where pause left it; stop and rewind go back to the start.
     std::atomic<bool> previewFromStart { true }, previewRewind { false };
-    void previewPlay()   { previewOn = true; }
-    void previewPause()  { previewOn = false; previewFromStart = false; }
-    void previewStop()   { previewOn = false; previewFromStart = true; }
-    void previewToStart() { previewFromStart = true; previewRewind = true; }
+    // (With LINK on, play / pause / stop / back to the start are shared with the linked plug-ins.)
+    void previewPlay();
+    void previewPause();
+    void previewStop();
+    void previewToStart();
     void previewToggle() { previewOn.load() ? previewPause() : previewPlay(); }
     std::atomic<double> lastBpm { 120.0 };   // tempo in use (DAW or manual)
     /** The tempo exported files use: the manual BPM as set now, or the DAW's (as last reported). */
@@ -367,9 +368,24 @@ private:
         void timerCallback() override { if (callback) callback(); }
     } editRefresher, linkRefresher;
     std::atomic<bool> linkOn { false };
-    juce::Time linkSeen;            // the link file's time when last read or written
-    int linkGenre = -2;             // what was last shared (-1: no genre, a random or user groove)
-    float linkSwing = -1.0f;
+    // What the linked plug-ins share: genre, swing, tempo, DAW sync and the play button's clock
+    // (anchor: the system time, in high-resolution ms, at which that clock was at beat 0).
+    struct LinkState
+    {
+        int genre = -2;   // -1: no genre (a random or user groove)
+        float swing = -1.0f, bpm = -1.0f;
+        bool sync = false, playing = false, paused = false;
+        double anchor = -1.0;
+        bool sameAs (const LinkState& o) const noexcept
+        {
+            return genre == o.genre && std::abs (swing - o.swing) < 0.001f && std::abs (bpm - o.bpm) < 0.01f && sync == o.sync
+                && playing == o.playing && paused == o.paused && std::abs (anchor - o.anchor) < 1.0;
+        }
+    };
+    LinkState linkShared;                      // what the link file says (or what we wrote)
+    juce::String linkSeenText;
+    std::atomic<double> linkAnchor { -1.0 };   // the shared clock while playing, -1 = none
+    LinkState localLinkState() const;
     int currentGenre() const;
     float raw (const char* id) const;
 
