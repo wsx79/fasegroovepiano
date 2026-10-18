@@ -6,6 +6,13 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.18.0] - 2026-10-18
+
+### Added
+- **LINK DRUMS** (Transport & tempo): the piano and **Fase Groove Drums** share the same genre and
+  swing. Change the groove's genre or the swing in either one and the other follows; saved with
+  the project.
+
 ## [2.17.1] - 2026-10-17
 
 ### Fixed

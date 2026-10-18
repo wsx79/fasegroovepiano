@@ -966,6 +966,7 @@ private:
 
     // Tempo
     juce::TextButton syncButton { "SYNC DAW" };
+    juce::TextButton linkButton { "LINK DRUMS" };
     juce::ToggleButton sequencerToggle { "Sequencer" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> sequencerAttachment;
     juce::Slider tempoSlider;

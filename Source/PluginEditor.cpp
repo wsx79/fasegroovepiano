@@ -4773,7 +4773,16 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     dawTempo.setJustificationType (juce::Justification::centred);
     dawTempo.setFont (font (15.0f, true));
 
-    for (auto* c : std::initializer_list<juce::Component*> { &syncButton, &tempoSlider, &dawTempo, &optionsButton })
+    // LINK: the same genre and swing as Fase Groove Drums.
+    linkButton.setClickingTogglesState (true);
+    linkButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    linkButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent);
+    linkButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    linkButton.setColour (juce::TextButton::textColourOnId, Palette::background);
+    linkButton.setToggleState (p.isLinked(), juce::dontSendNotification);
+    linkButton.onClick = [this] { processor.setLinked (linkButton.getToggleState()); };
+
+    for (auto* c : std::initializer_list<juce::Component*> { &syncButton, &linkButton, &tempoSlider, &dawTempo, &optionsButton })
         addAndMakeVisible (c);
 
     // Groove menu: grouped by genre, in columns.
@@ -5696,6 +5705,8 @@ void FaseGroovePianoEditor::applyLanguage()
     diceProgression.setButtonText (tr ("RANDOM"));
     newRiffButton.setButtonText (tr ("NEW RIFF"));
     syncButton.setButtonText (tr ("SYNC DAW"));
+    linkButton.setButtonText (tr ("LINK DRUMS"));
+    linkButton.setTooltip (tr ("Link with Fase Groove Drums: the same genre and swing in both (change it in either one)"));
     sequencerToggle.setButtonText (tr ("Sequencer"));
     sequencerToggle.setTooltip (tr ("Off: the groove doesn't play with the DAW, e.g. when the dragged MIDI clip plays on this track (no doubled notes). Incoming MIDI still plays the guide sound; the play button still previews."));
     optionsButton.setButtonText (tr ("OPTIONS"));
@@ -6145,6 +6156,7 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
 void FaseGroovePianoEditor::timerCallback()
 {
     keepWindowOnScreen();
+    linkButton.setToggleState (processor.isLinked(), juce::dontSendNotification);
 
     if (miniMode)
     {
@@ -6675,7 +6687,10 @@ void FaseGroovePianoEditor::layoutFull()
     chordLab.setBounds (0, 0, baseWidth, baseHeight);
     {
         // Transport: to the start, play / pause, stop; then the tempo.
-        sequencerToggle.setBounds (tempoArea.reduced (12, 6).removeFromTop (18).removeFromRight (104));
+        auto titleRow = tempoArea.reduced (12, 6).removeFromTop (18);
+        sequencerToggle.setBounds (titleRow.removeFromRight (104));
+        titleRow.removeFromRight (6);
+        linkButton.setBounds (titleRow.removeFromRight (64));
         auto controls = tempoArea.reduced (12, 8).withTrimmedTop (22);
         rewindButton.setBounds (controls.removeFromLeft (34));
         playButton.setBounds (controls.removeFromLeft (40));

@@ -210,6 +210,8 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     // Edits made in the piano roll follow the settings: a change carries them over to the new notes.
     editRefresher.callback = [this] { refreshEditedLoop(); };
     editRefresher.startTimer (150);
+    linkRefresher.callback = [this] { updateLink(); };
+    linkRefresher.startTimer (400);
 
     pads = std::make_unique<PadController> (*this);
 
@@ -282,6 +284,7 @@ void FaseGroovePianoProcessor::runLiveKey (int key)
 
 FaseGroovePianoProcessor::~FaseGroovePianoProcessor()
 {
+    linkRefresher.stopTimer();
     pads.reset();   // lights off, the Launchpad back to its own mode
 }
 
@@ -2187,6 +2190,96 @@ juce::File FaseGroovePianoProcessor::writeSongSectionClip (int partIndex, ClipPa
 }
 
 //==============================================================================
+juce::File FaseGroovePianoProcessor::linkFile()
+{
+    // Shared by every Fase Groove plug-in on this computer.
+    return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+#if JUCE_MAC
+        .getChildFile ("Application Support")
+#endif
+        .getChildFile ("Fase Groove").getChildFile ("Link.xml");
+}
+
+void FaseGroovePianoProcessor::setLinked (bool on)
+{
+    if (on == linkOn.load())
+        return;
+    linkOn = on;
+    linkSeen = {};
+    linkGenre = -2;
+    linkSwing = -1.0f;
+}
+
+int FaseGroovePianoProcessor::currentGenre() const
+{
+    const int pattern = juce::roundToInt (raw (ParamIDs::pattern));
+    const auto& patterns = sgk::groovePatterns();
+    if (! juce::isPositiveAndBelow (pattern, (int) patterns.size()))
+        return -1;
+    const auto& genres = sgk::grooveCategories();
+    for (size_t g = 0; g < genres.size(); ++g)
+        if (patterns[(size_t) pattern].category == genres[g])
+            return (int) g;
+    return -1;
+}
+
+void FaseGroovePianoProcessor::updateLink()
+{
+    if (! linkOn.load())
+        return;
+
+    const auto file = linkFile();
+    const auto me = juce::String::toHexString ((juce::pointer_sized_int) this);
+
+    // Someone else changed it: take their genre (the first groove of it, unless this one is
+    // already of that genre) and their swing.
+    if (file.existsAsFile() && file.getLastModificationTime() != linkSeen)
+    {
+        linkSeen = file.getLastModificationTime();
+        if (auto xml = juce::parseXML (file))
+            if (xml->getStringAttribute ("instance") != me)
+            {
+                const auto genre = xml->getStringAttribute ("genre");
+                const auto& genres = sgk::grooveCategories();
+                for (size_t g = 0; g < genres.size(); ++g)
+                    if (genre == genres[g] && (int) g != currentGenre() && currentGenre() >= 0)
+                    {
+                        const auto& patterns = sgk::groovePatterns();
+                        for (size_t i = 0; i < patterns.size(); ++i)
+                            if (patterns[i].category == genres[g])
+                            {
+                                setParameterFromUI (ParamIDs::pattern, (float) i);
+                                break;
+                            }
+                    }
+                if (xml->hasAttribute ("swing"))
+                    setParameterFromUI (ParamIDs::swing, juce::jlimit (0.0f, 1.0f, (float) xml->getDoubleAttribute ("swing")));
+                linkGenre = currentGenre();
+                linkSwing = raw (ParamIDs::swing);
+                return;
+            }
+    }
+
+    // We changed it: tell the others (a random or user groove has no genre: only the swing).
+    const int genre = currentGenre();
+    const float swing = raw (ParamIDs::swing);
+    if (genre != linkGenre || std::abs (swing - linkSwing) > 0.001f)
+    {
+        juce::XmlElement xml ("FaseGrooveLink");
+        xml.setAttribute ("from", JucePlugin_Name);
+        xml.setAttribute ("instance", me);
+        if (genre >= 0)
+            xml.setAttribute ("genre", sgk::grooveCategories()[(size_t) genre]);
+        xml.setAttribute ("swing", swing);   // 0 straight, 1 a triplet shuffle
+        file.getParentDirectory().createDirectory();
+        if (xml.writeTo (file))
+            linkSeen = file.getLastModificationTime();
+        linkGenre = genre;
+        linkSwing = swing;
+    }
+}
+
+//==============================================================================
 juce::AudioProcessorEditor* FaseGroovePianoProcessor::createEditor()
 {
     return new FaseGroovePianoEditor (*this);
@@ -2230,6 +2323,7 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("soloBass", chordsMuted.load(), nullptr);
     state.setProperty ("bassMuted", bassMuted.load(), nullptr);
     state.setProperty ("lastGroove", lastGrooveName, nullptr);
+    state.setProperty ("linkDrums", linkOn.load(), nullptr);
     {
         juce::StringArray bars, variations, fills;
         for (int i = 0; i < numSongParts; ++i)
@@ -2334,6 +2428,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     chordsMuted = (bool) state.getProperty ("soloBass", false);
     bassMuted = (bool) state.getProperty ("bassMuted", false);
     lastGrooveName = state.getProperty ("lastGroove", juce::String()).toString();
+    setLinked ((bool) state.getProperty ("linkDrums", false));
     {
         resetSong();
         const auto bars = juce::StringArray::fromTokens (state.getProperty ("songBars").toString(), ",", {});

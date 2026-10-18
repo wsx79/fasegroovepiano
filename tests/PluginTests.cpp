@@ -1429,6 +1429,63 @@ namespace
     }
 }
 
+namespace
+{
+    void testLinkWithDrums()
+    {
+        // LINK: the genre and swing written by Fase Groove Drums, taken here; ours written back.
+        const auto link = FaseGroovePianoProcessor::linkFile();
+        const bool existed = link.existsAsFile();
+        const auto backup = link.loadFileAsString();
+        auto value = [] (FaseGroovePianoProcessor& p, const char* id) { return p.apvts.getRawParameterValue (id)->load(); };
+        auto categoryOf = [&] (FaseGroovePianoProcessor& p)
+        {
+            const int i = juce::roundToInt (value (p, ParamIDs::pattern));
+            return juce::isPositiveAndBelow (i, (int) sgk::groovePatterns().size()) ? juce::String (sgk::groovePatterns()[(size_t) i].category) : juce::String();
+        };
+
+        FaseGroovePianoProcessor p;
+        p.setLinked (true);
+        p.updateLink();   // shares its own first
+        juce::XmlElement drums ("FaseGrooveLink");
+        drums.setAttribute ("from", "Fase Groove Drums");
+        drums.setAttribute ("instance", "1234");
+        drums.setAttribute ("genre", "Deep");
+        drums.setAttribute ("swing", 0.5);
+        link.getParentDirectory().createDirectory();
+        CHECK (drums.writeTo (link));
+        link.setLastModificationTime (juce::Time::getCurrentTime() + juce::RelativeTime::seconds (5.0));
+        p.updateLink();
+        CHECK (categoryOf (p) == "Deep");
+        CHECK (std::abs (value (p, ParamIDs::swing) - 0.5f) < 0.01f);
+
+        // A heavier swing than the piano's (Drums goes to 1.5) stops at a full triplet shuffle.
+        drums.setAttribute ("swing", 1.2);
+        drums.writeTo (link);
+        link.setLastModificationTime (juce::Time::getCurrentTime() + juce::RelativeTime::seconds (10.0));
+        p.updateLink();
+        CHECK (std::abs (value (p, ParamIDs::swing) - 1.0f) < 0.01f);
+
+        // Our change goes to the file.
+        for (size_t i = 0; i < sgk::groovePatterns().size(); ++i)
+            if (sgk::groovePatterns()[i].category == "Jackin'") { p.setParameterFromUI (ParamIDs::pattern, (float) i); break; }
+        p.updateLink();
+        if (auto xml = juce::parseXML (link))
+            CHECK (xml->getStringAttribute ("genre") == "Jackin'");
+        else
+            CHECK (false);
+
+        // Saved with the project.
+        juce::MemoryBlock data;
+        p.getStateInformation (data);
+        FaseGroovePianoProcessor q;
+        q.setStateInformation (data.getData(), (int) data.getSize());
+        CHECK (q.isLinked());
+
+        if (existed) link.replaceWithText (backup); else link.deleteFile();
+    }
+}
+
 int main()
 {
     juce::ScopedJuceInitialiser_GUI juce;
@@ -1466,6 +1523,7 @@ int main()
     testSongTracksHaveFills();
     testClipsSameLength();
     testSectionTrackNames();
+    testLinkWithDrums();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

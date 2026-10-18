@@ -116,6 +116,7 @@ Le progressioni pronte si aprono con **SFOGLIA...** (mostra il nome di quella ch
 | **⏮ ▶/❚❚ ■** | Il **trasporto** del suono guida, per sentire il groove senza avviare la DAW: torna all'inizio, play / pausa (azzurro mentre suona), stop (il play successivo riparte dall'inizio). La **barra spaziatrice** fa play / pausa quando la finestra del plug-in è attiva. Con la DAW in play, il groove segue la DAW. |
 | **SYNC DAW** acceso | Il groove segue BPM e posizione della DAW (consigliato). Accanto vedi il tempo della DAW. **App standalone** (v2.11): non ha una DAW, quindi segue il **MIDI clock** - nella DAW manda il MIDI clock (Ableton: *Impostazioni → Link, Tempo & MIDI*, *Sync* acceso su una porta di uscita) a una porta che l'app ascolta (su Windows una porta virtuale come loopMIDI, su macOS il bus IAC; attivala nelle *Opzioni → Impostazioni audio/MIDI* dell'app): tempo, play, stop e posizione seguono. Senza clock compare *Niente DAW*. |
 | **SYNC DAW** spento | Compare la barra dei BPM (60–180): trascinala o fai doppio clic per scrivere il valore. Il groove gira al suo tempo ma parte/si ferma comunque col Play della DAW o con ▶. |
+| **LINK DRUMS** (v2.18) | Collega il piano a **Fase Groove Drums** (accendi anche LINK PIANO lì): stesso **genere** e stesso **swing** in entrambi. Scegli un groove di un altro genere, o muovi lo swing, in uno dei due plug-in e l'altro segue (prende il primo groove di quel genere). Un groove casuale o tuo condivide solo lo swing. |
 
 Il tempo scelto viene usato anche nelle clip MIDI esportate.
 

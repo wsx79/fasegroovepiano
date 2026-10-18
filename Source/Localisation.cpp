@@ -62,6 +62,8 @@ namespace
         { "NEW RIFF", "NUOVO RIFF", "NUEVO RIFF", "NOUVEAU RIFF", "NEUER RIFF", "NOVO RIFF" },
         { "PREVIEW", "ASCOLTA", "ESCUCHAR", "ÉCOUTER", "VORHÖREN", "OUVIR" },
         { "SYNC DAW", "SYNC DAW", "SYNC DAW", "SYNC DAW", "SYNC DAW", "SYNC DAW" },
+        { "LINK DRUMS", "LINK DRUMS", "LINK DRUMS", "LINK DRUMS", "LINK DRUMS", "LINK DRUMS" },
+        { "Link with Fase Groove Drums: the same genre and swing in both (change it in either one)", "Collega a Fase Groove Drums: stesso genere e stesso swing in entrambi (cambialo in uno dei due)", "Enlaza con Fase Groove Drums: el mismo género y swing en ambos (cámbialo en cualquiera)", "Lier à Fase Groove Drums : même genre et même swing dans les deux (change-le dans l'un ou l'autre)", "Mit Fase Groove Drums verbinden: dasselbe Genre und derselbe Swing in beiden (in einem davon ändern)", "Ligar ao Fase Groove Drums: o mesmo gênero e swing nos dois (mude em qualquer um)" },
         { "Guide sound", "Suono guida", "Sonido guía", "Son guide", "Guide-Sound", "Som guia" },
         { "Top +8va", "Ottava sopra", "Octava arriba", "Octave haute", "Oktave oben", "Oitava acima" },
         { "Save .mid...", "Salva .mid...", "Guardar .mid...", "Enregistrer .mid...", ".mid speichern...", "Salvar .mid..." },

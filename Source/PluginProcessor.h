@@ -268,6 +268,13 @@ public:
     bool loadGroove (const juce::File&);
     /** The groove saved or loaded last (its name): SAVE offers it again, saved with the project. */
     juce::String lastGrooveName;
+
+    // LINK: genre and swing shared with Fase Groove Drums (and other Fase Groove instances).
+    bool isLinked() const { return linkOn.load(); }
+    void setLinked (bool on);
+    static juce::File linkFile();
+    /** Writes the genre and swing for the others, or takes theirs (message thread, a few times a second). */
+    void updateLink();
     static juce::Array<juce::File> presetFiles();
     bool savePreset (const juce::String& name);
     bool loadPreset (const juce::File&);
@@ -358,7 +365,12 @@ private:
     {
         std::function<void()> callback;
         void timerCallback() override { if (callback) callback(); }
-    } editRefresher;
+    } editRefresher, linkRefresher;
+    std::atomic<bool> linkOn { false };
+    juce::Time linkSeen;            // the link file's time when last read or written
+    int linkGenre = -2;             // what was last shared (-1: no genre, a random or user groove)
+    float linkSwing = -1.0f;
+    int currentGenre() const;
     float raw (const char* id) const;
 
     std::array<std::atomic<float>*, sgk::maxProgressionLength> slotParams {};
