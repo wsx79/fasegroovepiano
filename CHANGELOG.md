@@ -6,7 +6,7 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.20.0] - 2026-10-19
 
 - **LINK and PLAY: no more stutters.** Linked, the beat goes on block by block and follows the shared
   clock gently (reading the system time each block made notes play twice or not at all).

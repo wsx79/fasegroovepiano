@@ -6,7 +6,7 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
-## [Unreleased]
+## [2.20.0] - 2026-10-19
 
 - **LINK e PLAY: niente più scatti.** Con LINK il tempo scorre continuo blocco dopo blocco e segue con
   dolcezza l'orologio condiviso (leggere l'ora di sistema a ogni blocco faceva suonare note due volte o per niente).
