@@ -29,7 +29,7 @@ Rhodes or synth.
 
 🌐 **Website:** [wsx79.github.io/fasegroovepiano](https://wsx79.github.io/fasegroovepiano/)
 
-**Development version: 0.23.0** (renumbered from 2.23.0).
+**Current release: [v0.23.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.23.0).** Version renumbered from 2.23.0; existing 2.x installations need one manual install of 0.23.0.
 
 ## Features
 
@@ -50,7 +50,7 @@ Rhodes or synth.
 - 🥁 **179 two-hand grooves** in 13 genres (**piano house** loops, soulful, deep, gospel, **jackin' house**, **jackin' piano**, garage, afro, funky & disco, '90s piano house, neo soul, chill, dance stabs), played in the classic house piano style: one shared top note (**House pedal**), the bass under every stab
   plus **NEW RIFF**, a random funky riff generator, and optional fills (11 styles, from gospel runs to piano glissandos).
 - 🎚️ **Strum** (rolled chords like a real pianist) and **Top +8va** (bright octave-doubled top note).
-- 🎼 **Piano roll** of every note that plays (chords, bass, fills) with the chord names and the playhead, which opens big to **edit the notes one by one** (zoom, velocity lane), and **BOTH / PIANO / BASS** to choose what you hear.
+- 🎼 **Piano roll** of every note that plays (chords, bass, fills) with the chord names and the playhead, which opens big to **edit the notes one by one** (zoom, velocity lane), with separate **PIANO / BASS / STRINGS** listening buttons and visibility filters.
 - ✏️ **Editable rhythm grid** split into parts **A/B/C/D** you can reorder, randomize (RND) and
   lock (LOCK), with a **VELOCITY** page: every hit as a green fader to set its velocity by hand.
 - 🎛️ **Novation Launchpad** (Mini MK3, X, Pro MK3) or **Ableton Push 2 / 3** as a hardware grid: see and edit the groove on the pads.

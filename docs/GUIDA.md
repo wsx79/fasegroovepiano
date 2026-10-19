@@ -24,6 +24,8 @@ suonarla col tuo piano, Rhodes o synth preferito.
 
 ## 1. Installazione
 
+Questa guida descrive la [v0.23.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.23.0). Controlli e posizioni sono conservati; pulsanti, menu e colori comuni hanno uno stile uniforme.
+
 ### Windows: l'installer (il modo più semplice)
 
 1. Scarica **`FaseGroovePiano-Windows-Setup.exe`** dall'
@@ -40,6 +42,10 @@ suonarla col tuo piano, Rhodes o synth preferito.
    desktop, se spunti l'opzione). Rifai la scansione dei plugin nella DAW.
 
 Per disinstallare: **Impostazioni → App → Fase Groove Piano → Disinstalla**.
+
+**Aggiornamento dalla serie 2.x:** installa manualmente v0.23.0 una volta.
+Il vecchio aggiornamento automatico vede una versione principale più bassa e non la propone.
+Gli ID del plugin e il formato dei preset restano uguali: progetti e preset sono compatibili.
 
 ### Installazione manuale (zip, tutti i sistemi)
 
@@ -86,14 +92,16 @@ impostati con un clic, pronti da suonare.
 
 <p align="center"><img src="screenshot.png" alt="Interfaccia" width="900"></p>
 
-### L'aspetto della versione 2.0
+### Interfaccia attuale
 
 Tutti i pulsanti dell'interfaccia sono disegnati allo stesso modo: **acceso (pieno) = attivo**,
 in rilievo = spento. L'**ambra** è il piano e le azioni principali, l'**azzurro** il basso e "sta
 suonando", il **viola** i fill. I pulsanti che vanno insieme sono uniti, e ogni gruppo ha una piccola
 didascalia sopra. Icone usate ovunque: ▶ play, ❚❚ pausa, ■ stop, ⏮ torna all'inizio, 🎲 casuale,
 🔊 senti / 🔇 muto, la tastiera = piano, la chiave di basso = basso, l'occhio = mostra. Ogni
-pulsante ha il suo tooltip.
+pulsante ha il suo tooltip. Le schede **PIANO / BASSO / ARCHI** conservano le
+impostazioni di ciascuna parte; i pulsanti di ascolto sopra il piano roll e i filtri di
+visualizzazione nell'angolo in basso a destra permettono di sentirle e mostrarle separatamente.
 
 ### Vista semplice e avanzata (v2.6)
 

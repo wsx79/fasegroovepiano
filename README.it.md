@@ -28,7 +28,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 
 🌐 **Sito:** [wsx79.github.io/fasegroovepiano](https://wsx79.github.io/fasegroovepiano/)
 
-**Versione di sviluppo: 0.23.0** (rinumerata da 2.23.0).
+**Versione attuale: [v0.23.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.23.0).** Rinumerata da 2.23.0; chi ha già una versione 2.x deve installare manualmente 0.23.0 una volta.
 
 ## Funzioni
 
@@ -49,7 +49,7 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 - 🥁 **179 groove** a due mani in 13 generi (loop di **piano house**, soulful, deep, gospel, **jackin' house**, **piano jackin'**, garage, afro, funky e disco, piano house anni '90, neo soul, chill, stab dance), suonati nel classico stile piano house: una nota in alto condivisa (**Pedale house**), il basso sotto ogni stab
   più **NEW RIFF**, che genera riff funky casuali sul momento, e fill opzionali (11 stili, dalle scale gospel ai glissati di piano).
 - 🎚️ **Strum** (accordi arpeggiati come un pianista vero) e **Top +8va** (nota alta raddoppiata all'ottava).
-- 🎼 **Piano roll** di tutte le note che suonano (accordi, basso, fill) coi nomi degli accordi e la testina, che si apre in grande per **modificare le note una per una** (zoom, corsia della dinamica), e **TUTTI / PIANO / BASSO** per scegliere cosa ascolti.
+- 🎼 **Piano roll** di tutte le note che suonano (accordi, basso, fill) coi nomi degli accordi e la testina, che si apre in grande per **modificare le note una per una** (zoom, corsia della dinamica), con pulsanti separati per ascoltare e visualizzare **PIANO / BASSO / ARCHI**.
 - ✏️ **Griglia ritmica modificabile** a mano, divisa in parti **A/B/C/D** da combinare,
   randomizzare (RND) e bloccare (LOCK), con una pagina **VELOCITY**: ogni colpo è un fader verde
   per regolarne la velocity a mano.

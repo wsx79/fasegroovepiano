@@ -24,6 +24,8 @@ your DAW** and play it with your favourite piano, Rhodes or synth.
 
 ## 1. Installation
 
+This guide covers [v0.23.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.23.0). The existing controls and their positions are retained; shared buttons, menus and colours have a common style.
+
 ### Windows: the installer (easiest)
 
 1. Download **`FaseGroovePiano-Windows-Setup.exe`** from the
@@ -39,6 +41,10 @@ your DAW** and play it with your favourite piano, Rhodes or synth.
    shortcut (and a desktop one if you tick it). Rescan plug-ins in your DAW.
 
 To uninstall: **Settings → Apps → Fase Groove Piano → Uninstall**.
+
+**Upgrading from 2.x:** install v0.23.0 manually once. The older updater sees a
+lower major version and will not offer it automatically. Plug-in IDs and preset formats stay
+the same, so saved projects and presets remain compatible.
 
 ### Manual installation (zip, all systems)
 
@@ -84,13 +90,15 @@ Want something new? Press **🎲 RANDOM** (random progression) and **🎲 NEW RI
 
 <p align="center"><img src="screenshot.png" alt="Interface" width="900"></p>
 
-### The look of version 2.0
+### Current interface
 
 Every button of the interface is drawn the same way: **lit (filled) = on**, raised = off. **Amber**
 is the piano and the main actions, **cyan** the bass and "playing", **violet** the fills. Buttons
 that belong together are joined, and every group has a small caption above it. Icons used
 everywhere: ▶ play, ❚❚ pause, ■ stop, ⏮ back to the start, 🎲 random, 🔊 hear / 🔇 muted,
-the keyboard = piano, the bass clef = bass, the eye = show. Every button has a tooltip.
+the keyboard = piano, the bass clef = bass, the eye = show. Every button has a tooltip. The **PIANO / BASS / STRINGS** tabs retain their individual
+settings; the listening buttons above the piano roll and its visibility filters in the lower-right
+corner let you hear and show each part separately.
 
 ### Simple and advanced view (v2.6)
 
