@@ -1302,6 +1302,8 @@ void FaseGroovePianoProcessor::prepareToPlay (double sampleRate, int samplesPerB
     outputGain.reset (sampleRate, 0.05);
     outputGain.setCurrentAndTargetValue (juce::Decibels::decibelsToGain (raw (ParamIDs::volume)));
     // Room for blocks larger than announced (some hosts do send them): no allocation in processBlock.
+    answerEvents.reserve (256);
+    answerSounding.fill (false);
     sidechainLevel.assign ((size_t) juce::jmax (8192, 2 * samplesPerBlock), 0.0f);
     lastOutput.assign ((size_t) juce::jmax (1, samplesPerBlock), 0.0f);
     sidechainEnvelope = 0.0f;
@@ -1591,10 +1593,16 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         }
     }
 
+    bool answersCut = ! running;   // the piano's own answers (guitar leads) stop on a stop or a jump
+    double renderEnd = startPpq;
     if (running)
     {
         if (! wasRunning || std::abs (startPpq - expectedNextPpq) > 0.05)
+        {
             engine.allNotesOff (startPpq, events);   // start, loop or jump
+            answersCut = true;
+        }
+        renderEnd = startPpq + blockBeats + linkCorrection;
 
         engine.render (startPpq, startPpq + blockBeats + linkCorrection, settings, events);
         expectedNextPpq = internalPpq = startPpq + blockBeats + linkCorrection;
@@ -1621,13 +1629,14 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     const bool muteChords = chordsMuted.load(), muteBass = bassMuted.load();
     const bool leading = guitarLeads.load() && linkOn.load();
+    const auto compSeed = leading ? compingSeed() : 0u;
     for (const auto& e : events)
     {
         if (muteChords && e.isNoteOn() && e.part != sgk::Part::bass && e.part != sgk::Part::strings)
             continue;   // the piano muted (note-offs still pass, so nothing hangs)
         if (muteBass && e.isNoteOn() && e.part == sgk::Part::bass)
             continue;   // the bass muted
-        if (leading && e.isNoteOn() && (e.part == sgk::Part::chords || e.part == sgk::Part::fill) && ! compingKeeps (e.ppq))
+        if (leading && e.isNoteOn() && (e.part == sgk::Part::chords || e.part == sgk::Part::fill) && ! compingKeeps (e.ppq, compSeed))
             continue;   // the guitar leads: only a chord now and then
 
         const int pos = juce::jlimit (0, numSamples - 1, (int) std::floor ((e.ppq - startPpq) * samplesPerBeat));
@@ -1635,6 +1644,34 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         outMidi.addEvent (e.isNoteOn() ? juce::MidiMessage::noteOn (channel, e.note, (juce::uint8) e.velocity)
                                        : juce::MidiMessage::noteOff (channel, e.note),
                           pos);
+    }
+
+    // ---- The piano's own answers while the guitar leads (between its own chords) ----
+    if (answersCut || ! leading || muteChords)
+        for (int n = 0; n < 128; ++n)
+            if (answerSounding[(size_t) n])
+            {
+                outMidi.addEvent (juce::MidiMessage::noteOff (1, n), 0);
+                answerSounding[(size_t) n] = false;
+            }
+    if (running && leading && ! muteChords)
+    {
+        answerEvents.clear();   // (reserved in prepareToPlay: nothing allocated here)
+        compingAnswers (startPpq, renderEnd, compSeed, settings, answerEvents);
+        for (const auto& e : answerEvents)
+        {
+            const int pos = juce::jlimit (0, numSamples - 1, (int) std::floor ((e.ppq - startPpq) * samplesPerBeat));
+            if (e.isNoteOn())
+            {
+                outMidi.addEvent (juce::MidiMessage::noteOn (1, e.note, (juce::uint8) e.velocity), pos);
+                answerSounding[(size_t) e.note] = true;
+            }
+            else if (answerSounding[(size_t) e.note])
+            {
+                outMidi.addEvent (juce::MidiMessage::noteOff (1, e.note), pos);
+                answerSounding[(size_t) e.note] = false;
+            }
+        }
     }
 
     // ---- Internal e-piano ----
@@ -2071,7 +2108,7 @@ juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::
 {
     if (guitarLeads.load() && linkOn.load())   // the guitar leads: the clip as the piano plays it
     {
-        const auto comped = comping (clipEvents);
+        const auto comped = comping (clipEvents, compingSeed(), currentSettings(), beats);
         return midiFromEventsAsIs (comped, beats, markers, part, name, songPart);
     }
     return midiFromEventsAsIs (clipEvents, beats, markers, part, name, songPart);
@@ -2238,15 +2275,126 @@ juce::File FaseGroovePianoProcessor::linkFile()
         .getChildFile ("Fase Groove").getChildFile ("Link.xml");
 }
 
-bool FaseGroovePianoProcessor::compingKeeps (double ppq) noexcept
+int FaseGroovePianoProcessor::compingWindows (std::uint32_t seed, std::array<CompingWindow, 8>& out) noexcept
 {
-    const auto bar = (long long) std::floor (ppq / 4.0);
-    const double beat = ppq - (double) bar * 4.0;
-    return (bar % 2 == 0 && beat < 1.0)    // a chord on the first beat of every other bar
-        || (bar % 4 == 3 && beat >= 3.0);  // and one pushing into the next phrase
+    // The piano's answers over four bars, from the seed (a new rhythm, another groove: other
+    // answers): each bar one beat-long window or two, or none, three to five in the four bars,
+    // always on bars 1 and 3, the first on the one or just after it. About half of them play
+    // the piano's own groove there; the others are an answer of their own (a stab, two short
+    // hits, a push, a held chord, an off-beat pair).
+    static constexpr double starts[] { 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0 };
+    std::uint32_t r = seed * 2654435761u + 12345u;
+    auto next = [&r] { r = r * 1664525u + 1013904223u; return r >> 8; };
+
+    int count = 0;
+    int windowsLeft = 3 + (int) (next() % 3);
+    for (int b = 0; b < 4; ++b)
+    {
+        int here = (int) (next() % 3);
+        if (b == 0 || b == 2)
+            here = juce::jmax (here, 1);
+        here = juce::jmin (here, windowsLeft - (b < 2 ? 1 : 0));   // (one kept for bar 3)
+        if (b == 3)
+            here = juce::jmin (windowsLeft, 2);   // the last bar takes what is left (up to two)
+        windowsLeft -= here;
+        double previous = -2.0;
+        for (int k = 0; k < here && count < (int) out.size(); ++k)
+        {
+            double start = starts[next() % std::size (starts)];
+            if (b == 0 && k == 0)
+                start = (next() % 2) == 0 ? 0.0 : 0.5;   // on the one, or just after it
+            if (b == 3 && k == here - 1 && (next() % 2) == 0)
+                start = 3.0;                             // a push into the next phrase
+            if (std::abs (start - previous) < 1.0)
+                start = std::fmod (previous + 1.5, 4.0); // two answers a little apart
+            previous = start;
+            CompingWindow w;
+            w.start = b * 4.0 + start;
+            w.figure = (next() % 2) == 0 ? -1 : (int) (next() % numCompingFigures);
+            out[(size_t) count++] = w;
+        }
+    }
+    return count;
 }
 
-std::vector<sgk::NoteEvent> FaseGroovePianoProcessor::comping (const std::vector<sgk::NoteEvent>& events)
+const FaseGroovePianoProcessor::CompingFigure& FaseGroovePianoProcessor::compingFigure (int figure) noexcept
+{
+    // Hits inside a beat-long window: start, length (beats), loudness.
+    using H = CompingHit;
+    static const CompingFigure figures[numCompingFigures]
+    {
+        { 1, {{ H { 0.0, 0.25, 1.0f }, H { 0.0, 0.0, 0.0f } }} },        // a stab
+        { 2, {{ H { 0.0, 0.2, 0.95f }, H { 0.5, 0.2, 0.8f } }} },        // two short hits
+        { 2, {{ H { 0.25, 0.2, 0.7f }, H { 0.5, 0.45, 1.0f } }} },       // a push into a hit
+        { 1, {{ H { 0.0, 0.9, 0.85f }, H { 0.0, 0.0, 0.0f } }} },        // a held chord
+        { 2, {{ H { 0.5, 0.2, 0.9f }, H { 0.75, 0.2, 0.7f } }} },        // an off-beat pair
+    };
+    return figures[juce::jlimit (0, numCompingFigures - 1, figure)];
+}
+
+bool FaseGroovePianoProcessor::compingKeeps (double ppq, std::uint32_t seed) noexcept
+{
+    // Only inside the windows where the piano plays its own groove (the others have their answer).
+    std::array<CompingWindow, 8> windows;
+    const int n = compingWindows (seed, windows);
+    const double inCycle = ppq - std::floor (ppq / 16.0) * 16.0;
+    for (int i = 0; i < n; ++i)
+        if (windows[(size_t) i].figure < 0 && inCycle >= windows[(size_t) i].start && inCycle < windows[(size_t) i].start + 1.0)
+            return true;
+    return false;
+}
+
+void FaseGroovePianoProcessor::compingAnswers (double from, double to, std::uint32_t seed, const sgk::GrooveSettings& s,
+                                               std::vector<sgk::NoteEvent>& out)
+{
+    // The answers' notes whose start or end falls in [from, to): the chord of the moment, as the
+    // progression voices it for the right hand.
+    if (to <= from)
+        return;
+    std::array<CompingWindow, 8> windows;
+    const int n = compingWindows (seed, windows);
+    std::array<sgk::Chord, sgk::maxProgressionLength> chords;
+    std::array<sgk::VoicedChord, sgk::maxProgressionLength> voiced;
+    sgk::GrooveEngine::voiceProgression (s, chords, voiced);
+    const int baseVelocity = juce::jlimit (30, 127, s.velocity);
+
+    for (double cycle = std::floor ((from - 1.0) / 16.0) * 16.0; cycle < to; cycle += 16.0)
+        for (int i = 0; i < n; ++i)
+        {
+            const auto& w = windows[(size_t) i];
+            if (w.figure < 0)
+                continue;
+            const auto& f = compingFigure (w.figure);
+            for (int h = 0; h < f.count; ++h)
+            {
+                const double on = cycle + w.start + f.hits[(size_t) h].offset;
+                const double off = on + f.hits[(size_t) h].length;
+                const bool onHere = on >= from && on < to, offHere = off >= from && off < to;
+                if (! onHere && ! offHere)
+                    continue;
+                const int slot = juce::jlimit (0, sgk::maxProgressionLength - 1,
+                                               sgk::GrooveEngine::slotForStep ((long long) std::floor (on / sgk::stepLength + 1.0e-6), s));
+                const auto& notes = voiced[(size_t) slot].rightHand;
+                const int velocity = juce::jlimit (1, 127, juce::roundToInt ((float) baseVelocity * f.hits[(size_t) h].level));
+                for (int k = 0; k < notes.size; ++k)
+                {
+                    if (onHere)
+                        out.push_back ({ on, notes[k], velocity, sgk::Part::chords });
+                    if (offHere)
+                        out.push_back ({ off, notes[k], 0, sgk::Part::chords });
+                }
+            }
+        }
+}
+
+std::uint32_t FaseGroovePianoProcessor::compingSeed() const
+{
+    return (std::uint32_t) juce::roundToInt (raw (ParamIDs::riffSeed)) * 7919u
+         + (std::uint32_t) juce::jmax (0, juce::roundToInt (raw (ParamIDs::pattern))) * 31u + 1u;
+}
+
+std::vector<sgk::NoteEvent> FaseGroovePianoProcessor::comping (const std::vector<sgk::NoteEvent>& events, std::uint32_t seed,
+                                                               const sgk::GrooveSettings& settings, double length)
 {
     std::vector<sgk::NoteEvent> out;
     out.reserve (events.size());
@@ -2261,7 +2409,7 @@ std::vector<sgk::NoteEvent> FaseGroovePianoProcessor::comping (const std::vector
         auto& queue = kept[e.note + 128 * (int) e.part];
         if (e.isNoteOn())
         {
-            const bool keep = compingKeeps (e.ppq);
+            const bool keep = compingKeeps (e.ppq, seed);
             queue.push_back (keep);
             if (keep)
                 out.push_back (e);
@@ -2275,13 +2423,18 @@ std::vector<sgk::NoteEvent> FaseGroovePianoProcessor::comping (const std::vector
                 out.push_back (e);
         }
     }
+    // The piano's own answers, then everything in time order (note-offs first at the same moment).
+    compingAnswers (0.0, length, seed, settings, out);
+    std::stable_sort (out.begin(), out.end(), [] (const sgk::NoteEvent& a, const sgk::NoteEvent& b)
+                      { return a.ppq != b.ppq ? a.ppq < b.ppq : (! a.isNoteOn() && b.isNoteOn()); });
     return out;
 }
 
-sgk::GroovePattern FaseGroovePianoProcessor::compingPattern (const sgk::GroovePattern& source)
+sgk::GroovePattern FaseGroovePianoProcessor::compingPattern (const sgk::GroovePattern& source, std::uint32_t seed)
 {
-    // Four bars (the comping cycle): the right hand only where the piano still plays under a
-    // leading guitar, the left hand as it is.
+    // Four bars (the comping cycle): the right hand where the piano still plays its groove, its
+    // own answers drawn in their windows (X a strong hit, x a softer one, = held), the left hand
+    // as it is.
     const int len = source.length();
     if (len == 0)
         return source;
@@ -2295,13 +2448,36 @@ sgk::GroovePattern FaseGroovePianoProcessor::compingPattern (const sgk::GroovePa
         const char c = source.rightHand[(size_t) (i % len)];
         if (c == '.')
             keeping = false;
-        else if (c != '=' && c != '>')   // a hit: kept on the comping beats only
-            keeping = compingKeeps (i * sgk::stepLength);
+        else if (c != '=')   // a hit (a push too): kept in the groove's windows only
+            keeping = compingKeeps (i * sgk::stepLength, seed);
         out.rightHand[(size_t) i] = keeping ? c : '.';   // (a held note follows its hit)
         if ((int) source.leftHand.size() == len)
             out.leftHand[(size_t) i] = source.leftHand[(size_t) (i % len)];
     }
+    std::array<CompingWindow, 8> windows;
+    const int n = compingWindows (seed, windows);
+    for (int w = 0; w < n; ++w)
+    {
+        if (windows[(size_t) w].figure < 0)
+            continue;
+        const auto& f = compingFigure (windows[(size_t) w].figure);
+        for (int h = 0; h < f.count; ++h)
+        {
+            const auto& hit = f.hits[(size_t) h];
+            const int first = juce::roundToInt ((windows[(size_t) w].start + hit.offset) / sgk::stepLength);
+            const int steps = juce::jmax (1, juce::roundToInt (hit.length / sgk::stepLength));
+            for (int k = 0; k < steps && first + k < cycle; ++k)
+                out.rightHand[(size_t) (first + k)] = k > 0 ? '=' : (hit.level >= 0.9f ? 'X' : 'x');
+        }
+    }
     return out;
+}
+
+void FaseGroovePianoProcessor::setKeyLinked (bool on)
+{
+    keyLinked = on;
+    linkShared = {};   // switched on: this key goes out to the others
+    updateLink();
 }
 
 void FaseGroovePianoProcessor::readGuitarLead()
@@ -2356,6 +2532,11 @@ FaseGroovePianoProcessor::LinkState FaseGroovePianoProcessor::localLinkState() c
     s.playing = previewOn.load();
     s.paused = ! s.playing && ! previewFromStart.load();
     s.anchor = s.playing ? linkAnchor.load() : -1.0;
+    if (keyLinked.load())
+    {
+        s.key = juce::roundToInt (raw (ParamIDs::key));
+        s.scale = juce::roundToInt (raw (ParamIDs::scale));
+    }
     return s;
 }
 
@@ -2430,6 +2611,12 @@ void FaseGroovePianoProcessor::updateLink()
                                 break;
                             }
                     }
+                if (keyLinked.load() && xml->hasAttribute ("key"))   // the same key
+                {
+                    setParameterFromUI (ParamIDs::key, (float) juce::jlimit (0, 11, xml->getIntAttribute ("key")));
+                    if (xml->hasAttribute ("scale"))
+                        setParameterFromUI (ParamIDs::scale, (float) juce::jlimit (0, sgk::numScales - 1, xml->getIntAttribute ("scale")));
+                }
                 if (xml->hasAttribute ("swing"))
                     setParameterFromUI (ParamIDs::swing, juce::jlimit (0.0f, 1.5f, (float) xml->getDoubleAttribute ("swing")));
                 if (xml->hasAttribute ("bpm"))
@@ -2479,6 +2666,11 @@ void FaseGroovePianoProcessor::updateLink()
     xml.setAttribute ("playing", now.playing);
     xml.setAttribute ("paused", now.paused);
     xml.setAttribute ("anchor", juce::String (now.anchor, 3));
+    if (now.key >= 0)
+    {
+        xml.setAttribute ("key", now.key);
+        xml.setAttribute ("scale", now.scale);
+    }
     file.getParentDirectory().createDirectory();
     if (xml.writeTo (file))
         linkSeenText = file.loadFileAsString();
@@ -2530,6 +2722,7 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("bassMuted", bassMuted.load(), nullptr);
     state.setProperty ("lastGroove", lastGrooveName, nullptr);
     state.setProperty ("linkDrums", linkOn.load(), nullptr);
+    state.setProperty ("linkKey", keyLinked.load(), nullptr);
     {
         juce::StringArray bars, variations, fills;
         for (int i = 0; i < numSongParts; ++i)
@@ -2634,6 +2827,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     chordsMuted = (bool) state.getProperty ("soloBass", false);
     bassMuted = (bool) state.getProperty ("bassMuted", false);
     lastGrooveName = state.getProperty ("lastGroove", juce::String()).toString();
+    keyLinked = (bool) state.getProperty ("linkKey", false);
     setLinked ((bool) state.getProperty ("linkDrums", false));
     {
         resetSong();

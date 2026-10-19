@@ -274,14 +274,31 @@ public:
     void setLinked (bool on);
     static juce::File linkFile();
     /** A linked Fase Groove Guitar set to LEAD: the piano only fills in a chord now and then
-        (the first beat of every other bar, a push into each four-bar phrase), the bass as usual. */
+        (a few answers in four bars, placed by compingSeed()), the bass as usual. */
     bool isGuitarLeading() const noexcept { return guitarLeads.load(); }
-    static bool compingKeeps (double ppq) noexcept;
+    /** KEY (with LINK on): the same key and scale in every linked plug-in that has KEY on. */
+    void setKeyLinked (bool on);
+    bool isKeyLinked() const noexcept { return keyLinked.load(); }
+    static bool compingKeeps (double ppq, std::uint32_t seed) noexcept;
+    /** One window of the four-bar comping cycle: where (beats in the cycle) and what plays there,
+        the piano's own groove (figure -1) or an answer of its own (a figure). */
+    struct CompingWindow { double start = 0.0; int figure = -1; };
+    static int compingWindows (std::uint32_t seed, std::array<CompingWindow, 8>& out) noexcept;
+    struct CompingHit { double offset, length; float level; };
+    struct CompingFigure { int count; std::array<CompingHit, 2> hits; };
+    static constexpr int numCompingFigures = 5;
+    static const CompingFigure& compingFigure (int figure) noexcept;
+    /** The answers' note-ons and note-offs that fall in [from, to), on the chords of the moment. */
+    static void compingAnswers (double from, double to, std::uint32_t seed, const sgk::GrooveSettings&,
+                                std::vector<sgk::NoteEvent>& out);
+    /** The comping's seed: the groove and its riff seed (NEW RHYTHM gives other answers). */
+    std::uint32_t compingSeed() const;
     /** The events as the piano plays them under a leading guitar: the chord and fill notes
         outside compingKeeps() left out (each with its note-off), the bass and strings as they are. */
-    static std::vector<sgk::NoteEvent> comping (const std::vector<sgk::NoteEvent>& events);
+    static std::vector<sgk::NoteEvent> comping (const std::vector<sgk::NoteEvent>& events, std::uint32_t seed,
+                                               const sgk::GrooveSettings&, double length);
     /** The groove as the grid shows it then: four bars, the right hand only on the comping beats. */
-    static sgk::GroovePattern compingPattern (const sgk::GroovePattern&);
+    static sgk::GroovePattern compingPattern (const sgk::GroovePattern&, std::uint32_t seed);
     /** Writes the genre and swing for the others, or takes theirs (message thread, a few times a second). */
     void updateLink();
     /** The genre shared with LINK: a preset's own, else the last preset's. */
@@ -380,6 +397,9 @@ private:
     } editRefresher, linkRefresher;
     std::atomic<bool> linkOn { false };
     std::atomic<bool> guitarLeads { false };
+    std::atomic<bool> keyLinked { false };
+    std::vector<sgk::NoteEvent> answerEvents;   // the comping answers of one block
+    std::array<bool, 128> answerSounding {};
     int leadChecks = 0;
     void readGuitarLead();
     // What the linked plug-ins share: genre, swing, tempo, DAW sync and the play button's clock
@@ -390,9 +410,10 @@ private:
         float swing = -1.0f, bpm = -1.0f;
         bool sync = false, playing = false, paused = false;
         double anchor = -1.0;
+        int key = -1, scale = -1;   // shared only with KEY on (-1: not shared)
         bool sameAs (const LinkState& o) const noexcept
         {
-            return genre == o.genre && std::abs (swing - o.swing) < 0.001f && std::abs (bpm - o.bpm) < 0.01f && sync == o.sync
+            return genre == o.genre && key == o.key && scale == o.scale && std::abs (swing - o.swing) < 0.001f && std::abs (bpm - o.bpm) < 0.01f && sync == o.sync
                 && playing == o.playing && paused == o.paused && std::abs (anchor - o.anchor) < 1.0;
         }
     };

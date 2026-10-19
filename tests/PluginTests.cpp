@@ -12,6 +12,8 @@
 #include "../Source/Localisation.h"
 
 #include <cstdio>
+#include <string>
+#include <algorithm>
 #include <map>
 #include <set>
 
@@ -1529,41 +1531,70 @@ namespace
     void testLinkRoles()
     {
         using P = FaseGroovePianoProcessor;
-        // Comping under a leading guitar: a chord on the first beat of every other bar and a
-        // push into each four-bar phrase, nothing else.
-        CHECK (P::compingKeeps (0.0) && P::compingKeeps (0.5));
-        CHECK (! P::compingKeeps (1.5) && ! P::compingKeeps (2.0));
-        CHECK (! P::compingKeeps (4.0));       // bar 2: nothing
-        CHECK (P::compingKeeps (8.0));         // bar 3
-        CHECK (P::compingKeeps (15.5));        // the push at the end of bar 4
-        CHECK (! P::compingKeeps (7.5));
+        // Comping under a leading guitar: three to five windows in four bars, always on bars 1
+        // and 3, placed by the seed; in each the piano's own groove or an answer of its own.
+        std::set<std::string> shapes;
+        int answers = 0, grooves = 0;
+        for (std::uint32_t seed = 1; seed <= 40; ++seed)
+        {
+            std::array<P::CompingWindow, 8> w;
+            const int n = P::compingWindows (seed, w);
+            CHECK (n >= 3 && n <= 5);
+            bool bar1 = false, bar3 = false;
+            std::string shape;
+            for (int i = 0; i < n; ++i)
+            {
+                bar1 = bar1 || (w[(size_t) i].start >= 0.0 && w[(size_t) i].start < 4.0);
+                bar3 = bar3 || (w[(size_t) i].start >= 8.0 && w[(size_t) i].start < 12.0);
+                (w[(size_t) i].figure < 0 ? grooves : answers) += 1;
+                shape += juce::String (w[(size_t) i].start).toStdString() + ":" + std::to_string (w[(size_t) i].figure) + " ";
+            }
+            CHECK (bar1 && bar3);
+            std::array<P::CompingWindow, 8> again;
+            CHECK (P::compingWindows (seed, again) == n && again[0].start == w[0].start && again[0].figure == w[0].figure);
+            shapes.insert (shape);
+        }
+        CHECK (shapes.size() >= 30);
+        CHECK (answers > 20 && grooves > 20);   // both kinds, often
+        {
+            // NEW RHYTHM: other answers.
+            P p;
+            const auto before = p.compingSeed();
+            p.rollNewRiff();
+            CHECK (p.compingSeed() != before);
+        }
 
-        // The exported clip under a leading guitar: fewer piano chords, every one closed, the
-        // bass untouched.
+        // The exported clip under a leading guitar: the answers on the chords of the moment, in
+        // time order, every note closed, the bass untouched.
         {
             P p;
-            const auto events = sgk::GrooveEngine::renderClip (p.currentSettings(), 16.0);
-            const auto comped = P::comping (events);
-            int chordsBefore = 0, chordsAfter = 0, bassBefore = 0, bassAfter = 0;
-            for (const auto& e : events)
-                if (e.isNoteOn()) (e.part == sgk::Part::bass ? bassBefore : chordsBefore) += 1;
-            std::map<int, int> open;
-            for (const auto& e : comped)
+            const auto settings = p.currentSettings();
+            for (std::uint32_t seed = 1; seed <= 12; ++seed)
             {
-                if (e.isNoteOn())
+                const auto events = sgk::GrooveEngine::renderClip (settings, 16.0);
+                const auto comped = P::comping (events, seed, settings, 16.0);
+                int bassBefore = 0, bassAfter = 0, chordsAfter = 0;
+                for (const auto& e : events)
+                    if (e.isNoteOn() && e.part == sgk::Part::bass) ++bassBefore;
+                std::map<int, int> open;
+                double last = -1.0;
+                for (const auto& e : comped)
                 {
-                    (e.part == sgk::Part::bass ? bassAfter : chordsAfter) += 1;
-                    if (e.part != sgk::Part::bass)
-                        CHECK (P::compingKeeps (e.ppq));
-                    ++open[e.note + 128 * (int) e.part];
+                    CHECK (e.ppq >= last);
+                    last = e.ppq;
+                    if (e.isNoteOn())
+                    {
+                        (e.part == sgk::Part::bass ? bassAfter : chordsAfter) += 1;
+                        ++open[e.note + 128 * (int) e.part];
+                    }
+                    else
+                        --open[e.note + 128 * (int) e.part];
                 }
-                else
-                    --open[e.note + 128 * (int) e.part];
+                CHECK (chordsAfter > 0);
+                CHECK (bassAfter == bassBefore);
+                for (const auto& [id, n] : open)
+                    CHECK (n <= 0);   // nothing left hanging
             }
-            CHECK (chordsAfter > 0 && chordsAfter < chordsBefore);
-            CHECK (bassAfter == bassBefore);
-            for (const auto& [id, n] : open)
-                CHECK (n <= 0);   // nothing left hanging
         }
 
         // The grid under a leading guitar: four bars, right-hand hits only on the comping beats.
@@ -1571,15 +1602,46 @@ namespace
             sgk::GroovePattern g;
             g.rightHand = "X.x.X.x.X.x.X.x.";
             g.leftHand  = "x...x...x...x...";
-            const auto c = P::compingPattern (g);
+            const auto c = P::compingPattern (g, 7);
             CHECK (c.length() == 64 && (int) c.leftHand.size() == 64);
+            int hits = 0;
             for (int i = 0; i < 64; ++i)
             {
                 if (c.rightHand[(size_t) i] != '.')
-                    CHECK (P::compingKeeps (i * sgk::stepLength));
+                    ++hits;   // the groove's hits in its windows, the answers in theirs
                 CHECK (c.leftHand[(size_t) i] == g.leftHand[(size_t) (i % 16)]);
             }
-            CHECK (c.rightHand[0] == 'X' && c.rightHand[16] == '.' && c.rightHand[32] == 'X');
+            CHECK (hits > 0 && hits < 32);
+        }
+
+        // KEY: another plug-in's key and scale arrive only with KEY on; with KEY on ours go out.
+        {
+            const auto link = P::linkFile();
+            const bool existed = link.existsAsFile();
+            const auto backup = link.loadFileAsString();
+            auto writeTheirs = [&link] (int key, int scale)
+            {
+                juce::XmlElement xml ("FaseGrooveLink");
+                xml.setAttribute ("instance", "someone else");
+                xml.setAttribute ("key", key);
+                xml.setAttribute ("scale", scale);
+                xml.setAttribute ("bpm", 124.0);
+                xml.writeTo (link);
+            };
+            P p;
+            p.setLinked (true);
+            writeTheirs (2, 2);
+            p.updateLink();
+            CHECK (juce::roundToInt (p.apvts.getRawParameterValue (ParamIDs::key)->load()) != 2);   // KEY off: ours stays
+            p.setKeyLinked (true);
+            if (auto xml = juce::parseXML (link))
+                CHECK (xml->getIntAttribute ("key", -1) == juce::roundToInt (p.apvts.getRawParameterValue (ParamIDs::key)->load()));   // ours went out
+            writeTheirs (4, 2);
+            p.updateLink();
+            CHECK (juce::roundToInt (p.apvts.getRawParameterValue (ParamIDs::key)->load()) == 4);
+            CHECK (juce::roundToInt (p.apvts.getRawParameterValue (ParamIDs::scale)->load()) == 2);
+            p.setLinked (false);
+            if (existed) link.replaceWithText (backup); else link.deleteFile();
         }
 
         // A guitar set to LEAD, seen through the link folder; an old note (guitar closed) is not.

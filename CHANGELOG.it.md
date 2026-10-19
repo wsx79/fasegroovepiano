@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.22.0] - 2026-10-19
+
+- Chitarra solista: le risposte del piano si spostano e cambiano. In quattro battute, da tre a cinque momenti scelti dal groove e da NUOVO RITMO; in ognuno il piano suona il suo groove oppure una risposta tutta sua (un colpo, due colpi brevi, una spinta, un accordo tenuto, una coppia in levare) sull'accordo del momento. Suono, griglia, piano roll e MIDI esportato coincidono.
+- **TONALITÀ** accanto a Sequencer (con LINK attivo): stessa tonalità e scala in Fase Groove Piano e Guitar. Il titolo del riquadro ora è solo TEMPO per fare spazio.
+
 ## [2.21.2] - 2026-10-19
 
 - Chitarra solista: la griglia del ritmo e il piano roll mostrano quello che il piano suona in quel momento (quattro battute, solo gli accordi di completamento; il basso com'è). Intanto la griglia è solo da guardare.

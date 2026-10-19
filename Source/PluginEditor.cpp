@@ -4781,6 +4781,13 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     linkButton.setColour (juce::TextButton::textColourOnId, Palette::background);
     linkButton.setToggleState (p.isLinked(), juce::dontSendNotification);
     linkButton.onClick = [this] { processor.setLinked (linkButton.getToggleState()); };
+    keyLinkButton.setClickingTogglesState (true);
+    keyLinkButton.setColour (juce::TextButton::buttonColourId, Palette::background);
+    keyLinkButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent);
+    keyLinkButton.setColour (juce::TextButton::textColourOffId, Palette::text);
+    keyLinkButton.setColour (juce::TextButton::textColourOnId, Palette::background);
+    keyLinkButton.onClick = [this] { processor.setKeyLinked (keyLinkButton.getToggleState()); };
+    addAndMakeVisible (keyLinkButton);
 
     for (auto* c : std::initializer_list<juce::Component*> { &syncButton, &linkButton, &tempoSlider, &dawTempo, &optionsButton })
         addAndMakeVisible (c);
@@ -5711,6 +5718,8 @@ void FaseGroovePianoEditor::applyLanguage()
     newRiffButton.setButtonText (tr ("NEW RIFF"));
     syncButton.setButtonText (tr ("SYNC DAW"));
     linkButton.setButtonText (tr ("LINK DRUMS"));
+    keyLinkButton.setButtonText (tr ("KEY"));
+    keyLinkButton.setTooltip (tr ("Same key (with LINK on): the key and the scale stay the same in Fase Groove Piano and Guitar (change them in either one)"));
     linkButton.setTooltip (tr ("Link with Fase Groove Drums: the same genre, swing, tempo and play button in both, on the same beat (change it in either one)"));
     sequencerToggle.setButtonText (tr ("Sequencer"));
     sequencerToggle.setTooltip (tr ("Off: the groove doesn't play with the DAW, e.g. when the dragged MIDI clip plays on this track (no doubled notes). Incoming MIDI still plays the guide sound; the play button still previews."));
@@ -6149,7 +6158,7 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
     {
         auto events = sgk::GrooveEngine::renderClip (s, rollLength);
         if (processor.isGuitarLeading())   // only what the piano plays under a leading guitar
-            events = FaseGroovePianoProcessor::comping (events);
+            events = FaseGroovePianoProcessor::comping (events, processor.compingSeed(), s, rollLength);
         std::map<int, std::pair<double, int>> open;   // note -> start, velocity (per part)
         std::map<int, sgk::Part> parts;
         for (const auto& e : events)
@@ -6181,6 +6190,9 @@ void FaseGroovePianoEditor::timerCallback()
 {
     keepWindowOnScreen();
     linkButton.setToggleState (processor.isLinked(), juce::dontSendNotification);
+    keyLinkButton.setToggleState (processor.isKeyLinked(), juce::dontSendNotification);
+    keyLinkButton.setEnabled (processor.isLinked());   // it works only with LINK on
+    keyLinkButton.setAlpha (processor.isLinked() ? 1.0f : 0.4f);
     {
         // A linked Fase Groove Guitar set to LEAD: the piano fills in, and says so.
         const auto text = processor.isGuitarLeading() ? tr ("GUITAR LEADS") : tr ("LINK DRUMS");
@@ -6334,7 +6346,7 @@ void FaseGroovePianoEditor::timerCallback()
     const bool bassOn = processor.isBassHeard();
     shownPattern = sgk::GrooveEngine::resolvePattern (s);
     if (processor.isGuitarLeading())
-        shownPattern = FaseGroovePianoProcessor::compingPattern (shownPattern);
+        shownPattern = FaseGroovePianoProcessor::compingPattern (shownPattern, processor.compingSeed());
     patternView.setInterceptsMouseClicks (! processor.isGuitarLeading(), false);   // the comping view is to look at
     patternView.setState (shownPattern, shownStep(), bassOn,
                           ! processor.chordsMuted.load() || ! bassOn);
@@ -6510,7 +6522,7 @@ void FaseGroovePianoEditor::paint (juce::Graphics& g)
     g.setFont (font (13.0f));
     g.drawText ((showingHold ? tr ("HOLD: ") : juce::String()) + currentKey, cd, juce::Justification::centredRight);
 
-    drawPanel (g, tempoArea, tr ("TRANSPORT & TEMPO"));
+    drawPanel (g, tempoArea, tr ("TEMPO"));   // (short: LINK, KEY and Sequencer share its title row)
     drawPanel (g, progressionPanel, tr ("PROGRESSION"));
     drawPanel (g, harmonyPanel, tr ("HARMONY & SCALES"));
     if (! harmonyTabArea.isEmpty())
@@ -6737,7 +6749,9 @@ void FaseGroovePianoEditor::layoutFull()
         auto titleRow = tempoArea.reduced (12, 6).removeFromTop (18);
         sequencerToggle.setBounds (titleRow.removeFromRight (104));
         titleRow.removeFromRight (6);
-        linkButton.setBounds (titleRow.removeFromRight (64));
+        keyLinkButton.setBounds (titleRow.removeFromRight (74));   // KEY, beside Sequencer
+        titleRow.removeFromRight (4);
+        linkButton.setBounds (titleRow.removeFromRight (84));
         auto controls = tempoArea.reduced (12, 8).withTrimmedTop (22);
         rewindButton.setBounds (controls.removeFromLeft (34));
         playButton.setBounds (controls.removeFromLeft (40));
