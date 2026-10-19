@@ -13,7 +13,7 @@ namespace
 {
     juce::Font font (float height, bool bold = false)
     {
-        return juce::Font (juce::FontOptions (height).withStyle (bold ? "Bold" : "Regular"));
+        return FamilyTheme::font (height, bold);
     }
 
     void styleCaption (juce::Label& label, const juce::String& text)
@@ -66,224 +66,6 @@ namespace
 }
 
 //==============================================================================
-GrooveLookAndFeel::GrooveLookAndFeel()
-{
-    regular = juce::Typeface::createSystemTypefaceFor (BinaryData::InterRegular_otf, BinaryData::InterRegular_otfSize);
-    semiBold = juce::Typeface::createSystemTypefaceFor (BinaryData::InterSemiBold_otf, BinaryData::InterSemiBold_otfSize);
-
-    setColour (juce::ResizableWindow::backgroundColourId, Palette::background);
-    setColour (juce::TextButton::buttonColourId, Palette::control);
-    setColour (juce::TextEditor::backgroundColourId, Palette::field);
-    setColour (juce::TextEditor::outlineColourId, Palette::panelEdge);
-    setColour (juce::TextEditor::focusedOutlineColourId, Palette::accent.withAlpha (0.6f));
-    setColour (juce::ListBox::backgroundColourId, Palette::field);
-    setColour (juce::ScrollBar::thumbColourId, Palette::panelEdge.brighter (0.3f));
-    setColour (juce::ComboBox::backgroundColourId, Palette::field);
-    setColour (juce::ComboBox::outlineColourId, Palette::panelEdge);
-    setColour (juce::ComboBox::textColourId, Palette::text);
-    setColour (juce::ComboBox::arrowColourId, Palette::accent);
-    setColour (juce::ComboBox::focusedOutlineColourId, Palette::accent);
-    setColour (juce::PopupMenu::backgroundColourId, Palette::panel);
-    setColour (juce::PopupMenu::textColourId, Palette::text);
-    setColour (juce::PopupMenu::highlightedBackgroundColourId, Palette::accent.withAlpha (0.85f));
-    setColour (juce::PopupMenu::highlightedTextColourId, Palette::background);
-    setColour (juce::Slider::textBoxTextColourId, Palette::text);
-    setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
-    setColour (juce::Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
-    setColour (juce::Label::textColourId, Palette::text);
-    setColour (juce::ToggleButton::textColourId, Palette::text);
-}
-
-juce::Typeface::Ptr GrooveLookAndFeel::getTypefaceForFont (const juce::Font& f)
-{
-    // The default sans-serif becomes Inter (bold styles: Inter SemiBold), the same on every system.
-    if (f.getTypefaceName() == juce::Font::getDefaultSansSerifFontName() && regular != nullptr && semiBold != nullptr)
-        return f.isBold() || f.getTypefaceStyle().containsIgnoreCase ("bold") ? semiBold : regular;
-    return juce::LookAndFeel_V4::getTypefaceForFont (f);
-}
-
-void GrooveLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& b, const juce::Colour& background, bool highlighted, bool down)
-{
-    auto r = b.getLocalBounds().toFloat().reduced (0.5f);
-    const float corner = 4.0f;
-    const bool flatLeft = b.isConnectedOnLeft(), flatRight = b.isConnectedOnRight();
-
-    // The near-black "background" colour many buttons ask for becomes the raised control colour.
-    auto fillColour = background == Palette::background ? Palette::control : background;
-    if (! b.isEnabled())
-        fillColour = fillColour.withMultipliedAlpha (0.5f);
-    else if (down)
-        fillColour = fillColour.darker (0.15f);
-    else if (highlighted)
-        fillColour = fillColour.brighter (0.08f);
-
-    juce::Path shape;
-    shape.addRoundedRectangle (r.getX(), r.getY(), r.getWidth(), r.getHeight(), corner, corner,
-                               ! flatLeft, ! flatRight, ! flatLeft, ! flatRight);
-    g.setColour (fillColour);
-    g.fillPath (shape);
-
-    const bool coloured = fillColour.getPerceivedBrightness() > 0.35f;
-    g.setColour (coloured ? fillColour.darker (0.25f) : (highlighted ? Palette::panelEdge.brighter (0.35f) : Palette::panelEdge));
-    g.strokePath (shape, juce::PathStrokeType (1.0f));
-}
-
-juce::Font GrooveLookAndFeel::getTextButtonFont (juce::TextButton&, int buttonHeight)
-{
-    return juce::Font (juce::FontOptions (juce::jlimit (10.0f, 13.5f, buttonHeight * 0.5f)).withStyle ("Bold"));
-}
-
-void GrooveLookAndFeel::drawComboBox (juce::Graphics& g, int width, int height, bool, int, int, int, int, juce::ComboBox& box)
-{
-    auto r = juce::Rectangle<float> (0.0f, 0.0f, (float) width, (float) height).reduced (0.5f);
-    g.setColour (box.findColour (juce::ComboBox::backgroundColourId));
-    g.fillRoundedRectangle (r, 4.0f);
-    g.setColour (box.hasKeyboardFocus (true) || box.isMouseOver (true) ? Palette::panelEdge.brighter (0.4f) : Palette::panelEdge);
-    g.drawRoundedRectangle (r, 4.0f, 1.0f);
-
-    // A small chevron.
-    const float cx = (float) width - 12.0f, cy = height * 0.5f;
-    juce::Path chevron;
-    chevron.startNewSubPath (cx - 3.5f, cy - 1.8f);
-    chevron.lineTo (cx, cy + 1.8f);
-    chevron.lineTo (cx + 3.5f, cy - 1.8f);
-    g.setColour (box.isEnabled() ? Palette::dim : Palette::dim.withAlpha (0.4f));
-    g.strokePath (chevron, juce::PathStrokeType (1.5f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-}
-
-juce::Font GrooveLookAndFeel::getComboBoxFont (juce::ComboBox& box)
-{
-    return juce::Font (juce::FontOptions (juce::jlimit (11.0f, 14.0f, box.getHeight() * 0.48f)));
-}
-
-void GrooveLookAndFeel::positionComboBoxText (juce::ComboBox& box, juce::Label& label)
-{
-    label.setBounds (2, 1, box.getWidth() - 22, box.getHeight() - 2);
-    label.setFont (getComboBoxFont (box));
-}
-
-void GrooveLookAndFeel::drawPopupMenuBackground (juce::Graphics& g, int width, int height)
-{
-    g.fillAll (Palette::panel);
-    g.setColour (Palette::panelEdge);
-    g.drawRect (0, 0, width, height, 1);
-}
-
-juce::Font GrooveLookAndFeel::getPopupMenuFont()
-{
-    return juce::Font (juce::FontOptions (14.0f));
-}
-
-void GrooveLookAndFeel::drawScrollbar (juce::Graphics& g, juce::ScrollBar&, int x, int y, int width, int height, bool vertical,
-                                       int thumbStart, int thumbSize, bool over, bool down)
-{
-    auto track = juce::Rectangle<int> (x, y, width, height).toFloat();
-    g.setColour (Palette::field);
-    g.fillRoundedRectangle (track, 3.0f);
-    auto thumb = vertical ? juce::Rectangle<float> ((float) x, (float) thumbStart, (float) width, (float) thumbSize)
-                          : juce::Rectangle<float> ((float) thumbStart, (float) y, (float) thumbSize, (float) height);
-    g.setColour (down ? Palette::accent : over ? Palette::panelEdge.brighter (0.6f) : Palette::panelEdge.brighter (0.3f));
-    g.fillRoundedRectangle (thumb.reduced (1.5f), 3.0f);
-}
-
-void GrooveLookAndFeel::drawTooltip (juce::Graphics& g, const juce::String& text, int width, int height)
-{
-    auto r = juce::Rectangle<float> (0.0f, 0.0f, (float) width, (float) height);
-    g.setColour (Palette::field);
-    g.fillRoundedRectangle (r, 4.0f);
-    g.setColour (Palette::panelEdge.brighter (0.3f));
-    g.drawRoundedRectangle (r.reduced (0.5f), 4.0f, 1.0f);
-    g.setColour (Palette::text);
-    g.setFont (juce::Font (juce::FontOptions (13.0f)));
-    g.drawFittedText (text, r.reduced (10.0f, 6.0f).toNearestInt(), juce::Justification::centredLeft, 8, 1.0f);
-}
-
-juce::Rectangle<int> GrooveLookAndFeel::getTooltipBounds (const juce::String& text, juce::Point<int> screenPos, juce::Rectangle<int> parentArea)
-{
-    const juce::Font f (juce::FontOptions (13.0f));
-    const int w = juce::jmin (420, juce::roundToInt (juce::GlyphArrangement::getStringWidth (f, text)) + 22);
-    const int lines = juce::jmax (1, juce::roundToInt (juce::GlyphArrangement::getStringWidth (f, text) / 398.0f + 0.5f));
-    const int h = juce::roundToInt (lines * f.getHeight() * 1.2f) + 12;
-    return juce::Rectangle<int> (screenPos.x > parentArea.getCentreX() ? screenPos.x - (w + 12) : screenPos.x + 24,
-                                 screenPos.y > parentArea.getCentreY() ? screenPos.y - (h + 6) : screenPos.y + 6, w, h)
-        .constrainedWithin (parentArea);
-}
-
-void GrooveLookAndFeel::drawButtonText (juce::Graphics& g, juce::TextButton& b, bool, bool)
-{
-    // Secondary buttons speak in plain text; the accent is kept for filled (primary) buttons.
-    const bool on = b.getToggleState();
-    auto colour = b.findColour (on ? juce::TextButton::textColourOnId : juce::TextButton::textColourOffId);
-    const auto fillColour = b.findColour (on ? juce::TextButton::buttonOnColourId : juce::TextButton::buttonColourId);
-    const bool filled = fillColour != Palette::background && fillColour != Palette::control && fillColour.getPerceivedBrightness() > 0.35f;
-    if (! filled && colour == Palette::accent)
-        colour = Palette::text.withAlpha (0.9f);
-    g.setColour (colour.withMultipliedAlpha (b.isEnabled() ? 1.0f : 0.5f));
-    g.setFont (getTextButtonFont (b, b.getHeight()));
-    g.drawFittedText (b.getButtonText(), b.getLocalBounds().reduced (4, 2), juce::Justification::centred, 1, 0.75f);
-}
-
-juce::Font GrooveLookAndFeel::getLabelFont (juce::Label& label)
-{
-    return label.getFont();
-}
-
-void GrooveLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float pos,
-                                          float startAngle, float endAngle, juce::Slider&)
-{
-    // A studio knob: thin track, accent value arc, a dark body with a soft top light and a pointer.
-    const auto bounds = juce::Rectangle<int> (x, y, width, height).toFloat().reduced (3.0f);
-    const float radius = juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.5f;
-    const auto centre = bounds.getCentre();
-    const float angle = startAngle + pos * (endAngle - startAngle);
-    const float lineW = juce::jlimit (2.0f, 3.5f, radius * 0.11f);
-    const float arcR = radius - lineW * 0.5f;
-
-    juce::Path track;
-    track.addCentredArc (centre.x, centre.y, arcR, arcR, 0.0f, startAngle, endAngle, true);
-    g.setColour (Palette::panelEdge);
-    g.strokePath (track, juce::PathStrokeType (lineW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-
-    juce::Path value;
-    value.addCentredArc (centre.x, centre.y, arcR, arcR, 0.0f, startAngle, angle, true);
-    g.setColour (Palette::accent);
-    g.strokePath (value, juce::PathStrokeType (lineW, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-
-    const float knobR = arcR - lineW - 3.0f;
-    const auto body = juce::Rectangle<float> (knobR * 2.0f, knobR * 2.0f).withCentre (centre);
-    g.setColour (juce::Colours::black.withAlpha (0.35f));
-    g.fillEllipse (body.translated (0.0f, 1.5f));
-    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff2c313b), centre.x, body.getY(),
-                                             juce::Colour (0xff181b21), centre.x, body.getBottom(), false));
-    g.fillEllipse (body);
-    g.setColour (juce::Colour (0xff3a404b));
-    g.drawEllipse (body.reduced (0.5f), 1.0f);
-
-    g.setColour (Palette::text);
-    g.drawLine ({ centre.getPointOnCircumference (knobR * 0.35f, angle), centre.getPointOnCircumference (knobR * 0.85f, angle) }, 2.0f);
-}
-
-void GrooveLookAndFeel::drawToggleButton (juce::Graphics& g, juce::ToggleButton& b, bool highlighted, bool)
-{
-    auto r = b.getLocalBounds().toFloat();
-    auto pill = r.removeFromLeft (34.0f).withSizeKeepingCentre (30.0f, 16.0f);
-    const bool on = b.getToggleState();
-
-    g.setColour (on ? Palette::accent : Palette::field);
-    g.fillRoundedRectangle (pill, 8.0f);
-    g.setColour (on ? Palette::accent.darker (0.2f) : (highlighted ? Palette::panelEdge.brighter (0.4f) : Palette::panelEdge));
-    g.drawRoundedRectangle (pill.reduced (0.5f), 8.0f, 1.0f);
-
-    const float d = 12.0f;
-    const float cx = on ? pill.getRight() - d - 2.0f : pill.getX() + 2.0f;
-    g.setColour (on ? Palette::background : Palette::dim);
-    g.fillEllipse (cx, pill.getCentreY() - d * 0.5f, d, d);
-
-    g.setColour (Palette::text);
-    g.setFont (font (13.0f));
-    g.drawText (b.getButtonText(), r.withTrimmedLeft (6.0f), juce::Justification::centredLeft);
-}
-
 //==============================================================================
 Knob::Knob (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& captionText)
     : caption (captionText), attachment (state, paramId, slider)
@@ -1428,13 +1210,13 @@ void MidiDragTile::paint (juce::Graphics& g)
     }
 
     g.setColour (Palette::background);
-    g.setFont (juce::Font (juce::FontOptions (15.0f).withStyle ("Bold")));
+    g.setFont (FamilyTheme::font (15.0f, true));
     auto titleArea = subtitle.isEmpty() ? content : content.removeFromTop (content.getHeight() * 0.55f);
     g.drawFittedText (title.isNotEmpty() ? title : tr ("DRAG MIDI TO DAW"), titleArea.toNearestInt(), subtitle.isEmpty() ? juce::Justification::centred : juce::Justification::centredBottom, 1, 0.8f);
     if (subtitle.isNotEmpty())
     {
         g.setColour (Palette::background.withAlpha (0.75f));
-        g.setFont (juce::Font (juce::FontOptions (11.5f)));
+        g.setFont (FamilyTheme::font (11.5f));
         g.drawFittedText (subtitle, content.toNearestInt().withTrimmedTop (3), juce::Justification::centredTop, 1, 0.8f);
     }
 }
@@ -2904,11 +2686,12 @@ void IconButton::paintButton (juce::Graphics& g, bool highlighted, bool down)
     shape.addRoundedRectangle (r.getX(), r.getY(), r.getWidth(), r.getHeight(), 4.0f, 4.0f, ! flatLeft, ! flatRight, ! flatLeft, ! flatRight);
     g.setColour (fillColour);
     g.fillPath (shape);
-    g.setColour (filled ? fillColour.darker (0.3f) : (highlighted ? Palette::panelEdge.brighter (0.35f) : Palette::panelEdge));
+    g.setColour (hasKeyboardFocus (true) ? Palette::accent2 : filled ? fillColour.darker (0.3f) : (highlighted ? Palette::panelEdge.brighter (0.35f) : Palette::panelEdge));
     g.strokePath (shape, juce::PathStrokeType (1.0f));
 
-    const auto ink = filled ? Palette::background : (mutedWhenOff ? Palette::dim : Palette::text.withAlpha (0.92f));
-    const auto iconInk = ! filled && ! iconColour.isTransparent() ? iconColour : ink;
+    auto ink = filled ? Palette::background : (mutedWhenOff ? Palette::dim : Palette::text.withAlpha (0.92f));
+    if (! isEnabled()) ink = ink.withMultipliedAlpha (0.4f);
+    const auto iconInk = ! filled && ! iconColour.isTransparent() ? iconColour.withMultipliedAlpha (isEnabled() ? 1.0f : 0.4f) : ink;
     const float iconSize = juce::jmin (r.getHeight() * 0.56f, 18.0f);
     const auto text = getButtonText();
 
@@ -2924,7 +2707,7 @@ void IconButton::paintButton (juce::Graphics& g, bool highlighted, bool down)
     }
     else
     {
-        juce::Font f (juce::FontOptions (juce::jlimit (10.0f, 13.0f, r.getHeight() * 0.46f)).withStyle ("Bold"));
+        const auto f = FamilyTheme::font (juce::jlimit (10.0f, 13.0f, r.getHeight() * 0.42f), true);
         const float textW = juce::GlyphArrangement::getStringWidth (f, text);
         const float iconsW = icon == Icon::none ? 0.0f : iconSize * (icon2 != Icon::none ? 2.15f : 1.0f) + 6.0f;
         auto area = content.withSizeKeepingCentre (juce::jmin (content.getWidth(), iconsW + textW), content.getHeight());
@@ -2946,7 +2729,7 @@ void IconButton::paintButton (juce::Graphics& g, bool highlighted, bool down)
     {
         const auto iconArea = text.isEmpty() ? content.withSizeKeepingCentre (iconSize, iconSize)
                                              : content.withWidth (iconSize).withSizeKeepingCentre (iconSize, iconSize)
-                                                   .translated (juce::jmax (0.0f, (content.getWidth() - (iconSize + 6.0f + juce::GlyphArrangement::getStringWidth (juce::Font (juce::FontOptions (juce::jlimit (10.0f, 13.0f, r.getHeight() * 0.46f)).withStyle ("Bold")), text))) * 0.5f), 0.0f);
+                                                   .translated (juce::jmax (0.0f, (content.getWidth() - (iconSize + 6.0f + juce::GlyphArrangement::getStringWidth (FamilyTheme::font (juce::jlimit (10.0f, 13.0f, r.getHeight() * 0.42f), true), text))) * 0.5f), 0.0f);
         g.setColour (Palette::dim.brighter (0.3f));
         g.drawLine ({ iconArea.getBottomLeft().translated (-1.0f, 1.0f), iconArea.getTopRight().translated (1.0f, -1.0f) }, 1.8f);
     }
@@ -4772,14 +4555,14 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     // LINK: the same genre and swing as Fase Groove Drums.
     linkButton.setClickingTogglesState (true);
     linkButton.setColour (juce::TextButton::buttonColourId, Palette::background);
-    linkButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent2.darker (0.3f));   // as in Drums and Guitar
+    linkButton.setColour (juce::TextButton::buttonOnColourId, Palette::linked);   // as in Drums and Guitar
     linkButton.setColour (juce::TextButton::textColourOffId, Palette::text);
     linkButton.setColour (juce::TextButton::textColourOnId, Palette::text);
     linkButton.setToggleState (p.isLinked(), juce::dontSendNotification);
     linkButton.onClick = [this] { processor.setLinked (linkButton.getToggleState()); };
     keyLinkButton.setClickingTogglesState (true);
     keyLinkButton.setColour (juce::TextButton::buttonColourId, Palette::background);
-    keyLinkButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent2.darker (0.3f));
+    keyLinkButton.setColour (juce::TextButton::buttonOnColourId, Palette::linked);
     keyLinkButton.setColour (juce::TextButton::textColourOffId, Palette::text);
     keyLinkButton.setColour (juce::TextButton::textColourOnId, Palette::text);
     keyLinkButton.onClick = [this] { processor.setKeyLinked (keyLinkButton.getToggleState()); };
@@ -4975,7 +4758,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     // The velocity page (grid view only): the hits as faders.
     velocityTab.setClickingTogglesState (false);
     velocityTab.setColour (juce::TextButton::buttonColourId, Palette::background);
-    velocityTab.setColour (juce::TextButton::buttonOnColourId, Palette::level);
+    velocityTab.setColour (juce::TextButton::buttonOnColourId, Palette::accent);
     velocityTab.setColour (juce::TextButton::textColourOffId, Palette::level);
     velocityTab.setColour (juce::TextButton::textColourOnId, Palette::background);
     velocityTab.onClick = [this] { showVelocity (! velocityShown); };
@@ -5036,7 +4819,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         auto* lock = segmentLocks.add (new juce::TextButton ("LOCK"));
         lock->setClickingTogglesState (true);
         lock->setColour (juce::TextButton::buttonColourId, Palette::background);
-        lock->setColour (juce::TextButton::buttonOnColourId, Palette::accent2);
+        lock->setColour (juce::TextButton::buttonOnColourId, Palette::accent);
         lock->setColour (juce::TextButton::textColourOffId, Palette::dim);
         lock->setColour (juce::TextButton::textColourOnId, Palette::background);
         lock->setTooltip ("Keep this part when you press NEW RIFF");
@@ -5068,7 +4851,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         auto* vlock = velocityLocks.add (new juce::TextButton ("LOCK"));
         vlock->setClickingTogglesState (true);
         vlock->setColour (juce::TextButton::buttonColourId, Palette::background);
-        vlock->setColour (juce::TextButton::buttonOnColourId, Palette::level);
+        vlock->setColour (juce::TextButton::buttonOnColourId, Palette::accent);
         vlock->setColour (juce::TextButton::textColourOffId, Palette::dim);
         vlock->setColour (juce::TextButton::textColourOnId, Palette::background);
         vlock->onClick = [this, i, vlock] { processor.setVelocityLocked (processor.velocityPartAt (i), vlock->getToggleState()); };
@@ -5090,7 +4873,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addAndMakeVisible (b);
     }
     learnButton.setClickingTogglesState (false);
-    learnButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent2);
+    learnButton.setColour (juce::TextButton::buttonOnColourId, Palette::linked);
     learnButton.setColour (juce::TextButton::textColourOnId, Palette::background);
     learnButton.onClick = [this]
     {
@@ -6455,7 +6238,7 @@ void FaseGroovePianoEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> a
         auto head = area.reduced (14, 8).removeFromTop (16).toFloat();
         g.setColour (Palette::accent);
         g.fillRoundedRectangle (head.getX(), head.getCentreY() - 5.0f, 2.5f, 10.0f, 1.0f);
-        juce::Font f (juce::FontOptions (11.0f).withStyle ("Bold"));
+        const auto f = FamilyTheme::font (11.0f, true);
         f.setExtraKerningFactor (0.12f);
         g.setFont (f);
         g.setColour (Palette::text.withAlpha (0.85f));

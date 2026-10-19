@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [0.23.0] - 2026-10-19
 
+- Shared Piano/Drums/Guitar control theme: matching buttons, menus, embedded Inter fonts, focus and active states; existing layouts are preserved.
 - Note-offs keep the channel used by their note-on, including a channel change while playing.
 - Old presets restore defaults for missing parameters instead of inheriting the previous preset.
 - MIDI Start and Song Position Pointer replace the old clock position in the current block.

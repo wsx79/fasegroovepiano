@@ -62,6 +62,16 @@ jobs:
       - name: Engine tests
         run: ctest --test-dir build -C Release --output-on-failure
 
+      - name: Render interface screenshots (Windows)
+        if: runner.os == 'Windows'
+        run: ./build/sgk_plugin_tests_artefacts/Release/sgk_plugin_tests.exe --screenshots screenshots 1
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: interface-screenshots-piano
+          path: screenshots/*.png
+
       # macOS signing. Without the secrets below the plug-in is signed ad hoc (as before).
       # With an Apple Developer account, add these repository secrets and every release is
       # signed with your Developer ID, notarized by Apple and stapled (no Gatekeeper warning):

@@ -1755,9 +1755,30 @@ namespace
 
 }
 
-int main()
+int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI juce;
+    if (argc > 2 && juce::String (argv[1]) == "--screenshots")
+    {
+        Localisation::setCurrent (Localisation::Language::italian);
+        const auto folder = juce::File::getCurrentWorkingDirectory().getChildFile (argv[2]);
+        folder.createDirectory();
+        FaseGroovePianoProcessor p;
+        std::unique_ptr<juce::AudioProcessorEditor> editor (p.createEditor());
+        const auto image = editor->createComponentSnapshot (editor->getLocalBounds(), true, 1.0f);
+        juce::PNGImageFormat png;
+        juce::FileOutputStream output (folder.getChildFile ("1-main.png"));
+        return output.openedOk() && png.writeImageToStream (image, output) ? 0 : 1;
+    }
+    {
+        auto* original = &juce::LookAndFeel::getDefaultLookAndFeel();
+        FaseGroovePianoProcessor a, b;
+        std::unique_ptr<juce::AudioProcessorEditor> first (a.createEditor()), second (b.createEditor());
+        CHECK (&juce::LookAndFeel::getDefaultLookAndFeel() == original);
+        first.reset();
+        CHECK (&juce::LookAndFeel::getDefaultLookAndFeel() == original);
+        CHECK (second->createComponentSnapshot (second->getLocalBounds(), true, 1.0f).isValid());
+    }
 
     testStateRoundTrip();
     testOldAndBrokenStates();
