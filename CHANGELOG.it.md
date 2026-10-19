@@ -8,6 +8,8 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 
 ## [Unreleased]
 
+- **LINK e PLAY: niente più scatti.** Con LINK il tempo scorre continuo blocco dopo blocco e segue con
+  dolcezza l'orologio condiviso (leggere l'ora di sistema a ogni blocco faceva suonare note due volte o per niente).
 - **LINK con Fase Groove Drums e Guitar:** lo swing arriva fino a 1,5 (lo shuffle più pesante),
   come batteria e chitarra, così lo swing condiviso suona uguale in tutti e tre.
 - Un groove casuale o modificato condivide comunque con LINK il genere del suo ultimo preset, e

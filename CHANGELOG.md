@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+- **LINK and PLAY: no more stutters.** Linked, the beat goes on block by block and follows the shared
+  clock gently (reading the system time each block made notes play twice or not at all).
 - **LINK with Fase Groove Drums and Guitar:** the swing goes up to 1.5 (the heaviest shuffle), the
   same range as the drums and the guitar, so the shared swing sounds the same in all three.
 - A random or edited groove still shares the genre of its last preset with LINK, and keeps itself
