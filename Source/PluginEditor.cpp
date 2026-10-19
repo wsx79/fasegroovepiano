@@ -6352,7 +6352,8 @@ void FaseGroovePianoEditor::timerCallback()
     if (rollShown)
         updatePianoRoll (s);
     generatedButton.setVisible (rollShown && s.playsEditedLoop());
-    dragTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + clipLength.getText());
+    dragTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + clipLength.getText()
+                          + (processor.isGuitarLeading() ? juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("GUITAR LEADS") : juce::String()));
     if (songOverlay.isVisible())
         songOverlay.songTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("Song"));
     if (songOverlay.isVisible())

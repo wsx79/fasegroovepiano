@@ -2069,6 +2069,18 @@ juce::MidiFile FaseGroovePianoProcessor::midiFromEvents (const std::vector<sgk::
                                                          const std::vector<sgk::GrooveEngine::Marker>* markers,
                                                          ClipPart part, const juce::String& name, const juce::String& songPart) const
 {
+    if (guitarLeads.load() && linkOn.load())   // the guitar leads: the clip as the piano plays it
+    {
+        const auto comped = comping (clipEvents);
+        return midiFromEventsAsIs (comped, beats, markers, part, name, songPart);
+    }
+    return midiFromEventsAsIs (clipEvents, beats, markers, part, name, songPart);
+}
+
+juce::MidiFile FaseGroovePianoProcessor::midiFromEventsAsIs (const std::vector<sgk::NoteEvent>& clipEvents, double beats,
+                                                             const std::vector<sgk::GrooveEngine::Marker>* markers,
+                                                             ClipPart part, const juce::String& name, const juce::String& songPart) const
+{
     constexpr int ticksPerQuarter = 960;
     const bool bassOnChannel2 = juce::roundToInt (raw (ParamIDs::bassChannel)) == 1;
 
@@ -2232,6 +2244,38 @@ bool FaseGroovePianoProcessor::compingKeeps (double ppq) noexcept
     const double beat = ppq - (double) bar * 4.0;
     return (bar % 2 == 0 && beat < 1.0)    // a chord on the first beat of every other bar
         || (bar % 4 == 3 && beat >= 3.0);  // and one pushing into the next phrase
+}
+
+std::vector<sgk::NoteEvent> FaseGroovePianoProcessor::comping (const std::vector<sgk::NoteEvent>& events)
+{
+    std::vector<sgk::NoteEvent> out;
+    out.reserve (events.size());
+    std::map<int, std::vector<bool>> kept;   // note + part -> the notes struck, kept or not, in order
+    for (const auto& e : events)
+    {
+        if (e.part != sgk::Part::chords && e.part != sgk::Part::fill)
+        {
+            out.push_back (e);
+            continue;
+        }
+        auto& queue = kept[e.note + 128 * (int) e.part];
+        if (e.isNoteOn())
+        {
+            const bool keep = compingKeeps (e.ppq);
+            queue.push_back (keep);
+            if (keep)
+                out.push_back (e);
+        }
+        else
+        {
+            const bool keep = queue.empty() || queue.front();   // an off with no on stays (harmless)
+            if (! queue.empty())
+                queue.erase (queue.begin());
+            if (keep)
+                out.push_back (e);
+        }
+    }
+    return out;
 }
 
 void FaseGroovePianoProcessor::readGuitarLead()

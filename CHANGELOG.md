@@ -6,6 +6,10 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.21.1] - 2026-10-19
+
+- Guitar leads: the exported MIDI (clip, whole song, sections) is the piano as it plays then, only the chords that fill in; the bass and strings as they are. The drag tile says GUITAR LEADS.
+
 ## [2.21.0] - 2026-10-19
 
 - **Guitar leads:** with LINK on and LEAD pressed in Fase Groove Guitar, the piano plays only a chord now and then (the first beat of every other bar and a push into each phrase); the button reads GUITAR LEADS. Without LEAD nothing changes.

@@ -277,6 +277,9 @@ public:
         (the first beat of every other bar, a push into each four-bar phrase), the bass as usual. */
     bool isGuitarLeading() const noexcept { return guitarLeads.load(); }
     static bool compingKeeps (double ppq) noexcept;
+    /** The events as the piano plays them under a leading guitar: the chord and fill notes
+        outside compingKeeps() left out (each with its note-off), the bass and strings as they are. */
+    static std::vector<sgk::NoteEvent> comping (const std::vector<sgk::NoteEvent>& events);
     /** Writes the genre and swing for the others, or takes theirs (message thread, a few times a second). */
     void updateLink();
     /** The genre shared with LINK: a preset's own, else the last preset's. */
@@ -444,6 +447,8 @@ private:
     std::uint32_t morphSeed = 1;
     juce::MidiFile midiFromEvents (const std::vector<sgk::NoteEvent>&, double beats, const std::vector<sgk::GrooveEngine::Marker>*,
                                    ClipPart, const juce::String& name, const juce::String& songPart = {}) const;
+    juce::MidiFile midiFromEventsAsIs (const std::vector<sgk::NoteEvent>&, double beats, const std::vector<sgk::GrooveEngine::Marker>*,
+                                       ClipPart, const juce::String& name, const juce::String& songPart) const;
     std::array<std::atomic<int>, sgk::maxProgressionLength> freeChords;
     void resetUserPattern();
     int lastBassMode = 1;

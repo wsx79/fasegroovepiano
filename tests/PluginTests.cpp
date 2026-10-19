@@ -1537,6 +1537,34 @@ namespace
         CHECK (P::compingKeeps (8.0));         // bar 3
         CHECK (P::compingKeeps (15.5));        // the push at the end of bar 4
         CHECK (! P::compingKeeps (7.5));
+
+        // The exported clip under a leading guitar: fewer piano chords, every one closed, the
+        // bass untouched.
+        {
+            P p;
+            const auto events = sgk::GrooveEngine::renderClip (p.currentSettings(), 16.0);
+            const auto comped = P::comping (events);
+            int chordsBefore = 0, chordsAfter = 0, bassBefore = 0, bassAfter = 0;
+            for (const auto& e : events)
+                if (e.isNoteOn()) (e.part == sgk::Part::bass ? bassBefore : chordsBefore) += 1;
+            std::map<int, int> open;
+            for (const auto& e : comped)
+            {
+                if (e.isNoteOn())
+                {
+                    (e.part == sgk::Part::bass ? bassAfter : chordsAfter) += 1;
+                    if (e.part != sgk::Part::bass)
+                        CHECK (P::compingKeeps (e.ppq));
+                    ++open[e.note + 128 * (int) e.part];
+                }
+                else
+                    --open[e.note + 128 * (int) e.part];
+            }
+            CHECK (chordsAfter > 0 && chordsAfter < chordsBefore);
+            CHECK (bassAfter == bassBefore);
+            for (const auto& [id, n] : open)
+                CHECK (n <= 0);   // nothing left hanging
+        }
     }
 
 }
