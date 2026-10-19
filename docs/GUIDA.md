@@ -704,6 +704,32 @@ Due modi di usarla:
 
 ---
 
+## Novità: suonare con la chitarra, e la 0.24
+
+**LINK** (in TEMPO) collega Fase Groove Piano con Fase Groove **Drums** e **Guitar**: stesso genere,
+swing, tempo e tasto play in tutti, sullo stesso battito.
+
+- **TONALITÀ** (accanto a Sequencer) mostra tonalità e scala ("TONALITÀ  A Dorian"). Accesa nel piano
+  e nella chitarra, con LINK attivo, mantiene la stessa tonalità e scala: cambiala in uno qualsiasi.
+- **Chitarra solista:** quando Fase Groove Guitar ha **SOLISTA** acceso, il piano smette il suo
+  pattern completo e risponde alla chitarra ogni tanto: alcune finestre in quattro battute (ogni
+  battuta risponde, la seconda a volte resta in silenzio), in ognuna un pezzo del groove del piano o
+  una risposta sua (un colpo, due colpi brevi, una spinta, un accordo tenuto, una coppia in levare,
+  tre sedicesimi, un anticipo, un ghost e un colpo). NUOVO RITMO le sposta. Il pulsante del link
+  mostra CHITARRA SOLISTA; griglia, piano roll e MIDI esportato mostrano esattamente cosa suona il piano.
+
+Nuovo nel menu **Feel** (0.24):
+
+| Impostazione | Cosa fa |
+|---|---|
+| **Bass feel** | *Classico*; *Sub*: la fondamentale nell'ottava bassa (Mi1–La2) con condotta delle voci, senza salti d'ottava tra gli accordi; *Sub + spazi sidechain*: nessuna nota di basso suona dentro il battito dopo, spazio per il kick. |
+| **Groove realism** | Tempo da entrambi i lati del battito con una deriva lenta (il basso più stretto degli accordi), accenti in base al posto nella battuta e lungo la frase di quattro battute, due altre versioni del groove in ogni frase, qualche stab in levare tolto, l'ultimo stab della frase che risponde un grado sopra. |
+| **Pedale ed espressione** | Pedale di sustain (CC64) alzato a ogni cambio d'accordo e ripremuto subito dopo; espressione (CC11) che sale nel build-up. Dal vivo e nelle clip esportate. |
+
+I nuovi progetti partono con *Sub* e realism attivo; quelli vecchi si aprono come suonavano. Nell'export
+MIDI la clip a traccia unica mette il basso sul canale 2, e *Tracce separate* ha sempre Piano, Basso,
+Fill e Archi così le clip di un brano restano allineate.
+
 ## 8. Domande frequenti e problemi
 
 **Alla fine di ogni giro c'è una piccola scaletta. Si può togliere?**

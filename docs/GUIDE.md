@@ -680,6 +680,32 @@ Two ways to use it:
 
 ---
 
+## What's new: playing with the guitar, and 0.24
+
+**LINK** (in TEMPO) links Fase Groove Piano with Fase Groove **Drums** and **Guitar**: the same genre,
+swing, tempo and play button in all of them, on the same beat.
+
+- **KEY** (beside Sequencer) shows the key and scale ("KEY  A Dorian"). On in the piano and in the
+  guitar, with LINK on, they keep the same key and scale: change it in either one.
+- **Guitar leads:** when Fase Groove Guitar has **LEAD** on, the piano stops its full pattern and
+  answers the guitar now and then: a few windows in four bars (every bar answers, the second now and
+  then stays quiet), each one either a piece of the piano's groove or an answer of its own (a stab,
+  two short hits, a push, a held chord, an off-beat pair, three 16ths, an anticipation, a ghost and
+  a hit). NEW RHYTHM moves them. The link button reads GUITAR LEADS; the grid, the piano roll and
+  the exported MIDI show exactly what the piano plays.
+
+New in the **Feel** menu (0.24):
+
+| Setting | What it does |
+|---|---|
+| **Bass feel** | *Classic*; *Sub*: the root voice-led in the low octave (E1–A2), never jumping an octave between chords; *Sub + sidechain gaps*: no bass note rings into the next beat, room for the kick. |
+| **Groove realism** | Timing on both sides of the beat with a slow drift (the bass tighter than the chords), accents by place in the bar and over a four-bar phrase, two other takes of the groove in every phrase of four, a few off-beat stabs left out, the last stab of a phrase answering a step up. |
+| **Pedal & expression** | Sustain pedal (CC64) lifted on every chord change and pressed just after; expression (CC11) rising through the build-up. Live and in the exported clips. |
+
+New instances start with *Sub* and realism on; older projects open as they sounded. In the MIDI
+export a single-track clip puts the bass on channel 2, and *Separate tracks* always contain Piano,
+Bass, Fills and Strings so the clips of a song line up.
+
 ## 8. FAQ and troubleshooting
 
 **There's a little scale at the end of every few bars. Can I remove it?**
