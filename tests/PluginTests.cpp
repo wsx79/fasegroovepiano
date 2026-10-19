@@ -229,7 +229,7 @@ namespace
             for (auto part : { FaseGroovePianoProcessor::ClipPart::all, FaseGroovePianoProcessor::ClipPart::chords,
                                FaseGroovePianoProcessor::ClipPart::bass })
             {
-                const auto c = readClip (p.writeMidiClip (bars, part), false);
+                const auto c = readClip (p.writeMidiClip (bars, part), part == FaseGroovePianoProcessor::ClipPart::all);
                 CHECK (c.unmatched == 0);
                 CHECK (c.ordered);
                 CHECK (c.channelsOk);
@@ -493,7 +493,7 @@ namespace
         CHECK (p.saveSongSections (folder, FaseGroovePianoProcessor::ClipPart::all) == 5);
         CHECK (folder.findChildFiles (juce::File::findFiles, false, "*.mid").size() == 5);
         for (const auto& f : folder.findChildFiles (juce::File::findFiles, false, "*.mid"))
-            CHECK (readClip (f, false).unmatched == 0);
+            CHECK (readClip (f, true).unmatched == 0);
         folder.deleteRecursively();
     }
 
@@ -573,7 +573,7 @@ namespace
         q.setParameterFromUI (ParamIDs::fills, 2.0f);
         CHECK (q.currentSettings().fillEveryBars == 0);
 
-        // Separate tracks (with "Bass on channel 2"): a conductor track, then Piano (ch 1), Bass (ch 2) and Fills.
+        // Separate tracks (with "Bass on channel 2"): a conductor track, then Piano (ch 1), Bass (ch 2), Fills and Strings (always there, even empty).
         q.setParameterFromUI (ParamIDs::bassChannel, 1.0f);
         q.setParameterFromUI (ParamIDs::section, (float) sgk::Section::drop);
         q.setParameterFromUI (ParamIDs::fills, 1.0f);
@@ -581,7 +581,7 @@ namespace
         juce::FileInputStream in (file);
         juce::MidiFile mf;
         CHECK (in.openedOk() && mf.readFrom (in));
-        CHECK (mf.getNumTracks() == 4);
+        CHECK (mf.getNumTracks() == 5);
         auto channelsOf = [&mf] (int track, int& ch1, int& ch2, juce::String& name)
         {
             ch1 = ch2 = 0;
@@ -596,7 +596,7 @@ namespace
         channelsOf (0, h1, h2, headName);
         channelsOf (1, a1, a2, pianoName);
         channelsOf (2, b1, b2, bassName);
-        if (mf.getNumTracks() == 4) channelsOf (3, f1, f2, fillName);
+        if (mf.getNumTracks() >= 4) channelsOf (3, f1, f2, fillName);
         CHECK (h1 + h2 == 0);
         // Each track named after its instrument and the part of the song ("Piano Main groove"...).
         CHECK (pianoName.startsWith ("Piano ") && a1 > 0 && a2 == 0);
@@ -1294,7 +1294,7 @@ namespace
         CHECK (juce::roundToInt (value (p, ParamIDs::strings)) == (int) sgk::StringsMode::widePad);
 
         // Clips: everything (strings on channel 3), chords only without them, strings only.
-        const auto all = readClip (p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::all), false);
+        const auto all = readClip (p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::all), true);
         CHECK (all.onChannel3 > 0 && all.unmatched == 0 && all.channelsOk);
         CHECK (readClip (p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::chords), false).onChannel3 == 0);
         const auto stringsFile = p.writeMidiClip (2, FaseGroovePianoProcessor::ClipPart::strings);
@@ -1753,6 +1753,98 @@ namespace
         }
     }
 
+
+    void testV024()
+    {
+        using P = FaseGroovePianoProcessor;
+
+        // The answers' hits never overlap (the same notes would be struck twice at once), the loop
+        // point included, and an exported comped clip closes every answer inside the clip.
+        for (std::uint32_t seed = 1; seed <= 60; ++seed)
+        {
+            std::array<P::CompingSpan, 24> hits;
+            const int n = P::compingHits (seed, hits);
+            for (int i = 0; i < n; ++i)
+            {
+                const double nextOn = i + 1 < n ? hits[(size_t) i + 1].on : hits[0].on + 16.0;
+                CHECK (hits[(size_t) i].off <= nextOn - 0.019 && hits[(size_t) i].off > hits[(size_t) i].on);
+            }
+            P p;
+            const auto settings = p.currentSettings();
+            for (double length : { 4.0, 16.0, 32.0 })
+            {
+                const auto comped = P::comping (sgk::GrooveEngine::renderClip (settings, length), seed, settings, length);
+                std::map<int, int> open;
+                for (const auto& e : comped)
+                {
+                    CHECK (e.ppq <= length + 1.0e-9);
+                    const int id = e.note + 128 * (int) e.part;
+                    open[id] += e.isNoteOn() ? 1 : -1;
+                    CHECK (open[id] <= 1 && open[id] >= -1);
+                }
+                for (const auto& [id, count] : open)
+                    CHECK (count <= 0);   // every answer struck in the clip ends in it
+            }
+        }
+
+        // A new instance plays the sub bass and the realism; a project saved before them keeps
+        // its classic bass and feel.
+        {
+            P fresh;
+            CHECK (fresh.currentSettings().bassFeel == 1 && fresh.currentSettings().realism);
+            juce::MemoryBlock state;
+            fresh.getStateInformation (state);
+            auto xml = juce::AudioProcessor::getXmlFromBinary (state.getData(), (int) state.getSize());
+            CHECK (xml != nullptr);
+            if (xml != nullptr)
+            {
+                for (auto* id : { ParamIDs::bassFeel, ParamIDs::realism })
+                    if (auto* child = xml->getChildByAttribute ("id", id))
+                        xml->removeChildElement (child, true);
+                juce::MemoryBlock old;
+                juce::AudioProcessor::copyXmlToBinary (*xml, old);
+                P older;
+                older.setStateInformation (old.getData(), (int) old.getSize());
+                CHECK (older.currentSettings().bassFeel == 0 && ! older.currentSettings().realism);
+            }
+        }
+
+        // Pedal & expression: the piano's clip carries the sustain pedal (down and up) and CC11.
+        {
+            P p;
+            p.setParameterFromUI (ParamIDs::pedalCC, 1.0f);
+            juce::FileInputStream in (p.writeMidiClip (2, P::ClipPart::chords));
+            juce::MidiFile mf;
+            CHECK (in.openedOk() && mf.readFrom (in));
+            int down = 0, up = 0, expression = 0;
+            for (int t = 0; t < mf.getNumTracks(); ++t)
+                for (auto* ev : *mf.getTrack (t))
+                    if (ev->message.isController())
+                    {
+                        if (ev->message.getControllerNumber() == 64) (ev->message.getControllerValue() > 0 ? down : up) += 1;
+                        if (ev->message.getControllerNumber() == 11) ++expression;
+                    }
+            CHECK (down > 0 && up > 0 && expression > 0);
+            juce::FileInputStream bassIn (p.writeMidiClip (2, P::ClipPart::bass));
+            juce::MidiFile bass;
+            CHECK (bassIn.openedOk() && bass.readFrom (bassIn));
+            for (int t = 0; t < bass.getNumTracks(); ++t)
+                for (auto* ev : *bass.getTrack (t))
+                    CHECK (! ev->message.isController());   // the pedal is the piano's
+        }
+
+        // The edited loop plays at the length its carried notes were made for.
+        {
+            P d;
+            const double length = d.naturalLoopBeats();
+            d.setEditedLoop (d.generatedLoop (length), length);
+            d.setParameterFromUI (ParamIDs::progLength, 4.0f);
+            d.setParameterFromUI (ParamIDs::chordLength, 2.0f);   // two bars a chord: a longer loop
+            d.refreshEditedLoop();
+            CHECK (std::abs (d.currentSettings().editedLoopLength - d.editedLoopLength()) < 1.0e-9);
+            CHECK (d.editedLoopLength() > length);
+        }
+    }
 }
 
 int main (int argc, char** argv)
@@ -1817,6 +1909,7 @@ int main (int argc, char** argv)
     testSectionTrackNames();
     testLinkWithDrums();
     testLinkRoles();
+    testV024();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

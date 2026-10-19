@@ -75,6 +75,10 @@ GroovePattern addVoicingMovement (const GroovePattern& source, int level);
     moves soulful house uses most: ii-V, IV-iii-ii, falling fifths... */
 std::vector<int> randomProgression (std::uint32_t seed, int length);
 
+/** The same in a scale: the minor modes move the way minor house does (i - bVII - bVI, i - iv,
+    i - IV in Dorian...), the major ones as above. */
+std::vector<int> randomProgression (std::uint32_t seed, int length, int scale);
+
 //==============================================================================
 struct ArrangementPart
 {

@@ -6,6 +6,18 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.24.0] - 2026-10-19
+
+- Carattere del basso (menu Feel): Classico, Sub (la fondamentale condotta nell'ottava bassa, Mi1-La2) o Sub + pause per il sidechain (nessuna nota di basso suona sul battito successivo). Le nuove istanze partono da Sub; i progetti esistenti restano su Classico.
+- Groove realistico (menu Feel, attivo nelle nuove istanze): tempi in anticipo e in ritardo con una lenta deriva da una battuta all'altra, il basso più preciso degli accordi, accenti secondo la posizione nella battuta e lungo una frase di quattro battute, due altre versioni del groove in ogni frase di quattro, qualche accordo in levare omesso e l'ultimo accordo della frase che risponde un grado sopra.
+- Pedale ed espressione (menu Feel): pedale di risonanza (CC64) rilasciato a ogni cambio d'accordo e ripremuto subito dopo, espressione (CC11) in crescendo nel build-up; dal vivo e nelle clip esportate del pianoforte.
+- Chitarra in primo piano: le risposte del pianoforte non si sovrappongono più e non restano appese; un'anticipazione suona l'accordo successivo; le risposte sono arpeggiate, con dinamica per voce (nota in alto più forte) e seguono il livello della sezione e l'umanizzazione; la clip esportata chiude ogni risposta al suo interno; le note d'accordo omesse non tagliano più una risposta della stessa altezza.
+- Correzioni: le sezioni del brano suonano i propri colori armonici (l'intro non decide più le estensioni di tutto il brano); estensione degli accordi e basso on/off aggiornano subito il voicing; tornare da una linea di basso della libreria al basso del groove ha effetto subito; lo stile Pianista non perde più le note in alto ai confini dei blocchi o all'inizio della clip; la mano sinistra non raddoppia più la nota del basso, e una nota suonata da entrambi appartiene al basso; un loop modificato suona alla lunghezza a cui sono state riportate le sue note.
+- Linee di basso della libreria: la quinta segue l'accordo (quinta diminuita sui semidiminuiti), la sesta segue la tonalità e le note di avvicinamento suonano solo se l'accordo cambia entro il battito.
+- I fill sugli accordi cromatici usano le note di quell'accordo; i voicing Quartale e Quinte aperte si muovono senza salti da un accordo all'altro e seguono la linea in alto; l'estensione degli accordi si applica dopo la pulizia del registro grave.
+- Progressioni casuali nei modi minori: si muovono come la house minore (i - iv - bVII - bVI...).
+- Esportazione MIDI: una clip a traccia singola con tutte le parti mette il basso sul canale 2; Tracce separate contiene sempre Piano, Basso, Fill e Archi, così le clip di un brano si allineano; una clip in loop riporta all'inizio le note che suonano ancora alla fine.
+
 ## [0.23.0] - 2026-10-19
 
 - Controlli comuni a Piano, Drums e Guitar: stessi pulsanti, menu, font Inter, focus, stati attivi e colori dei comandi, mantenendo la disposizione attuale.

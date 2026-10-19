@@ -61,6 +61,9 @@ namespace ParamIDs
     inline constexpr const char* reverb      = "reverb";
     inline constexpr const char* volume      = "volume";
     inline constexpr const char* strings     = "strings";       // the strings (StringsMode), MIDI channel 3
+    inline constexpr const char* bassFeel    = "bassFeel";      // classic, sub (voice-led), sub + sidechain gaps
+    inline constexpr const char* realism     = "realism";       // groove realism (timing, accents, phrase variation)
+    inline constexpr const char* pedalCC     = "pedalCC";       // sustain pedal (CC64) and expression (CC11) out
 
     inline juce::String slot (int index)    { return "slot" + juce::String (index + 1); }
     inline juce::String segment (int index) { return "segment" + juce::String (index + 1); }
@@ -291,6 +294,13 @@ public:
     /** The answers' note-ons and note-offs that fall in [from, to), on the chords of the moment. */
     static void compingAnswers (double from, double to, std::uint32_t seed, const sgk::GrooveSettings&,
                                 std::vector<sgk::NoteEvent>& out);
+    /** The same on a progression already voiced (the audio thread voices it only when it changes). */
+    static void compingAnswers (double from, double to, std::uint32_t seed, const sgk::GrooveSettings&,
+                                const std::array<sgk::VoicedChord, sgk::maxProgressionLength>& voiced,
+                                std::vector<sgk::NoteEvent>& out);
+    /** One hit of the answers in the four-bar cycle (beats), ended before the next one starts. */
+    struct CompingSpan { double on = 0.0, off = 0.0; float level = 1.0f; int id = 0; };
+    static int compingHits (std::uint32_t seed, std::array<CompingSpan, 24>& out) noexcept;
     /** The comping's seed: the groove and its riff seed (NEW RHYTHM gives other answers). */
     std::uint32_t compingSeed() const;
     /** The events as the piano plays them under a leading guitar: the chord and fill notes
@@ -403,6 +413,15 @@ private:
     std::atomic<bool> keyLinked { false };
     std::vector<sgk::NoteEvent> answerEvents;   // the comping answers of one block
     std::array<bool, 128> answerSounding {};
+    // Piano notes the comping left out (their note-on never went out, so neither does their note-off,
+    // which would cut an answer of the same pitch).
+    std::array<bool, 256> compingDropped {};
+    // The answers' voiced progression, voiced again only when the harmony changes.
+    sgk::GrooveEngine::HarmonyKey compingHarmony {};
+    bool compingVoiced = false;
+    std::array<sgk::Chord, sgk::maxProgressionLength> compingChords {};
+    std::array<sgk::VoicedChord, sgk::maxProgressionLength> compingVoicing {};
+    bool pedalDown = false;   // CC64 sent down (lifted on a stop or a jump)
     int leadChecks = 0;
     void readGuitarLead();
     // What the linked plug-ins share: genre, swing, tempo, DAW sync and the play button's clock

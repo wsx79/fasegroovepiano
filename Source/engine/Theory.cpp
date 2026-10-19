@@ -537,15 +537,49 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
 
     auto absolutePc = [&chord] (int interval) { return mod (chord.rootPc + interval, 12); };
 
+    // A fixed shape (fourths, the open pad) placed where it moves the least from the chord before
+    // and lets the top note follow the line asked for: by octaves, and for the fourths also by
+    // inversions (the lowest note up an octave), as a pianist moves a So What shape.
+    auto placeShape = [&] (const NoteSet& shape, bool inversions)
+    {
+        NoteSet best = placeNear (shape, centre);
+        if ((previousRightHand == nullptr || previousRightHand->size == 0) && topTarget < 0)
+            return best;
+        double bestCost = std::numeric_limits<double>::max();
+        for (int inv = 0; inv < (inversions ? shape.size : 1); ++inv)
+        {
+            NoteSet turned = shape;
+            invert (turned, inv);
+            turned = placeNear (turned, centre);
+            for (int shift = -12; shift <= 12; shift += 12)
+            {
+                NoteSet c = turned;
+                for (int i = 0; i < c.size; ++i)
+                    c.notes[(size_t) i] += shift;
+                double cost = 0.6 * std::abs (c.mean() - centre) + 1.5 * inv;
+                if (previousRightHand != nullptr && previousRightHand->size > 0)
+                    cost += movement (c, *previousRightHand) + 0.35 * std::abs (c.highest() - previousRightHand->highest());
+                if (topTarget >= 0)
+                    cost += 3.0 * std::abs (c.highest() - topTarget);
+                if (cost < bestCost - 1.0e-9)
+                {
+                    bestCost = cost;
+                    best = c;
+                }
+            }
+        }
+        return best;
+    };
+
     if (voicing == Voicing::quartal)
     {
-        // Keep the fourths shape intact; just move it by octaves.
+        // Keep the fourths shape; move it by octaves or inversions.
         NoteSet shape;
         const int bottom = centre - 7 + mod (chord.rootPc - (centre - 7), 12);
         for (int i = 0; i < chord.quartal.size; ++i)
             shape.add (bottom + chord.quartal[i]);
 
-        v.rightHand = placeNear (shape, centre);
+        v.rightHand = placeShape (shape, true);
         return v;
     }
 
@@ -591,7 +625,7 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
         shape.add (bottom + 12 + (chord.ninth >= 0 ? chord.ninth : 0));   // the 9th, or the octave
         shape.add (bottom + 12 + chord.third);
         shape.sort();
-        v.rightHand = placeNear (shape, centre);
+        v.rightHand = placeShape (shape, false);
         return v;
     }
 

@@ -245,7 +245,17 @@ struct GrooveSettings
     // Which part's levels play in each half bar (the velocity page's own A-D order, over the
     // displayed groove): 0 1 2 3 = each part keeps its own levels.
     std::array<int, numSegments> velocityOrder { 0, 1, 2, 3 };
+
+    // Bass feel: 0 classic (the root in the octave of C2), 1 sub (the root voice-led in the low
+    // octave, the nearest to the chord before), 2 sub with sidechain gaps (no note rings over a beat).
+    int bassFeel = 0;
+    // Groove realism: humanize both ways with a slow drift, accents by place in the bar, the loop
+    // varied over a phrase (another take now and then, a few hits left out, a top note that answers).
+    bool realism = false;
 };
+
+constexpr int numBassFeels = 3;
+const char* bassFeelName (int feel) noexcept;
 
 
 struct NoteEvent
@@ -290,6 +300,10 @@ public:
 
     /** Offline render of a whole clip starting at bar 1, with every note closed. */
     static std::vector<NoteEvent> renderClip (const GrooveSettings& s, double lengthInBeats);
+
+    /** The same as a loop: a note still ringing at the end (a push, a held chord) ends there and
+        its rest sounds again from the start, as it does when the loop goes round. */
+    static std::vector<NoteEvent> renderLoopClip (const GrooveSettings& s, double lengthInBeats);
 
     /** Chord slot that is active at a given step. */
     static int slotForStep (long long step, const GrooveSettings& s) noexcept;
@@ -347,6 +361,26 @@ public:
     static void voiceStrings (const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,
                               std::array<NoteSet, maxProgressionLength>& out) noexcept;
 
+    /** Everything the voiced progression depends on: a change of any of these voices it again. */
+    struct HarmonyKey
+    {
+        int key, scale, extension, voicing, centre, length, topLine, section, rangeLow, rangeHigh, bassOn, bassFeel;
+        std::array<int, maxProgressionLength> progression, freeChords, inversions;
+        bool operator== (const HarmonyKey& o) const noexcept
+        {
+            return key == o.key && scale == o.scale && extension == o.extension && voicing == o.voicing
+                && centre == o.centre && length == o.length && topLine == o.topLine && section == o.section
+                && rangeLow == o.rangeLow && rangeHigh == o.rangeHigh && bassOn == o.bassOn && bassFeel == o.bassFeel
+                && progression == o.progression && freeChords == o.freeChords && inversions == o.inversions;
+        }
+    };
+    static HarmonyKey harmonyKey (const GrooveSettings& s) noexcept;
+
+    /** The bass root of every slot: C2..B2 (classic), or in the low octave voice-led from chord
+        to chord (sub feels: the nearest to the root before, the loop point included). */
+    static void bassRoots (const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,
+                           std::array<int, maxProgressionLength>& out) noexcept;
+
 private:
     struct PendingOn { double ppq; int note; int velocity; double duration; bool tie = false; Part part = Part::chords; std::size_t order = 0; };
 
@@ -366,7 +400,8 @@ private:
     void flushOffsUpTo (double ppq, bool inclusive, std::vector<NoteEvent>& out);
 
     // Per note (0..127), and again for the strings (128..255): they have their own channel, so a
-    // string note can hold under the same piano note.
+    // string note can hold under the same piano note. Bass and piano share channel 1 by default, so
+    // they share a note: struck together, it belongs to the bass (the bass line never loses a note).
     static constexpr int numTracked = 256;
     static int trackIndex (int note, Part part) noexcept { return note + (part == Part::strings ? 128 : 0); }
     std::array<double, numTracked> offTime {};    // < 0 when the note is not sounding
@@ -377,27 +412,20 @@ private:
     std::string stabLine;   // reused: no allocation on the audio thread once it has grown
 
     // Cache of the voiced progression, rebuilt only when the harmony changes.
-    struct HarmonyKey
-    {
-        int key, scale, extension, voicing, centre, length, topLine;
-        std::array<int, maxProgressionLength> progression, freeChords, inversions;
-        bool operator== (const HarmonyKey& o) const noexcept
-        {
-            return key == o.key && scale == o.scale && extension == o.extension && voicing == o.voicing
-                && centre == o.centre && length == o.length && topLine == o.topLine && progression == o.progression
-                && freeChords == o.freeChords && inversions == o.inversions;
-        }
-    };
     HarmonyKey cachedHarmony {};
     bool harmonyCached = false;
     std::array<Chord, maxProgressionLength> cachedChords {};
     std::array<VoicedChord, maxProgressionLength> cachedVoiced {};
     std::array<NoteSet, maxProgressionLength> cachedStrings {};
+    std::array<int, maxProgressionLength> cachedBassRoots {};
     int cachedStringsMode = -1;
 
     // Cache of the resolved pattern, rebuilt only when its inputs change.
     GroovePattern cachedPattern, cachedVariation;
     std::array<GroovePattern, 3> cachedEvolution;   // the groove's evolution: + ghosts, + variation, + fill
+    std::array<GroovePattern, 2> cachedTakes;       // realism: two other takes of the groove over a phrase
+    int cachedBass = -1;
+    bool cachedRealism = false;
     int cachedBars = 2, cachedMovement = 1;
     int cachedIndex = -1;
     std::uint32_t cachedSeed = 0;

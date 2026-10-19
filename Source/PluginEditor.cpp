@@ -4366,11 +4366,29 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         juce::PopupMenu menu;
         for (int i = 0; i < sgk::numHumanizeStyles; ++i)
             menu.addItem (i + 1, tr (sgk::humanizeStyleName (i)), true, i == style);
+
+        // The feel of the whole part: realism, the bass's register, the pedal.
+        auto value = [this] (const char* id) { return processor.apvts.getRawParameterValue (id)->load(); };
+        menu.addSeparator();
+        menu.addItem (100, tr ("Groove realism"), true, value (ParamIDs::realism) > 0.5f);
+        juce::PopupMenu bassFeel;
+        const int feel = juce::roundToInt (value (ParamIDs::bassFeel));
+        for (int i = 0; i < sgk::numBassFeels; ++i)
+            bassFeel.addItem (200 + i, tr (sgk::bassFeelName (i)), true, i == feel);
+        menu.addSubMenu (tr ("Bass feel"), bassFeel);
+        menu.addItem (300, tr ("Pedal & expression (CC64 / CC11)"), true, value (ParamIDs::pedalCC) > 0.5f);
+
         juce::Component::SafePointer<FaseGroovePianoEditor> safe (this);
         menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&feelStyleButton), [safe] (int result)
         {
-            if (safe != nullptr && result > 0)
-                safe->processor.setParameterFromUI (ParamIDs::humanizeStyle, (float) (result - 1));
+            if (safe == nullptr || result <= 0)
+                return;
+            auto& p = safe->processor;
+            auto flip = [&p] (const char* id) { p.setParameterFromUI (id, p.apvts.getRawParameterValue (id)->load() > 0.5f ? 0.0f : 1.0f); };
+            if (result == 100)      flip (ParamIDs::realism);
+            else if (result == 300) flip (ParamIDs::pedalCC);
+            else if (result >= 200) p.setParameterFromUI (ParamIDs::bassFeel, (float) (result - 200));
+            else                    p.setParameterFromUI (ParamIDs::humanizeStyle, (float) (result - 1));
         });
     };
     newFeelButton.onClick = [this] { processor.newFeel(); };

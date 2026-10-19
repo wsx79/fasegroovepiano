@@ -902,6 +902,29 @@ namespace
         return out;
     }
 
+    /** The notes of a run over a chord: the key's scale (or `member`), with every chord tone outside
+        it taking the place of its neighbours a half step away (a run into a bVI or a chromatic chord
+        plays that chord's notes, not the key's), between low and high, ascending. */
+    NoteSet notesOverChord (bool member[12], const Chord& chord, int low, int high) noexcept
+    {
+        bool tone[12] {};
+        for (int i = 0; i < chord.tones.size; ++i)
+            tone[mod (chord.rootPc + chord.tones[i], 12)] = true;
+        for (int pc = 0; pc < 12; ++pc)
+            if (tone[pc] && ! member[pc])
+            {
+                for (int side : { -1, 1 })
+                    if (! tone[mod (pc + side, 12)])
+                        member[mod (pc + side, 12)] = false;
+                member[pc] = true;
+            }
+        NoteSet out;
+        for (int n = low; n <= high && out.size < (int) out.notes.size(); ++n)
+            if (member[mod (n, 12)])
+                out.add (n);
+        return out;
+    }
+
     /** Index of the highest note <= target (0 if none). */
     int indexAtOrBelow (const NoteSet& notes, int target) noexcept
     {
@@ -1028,6 +1051,8 @@ int GrooveEngine::loopLengthInSteps (const GrooveSettings& s) noexcept
         steps = lcm (steps, 16LL * s.variationEvery);
     if (s.evolveBars > 0)
         steps = lcm (steps, 16LL * s.evolveBars);
+    if (s.realism)
+        steps = lcm (steps, 4LL * patternLength);   // the phrase of four grooves (two other takes in it)
 
     steps = lcm (steps, 16);                 // whole bars
     return (int) std::min<long long> (steps, 64 * 16);
@@ -1114,7 +1139,8 @@ const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
     if (s.pattern != cachedIndex || s.riffSeed != cachedSeed || s.riffDensity != cachedDensity
         || s.section != cachedSection || s.segmentOrder != cachedOrder
         || s.userRight != cachedUserRight || s.userLeft != cachedUserLeft || s.grooveBars != cachedBars
-        || s.movement != cachedMovement || s.sectionVariation != cachedSectionVariation || cachedPattern.rightHand.empty())
+        || s.movement != cachedMovement || s.sectionVariation != cachedSectionVariation || cachedPattern.rightHand.empty()
+        || (int) s.bass != cachedBass || s.realism != cachedRealism)   // a library bass line shows its own rhythm
     {
         cachedPattern = resolvePattern (s);
         cachedVariation = makeVariation (cachedPattern, s.riffSeed * 17u + (std::uint32_t) s.pattern);
@@ -1124,6 +1150,12 @@ const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
         for (std::uint32_t k = 0; k < 6 && cachedEvolution[1].rightHand == cachedEvolution[0].rightHand; ++k)   // it must change
             cachedEvolution[1] = makeVariation (cachedEvolution[0], s.riffSeed * 37u + (std::uint32_t) s.pattern + k * 101u);
         cachedEvolution[2] = cachedEvolution[1];
+        // Realism: two other takes of the same groove, played now and then over a phrase.
+        for (std::uint32_t k = 0; k < 2; ++k)
+            cachedTakes[k] = s.realism ? makeVariation (cachedPattern, s.riffSeed * 53u + (std::uint32_t) s.pattern + k * 7919u)
+                                       : GroovePattern {};
+        cachedBass = (int) s.bass;
+        cachedRealism = s.realism;
         cachedBars = s.grooveBars;
         cachedMovement = s.movement;
         cachedIndex = s.pattern;
@@ -1181,6 +1213,61 @@ std::vector<NoteEvent> GrooveEngine::renderClip (const GrooveSettings& s, double
     // Clip notes at the end so the clip loops cleanly.
     engine.allNotesOff (lengthInBeats, events);
     return events;
+}
+
+std::vector<NoteEvent> GrooveEngine::renderLoopClip (const GrooveSettings& s, double lengthInBeats)
+{
+    const auto all = renderClip (s, lengthInBeats + 4.0);
+    std::vector<NoteEvent> out, tails;
+    out.reserve (all.size());
+    std::array<NoteEvent, numTracked> open {};
+    std::array<bool, numTracked> isOpen {};
+    for (const auto& e : all)
+    {
+        const auto k = (size_t) trackIndex (e.note, e.part);
+        if (e.isNoteOn())
+        {
+            if (e.ppq >= lengthInBeats)
+                continue;
+            out.push_back (e);
+            open[k] = e;
+            isOpen[k] = true;
+        }
+        else if (isOpen[k])
+        {
+            isOpen[k] = false;
+            if (e.ppq > lengthInBeats + 1.0e-9)
+            {
+                out.push_back ({ lengthInBeats, e.note, 0, e.part });
+                tails.push_back ({ e.ppq - lengthInBeats, e.note, open[k].velocity, e.part });   // ppq: where the tail ends
+            }
+            else
+                out.push_back (e);
+        }
+    }
+
+    // The tails at the start, unless the loop strikes that note there itself; each ends before the
+    // loop plays that note again.
+    const auto clipEvents = out.size();
+    for (const auto& t : tails)
+    {
+        double end = t.ppq;
+        bool struck = false;
+        for (size_t i = 0; i < clipEvents; ++i)
+            if (out[i].isNoteOn() && out[i].note == t.note && out[i].part == t.part)
+            {
+                struck = struck || out[i].ppq < 0.02;
+                end = std::min (end, out[i].ppq);
+            }
+        if (! struck && end > 0.03)
+        {
+            out.push_back ({ 0.0, t.note, t.velocity, t.part });
+            out.push_back ({ end, t.note, 0, t.part });
+        }
+    }
+    std::stable_sort (out.begin(), out.end(), [] (const NoteEvent& a, const NoteEvent& b)
+                      { return a.ppq != b.ppq ? a.ppq < b.ppq : (! a.isNoteOn() && b.isNoteOn()); });
+    return out;
 }
 
 int GrooveEngine::slotForStep (long long step, const GrooveSettings& s) noexcept
@@ -1279,6 +1366,8 @@ void GrooveEngine::clearLowRegister (VoicedChord& v, const Chord& chord, bool ba
             const int interval = mod (n - chord.rootPc, 12);
             while ((n < clearAbove && interval != 0 && interval != 7) || (bassOn && n < bassRoot))
                 n += 12;
+            if (bassOn && n == bassRoot)
+                continue;   // the bass plays that very note: a unison under it only thickens (and phases)
             if (! fixed.contains (n) && ! (hand == &v.rightHand && v.leftHand.contains (n)))
                 fixed.add (n);
         }
@@ -1305,6 +1394,46 @@ void GrooveEngine::keepInRange (VoicedChord& v, int low, int high) noexcept
         kept.sort();
         *hand = kept;
     }
+}
+
+GrooveEngine::HarmonyKey GrooveEngine::harmonyKey (const GrooveSettings& s) noexcept
+{
+    return { s.keyRoot, s.scale, (int) s.extension, (int) s.voicing, s.centre, s.progressionLength, (int) s.topLine,
+             (int) s.section, s.rangeLow, s.rangeHigh, s.bass != BassMode::off ? 1 : 0, s.bassFeel,
+             s.progression, s.freeChords, s.inversions };
+}
+
+void GrooveEngine::bassRoots (const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,
+                              std::array<int, maxProgressionLength>& out) noexcept
+{
+    const int len = std::clamp (s.progressionLength, 1, maxProgressionLength);
+    if (s.bassFeel <= 0)
+    {
+        for (int i = 0; i < maxProgressionLength; ++i)
+            out[(size_t) i] = 36 + chords[(size_t) std::min (i, len - 1)].rootPc;
+        return;
+    }
+
+    // The sub: the first root between G1 and F#2, then each one the nearest to the one before
+    // (a B to a C goes up a half step, not down a major 7th), kept between E1 and A2.
+    auto nearest = [] (int pc, int from)
+    {
+        int n = from - 6 + mod (pc - (from - 6), 12);
+        while (n > 45) n -= 12;
+        while (n < 28) n += 12;
+        return n;
+    };
+    out[0] = 31 + mod (chords[0].rootPc - 31, 12);
+    for (int i = 1; i < len; ++i)
+        out[(size_t) i] = nearest (chords[(size_t) i].rootPc, out[(size_t) i - 1]);
+    for (int i = len; i < maxProgressionLength; ++i)
+        out[(size_t) i] = out[(size_t) len - 1];
+}
+
+const char* bassFeelName (int feel) noexcept
+{
+    static const char* const names[numBassFeels] { "Classic", "Sub (voice-led)", "Sub + sidechain gaps" };
+    return names[mod (feel, numBassFeels)];
 }
 
 void GrooveEngine::voiceProgression (const GrooveSettings& s,
@@ -1389,8 +1518,10 @@ void GrooveEngine::voiceProgression (const GrooveSettings& s,
                 while (voiced[(size_t) i].rightHand.lowest() < 28)   invert (voiced[(size_t) i].rightHand, voiced[(size_t) i].rightHand.size);
             }
 
-            keepInRange (voiced[(size_t) i], s.rangeLow, std::max (s.rangeHigh, s.rangeLow + 12));
+            // The low register cleared first, then the range: a note lifted out of the mud never
+            // ends up above the chords' highest note.
             clearLowRegister (voiced[(size_t) i], chords[(size_t) i], s.bass != BassMode::off);
+            keepInRange (voiced[(size_t) i], s.rangeLow, std::max (s.rangeHigh, s.rangeLow + 12));
 
             previous = &voiced[(size_t) i].rightHand;
         }
@@ -1421,6 +1552,12 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     const GroovePattern* chosen = varied ? &variation : &normalPattern;
     if (evolveStage > 0 && cachedEvolution[(size_t) evolveStage - 1].length() == normalPattern.length())
         chosen = &cachedEvolution[(size_t) evolveStage - 1];
+    // Realism: over a phrase of four grooves the third and the fourth are other takes of it, so a
+    // long clip never repeats the same loop note for note.
+    if (s.realism && ! varied && evolveStage == 0 && normalPattern.length() > 0)
+        if (const int take = mod (floorDiv (step, normalPattern.length()), 4) - 2;
+            take >= 0 && cachedTakes[(size_t) take].length() == normalPattern.length())
+            chosen = &cachedTakes[(size_t) take];
     const GroovePattern& pattern = *chosen;
     const double evolveLift = evolveStage == 3 ? 1.06 : evolveStage == 2 ? 1.03 : 1.0;   // a little more energy
 
@@ -1432,12 +1569,32 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     const int seedSalt = (int) (s.humanizeSeed % 100003u) * 7919;
     const auto hv = humanizeVoices (s.humanizeStyle);
 
-    auto hitTime = [&] (int salt, double amount) { return baseTime + amount * 0.03 * noise (step, seedSalt + salt); };
+    // Realism: the timing goes both ways around the beat, on a slow drift from bar to bar (a player
+    // pushes a little, then sits back), and the bass (salts 90+) stays tighter than the chords.
+    const long long barNow = floorDiv (step, 16);
+    const double drift = s.realism ? 0.012 * 2.0 * ((noise (barNow, seedSalt + 777) * (1.0 - mod (step, 16) / 16.0)
+                                                      + noise (barNow + 1, seedSalt + 777) * (mod (step, 16) / 16.0)) - 0.5)
+                                   : 0.0;
+    auto hitTime = [&] (int salt, double amount)
+    {
+        if (! s.realism)
+            return baseTime + amount * 0.03 * noise (step, seedSalt + salt);
+        const double a = salt >= 90 ? amount * 0.6 : amount;
+        return std::max (step >= 0 ? 0.0 : -1.0e9, baseTime + a * (0.03 * (noise (step, seedSalt + salt) - 0.5) + drift));
+    };
 
     auto hitVelocity = [&] (char symbol, double scale, int salt, double amount = -1.0)
     {
         if (amount < 0.0) amount = human * hv.chordVel;
         double level = s.velocity * (symbol == 'X' || symbol == 'U' || symbol == 'D' ? 1.0 : symbol == '>' ? 0.97 : symbol == 'g' ? 0.55 : 0.9);
+        // Realism: the place in the bar shapes the touch (the beat strongest, then the "&", then
+        // the 16ths in between), and the phrase of four bars breathes (the fourth leans forward).
+        if (s.realism)
+        {
+            static constexpr double place[4] { 1.0, 0.92, 0.96, 0.91 };
+            static constexpr double phrase[4] { 1.0, 0.97, 0.99, 1.03 };
+            level *= place[mod (step, 4)] * phrase[mod (barNow, 4)];
+        }
 
         // A velocity set by hand on this step of the user pattern (chord stabs: salts 60..89,
         // bass: 90..99), relative to the Velocity control (118 = as set).
@@ -1549,7 +1706,10 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         const auto& thisChord = voiced[(size_t) slotForStep (step, s)].rightHand;
         const int target = nextChord.size > 0 ? nextChord.highest() : s.centre + 7;   // where the fill lands
         const auto& scale = scaleIntervals (s.scale);
-        const auto scaleRun = notesOf (s.keyRoot, scale.data(), 7, target - 26, target + 14);
+        bool inKey[12] {};
+        for (int d : scale)
+            inKey[mod (s.keyRoot + d, 12)] = true;
+        const auto scaleRun = notesOverChord (inKey, chords[(size_t) slotForStep (nextBarStep, s)], target - 26, target + 14);
         const int iTarget = indexAtOrBelow (scaleRun, target);
         const double t = hitTime (31, human * hv.chordTime);
 
@@ -1637,7 +1797,11 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         {
             const auto& rh = voiced[(size_t) slotForStep (step, s)].rightHand;
             const int top = rh.size > 0 ? rh.highest() : s.centre + 7;
-            const auto run = pentatonicNotes (s.keyRoot, s.scale, s.centre - 5, s.centre + 19);
+            bool inPentatonic[12] {};
+            const auto octave = pentatonicNotes (s.keyRoot, s.scale, 60, 71);
+            for (int i = 0; i < octave.size; ++i)
+                inPentatonic[mod (octave[i], 12)] = true;
+            const auto run = notesOverChord (inPentatonic, chords[(size_t) slotForStep (step, s)], s.centre - 5, s.centre + 19);
 
             if (run.size > 0)
             {
@@ -1670,7 +1834,21 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     }
     else
     {
-        const char symbol = pattern.rightHand[(size_t) pos];
+        char symbol = pattern.rightHand[(size_t) pos];
+        // Realism: now and then a plain hit off the beat is left out (a pianist doesn't play every
+        // stab of a loop every time), never one a held note or a push leads into.
+        if (s.realism && symbol == 'x' && mod (pos, 4) != 0 && ! isTiedFromPush (pattern.rightHand, pos)
+            && pattern.rightHand[(size_t) mod (pos + 1, pattern.length())] != '=' && noise (step, seedSalt + 313) < 0.05)
+            symbol = '.';
+        // ...and the last stab of a four-bar phrase lets its top note answer, a step up.
+        if (s.realism && symbol == 'x' && mod (barNow, 4) == 3 && mod (step, 16) >= 8 && s.topLine != TopLine::pedal)
+        {
+            bool last = true;
+            for (int k = 1; k < 16 - mod (step, 16); ++k)
+                last = last && ! isHit (pattern.rightHand[(size_t) mod (pos + k, pattern.length())]);
+            if (last)
+                symbol = 'u';
+        }
         if (isHit (symbol))
         {
             // 'u' / 'd' (and accented 'U' / 'D'): the top note steps to a neighbour and back.
@@ -1747,8 +1925,9 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             {
                 // Pianist: the top note sings, a hair early and a little louder.
                 const bool top = i == v.rightHand.size - 1;
-                pending.push_back ({ t + 0.004 * human * hv.chordTime * noise (step, seedSalt + 50 + i) + rollOffset (i - firstNote)
-                                         - (top ? human * hv.topLead * 0.02 : 0.0),
+                // (never before the start of the song: a clip's first top note would be lost)
+                pending.push_back ({ std::max (step >= 0 ? 0.0 : -1.0e9, t + 0.004 * human * hv.chordTime * noise (step, seedSalt + 50 + i) + rollOffset (i - firstNote)
+                                                        - (top ? human * hv.topLead * 0.02 : 0.0)),
                                      v.rightHand[i],
                                      hitVelocity (symbol, (1.0 - 0.03 * (v.rightHand.size - 1 - i)) * (top ? 1.0 + hv.topAccent : 1.0), 60 + i),
                                      len, tie });
@@ -1804,7 +1983,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
 
     if (bassMode != BassMode::off && approachHere && canApproach (pattern.leftHand))
     {
-        const int target = 36 + chords[(size_t) slotNext].rootPc;
+        const int target = cachedBassRoots[(size_t) slotNext];
         pending.push_back ({ (hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02), target + approachShift, hitVelocity ('x', 0.8, 91, human * hv.bassVel), approachLength, false, Part::bass });
     }
     else if (bassMode == BassMode::withChords)
@@ -1848,7 +2027,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             }
             const char symbol = line[(size_t) pos];
             const char rh = pattern.rightHand[(size_t) pos];
-            const int root = 36 + chords[(size_t) slotFor (rh == '>' ? '>' : symbol)].rootPc;
+            const int root = cachedBassRoots[(size_t) slotFor (rh == '>' ? '>' : symbol)];
             const double t = hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02;
             const double len = durationFor (line);
             const bool tie = isTiedFromPush (line, pos);
@@ -1870,7 +2049,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             line = pattern.leftHand;
             for (auto& c : line)
                 if (c == '>') c = 'x';
-            const int root = 36 + chords[(size_t) slotFor (symbol)].rootPc;
+            const int root = cachedBassRoots[(size_t) slotFor (symbol)];
             const double t = hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02;
             const double len = durationFor (line);
             const bool tie = isTiedFromPush (line, pos);
@@ -1885,7 +2064,9 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         const char symbol = pattern.leftHand[(size_t) pos];
         if (isHit (symbol))
         {
-            const int root = 36 + chords[(size_t) slotFor (symbol)].rootPc;
+            const int root = cachedBassRoots[(size_t) slotFor (symbol)];
+            // The chord's own 5th (a b5 on a half-diminished chord), not always a perfect one.
+            const int fifthAbove = chords[(size_t) slotFor (symbol)].fifth >= 0 ? chords[(size_t) slotFor (symbol)].fifth : 7;
             const double len = durationFor (pattern.leftHand);
             const double t = (hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02);
             const int vel = hitVelocity (symbol, 0.9, 91, human * hv.bassVel);
@@ -1906,11 +2087,13 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
                 // change, a chromatic step into the next root.
                 const int inChord = (int) (((step % s.stepsPerChord) + s.stepsPerChord) % s.stepsPerChord);
                 const int nextSlot = slotForStep (step + (s.stepsPerChord - inChord), s);
-                static constexpr int walk[4] { 0, 7, 12, 7 };
+                const int walk[4] { 0, fifthAbove, 12, fifthAbove };
                 note = root + walk[(inChord / 4) % 4];
                 if (s.stepsPerChord - inChord <= 4 && nextSlot != slotForStep (step, s))
                 {
-                    const int target = 36 + chords[(size_t) nextSlot].rootPc;
+                    int target = cachedBassRoots[(size_t) nextSlot];
+                    if (target - root > 6)  target -= 12;   // the next root in the octave closest to this one
+                    if (root - target > 6)  target += 12;
                     note = target + (target - 1 >= root ? -1 : 1);
                 }
                 noteVel = (int) (vel * (inChord == 0 ? 1.0 : 0.85));
@@ -1927,7 +2110,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
 
             pending.push_back ({ t, note, noteVel, len, tie, Part::bass });
             if (bassMode == BassMode::octaves)    pending.push_back ({ t, root + 12, (int) (vel * 0.85), len, tie, Part::bass });
-            if (bassMode == BassMode::rootFifth)  pending.push_back ({ t, root + 7,  (int) (vel * 0.85), len, tie, Part::bass });
+            if (bassMode == BassMode::rootFifth)  pending.push_back ({ t, root + fifthAbove, (int) (vel * 0.85), len, tie, Part::bass });
         }
     }
 }
@@ -1945,30 +2128,48 @@ void GrooveEngine::collectBassLine (long long step, const GrooveSettings& s, con
     const double human = std::clamp (s.humanize, 0.0f, 1.0f);
     const int seedSalt = (int) (s.humanizeSeed % 100003u) * 7919;
     const auto hv = humanizeVoices (s.humanizeStyle);
-    const double t = (double) step * stepLength + swingDelay + human * hv.bassTime * 0.03 * noise (step, seedSalt + 90)
-                   + human * hv.bassLate * 0.02;
+    // Realism: around the beat (tighter than the chords) instead of only behind it.
+    const double timing = s.realism ? 0.6 * 0.03 * (noise (step, seedSalt + 90) - 0.5) : 0.03 * noise (step, seedSalt + 90);
+    const double t = std::max (step >= 0 ? 0.0 : -1.0e9, (double) step * stepLength + swingDelay + human * hv.bassTime * timing
+                                    + human * hv.bassLate * 0.02);
 
-    const auto& chord = chords[(size_t) slotForStep (step, s)];
-    const int root = 36 + chord.rootPc;
+    const int slot = slotForStep (step, s);
+    const auto& chord = chords[(size_t) slot];
+    const int root = cachedBassRoots[(size_t) slot];
 
     // The next chord's root, in the octave closest to this one.
     const int inChord = (int) (((step % s.stepsPerChord) + s.stepsPerChord) % s.stepsPerChord);
-    int target = 36 + chords[(size_t) slotForStep (step + (s.stepsPerChord - inChord), s)].rootPc;
+    const int nextSlot = slotForStep (step + (s.stepsPerChord - inChord), s);
+    int target = cachedBassRoots[(size_t) nextSlot];
     if (target - root > 6)  target -= 12;
     if (root - target > 6)  target += 12;
+    // An approach only leads somewhere when the chord changes within the beat: else it would be a
+    // chromatic note against the chord still playing (the 5th, or the octave, instead).
+    const bool changeSoon = s.stepsPerChord - inChord <= 4 && nextSlot != slot;
+
+    // The chord's own 5th and 6th: a b5 on a half-diminished chord, the 6th of the scale (a b6 in
+    // minor) or of the chord.
+    const int fifth = chord.fifth >= 0 ? chord.fifth : 7;
+    int sixth = chord.sixth >= 0 ? chord.sixth : chord.thirteenth >= 0 ? chord.thirteenth : 9;
+    if (chord.sixth < 0 && chord.thirteenth < 0 && s.freeChords[(size_t) std::clamp (slot, 0, maxProgressionLength - 1)] < 0)
+    {
+        const auto& scale = scaleIntervals (s.scale);
+        if (std::find (scale.begin(), scale.end(), mod (chord.rootPc + 9 - s.keyRoot, 12)) == scale.end())
+            sixth = 8;
+    }
 
     int note = root;
     switch (symbol)
     {
         case 'O': note = root + 12; break;
-        case '5': note = root + 7; break;
-        case 'L': note = root - 5 >= 28 ? root - 5 : root + 7; break;
+        case '5': note = root + fifth; break;
+        case 'L': note = root + fifth - 12 >= 28 ? root + fifth - 12 : root + fifth; break;
         case '3': note = root + (chord.third >= 0 ? chord.third : 4); break;
         case '7': note = root + (chord.seventh >= 0 ? chord.seventh : 10); break;
-        case '6': note = root + 9; break;
+        case '6': note = root + sixth; break;
         case 'b': note = root + 3; break;
-        case 'A': note = target - 1; break;   // chromatic step into the next root
-        case 'S': note = target - 2; break;   // a whole step below it
+        case 'A': note = changeSoon ? target - 1 : root + fifth; break;   // chromatic step into the next root
+        case 'S': note = changeSoon ? target - 2 : root + 12; break;      // a whole step below it
         default: break;                        // R, G
     }
     note = std::clamp (note, 24, 64);
@@ -2396,11 +2597,11 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
         return;
 
     // Voicing a progression is the costly part: only redo it when the harmony changes.
-    const HarmonyKey harmony { s.keyRoot, s.scale, (int) s.extension, (int) s.voicing, s.centre,
-                               s.progressionLength, (int) s.topLine, s.progression, s.freeChords, s.inversions };
+    const auto harmony = harmonyKey (s);
     if (! (harmony == cachedHarmony) || ! harmonyCached)
     {
         voiceProgression (s, cachedChords, cachedVoiced);
+        bassRoots (s, cachedChords, cachedBassRoots);
         cachedHarmony = harmony;
         harmonyCached = true;
         cachedStringsMode = -1;
@@ -2415,9 +2616,10 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
 
     pending.clear();
 
-    // Swing and humanize only ever delay a hit (by < 2 steps), so look back a little.
+    // Swing and humanize delay a hit by < 2 steps, so look back a little; the pianist's singing top
+    // note and the realism's timing can be a hair early, so look one step ahead too.
     const auto firstStep = (long long) std::floor (startPpq / stepLength) - 2;
-    const auto lastStep  = (long long) std::floor (endPpq / stepLength);
+    const auto lastStep  = (long long) std::floor (endPpq / stepLength) + 1;
 
     // The strings' pad starts with each chord; starting (or turning them on) in the middle of a
     // chord, it comes in at once for the rest of it.
@@ -2474,6 +2676,17 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
                                                                    || p.note < 0 || p.note > 127; }),
                    pending.end());
 
+    // Sidechain gaps: a bass note never rings over the next beat (where the kick ducks it anyway):
+    // it ends a 32nd before, so the kick has the low end to itself.
+    if (s.bassFeel == 2)
+        for (auto& p : pending)
+            if (p.part == Part::bass)
+            {
+                const double nextBeat = std::floor (p.ppq + 0.02) + 1.0;
+                if (p.ppq + p.duration > nextBeat - 0.125)
+                    p.duration = std::max (0.06, nextBeat - 0.125 - p.ppq);
+            }
+
     for (size_t i = 0; i < pending.size(); ++i)
         pending[i].order = i;
     std::sort (pending.begin(), pending.end(), [] (const PendingOn& a, const PendingOn& b)
@@ -2494,6 +2707,14 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
             if (p.tie || onTime[k] == p.ppq)   // tied, or same note twice at once: extend
             {
                 off = std::max (off, p.ppq + p.duration);
+                if (onTime[k] == p.ppq && p.part == Part::bass && partOf[k] != Part::bass)
+                    for (auto it = out.rbegin(); it != out.rend(); ++it)
+                        if (it->isNoteOn() && it->note == p.note && it->ppq == p.ppq && it->part != Part::strings)
+                        {
+                            it->part = Part::bass;   // the bass's note (on its channel, in its track)
+                            partOf[k] = Part::bass;
+                            break;
+                        }
                 continue;
             }
 

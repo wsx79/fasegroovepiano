@@ -799,6 +799,39 @@ std::vector<int> randomProgression (std::uint32_t seed, int length)
     return out;
 }
 
+std::vector<int> randomProgression (std::uint32_t seed, int length, int scale)
+{
+    if (! scaleIsMinor (scale))
+        return randomProgression (seed, length);
+
+    Random rng (seed ^ 0x5A5A5A5Au);
+    length = std::clamp (length, 1, maxProgressionLength);
+
+    // Minor moves: i iv bVII bVI, the Dorian IV, v to i, bIII as a colour.
+    static const std::array<std::vector<int>, 7> moves {{
+        { 3, 6, 5, 3, 2, 6 },   // i    -> iv bVII bVI iv bIII bVII
+        { 4, 6, 0 },            // ii   -> v bVII i
+        { 6, 3, 5 },            // bIII -> bVII iv bVI
+        { 6, 0, 4, 2, 6 },      // iv   -> bVII i v bIII bVII
+        { 0, 5, 3 },            // v    -> i bVI iv
+        { 6, 3, 4, 2, 6 },      // bVI  -> bVII iv v bIII bVII
+        { 0, 2, 5, 3, 0 },      // bVII -> i bIII bVI iv i
+    }};
+    static const std::array<int, 5> starts { 0, 0, 0, 5, 3 };
+
+    std::vector<int> out;
+    out.push_back (starts[(size_t) rng.below ((int) starts.size())]);
+    while ((int) out.size() < length)
+    {
+        const auto& options = moves[(size_t) out.back()];
+        int next = options[(size_t) rng.below ((int) options.size())];
+        if ((int) out.size() == length - 1 && length > 2 && next == out.front())
+            next = options[(size_t) rng.below ((int) options.size())];
+        out.push_back (next);
+    }
+    return out;
+}
+
 const std::vector<ArrangementPart>& defaultArrangement()
 {
     static const std::vector<ArrangementPart> parts {

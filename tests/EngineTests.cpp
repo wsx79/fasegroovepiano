@@ -13,6 +13,8 @@
 #include <cstring>
 #include <set>
 #include <map>
+#include <memory>
+#include <tuple>
 #include <string>
 #include <vector>
 
@@ -1333,7 +1335,9 @@ static void testVoicingCoach()
     s.voicing = Voicing::close;
     const auto close = GrooveEngine::voicingReport (s);
     s.voicing = Voicing::wide;
+    s.bass = BassMode::off;   // (with the bass on, the left hand leaves out the root the bass plays)
     const auto wide = GrooveEngine::voicingReport (s);
+    s.bass = GrooveSettings().bass;
     s.voicing = Voicing::rootless;
     const auto rootless = GrooveEngine::voicingReport (s);
 
@@ -1689,6 +1693,216 @@ static void testStrings()
     CHECK (strings (GrooveEngine::renderClip (s, 8.0), true).empty());
 }
 
+static std::vector<NoteEvent> renderInBlocks (GrooveEngine& engine, const GrooveSettings& s, double from, double to, double block)
+{
+    std::vector<NoteEvent> events;
+    for (double t = from; t < to - 1.0e-9; t += block)
+        engine.render (t, std::min (to, t + block), s, events);
+    return events;
+}
+
+static std::multiset<std::tuple<long long, int, int, int>> noteOnSet (const std::vector<NoteEvent>& events)
+{
+    std::multiset<std::tuple<long long, int, int, int>> set;
+    for (const auto& e : events)
+        if (e.isNoteOn())
+            set.insert ({ std::llround (e.ppq * 1.0e6), e.note, e.velocity, (int) e.part });
+    return set;
+}
+
+static void testV024Fixes()
+{
+    // The section is part of the harmony: one engine through the intro, then the main loop, plays
+    // the main loop's own (richer) chords, as a fresh one does.
+    {
+        GrooveSettings s;
+        s.extension = Extension::ninth;
+        s.section = Section::intro;
+        GrooveEngine engine;
+        renderInBlocks (engine, s, 0.0, 16.0, 16.0);
+        std::vector<NoteEvent> ignored;
+        engine.allNotesOff (16.0, ignored);
+        s.section = Section::main;
+        GrooveEngine fresh;
+        CHECK (noteOnSet (renderInBlocks (engine, s, 16.0, 32.0, 16.0)) == noteOnSet (renderInBlocks (fresh, s, 16.0, 32.0, 16.0)));
+    }
+
+    // The bass mode is part of the groove: from a library line back to the root bass, the bass
+    // plays the groove's left hand again, at once.
+    {
+        GrooveSettings s;
+        s.bass = (BassMode) bassModeForLine (0);
+        GrooveEngine engine;
+        renderInBlocks (engine, s, 0.0, 8.0, 8.0);
+        s.bass = BassMode::root;
+        GrooveEngine fresh;
+        CHECK (noteOnSet (renderInBlocks (engine, s, 8.0, 16.0, 8.0)) == noteOnSet (renderInBlocks (fresh, s, 8.0, 16.0, 8.0)));
+    }
+
+    // The pianist's early top note and the realism's timing: the same notes whatever the block size.
+    for (bool realism : { false, true })
+    {
+        GrooveSettings s;
+        s.humanizeStyle = 1;
+        s.humanize = 1.0f;
+        s.realism = realism;
+        s.progressionLength = 4;
+        GrooveEngine a, b;
+        const auto whole = noteOnSet (renderInBlocks (a, s, 0.0, 32.0, 32.0));
+        const auto blocks = noteOnSet (renderInBlocks (b, s, 0.0, 32.0, 0.0113));
+        CHECK (whole == blocks);
+        // ...and the clip's very first top note is there.
+        const auto clip = GrooveEngine::renderClip (s, 8.0);
+        CHECK (std::any_of (clip.begin(), clip.end(), [] (const NoteEvent& e) { return e.isNoteOn() && e.ppq < 0.05 && e.part == Part::chords; })
+               == std::any_of (clip.begin(), clip.end(), [] (const NoteEvent& e) { return e.isNoteOn() && e.ppq < 0.25 && e.part == Part::chords; }));
+    }
+
+    // Wide voicing in A with the bass on: the left hand doesn't double the bass's own note, and
+    // struck together a shared note belongs to the bass.
+    {
+        GrooveSettings s;
+        s.voicing = Voicing::wide;
+        s.bass = BassMode::root;
+        s.humanize = 0.0f;
+        std::array<Chord, maxProgressionLength> chords;
+        std::array<VoicedChord, maxProgressionLength> voiced;
+        GrooveEngine::voiceProgression (s, chords, voiced);
+        for (int i = 0; i < s.progressionLength; ++i)
+        {
+            CHECK (! voiced[(size_t) i].leftHand.contains (36 + chords[(size_t) i].rootPc));
+            CHECK (! voiced[(size_t) i].rightHand.contains (36 + chords[(size_t) i].rootPc));
+        }
+        int bassOnBeat = 0;
+        for (const auto& e : GrooveEngine::renderClip (s, 8.0))
+            if (e.isNoteOn() && e.part == Part::bass && std::abs (e.ppq) < 1.0e-9)
+                ++bassOnBeat;
+        CHECK (bassOnBeat >= (isHitChar (GrooveEngine::resolvePattern (s).leftHand[0]) ? 1 : 0));
+    }
+
+    // Library lines: the 5th of a half-diminished chord is its b5, and an approach only where the
+    // chord changes within the beat.
+    {
+        GrooveSettings s;
+        s.keyRoot = 0;
+        s.scale = 0;
+        s.progressionLength = 1;
+        s.progression = { 6, 0, 0, 0, 0, 0, 0, 0 };   // vii (Bm7b5) alone: no change, no approach
+        s.humanize = 0.0f;
+        s.swing = 0.0f;
+        for (int line = 0; line < numBassLines; ++line)
+        {
+            s.bass = (BassMode) bassModeForLine (line);
+            for (const auto& e : GrooveEngine::renderClip (s, 8.0))
+                if (e.isNoteOn() && e.part == Part::bass)
+                {
+                    const int interval = ((e.note - 11) % 12 + 12) % 12;
+                    CHECK (interval != 7);    // never the perfect 5th over Bm7b5
+                    CHECK (interval != 10 || bassLines()[(size_t) line].line.find ('7') != std::string::npos);
+                }
+        }
+    }
+
+    // Sub bass: voice-led in the low octave (a 5th at most from root to root) and, with
+    // sidechain gaps, no bass note rings into the next beat.
+    {
+        GrooveSettings s;
+        s.progressionLength = 4;
+        s.progression = { 0, 6, 3, 4, 0, 0, 0, 0 };
+        s.bass = BassMode::root;
+        for (int feel : { 1, 2 })
+        {
+            s.bassFeel = feel;
+            std::array<Chord, maxProgressionLength> chords;
+            std::array<VoicedChord, maxProgressionLength> voiced;
+            std::array<int, maxProgressionLength> roots {};
+            GrooveEngine::voiceProgression (s, chords, voiced);
+            GrooveEngine::bassRoots (s, chords, roots);
+            for (int i = 0; i < 4; ++i)
+            {
+                CHECK (roots[(size_t) i] >= 28 && roots[(size_t) i] <= 45 && roots[(size_t) i] % 12 == chords[(size_t) i].rootPc);
+                if (i > 0) CHECK (std::abs (roots[(size_t) i] - roots[(size_t) i - 1]) <= 7);   // (a tritone, or a 5th where E1 is the floor)
+            }
+            if (feel == 2)
+            {
+                std::map<int, double> on;
+                for (const auto& e : GrooveEngine::renderClip (s, 16.0))
+                    if (e.part == Part::bass)
+                    {
+                        if (e.isNoteOn()) on[e.note] = e.ppq;
+                        else if (on.count (e.note))
+                            CHECK (e.ppq <= std::floor (on[e.note] + 0.02) + 1.0 - 0.125 + 1.0e-6 || e.ppq - on[e.note] <= 0.0601);
+                    }
+            }
+        }
+    }
+
+    // Realism: a long clip is not the same loop over and over, and no notes hang.
+    {
+        GrooveSettings s;
+        s.realism = true;
+        const auto clip = GrooveEngine::renderClip (s, 64.0);
+        std::multiset<std::pair<long long, int>> first, third;
+        for (const auto& e : clip)
+            if (e.isNoteOn() && e.part == Part::chords)
+            {
+                if (e.ppq < 8.0) first.insert ({ std::llround (e.ppq * 4.0), e.note });
+                else if (e.ppq >= 16.0 && e.ppq < 24.0) third.insert ({ std::llround ((e.ppq - 16.0) * 4.0), e.note });
+            }
+        CHECK (first != third);
+        CHECK (GrooveEngine::loopLengthInSteps (s) % (4 * GrooveEngine::patternLength (s)) == 0);
+    }
+
+    // A loop clip: what rings at the end comes back at the start, every note closed in the clip.
+    {
+        GrooveSettings s;
+        s.strings = StringsMode::pad;
+        s.stepsPerChord = 32;
+        const auto clip = GrooveEngine::renderLoopClip (s, 12.0);   // ends in the middle of a chord
+        std::map<std::pair<int, int>, int> open;
+        bool wrapped = false;
+        for (const auto& e : clip)
+        {
+            CHECK (e.ppq >= 0.0 && e.ppq <= 12.0 + 1.0e-9);
+            auto& n = open[{ e.note, (int) e.part }];
+            n += e.isNoteOn() ? 1 : -1;
+            CHECK (n == 0 || n == 1);
+            wrapped = wrapped || (e.isNoteOn() && e.part == Part::strings && e.ppq < 1.0e-9);
+        }
+        CHECK (wrapped);
+        for (const auto& [k, n] : open)
+            CHECK (n == 0);
+    }
+
+    // Minor modes: random progressions move like minor house (no major-key V - I moves forced on them).
+    for (std::uint32_t seed = 1; seed < 50; ++seed)
+    {
+        const auto p = randomProgression (seed, 4, 1);
+        CHECK (p.size() == 4);
+        for (int d : p)
+            CHECK (d >= 0 && d < 7);
+    }
+
+    // Fills over a chromatic chord play that chord's notes, not the key's neighbours.
+    {
+        GrooveSettings s;
+        s.keyRoot = 0;
+        s.scale = 0;
+        s.progressionLength = 2;
+        s.progression = { 0, 0, 0, 0, 0, 0, 0, 0 };
+        s.freeChords = { -1, freeChordCode (8, false), -1, -1, -1, -1, -1, -1 };   // C, then Ab
+        s.fillEveryBars = 1;
+        s.fillStyle = FillStyle::gospelRun;
+        bool sawAb = false, sawA = false;
+        for (const auto& e : GrooveEngine::renderClip (s, 8.0))
+            if (e.isNoteOn() && e.part == Part::fill && e.ppq >= 3.0 && e.ppq < 4.0)   // the run into the Ab
+            {
+                sawAb = sawAb || e.note % 12 == 8;
+                sawA = sawA || e.note % 12 == 9;
+            }
+        CHECK (sawAb && ! sawA);
+    }
+}
+
 int main()
 {
     testChordNames();
@@ -1731,6 +1945,7 @@ int main()
     testMusicalDna();
     testVariationsHumanizeFills();
     testStrings();
+    testV024Fixes();
 
     if (failures == 0)
         std::printf ("All engine tests passed.\n");
