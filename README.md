@@ -29,10 +29,12 @@ Rhodes or synth.
 
 🌐 **Website:** [wsx79.github.io/fasegroovepiano](https://wsx79.github.io/fasegroovepiano/)
 
+**Development version: 0.23.0** (renumbered from 2.23.0).
+
 ## Features
 
-- 🎻 **Strings (v2.12):** a third part for body and volume, on MIDI channel 3: 10 kinds: a voice-led pad that holds every chord (also high, wide or half-bar), string stabs with the piano or on the offbeats, answers in the piano's rests, pulsing 8ths, disco octaves and runs into each chord. Exported on their own (*Strings ...* clips) or as a separate track.
-- ✨ **Version 2.0: a new interface**, clean and professional: graphite studio look, icon buttons, a real transport (▶ ❚❚ ■), clear switches to hear the piano or the bass.
+- 🎻 **Strings:** a third part for body and volume, on MIDI channel 3: 10 kinds: a voice-led pad that holds every chord (also high, wide or half-bar), string stabs with the piano or on the offbeats, answers in the piano's rests, pulsing 8ths, disco octaves and runs into each chord. Exported on their own (*Strings ...* clips) or as a separate track.
+- ✨ **Interface**, clean and professional: graphite studio look, icon buttons, a real transport (▶ ❚❚ ■), clear switches to hear the piano or the bass.
 - 🎹 **Harmony:** 12 keys × 13 scales/modes (Major, Dorian, Minor, Mixolydian, Lydian, Phrygian,
   Locrian, Harmonic and Melodic Minor, Harmonic Major, Lydian Dominant, Mixolydian b6, Phrygian
   Dominant). Triads, 7ths, 9ths, 11ths/13ths, **6/9**, **add9**, **9sus4** and the gospel

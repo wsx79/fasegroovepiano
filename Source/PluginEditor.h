@@ -11,22 +11,8 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-// v2 "studio" theme: graphite surfaces, one warm accent (piano) and one cool accent (bass).
-namespace Palette
-{
-    const juce::Colour background { 0xff0d0f13 };   // window
-    const juce::Colour panel      { 0xff161920 };   // panels
-    const juce::Colour panelEdge  { 0xff272c35 };   // borders, tracks, empty cells
-    const juce::Colour control    { 0xff1d2129 };   // buttons
-    const juce::Colour field      { 0xff0f1216 };   // menus, displays
-    const juce::Colour accent     { 0xffffa94d };   // amber: the piano, the main actions
-    const juce::Colour accent2    { 0xff4cc3f0 };   // cyan: the bass, pushes, playing
-    const juce::Colour strings    { 0xffff5a5f };   // red: the strings
-    const juce::Colour fill       { 0xffb69cff };   // violet: fills
-    const juce::Colour level      { 0xff5fd68a };   // green: velocity
-    const juce::Colour text       { 0xffe7e9ec };
-    const juce::Colour dim        { 0xff7f8794 };
-}
+// Shared family controls; the editor keeps its existing layout.
+#include "FamilyTheme.h"
 
 /** Each instrument's colour, everywhere: piano amber, bass cyan, strings red, fills violet. */
 inline juce::Colour partColour (sgk::Part part)
@@ -42,34 +28,7 @@ inline juce::Colour partColour (sgk::Part part)
 }
 
 //==============================================================================
-class GrooveLookAndFeel : public juce::LookAndFeel_V4
-{
-public:
-    GrooveLookAndFeel();
-
-    void drawRotarySlider (juce::Graphics&, int x, int y, int width, int height, float sliderPos,
-                           float startAngle, float endAngle, juce::Slider&) override;
-    void drawToggleButton (juce::Graphics&, juce::ToggleButton&, bool highlighted, bool down) override;
-
-    // One typeface everywhere (Inter, embedded), flat controls with thin borders.
-    juce::Typeface::Ptr getTypefaceForFont (const juce::Font&) override;
-    void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour& background, bool highlighted, bool down) override;
-    juce::Font getTextButtonFont (juce::TextButton&, int buttonHeight) override;
-    void drawComboBox (juce::Graphics&, int width, int height, bool isDown, int bx, int by, int bw, int bh, juce::ComboBox&) override;
-    juce::Font getComboBoxFont (juce::ComboBox&) override;
-    void positionComboBoxText (juce::ComboBox&, juce::Label&) override;
-    void drawPopupMenuBackground (juce::Graphics&, int width, int height) override;
-    juce::Font getPopupMenuFont() override;
-    void drawScrollbar (juce::Graphics&, juce::ScrollBar&, int x, int y, int width, int height, bool vertical,
-                        int thumbStart, int thumbSize, bool over, bool down) override;
-    void drawTooltip (juce::Graphics&, const juce::String& text, int width, int height) override;
-    juce::Rectangle<int> getTooltipBounds (const juce::String& text, juce::Point<int> screenPos, juce::Rectangle<int> parentArea) override;
-    juce::Font getLabelFont (juce::Label&) override;
-    void drawButtonText (juce::Graphics&, juce::TextButton&, bool highlighted, bool down) override;
-
-private:
-    juce::Typeface::Ptr regular, semiBold;
-};
+using GrooveLookAndFeel = FamilyLookAndFeel;
 
 //==============================================================================
 /** Rotary knob with a caption. */
@@ -564,8 +523,8 @@ public:
     bool primary = false;   // filled with onColour even when off (the main action of a panel)
     juce::Colour iconColour;  // when set: the icon's own colour (e.g. the dice of every random button)
 
-    /** The look shared by every "random" button: neutral, with a violet dice. */
-    void makeRandomButton()   { icon = Icon::dice; iconColour = Palette::fill; primary = false; repaint(); }
+    /** The look shared by every "random" button: neutral, with an amber dice. */
+    void makeRandomButton()   { icon = Icon::dice; iconColour = Palette::accent; primary = false; repaint(); }
 
     void paintButton (juce::Graphics&, bool highlighted, bool down) override;
     static void drawIcon (juce::Graphics&, Icon, juce::Rectangle<float>, juce::Colour);

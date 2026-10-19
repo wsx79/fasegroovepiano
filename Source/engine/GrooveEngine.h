@@ -348,7 +348,7 @@ public:
                               std::array<NoteSet, maxProgressionLength>& out) noexcept;
 
 private:
-    struct PendingOn { double ppq; int note; int velocity; double duration; bool tie = false; Part part = Part::chords; };
+    struct PendingOn { double ppq; int note; int velocity; double duration; bool tie = false; Part part = Part::chords; std::size_t order = 0; };
 
     const GroovePattern& patternFor (const GrooveSettings& s);
 

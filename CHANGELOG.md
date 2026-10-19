@@ -6,7 +6,16 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [2.23.0] - 2026-10-19
+## [0.23.0] - 2026-10-19
+
+- Shared Piano/Drums/Guitar control theme: matching buttons, menus, embedded Inter fonts, focus and active states; existing layouts are preserved.
+- Note-offs keep the channel used by their note-on, including a channel change while playing.
+- Old presets restore defaults for missing parameters instead of inheriting the previous preset.
+- MIDI Start and Song Position Pointer replace the old clock position in the current block.
+- Equal-time event ordering no longer needs the temporary allocation used by stable_sort.
+- Empty audio blocks are handled without invalid sample positions.
+- Development version renumbered from 2.23.0 to 0.23.0. Existing plug-in IDs and preset format are unchanged. The updater treats the former 2.x line as 0.x; already-installed 2.x builds need this renumbered build installed manually once.
+- Editor look-and-feel no longer changes the process-wide default, avoiding interference between editors in a DAW.
 
 - Guitar leads: much more varied answers. Every bar answers (the last one too, often pushing into the next phrase; the second now and then stays quiet), one or two windows a bar on any 8th or 16th, eight kinds of answer (stab, two hits, push, held chord, off-beat pair, three 16ths, anticipation, ghost and hit), and the piano's own groove in about a third of them.
 - KEY shows the key itself ("KEY  A Dorian"); the chord display is a little narrower to make room. KEY can be switched on before LINK: it works once linked.

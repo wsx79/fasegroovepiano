@@ -1335,6 +1335,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     juce::ScopedNoDenormals noDenormals;
 
     const int numSamples = buffer.getNumSamples();
+    if (numSamples == 0) return;
     const double sampleRate = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
 
     // Sidechain input: follow its level before the buffer is used for the output.
@@ -1385,7 +1386,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     // ---- MIDI in: in hold mode keys pick the root, otherwise they pass through ----
     outMidi.clear();
-    const double clockPpqAtStart = clockPpq;
+    double clockPpqAtStart = clockPpq;
     for (const auto meta : midi)
     {
         const auto m = meta.getMessage();
@@ -1403,10 +1404,10 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                 clockPpq += 1.0 / 24.0;
             continue;
         }
-        if (m.isMidiStart())             { clockRunning = true; clockPpq = 0.0; continue; }
-        if (m.isMidiContinue())          { clockRunning = true; continue; }
+        if (m.isMidiStart())             { clockRunning = true; clockPpq = clockPpqAtStart = 0.0; continue; }
+        if (m.isMidiContinue())          { clockRunning = true; clockPpqAtStart = clockPpq; continue; }
         if (m.isMidiStop())              { clockRunning = false; continue; }
-        if (m.isSongPositionPointer())   { clockPpq = m.getSongPositionPointerMidiBeat() / 4.0; continue; }
+        if (m.isSongPositionPointer())   { clockPpq = clockPpqAtStart = m.getSongPositionPointerMidiBeat() / 4.0; continue; }
 
         // Live keys: the lowest octave plays commands, not notes.
         if (liveKeysChoice.load() == 1 && m.isNoteOnOrOff()
@@ -1651,7 +1652,18 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             continue;   // the guitar leads: only a chord now and then
 
         const int pos = juce::jlimit (0, numSamples - 1, (int) std::floor ((e.ppq - startPpq) * samplesPerBeat));
-        const int channel = e.part == sgk::Part::strings ? stringsChannel : (bassOnChannel2 && e.part == sgk::Part::bass) ? 2 : 1;
+        int channel = e.part == sgk::Part::strings ? stringsChannel : (bassOnChannel2 && e.part == sgk::Part::bass) ? 2 : 1;
+        if (e.part == sgk::Part::bass)
+        {
+            auto& original = bassNoteChannels[(size_t) e.note];
+            if (e.isNoteOn())
+                original = channel;
+            else
+            {
+                channel = original > 0 ? original : channel;
+                original = 0;
+            }
+        }
         outMidi.addEvent (e.isNoteOn() ? juce::MidiMessage::noteOn (channel, e.note, (juce::uint8) e.velocity)
                                        : juce::MidiMessage::noteOff (channel, e.note),
                           pos);
@@ -2798,7 +2810,19 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     if (xml == nullptr || ! xml->hasTagName (apvts.state.getType()))
         return;
 
-    apvts.replaceState (juce::ValueTree::fromXml (*xml));
+    auto restored = juce::ValueTree::fromXml (*xml);
+    // APVTS retains the current value when a parameter child is absent. Old presets
+    // must instead restore defaults for parameters added after that preset was saved.
+    for (auto* parameter : getParameters())
+        if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*> (parameter))
+            if (! restored.getChildWithProperty ("id", ranged->paramID).isValid())
+            {
+                juce::ValueTree child ("PARAM");
+                child.setProperty ("id", ranged->paramID, nullptr);
+                child.setProperty ("value", ranged->convertFrom0to1 (ranged->getDefaultValue()), nullptr);
+                restored.appendChild (child, nullptr);
+            }
+    apvts.replaceState (restored);
     const auto& state = apvts.state;
 
     const auto right = state.getProperty ("userRight").toString();
@@ -2808,6 +2832,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
         return line.length() == sgk::userPatternLength && line.containsOnly ("XxgUuDd>=.");
     };
 
+    resetUserPattern();
     if (valid (right) && valid (left))
     {
         for (int i = 0; i < sgk::userPatternLength; ++i)

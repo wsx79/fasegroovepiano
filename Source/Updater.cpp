@@ -437,6 +437,9 @@ bool isNewer (const juce::String& a, const juce::String& b)
         std::array<int, 3> n {};
         for (int i = 0; i < 3 && i < tokens.size(); ++i)
             n[(size_t) i] = tokens[i].getIntValue();
+        // The former 2.x line is now numbered 0.x (2.23.0 == 0.23.0).
+        // Do not offer the legacy 2.x binary as an upgrade of the renumbered build.
+        if (n[0] == 2) n[0] = 0;
         return n;
     };
     return parts (a) > parts (b);

@@ -2474,8 +2474,10 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
                                                                    || p.note < 0 || p.note > 127; }),
                    pending.end());
 
-    std::stable_sort (pending.begin(), pending.end(),
-                      [] (const PendingOn& a, const PendingOn& b) { return a.ppq < b.ppq; });
+    for (size_t i = 0; i < pending.size(); ++i)
+        pending[i].order = i;
+    std::sort (pending.begin(), pending.end(), [] (const PendingOn& a, const PendingOn& b)
+    { return a.ppq < b.ppq || (a.ppq == b.ppq && a.order < b.order); });
 
     std::array<double, numTracked> onTime;
     onTime.fill (-1.0);

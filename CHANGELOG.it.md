@@ -6,7 +6,16 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
-## [2.23.0] - 2026-10-19
+## [0.23.0] - 2026-10-19
+
+- Controlli comuni a Piano, Drums e Guitar: stessi pulsanti, menu, font Inter, focus, stati attivi e colori dei comandi, mantenendo la disposizione attuale.
+- I rilasci MIDI mantengono il canale della nota iniziale, anche cambiando canale durante la riproduzione.
+- I preset vecchi ripristinano i valori predefiniti dei parametri mancanti, senza ereditare il preset precedente.
+- MIDI Start e Song Position Pointer aggiornano la posizione del clock nel blocco corrente.
+- L’ordinamento degli eventi simultanei evita il buffer temporaneo di stable_sort.
+- Gestione dei blocchi audio vuoti senza posizioni di campione non valide.
+- Versione di sviluppo rinumerata da 2.23.0 a 0.23.0. Identità del plugin e formato dei preset invariati. L’updater considera la vecchia serie 2.x come 0.x; sulle copie 2.x già installate occorre installare manualmente questa versione una volta.
+- Il tema dell’editor non modifica più il valore globale del processo, evitando interferenze tra finestre nella DAW.
 
 - Chitarra solista: risposte molto più varie. Ogni battuta risponde (anche l'ultima, spesso con una spinta verso la frase successiva; la seconda a volte resta in silenzio), una o due finestre a battuta su qualsiasi ottavo o sedicesimo, otto tipi di risposta (colpo, due colpi, spinta, accordo tenuto, coppia in levare, tre sedicesimi, anticipo, ghost e colpo), e il groove del piano in circa un terzo dei casi.
 - TONALITÀ mostra la tonalità ("TONALITÀ  A Dorian"); il riquadro dell'accordo è un po' più stretto per fare spazio. TONALITÀ si può accendere anche prima del LINK: funziona appena collegato.
