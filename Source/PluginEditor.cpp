@@ -6238,7 +6238,7 @@ void FaseGroovePianoEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> a
         auto head = area.reduced (14, 8).removeFromTop (16).toFloat();
         g.setColour (Palette::accent);
         g.fillRoundedRectangle (head.getX(), head.getCentreY() - 5.0f, 2.5f, 10.0f, 1.0f);
-        const auto f = FamilyTheme::font (11.0f, true);
+        auto f = FamilyTheme::font (11.0f, true);
         f.setExtraKerningFactor (0.12f);
         g.setFont (f);
         g.setColour (Palette::text.withAlpha (0.85f));
