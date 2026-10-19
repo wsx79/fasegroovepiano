@@ -265,6 +265,50 @@ namespace
     }
 
     //==============================================================================
+    void testChannelChangeWhilePlaying()
+    {
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::sound, 0.0f);
+        p.setParameterFromUI (ParamIDs::humanize, 0.0f);
+        p.setParameterFromUI (ParamIDs::fills, 0.0f);
+        p.setParameterFromUI (ParamIDs::variation, 0.0f);
+        p.setParameterFromUI (ParamIDs::bass, 1.0f);
+        p.prepareToPlay (44100.0, 256);
+        p.previewToggle();
+        juce::AudioBuffer<float> audio (2, 256);
+        juce::MidiBuffer midi;
+        int open[16][128] {};
+        bool changed = false;
+        int ons = 0;
+        auto track = [&]
+        {
+            for (const auto meta : midi)
+            {
+                const auto m = meta.getMessage();
+                if (m.isNoteOn()) { ++open[m.getChannel()-1][m.getNoteNumber()]; ++ons; }
+                if (m.isNoteOff()) { --open[m.getChannel()-1][m.getNoteNumber()]; }
+            }
+        };
+        for (int block = 0; block < 600; ++block)
+        {
+            midi.clear();
+            p.processBlock (audio, midi);
+            track();
+            if (! changed && std::any_of (open[0], open[0] + 60, [] (int n) { return n > 0; }))
+            {
+                p.setParameterFromUI (ParamIDs::bassChannel, 1.0f);
+                changed = true;
+            }
+        }
+        p.previewStop();
+        midi.clear();
+        p.processBlock (audio, midi);
+        track();
+        CHECK (changed && ons > 0);
+        for (auto& channel : open)
+            for (int count : channel) CHECK (count == 0);
+    }
+
     void testTransport()
     {
         FaseGroovePianoProcessor p;
@@ -640,6 +684,9 @@ namespace
     void testUpdateSwap()
     {
         CHECK (Updater::isNewer ("v1.18.1", "1.18.0"));
+        CHECK (! Updater::isNewer ("v2.23.0", "0.23.0"));
+        CHECK (Updater::isNewer ("v0.23.1", "2.23.0"));
+        CHECK (! Updater::isNewer ("v2.22.1", "0.23.0"));
         CHECK (! Updater::isNewer ("1.18.0", "1.18.0"));
         CHECK (! Updater::isNewer ("v1.9.0", "1.18.0"));
 
@@ -1716,6 +1763,7 @@ int main()
     testOldAndBrokenStates();
     testPresetFiles();
     testMidiExport();
+    testChannelChangeWhilePlaying();
     testTransport();
     testMidiImport();
     testBassLineControls();

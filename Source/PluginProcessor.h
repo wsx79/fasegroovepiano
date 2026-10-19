@@ -483,6 +483,7 @@ private:
     sgk::GrooveEngine engine;
     std::vector<sgk::NoteEvent> events;
     juce::MidiBuffer outMidi;
+    std::array<int, 128> bassNoteChannels {};
 
     juce::Synthesiser synth;
     juce::Reverb reverb;

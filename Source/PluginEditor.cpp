@@ -4510,7 +4510,6 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       tempoAttachment (p.apvts, ParamIDs::tempo, tempoSlider)
 {
     setLookAndFeel (&lookAndFeel);
-    juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);   // fonts are resolved by the default one
     Localisation::loadSaved();
 
     styleCaption (presetLabel, "Progression presets");
@@ -5185,7 +5184,6 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
 FaseGroovePianoEditor::~FaseGroovePianoEditor()
 {
     stopTimer();
-    juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
     setLookAndFeel (nullptr);
 }
 
