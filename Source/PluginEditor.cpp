@@ -5171,6 +5171,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     setResizable (true, true);
     applySizeLimits();
     setSize (juce::roundToInt (baseWidth * savedScale), juce::roundToInt (baseHeight * savedScale));
+    addMouseListener (this, true);   // the undo history: see mouseUp
+    pendingSnapshot = 1;
     startTimerHz (30);
     timerCallback();
 }
@@ -5860,6 +5862,9 @@ void FaseGroovePianoEditor::applyLanguage()
 
 void FaseGroovePianoEditor::mouseUp (const juce::MouseEvent& e)
 {
+    pendingSnapshot = 8;   // the undo history: a snapshot once the edit has settled
+    if (e.eventComponent != this)
+        return;
     // Clicking the logo opens the credits.
     const auto pos = e.getEventRelativeTo (this).position / uiScale;
     if (! miniMode && headerArea.toFloat().withWidth (300.0f).withHeight (56.0f).contains (pos))
@@ -6208,10 +6213,10 @@ void FaseGroovePianoEditor::timerCallback()
             presetBox.setSelectedId (0, juce::dontSendNotification);
     }
 
-    // Undo history: a snapshot every half second; a change pushes the previous one.
-    if (++snapshotTicks >= 15)
+    // Undo history: a snapshot once a mouse edit has settled (not polled: a copy of the whole
+    // state twice a second made the interface heavy); a change pushes the previous one.
+    if (pendingSnapshot > 0 && --pendingSnapshot == 0)
     {
-        snapshotTicks = 0;
         const auto now = processor.snapshot();
         if (lastSnapshot.isEmpty())
             lastSnapshot = now;

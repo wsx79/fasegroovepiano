@@ -6,6 +6,10 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.20.1] - 2026-10-19
+
+- Lighter interface: the undo history is saved only after an edit, no longer a copy of the whole state twice a second.
+
 ## [2.20.0] - 2026-10-19
 
 - **LINK and PLAY: no more stutters.** Linked, the beat goes on block by block and follows the shared

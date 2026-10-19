@@ -854,6 +854,8 @@ private:
     juce::StringArray undoStack, redoStack;
     juce::String lastSnapshot;
     int snapshotTicks = 0, lastLearnCount = 0;
+    int pendingSnapshot = 0;
+    void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override { pendingSnapshot = 8; }
     void showStyleMenu();
     void confirmReset();
     void afterReset();

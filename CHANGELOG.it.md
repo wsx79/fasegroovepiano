@@ -6,6 +6,10 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.20.1] - 2026-10-19
+
+- Interfaccia più leggera: la cronologia annulla si salva solo dopo una modifica, non più una copia dell'intero stato due volte al secondo.
+
 ## [2.20.0] - 2026-10-19
 
 - **LINK e PLAY: niente più scatti.** Con LINK il tempo scorre continuo blocco dopo blocco e segue con
