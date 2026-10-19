@@ -1301,7 +1301,8 @@ void FaseGroovePianoProcessor::prepareToPlay (double sampleRate, int samplesPerB
     chorusFx.reset();
     outputGain.reset (sampleRate, 0.05);
     outputGain.setCurrentAndTargetValue (juce::Decibels::decibelsToGain (raw (ParamIDs::volume)));
-    sidechainLevel.assign ((size_t) juce::jmax (1, samplesPerBlock), 0.0f);
+    // Room for blocks larger than announced (some hosts do send them): no allocation in processBlock.
+    sidechainLevel.assign ((size_t) juce::jmax (8192, 2 * samplesPerBlock), 0.0f);
     lastOutput.assign ((size_t) juce::jmax (1, samplesPerBlock), 0.0f);
     sidechainEnvelope = 0.0f;
 
@@ -1336,8 +1337,6 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     const bool externalPump = juce::roundToInt (raw (ParamIDs::pumpSource)) == 1;
     if (externalPump)   // (only then: the meter is shown only then too)
     {
-        if ((int) sidechainLevel.size() < numSamples)
-            sidechainLevel.resize ((size_t) numSamples);
 
         auto side = juce::AudioBuffer<float>();
         if (auto* bus = getBus (true, 0); bus != nullptr && bus->isEnabled())
@@ -1367,7 +1366,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                 peak = juce::jmax (peak, std::abs (side.getSample (ch, i)));
             blockPeak = juce::jmax (blockPeak, peak);
             sidechainEnvelope += (peak - sidechainEnvelope) * (peak > sidechainEnvelope ? attack : release);
-            sidechainLevel[(size_t) i] = sidechainEnvelope;
+            sidechainLevel[(size_t) juce::jmin (i, (int) sidechainLevel.size() - 1)] = sidechainEnvelope;   // (a block larger than the room: its end follows the last level)
         }
         sidechainMeter = juce::jmax (blockPeak, sidechainMeter.load() * 0.8f);   // for the meter in the UI
     }
@@ -1621,12 +1620,15 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     const bool bassOnChannel2 = juce::roundToInt (raw (ParamIDs::bassChannel)) == 1;
 
     const bool muteChords = chordsMuted.load(), muteBass = bassMuted.load();
+    const bool leading = guitarLeads.load() && linkOn.load();
     for (const auto& e : events)
     {
         if (muteChords && e.isNoteOn() && e.part != sgk::Part::bass && e.part != sgk::Part::strings)
             continue;   // the piano muted (note-offs still pass, so nothing hangs)
         if (muteBass && e.isNoteOn() && e.part == sgk::Part::bass)
             continue;   // the bass muted
+        if (leading && e.isNoteOn() && (e.part == sgk::Part::chords || e.part == sgk::Part::fill) && ! compingKeeps (e.ppq))
+            continue;   // the guitar leads: only a chord now and then
 
         const int pos = juce::jlimit (0, numSamples - 1, (int) std::floor ((e.ppq - startPpq) * samplesPerBeat));
         const int channel = e.part == sgk::Part::strings ? stringsChannel : (bassOnChannel2 && e.part == sgk::Part::bass) ? 2 : 1;
@@ -1672,7 +1674,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                 if (externalPump)
                 {
                     // -42 dB (nothing) .. -6 dB (full duck); no log below -42 dB (most of the time)
-                    if (const float level = sidechainLevel[(size_t) i]; level > 0.00794f)
+                    if (const float level = sidechainLevel[(size_t) juce::jmin (i, (int) sidechainLevel.size() - 1)]; level > 0.00794f)
                         duck = 0.85f * juce::jmin (1.0f, (20.0f * std::log10 (level) + 42.0f) / 36.0f);
                 }
                 else
@@ -2224,11 +2226,33 @@ juce::File FaseGroovePianoProcessor::linkFile()
         .getChildFile ("Fase Groove").getChildFile ("Link.xml");
 }
 
+bool FaseGroovePianoProcessor::compingKeeps (double ppq) noexcept
+{
+    const auto bar = (long long) std::floor (ppq / 4.0);
+    const double beat = ppq - (double) bar * 4.0;
+    return (bar % 2 == 0 && beat < 1.0)    // a chord on the first beat of every other bar
+        || (bar % 4 == 3 && beat >= 3.0);  // and one pushing into the next phrase
+}
+
+void FaseGroovePianoProcessor::readGuitarLead()
+{
+    // Written by Fase Groove Guitar beside the link file, refreshed every 2 seconds while it
+    // leads: an old one (the guitar closed) counts as not leading.
+    bool leads = false;
+    const auto file = linkFile().getSiblingFile ("GuitarLead.xml");
+    if (linkOn.load() && file.existsAsFile())
+        if (auto xml = juce::parseXML (file); xml != nullptr && xml->getBoolAttribute ("lead"))
+            leads = juce::Time::currentTimeMillis() - xml->getStringAttribute ("time").getLargeIntValue() < 6000;
+    guitarLeads = leads;
+}
+
 void FaseGroovePianoProcessor::setLinked (bool on)
 {
     if (on == linkOn.load())
         return;
     linkOn = on;
+    if (! on)
+        guitarLeads = false;
     linkSeenText = {};
     linkShared = {};
     linkAnchor = -1.0;
@@ -2302,6 +2326,11 @@ void FaseGroovePianoProcessor::updateLink()
 {
     if (! linkOn.load())
         return;
+    if (++leadChecks >= 6)   // about once a second
+    {
+        leadChecks = 0;
+        readGuitarLead();
+    }
 
     const auto file = linkFile();
     const auto me = juce::String::toHexString ((juce::pointer_sized_int) this);
@@ -2523,13 +2552,13 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
         for (int i = 0; i < sgk::numSegments; ++i)
         {
             velocityOrder[(size_t) i] = order.length() == sgk::numSegments ? juce::jlimit (0, sgk::numSegments - 1, (int) (order[i] - '0')) : i;
-            velocityLocked[(size_t) i] = velLocks[i] == '1';
+            velocityLocked[(size_t) i] = i < velLocks.length() && velLocks[i] == '1';   // older projects: unlocked
         }
     }
 
     const auto locks = state.getProperty ("segmentLocks").toString();
     for (int i = 0; i < sgk::numSegments; ++i)
-        segmentLocked[(size_t) i] = locks[i] == '1';
+        segmentLocked[(size_t) i] = i < locks.length() && locks[i] == '1';
 
     lastBassMode = juce::jlimit (1, sgk::numBassModes - 1, (int) state.getProperty ("lastBassMode", 1));
     chordsMuted = (bool) state.getProperty ("soloBass", false);

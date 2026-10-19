@@ -6,6 +6,13 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.21.0] - 2026-10-19
+
+- **Guitar leads:** with LINK on and LEAD pressed in Fase Groove Guitar, the piano plays only a chord now and then (the first beat of every other bar and a push into each phrase); the button reads GUITAR LEADS. Without LEAD nothing changes.
+- Lighter interface: the chords, the harmony and the groove picture are worked out 10 times a second, the playhead 30.
+- Sidechain: no memory allocated on the audio thread, even when the host sends a block larger than announced.
+- Older projects without lock data load safely (everything unlocked).
+
 ## [2.20.1] - 2026-10-19
 
 - Lighter interface: the undo history is saved only after an edit, no longer a copy of the whole state twice a second.

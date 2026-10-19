@@ -6,6 +6,13 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.21.0] - 2026-10-19
+
+- **Chitarra solista:** con LINK attivo e SOLISTA premuto in Fase Groove Guitar, il piano suona solo qualche accordo di completamento (il primo tempo di una battuta su due e una spinta verso ogni frase); il pulsante mostra CHITARRA SOLISTA. Senza SOLISTA non cambia nulla.
+- Interfaccia più leggera: accordi, armonia e disegno del groove si aggiornano 10 volte al secondo, il cursore 30.
+- Sidechain: nessuna allocazione di memoria nel thread audio, anche se la DAW manda un blocco più grande del previsto.
+- I progetti vecchi senza dati dei lucchetti si caricano in sicurezza (tutto sbloccato).
+
 ## [2.20.1] - 2026-10-19
 
 - Interfaccia più leggera: la cronologia annulla si salva solo dopo una modifica, non più una copia dell'intero stato due volte al secondo.

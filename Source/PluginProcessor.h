@@ -273,6 +273,10 @@ public:
     bool isLinked() const { return linkOn.load(); }
     void setLinked (bool on);
     static juce::File linkFile();
+    /** A linked Fase Groove Guitar set to LEAD: the piano only fills in a chord now and then
+        (the first beat of every other bar, a push into each four-bar phrase), the bass as usual. */
+    bool isGuitarLeading() const noexcept { return guitarLeads.load(); }
+    static bool compingKeeps (double ppq) noexcept;
     /** Writes the genre and swing for the others, or takes theirs (message thread, a few times a second). */
     void updateLink();
     /** The genre shared with LINK: a preset's own, else the last preset's. */
@@ -370,6 +374,9 @@ private:
         void timerCallback() override { if (callback) callback(); }
     } editRefresher, linkRefresher;
     std::atomic<bool> linkOn { false };
+    std::atomic<bool> guitarLeads { false };
+    int leadChecks = 0;
+    void readGuitarLead();
     // What the linked plug-ins share: genre, swing, tempo, DAW sync and the play button's clock
     // (anchor: the system time, in high-resolution ms, at which that clock was at beat 0).
     struct LinkState

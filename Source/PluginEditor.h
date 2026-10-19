@@ -855,6 +855,8 @@ private:
     juce::String lastSnapshot;
     int snapshotTicks = 0, lastLearnCount = 0;
     int pendingSnapshot = 0;
+    int uiTicks = 0;
+    sgk::GroovePattern shownPattern;   // the groove shown, worked out 10 times a second
     void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override { pendingSnapshot = 8; }
     void showStyleMenu();
     void confirmReset();

@@ -62,6 +62,7 @@ namespace
         { "NEW RIFF", "NUOVO RIFF", "NUEVO RIFF", "NOUVEAU RIFF", "NEUER RIFF", "NOVO RIFF" },
         { "PREVIEW", "ASCOLTA", "ESCUCHAR", "ÉCOUTER", "VORHÖREN", "OUVIR" },
         { "SYNC DAW", "SYNC DAW", "SYNC DAW", "SYNC DAW", "SYNC DAW", "SYNC DAW" },
+        { "GUITAR LEADS", "CHITARRA SOLISTA", "GUITARRA SOLISTA", "GUITARE SOLISTE", "GITARRE FÜHRT", "GUITARRA SOLISTA" },
         { "LINK DRUMS", "LINK DRUMS", "LINK DRUMS", "LINK DRUMS", "LINK DRUMS", "LINK DRUMS" },
         { "Link with Fase Groove Drums: the same genre, swing, tempo and play button in both, on the same beat (change it in either one)", "Collega a Fase Groove Drums: stesso genere, swing, tempo e play in entrambi, sullo stesso beat (cambialo in uno dei due)", "Enlaza con Fase Groove Drums: el mismo género, swing, tempo y play en ambos, en el mismo beat (cámbialo en cualquiera)", "Lier à Fase Groove Drums : même genre, swing, tempo et lecture dans les deux, sur le même temps (change-le dans l'un ou l'autre)", "Mit Fase Groove Drums verbinden: dasselbe Genre, Swing, Tempo und Play in beiden, auf demselben Beat (in einem davon ändern)", "Ligar ao Fase Groove Drums: o mesmo gênero, swing, tempo e play nos dois, no mesmo tempo (mude em qualquer um)" },
         { "Guide sound", "Suono guida", "Sonido guía", "Son guide", "Guide-Sound", "Som guia" },

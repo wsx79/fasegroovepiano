@@ -5174,6 +5174,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     addMouseListener (this, true);   // the undo history: see mouseUp
     pendingSnapshot = 1;
     startTimerHz (30);
+    uiTicks = 2;   // the next tick refreshes everything
     timerCallback();
 }
 
@@ -5290,6 +5291,7 @@ void FaseGroovePianoEditor::afterRestore()
     freeToggle.setToggleState (processor.freeCircle, juce::dontSendNotification);
     circle.setFreeMode (processor.freeCircle);
     shrinkToggle.setToggleState (processor.shrinkWhileDragging, juce::dontSendNotification);
+    uiTicks = 2;   // the next tick refreshes everything
     timerCallback();
     repaint();
 }
@@ -5643,6 +5645,7 @@ void FaseGroovePianoEditor::afterReset()
     for (auto* lock : segmentLocks)
         lock->setToggleState (false, juce::dontSendNotification);
     setSize (baseWidth, baseHeight);
+    uiTicks = 2;   // the next tick refreshes everything
     timerCallback();
     repaint();
 }
@@ -5853,6 +5856,7 @@ void FaseGroovePianoEditor::applyLanguage()
     for (auto* slot : slots)
         slot->setDegreeTip (tr ("Scale degree of this chord; the small arrows change its inversion"));
     currentKey = {};   // re-translates the key / scale line on the next timer tick
+    uiTicks = 2;   // the next tick refreshes everything
     timerCallback();
     repaint();
     for (auto* c : getChildren())
@@ -6162,6 +6166,12 @@ void FaseGroovePianoEditor::timerCallback()
 {
     keepWindowOnScreen();
     linkButton.setToggleState (processor.isLinked(), juce::dontSendNotification);
+    {
+        // A linked Fase Groove Guitar set to LEAD: the piano fills in, and says so.
+        const auto text = processor.isGuitarLeading() ? tr ("GUITAR LEADS") : tr ("LINK DRUMS");
+        if (linkButton.getButtonText() != text)
+            linkButton.setButtonText (text);
+    }
 
     if (miniMode)
     {
@@ -6194,6 +6204,18 @@ void FaseGroovePianoEditor::timerCallback()
 
     fullScreenButton.setToggleState (isFullScreen(), juce::dontSendNotification);
     fullScreenButton.setTooltip (tr (isFullScreen() ? "Exit full screen" : "Full screen"));
+
+    // The playhead 30 times a second; the rest (chords, harmony, the groove) 10 times: much
+    // less work while the plug-in is open.
+    if ((++uiTicks % 3) != 0 && ! pendingSnapshot)
+    {
+        const bool bassHeard = processor.isBassHeard();
+        patternView.setState (shownPattern, processor.uiStep.load(), bassHeard, ! processor.chordsMuted.load() || ! bassHeard);
+        const bool previewing = processor.previewOn.load();
+        playButton.setIcon (previewing ? IconButton::Icon::pause : IconButton::Icon::play);
+        playButton.setToggleState (previewing, juce::dontSendNotification);
+        return;
+    }
 
     auto s = processor.currentSettings();
     const int heldRoot = processor.uiHeldRoot.load();
@@ -6295,7 +6317,8 @@ void FaseGroovePianoEditor::timerCallback()
     }
 
     const bool bassOn = processor.isBassHeard();
-    patternView.setState (sgk::GrooveEngine::resolvePattern (s), processor.uiStep.load(), bassOn,
+    shownPattern = sgk::GrooveEngine::resolvePattern (s);
+    patternView.setState (shownPattern, processor.uiStep.load(), bassOn,
                           ! processor.chordsMuted.load() || ! bassOn);
     if (velocityShown && ! rollShown)
         updateVelocityView (s);

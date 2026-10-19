@@ -1526,6 +1526,19 @@ namespace
 
         if (existed) link.replaceWithText (backup); else link.deleteFile();
     }
+    void testLinkRoles()
+    {
+        using P = FaseGroovePianoProcessor;
+        // Comping under a leading guitar: a chord on the first beat of every other bar and a
+        // push into each four-bar phrase, nothing else.
+        CHECK (P::compingKeeps (0.0) && P::compingKeeps (0.5));
+        CHECK (! P::compingKeeps (1.5) && ! P::compingKeeps (2.0));
+        CHECK (! P::compingKeeps (4.0));       // bar 2: nothing
+        CHECK (P::compingKeeps (8.0));         // bar 3
+        CHECK (P::compingKeeps (15.5));        // the push at the end of bar 4
+        CHECK (! P::compingKeeps (7.5));
+    }
+
 }
 
 int main()
@@ -1566,6 +1579,7 @@ int main()
     testClipsSameLength();
     testSectionTrackNames();
     testLinkWithDrums();
+    testLinkRoles();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");
