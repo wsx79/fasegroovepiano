@@ -6,6 +6,10 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.21.2] - 2026-10-19
+
+- Chitarra solista: la griglia del ritmo e il piano roll mostrano quello che il piano suona in quel momento (quattro battute, solo gli accordi di completamento; il basso com'è). Intanto la griglia è solo da guardare.
+
 ## [2.21.1] - 2026-10-19
 
 - Chitarra solista: il MIDI esportato (clip, brano intero, sezioni) è il piano come suona in quel momento, solo gli accordi di completamento; basso e archi come sono. La tessera da trascinare mostra CHITARRA SOLISTA.

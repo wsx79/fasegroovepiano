@@ -6,6 +6,10 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.21.2] - 2026-10-19
+
+- Guitar leads: the rhythm grid and the piano roll show what the piano plays then (four bars, only the chords that fill in; the bass as it is). The grid is only to look at meanwhile.
+
 ## [2.21.1] - 2026-10-19
 
 - Guitar leads: the exported MIDI (clip, whole song, sections) is the piano as it plays then, only the chords that fill in; the bass and strings as they are. The drag tile says GUITAR LEADS.

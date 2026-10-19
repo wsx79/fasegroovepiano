@@ -6122,6 +6122,17 @@ std::vector<PianoRollView::ChordSpan> FaseGroovePianoEditor::chordSpansFor (cons
     return spans;
 }
 
+int FaseGroovePianoEditor::shownStep() const
+{
+    // Under a leading guitar the grid shows the four-bar comping cycle: the step in it.
+    if (! processor.isGuitarLeading())
+        return processor.uiStep.load();
+    const double ppq = processor.uiPpq.load();
+    if (ppq < 0.0)
+        return -1;
+    return (int) (((long long) std::floor (ppq / sgk::stepLength)) % 64);
+}
+
 void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
 {
     // The loop: long enough for the groove and the progression to come round together (8 bars at most).
@@ -6130,11 +6141,15 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
     int bars = std::lcm (patternBars, progressionBars);
     if (bars > 8)
         bars = juce::jmin (8, juce::jmax (patternBars, progressionBars));
+    if (processor.isGuitarLeading() && ! s.playsEditedLoop())   // the whole comping cycle in view
+        bars = juce::jmin (8, std::lcm (bars, 4));
     rollLength = s.playsEditedLoop() ? s.editedLoopLength : bars * 4.0;
 
     std::vector<PianoRollView::Note> notes;
     {
-        const auto events = sgk::GrooveEngine::renderClip (s, rollLength);
+        auto events = sgk::GrooveEngine::renderClip (s, rollLength);
+        if (processor.isGuitarLeading())   // only what the piano plays under a leading guitar
+            events = FaseGroovePianoProcessor::comping (events);
         std::map<int, std::pair<double, int>> open;   // note -> start, velocity (per part)
         std::map<int, sgk::Part> parts;
         for (const auto& e : events)
@@ -6210,7 +6225,7 @@ void FaseGroovePianoEditor::timerCallback()
     if ((++uiTicks % 3) != 0 && ! pendingSnapshot)
     {
         const bool bassHeard = processor.isBassHeard();
-        patternView.setState (shownPattern, processor.uiStep.load(), bassHeard, ! processor.chordsMuted.load() || ! bassHeard);
+        patternView.setState (shownPattern, shownStep(), bassHeard, ! processor.chordsMuted.load() || ! bassHeard);
         const bool previewing = processor.previewOn.load();
         playButton.setIcon (previewing ? IconButton::Icon::pause : IconButton::Icon::play);
         playButton.setToggleState (previewing, juce::dontSendNotification);
@@ -6318,7 +6333,10 @@ void FaseGroovePianoEditor::timerCallback()
 
     const bool bassOn = processor.isBassHeard();
     shownPattern = sgk::GrooveEngine::resolvePattern (s);
-    patternView.setState (shownPattern, processor.uiStep.load(), bassOn,
+    if (processor.isGuitarLeading())
+        shownPattern = FaseGroovePianoProcessor::compingPattern (shownPattern);
+    patternView.setInterceptsMouseClicks (! processor.isGuitarLeading(), false);   // the comping view is to look at
+    patternView.setState (shownPattern, shownStep(), bassOn,
                           ! processor.chordsMuted.load() || ! bassOn);
     if (velocityShown && ! rollShown)
         updateVelocityView (s);

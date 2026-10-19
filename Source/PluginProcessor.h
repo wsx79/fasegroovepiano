@@ -280,6 +280,8 @@ public:
     /** The events as the piano plays them under a leading guitar: the chord and fill notes
         outside compingKeeps() left out (each with its note-off), the bass and strings as they are. */
     static std::vector<sgk::NoteEvent> comping (const std::vector<sgk::NoteEvent>& events);
+    /** The groove as the grid shows it then: four bars, the right hand only on the comping beats. */
+    static sgk::GroovePattern compingPattern (const sgk::GroovePattern&);
     /** Writes the genre and swing for the others, or takes theirs (message thread, a few times a second). */
     void updateLink();
     /** The genre shared with LINK: a preset's own, else the last preset's. */

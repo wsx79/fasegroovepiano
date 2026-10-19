@@ -1565,6 +1565,53 @@ namespace
             for (const auto& [id, n] : open)
                 CHECK (n <= 0);   // nothing left hanging
         }
+
+        // The grid under a leading guitar: four bars, right-hand hits only on the comping beats.
+        {
+            sgk::GroovePattern g;
+            g.rightHand = "X.x.X.x.X.x.X.x.";
+            g.leftHand  = "x...x...x...x...";
+            const auto c = P::compingPattern (g);
+            CHECK (c.length() == 64 && (int) c.leftHand.size() == 64);
+            for (int i = 0; i < 64; ++i)
+            {
+                if (c.rightHand[(size_t) i] != '.')
+                    CHECK (P::compingKeeps (i * sgk::stepLength));
+                CHECK (c.leftHand[(size_t) i] == g.leftHand[(size_t) (i % 16)]);
+            }
+            CHECK (c.rightHand[0] == 'X' && c.rightHand[16] == '.' && c.rightHand[32] == 'X');
+        }
+
+        // A guitar set to LEAD, seen through the link folder; an old note (guitar closed) is not.
+        {
+            const auto lead = P::linkFile().getSiblingFile ("GuitarLead.xml");
+            const bool existed = lead.existsAsFile();
+            const auto backup = lead.loadFileAsString();
+            auto writeLead = [&lead] (juce::int64 time)
+            {
+                juce::XmlElement xml ("FaseGrooveLead");
+                xml.setAttribute ("lead", 1);
+                xml.setAttribute ("time", juce::String (time));
+                lead.getParentDirectory().createDirectory();
+                xml.writeTo (lead);
+            };
+            P p;
+            p.setLinked (true);
+            writeLead (juce::Time::currentTimeMillis());
+            for (int i = 0; i < 6; ++i)
+                p.updateLink();
+            CHECK (p.isGuitarLeading());
+            writeLead (juce::Time::currentTimeMillis() - 60000);
+            for (int i = 0; i < 6; ++i)
+                p.updateLink();
+            CHECK (! p.isGuitarLeading());
+            writeLead (juce::Time::currentTimeMillis());
+            for (int i = 0; i < 6; ++i)
+                p.updateLink();
+            p.setLinked (false);
+            CHECK (! p.isGuitarLeading());
+            if (existed) lead.replaceWithText (backup); else lead.deleteFile();
+        }
     }
 
 }

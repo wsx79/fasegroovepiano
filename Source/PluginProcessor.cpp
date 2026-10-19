@@ -2278,6 +2278,32 @@ std::vector<sgk::NoteEvent> FaseGroovePianoProcessor::comping (const std::vector
     return out;
 }
 
+sgk::GroovePattern FaseGroovePianoProcessor::compingPattern (const sgk::GroovePattern& source)
+{
+    // Four bars (the comping cycle): the right hand only where the piano still plays under a
+    // leading guitar, the left hand as it is.
+    const int len = source.length();
+    if (len == 0)
+        return source;
+    constexpr int cycle = 64;
+    sgk::GroovePattern out = source;
+    out.rightHand.assign ((size_t) cycle, '.');
+    out.leftHand.assign ((size_t) cycle, '.');
+    bool keeping = false;
+    for (int i = 0; i < cycle; ++i)
+    {
+        const char c = source.rightHand[(size_t) (i % len)];
+        if (c == '.')
+            keeping = false;
+        else if (c != '=' && c != '>')   // a hit: kept on the comping beats only
+            keeping = compingKeeps (i * sgk::stepLength);
+        out.rightHand[(size_t) i] = keeping ? c : '.';   // (a held note follows its hit)
+        if ((int) source.leftHand.size() == len)
+            out.leftHand[(size_t) i] = source.leftHand[(size_t) (i % len)];
+    }
+    return out;
+}
+
 void FaseGroovePianoProcessor::readGuitarLead()
 {
     // Written by Fase Groove Guitar beside the link file, refreshed every 2 seconds while it
