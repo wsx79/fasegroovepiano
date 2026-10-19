@@ -1133,6 +1133,31 @@ namespace
         CHECK (same >= total - 2);   // the same chord rhythm (a push may land a step apart)
     }
 
+    void testLearnAllNotesOff()
+    {
+        // LEARN: half a chord cut by All Notes Off is dropped; the next chord is learnt clean.
+        FaseGroovePianoProcessor p;
+        p.prepareToPlay (48000.0, 512);
+        juce::AudioBuffer<float> buffer (2, 512);
+        auto send = [&] (std::initializer_list<juce::MidiMessage> messages)
+        {
+            juce::MidiBuffer midi;
+            for (const auto& m : messages)
+                midi.addEvent (m, 0);
+            p.processBlock (buffer, midi);
+        };
+        p.startLearning();
+        const int before = p.learnedCount.load();
+        send ({ juce::MidiMessage::noteOn (1, 60, 0.8f), juce::MidiMessage::noteOn (1, 64, 0.8f), juce::MidiMessage::noteOn (1, 67, 0.8f),
+                juce::MidiMessage::noteOn (1, 71, 0.8f) });
+        send ({ juce::MidiMessage::allNotesOff (1) });
+        send ({ juce::MidiMessage::noteOn (1, 62, 0.8f), juce::MidiMessage::noteOn (1, 65, 0.8f), juce::MidiMessage::noteOn (1, 69, 0.8f) });
+        send ({ juce::MidiMessage::noteOff (1, 62), juce::MidiMessage::noteOff (1, 65), juce::MidiMessage::noteOff (1, 69) });
+        CHECK (p.learnedCount.load() == before + 1);
+        CHECK (p.learnedMask.load() == ((1 << 2) | (1 << 5) | (1 << 9)));   // D F A, nothing of C E G B
+        CHECK (p.learnedBass.load() == 2);
+    }
+
     void testLiveKeys()
     {
         // Live keys: the lowest octave picks the section (and doesn't sound); off, it is just notes.
@@ -1706,6 +1731,7 @@ int main()
     testViewModeRestore();
     testGrooveFromMidiFile();
     testLiveKeys();
+    testLearnAllNotesOff();
     testMidiClock();
     testSongSectionClip();
     testStrings();

@@ -4661,10 +4661,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
                                       if (file == juce::File())
                                           return;
                                       file = file.withFileExtension ("mid");
-                                      file.deleteFile();
-                                      juce::FileOutputStream stream (file);
-                                      if (stream.openedOk())
-                                          processor.createMidiClip (FaseGroovePianoProcessor::songArrangement, part).writeTo (stream);
+                                      FaseGroovePianoProcessor::writeMidiFileSafely (processor.createMidiClip (FaseGroovePianoProcessor::songArrangement, part), file);
                                   });
     };
     songOverlay.onSaveSections = [this]
@@ -4776,16 +4773,16 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     // LINK: the same genre and swing as Fase Groove Drums.
     linkButton.setClickingTogglesState (true);
     linkButton.setColour (juce::TextButton::buttonColourId, Palette::background);
-    linkButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent);
+    linkButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent2.darker (0.3f));   // as in Drums and Guitar
     linkButton.setColour (juce::TextButton::textColourOffId, Palette::text);
-    linkButton.setColour (juce::TextButton::textColourOnId, Palette::background);
+    linkButton.setColour (juce::TextButton::textColourOnId, Palette::text);
     linkButton.setToggleState (p.isLinked(), juce::dontSendNotification);
     linkButton.onClick = [this] { processor.setLinked (linkButton.getToggleState()); };
     keyLinkButton.setClickingTogglesState (true);
     keyLinkButton.setColour (juce::TextButton::buttonColourId, Palette::background);
-    keyLinkButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent);
+    keyLinkButton.setColour (juce::TextButton::buttonOnColourId, Palette::accent2.darker (0.3f));
     keyLinkButton.setColour (juce::TextButton::textColourOffId, Palette::text);
-    keyLinkButton.setColour (juce::TextButton::textColourOnId, Palette::background);
+    keyLinkButton.setColour (juce::TextButton::textColourOnId, Palette::text);
     keyLinkButton.onClick = [this] { processor.setKeyLinked (keyLinkButton.getToggleState()); };
     addAndMakeVisible (keyLinkButton);
 
@@ -5633,10 +5630,7 @@ void FaseGroovePianoEditor::saveAllParts()
                                       for (auto part : parts)
                                       {
                                           auto file = folder.getChildFile (processor.clipFileName (bars, part));
-                                          file.deleteFile();
-                                          juce::FileOutputStream stream (file);
-                                          if (stream.openedOk())
-                                              processor.createMidiClip (bars, part).writeTo (stream);
+                                          FaseGroovePianoProcessor::writeMidiFileSafely (processor.createMidiClip (bars, part), file);
                                       }
 
                                   folder.revealToUser();
@@ -5717,10 +5711,10 @@ void FaseGroovePianoEditor::applyLanguage()
     diceProgression.setButtonText (tr ("RANDOM"));
     newRiffButton.setButtonText (tr ("NEW RIFF"));
     syncButton.setButtonText (tr ("SYNC DAW"));
-    linkButton.setButtonText (tr ("LINK DRUMS"));
+    linkButton.setButtonText (tr ("LINK"));
     keyLinkButton.setButtonText (tr ("KEY"));
     keyLinkButton.setTooltip (tr ("Same key (with LINK on): the key and the scale stay the same in Fase Groove Piano and Guitar (change them in either one)"));
-    linkButton.setTooltip (tr ("Link with Fase Groove Drums: the same genre, swing, tempo and play button in both, on the same beat (change it in either one)"));
+    linkButton.setTooltip (tr ("Link with Fase Groove Drums and Guitar: the same genre, swing, tempo and play button in all of them, on the same beat (change it in any one)"));
     sequencerToggle.setButtonText (tr ("Sequencer"));
     sequencerToggle.setTooltip (tr ("Off: the groove doesn't play with the DAW, e.g. when the dragged MIDI clip plays on this track (no doubled notes). Incoming MIDI still plays the guide sound; the play button still previews."));
     optionsButton.setButtonText (tr ("OPTIONS"));
@@ -5915,11 +5909,7 @@ void FaseGroovePianoEditor::saveClip()
                                       return;
 
                                   file = file.withFileExtension ("mid");
-                                  file.deleteFile();
-
-                                  juce::FileOutputStream stream (file);
-                                  if (stream.openedOk())
-                                      processor.createMidiClip (bars, part).writeTo (stream);
+                                  FaseGroovePianoProcessor::writeMidiFileSafely (processor.createMidiClip (bars, part), file);
                               });
 }
 
@@ -6195,7 +6185,7 @@ void FaseGroovePianoEditor::timerCallback()
     keyLinkButton.setAlpha (processor.isLinked() ? 1.0f : 0.4f);
     {
         // A linked Fase Groove Guitar set to LEAD: the piano fills in, and says so.
-        const auto text = processor.isGuitarLeading() ? tr ("GUITAR LEADS") : tr ("LINK DRUMS");
+        const auto text = processor.isGuitarLeading() ? tr ("GUITAR LEADS") : tr ("LINK");
         if (linkButton.getButtonText() != text)
             linkButton.setButtonText (text);
     }
@@ -6749,9 +6739,9 @@ void FaseGroovePianoEditor::layoutFull()
         auto titleRow = tempoArea.reduced (12, 6).removeFromTop (18);
         sequencerToggle.setBounds (titleRow.removeFromRight (104));
         titleRow.removeFromRight (6);
-        keyLinkButton.setBounds (titleRow.removeFromRight (74));   // KEY, beside Sequencer
+        keyLinkButton.setBounds (titleRow.removeFromRight (70));   // KEY, beside Sequencer
         titleRow.removeFromRight (4);
-        linkButton.setBounds (titleRow.removeFromRight (84));
+        linkButton.setBounds (titleRow.removeFromRight (56));   // as in Drums and Guitar: LINK
         auto controls = tempoArea.reduced (12, 8).withTrimmedTop (22);
         rewindButton.setBounds (controls.removeFromLeft (34));
         playButton.setBounds (controls.removeFromLeft (40));

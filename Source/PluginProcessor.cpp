@@ -1302,7 +1302,9 @@ void FaseGroovePianoProcessor::prepareToPlay (double sampleRate, int samplesPerB
     outputGain.reset (sampleRate, 0.05);
     outputGain.setCurrentAndTargetValue (juce::Decibels::decibelsToGain (raw (ParamIDs::volume)));
     // Room for blocks larger than announced (some hosts do send them): no allocation in processBlock.
-    answerEvents.reserve (256);
+    // Room for the largest blocks (offline rendering too): no growing on the audio thread.
+    events.reserve ((size_t) juce::jmax (8192, samplesPerBlock / 2));
+    answerEvents.reserve ((size_t) juce::jmax (1024, samplesPerBlock / 8));
     answerSounding.fill (false);
     sidechainLevel.assign ((size_t) juce::jmax (8192, 2 * samplesPerBlock), 0.0f);
     lastOutput.assign ((size_t) juce::jmax (1, samplesPerBlock), 0.0f);
@@ -1423,6 +1425,15 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                 }
             }
             continue;
+        }
+
+        if (m.isAllNotesOff() || m.isAllSoundOff())
+        {
+            // The keyboard or the DAW let go of everything at once: the chord being learnt is
+            // dropped (half a chord is not learnt), the next one starts clean.
+            learnDown.fill (false);
+            learnPeakCount = 0;
+            learnPeakMask = 0;
         }
 
         if (learnMode.load() && m.isNoteOnOrOff())
@@ -1819,9 +1830,7 @@ int FaseGroovePianoProcessor::saveSongSections (const juce::File& folder, ClipPa
         const auto midi = midiFromEvents (events, parts[(size_t) i].bars * 4.0, &markers, part, name,
                                           tr (sgk::sectionName ((int) parts[(size_t) i].section)));
         auto file = folder.getChildFile (juce::File::createLegalFileName (name + " - " + clipFileName (parts[(size_t) i].bars, part)));
-        file.deleteFile();
-        juce::FileOutputStream out (file);
-        if (out.openedOk() && midi.writeTo (out))
+        if (writeMidiFileSafely (midi, file))
             ++written;
     }
     return written;
@@ -2086,6 +2095,20 @@ double FaseGroovePianoProcessor::exportBpm() const
     return juce::jlimit (20.0, 400.0, synced ? hostBpm.load() : (double) raw (ParamIDs::tempo));
 }
 
+bool FaseGroovePianoProcessor::writeMidiFileSafely (const juce::MidiFile& midi, const juce::File& target)
+{
+    juce::TemporaryFile temp (target);
+    {
+        juce::FileOutputStream out (temp.getFile());
+        if (! out.openedOk() || ! midi.writeTo (out))
+            return false;
+        out.flush();
+        if (out.getStatus().failed())
+            return false;
+    }
+    return temp.overwriteTargetFileWithTemporary();
+}
+
 juce::MidiFile FaseGroovePianoProcessor::createMidiClip (int bars, ClipPart part) const
 {
     const auto settings = currentSettings();
@@ -2226,14 +2249,7 @@ juce::File FaseGroovePianoProcessor::writeMidiClip (int bars, ClipPart part) con
         folder = juce::File::getSpecialLocation (juce::File::tempDirectory);
 
     auto file = folder.getChildFile (clipFileName (bars, part));
-    file.deleteFile();
-
-    juce::FileOutputStream stream (file);
-    if (! stream.openedOk())
-        return {};
-
-    createMidiClip (bars, part).writeTo (stream);
-    return file;
+    return writeMidiFileSafely (createMidiClip (bars, part), file) ? file : juce::File();
 }
 
 juce::File FaseGroovePianoProcessor::writeSongSectionClip (int partIndex, ClipPart part) const
@@ -2257,11 +2273,7 @@ juce::File FaseGroovePianoProcessor::writeSongSectionClip (int partIndex, ClipPa
 
     auto file = folder.getChildFile (juce::File::createLegalFileName (title + " - " + juce::String (section.bars) + "bars "
                                                                       + juce::String (juce::roundToInt (exportBpm())) + "bpm") + ".mid");
-    file.deleteFile();
-    juce::FileOutputStream stream (file);
-    if (! stream.openedOk() || ! midi.writeTo (stream))
-        return {};
-    return file;
+    return writeMidiFileSafely (midi, file) ? file : juce::File();
 }
 
 //==============================================================================

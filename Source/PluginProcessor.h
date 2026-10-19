@@ -327,6 +327,9 @@ public:
     /** Renders the current progression + groove as a standard MIDI file.
         bars == 0 means "one full loop" (progression, groove and fills all repeat). */
     juce::MidiFile createMidiClip (int bars, ClipPart part) const;
+    /** Writes a .mid whole or not at all: a temporary file first, the one already there replaced
+        only once the new one is complete (a full disk or no permission keeps the old clip). */
+    static bool writeMidiFileSafely (const juce::MidiFile&, const juce::File& target);
 
     // Song arrangement: Intro, Main, Break, Build-up, Drop, Outro (the order of sgk::defaultArrangement).
     static constexpr int numSongParts = 6;

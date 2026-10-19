@@ -971,7 +971,7 @@ private:
 
     // Tempo
     juce::TextButton syncButton { "SYNC DAW" };
-    juce::TextButton linkButton { "LINK DRUMS" };
+    juce::TextButton linkButton { "LINK" };
     juce::TextButton keyLinkButton { "KEY" };   // the same key in the linked plug-ins (only while linked)
     juce::ToggleButton sequencerToggle { "Sequencer" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> sequencerAttachment;

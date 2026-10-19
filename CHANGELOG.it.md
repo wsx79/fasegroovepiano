@@ -6,6 +6,13 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.22.1] - 2026-10-19
+
+- Export più sicuri: ogni .mid (e .wav) si scrive prima in un file temporaneo; quello esistente viene sostituito solo quando il nuovo è completo (disco pieno o permessi mancanti lasciano il file vecchio).
+- Spazio riservato per blocchi audio molto grandi (render offline): niente cresce nel thread audio.
+- LEARN: un All Notes Off dalla tastiera o dalla DAW scarta l'accordo appreso a metà; il successivo parte pulito.
+- Uguale a Drums e Guitar: il pulsante si chiama LINK, LINK e TONALITÀ sono blu, il titolo TEMPO non è più coperto.
+
 ## [2.22.0] - 2026-10-19
 
 - Chitarra solista: le risposte del piano si spostano e cambiano. In quattro battute, da tre a cinque momenti scelti dal groove e da NUOVO RITMO; in ognuno il piano suona il suo groove oppure una risposta tutta sua (un colpo, due colpi brevi, una spinta, un accordo tenuto, una coppia in levare) sull'accordo del momento. Suono, griglia, piano roll e MIDI esportato coincidono.

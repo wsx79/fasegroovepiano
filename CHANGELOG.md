@@ -6,6 +6,13 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.22.1] - 2026-10-19
+
+- Safer exports: every .mid (and .wav) is written to a temporary file first; the one already there is replaced only once the new one is complete (a full disk or no permission keeps the old file).
+- Room reserved for very large audio blocks (offline rendering): nothing grows on the audio thread.
+- LEARN: an All Notes Off from the keyboard or the DAW drops the half-learnt chord; the next one starts clean.
+- Looks like Drums and Guitar: the button reads LINK, LINK and KEY are blue, the TEMPO title is no longer covered.
+
 ## [2.22.0] - 2026-10-19
 
 - Guitar leads: the piano's answers move and change. In four bars, three to five windows placed by the groove and NEW RHYTHM; in each one the piano plays its own groove or an answer of its own (a stab, two short hits, a push, a held chord, an off-beat pair) on the chord of the moment. Sound, grid, piano roll and exported MIDI all alike.
