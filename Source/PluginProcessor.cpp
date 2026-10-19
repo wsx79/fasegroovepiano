@@ -2289,40 +2289,42 @@ juce::File FaseGroovePianoProcessor::linkFile()
 
 int FaseGroovePianoProcessor::compingWindows (std::uint32_t seed, std::array<CompingWindow, 8>& out) noexcept
 {
-    // The piano's answers over four bars, from the seed (a new rhythm, another groove: other
-    // answers): each bar one beat-long window or two, or none, three to five in the four bars,
-    // always on bars 1 and 3, the first on the one or just after it. About half of them play
-    // the piano's own groove there; the others are an answer of their own (a stab, two short
-    // hits, a push, a held chord, an off-beat pair).
-    static constexpr double starts[] { 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0 };
-    std::uint32_t r = seed * 2654435761u + 12345u;
-    auto next = [&r] { r = r * 1664525u + 1013904223u; return r >> 8; };
+    // The piano's answers over four bars, from the seed (another groove, NEW RHYTHM: other
+    // answers). Every bar answers, the second one now and then stays quiet: one or two windows a
+    // bar, on any 8th or 16th, a little apart. In about a third of them the piano plays its own
+    // groove; in the others an answer of its own. The last bar often pushes into the next phrase.
+    static constexpr double starts[] { 0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 1.75, 2.0, 2.5, 2.75, 3.0, 3.25, 3.5 };
+    std::uint64_t r = (std::uint64_t) seed * 0x9E3779B97F4A7C15ull + 0x2545F4914F6CDD1Dull;
+    auto next = [&r]
+    {
+        // splitmix64: well spread from one seed to the next
+        r += 0x9E3779B97F4A7C15ull;
+        auto z = r;
+        z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
+        z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
+        return (std::uint32_t) ((z ^ (z >> 31)) >> 16);
+    };
 
     int count = 0;
-    int windowsLeft = 3 + (int) (next() % 3);
     for (int b = 0; b < 4; ++b)
     {
-        int here = (int) (next() % 3);
-        if (b == 0 || b == 2)
-            here = juce::jmax (here, 1);
-        here = juce::jmin (here, windowsLeft - (b < 2 ? 1 : 0));   // (one kept for bar 3)
-        if (b == 3)
-            here = juce::jmin (windowsLeft, 2);   // the last bar takes what is left (up to two)
-        windowsLeft -= here;
+        int here = 1 + (int) (next() % 2);              // one or two
+        if (b == 1 && next() % 3 == 0)
+            here = 0;                                   // the second bar: room for the guitar
         double previous = -2.0;
         for (int k = 0; k < here && count < (int) out.size(); ++k)
         {
             double start = starts[next() % std::size (starts)];
-            if (b == 0 && k == 0)
-                start = (next() % 2) == 0 ? 0.0 : 0.5;   // on the one, or just after it
-            if (b == 3 && k == here - 1 && (next() % 2) == 0)
-                start = 3.0;                             // a push into the next phrase
-            if (std::abs (start - previous) < 1.0)
-                start = std::fmod (previous + 1.5, 4.0); // two answers a little apart
+            if (b == 3 && k == here - 1 && next() % 2 == 0)
+                start = 3.0 + 0.25 * (double) (next() % 3);   // a push into the next phrase
+            if (k > 0 && start < previous + 1.0)
+                start = previous + 1.0 + 0.5 * (double) (next() % 2);
+            if (start > 3.5)
+                break;
             previous = start;
             CompingWindow w;
             w.start = b * 4.0 + start;
-            w.figure = (next() % 2) == 0 ? -1 : (int) (next() % numCompingFigures);
+            w.figure = (next() % 3 == 0) ? -1 : (int) (next() % numCompingFigures);
             out[(size_t) count++] = w;
         }
     }
@@ -2331,15 +2333,18 @@ int FaseGroovePianoProcessor::compingWindows (std::uint32_t seed, std::array<Com
 
 const FaseGroovePianoProcessor::CompingFigure& FaseGroovePianoProcessor::compingFigure (int figure) noexcept
 {
-    // Hits inside a beat-long window: start, length (beats), loudness.
+    // Hits inside a window: start, length (beats), loudness.
     using H = CompingHit;
     static const CompingFigure figures[numCompingFigures]
     {
-        { 1, {{ H { 0.0, 0.25, 1.0f }, H { 0.0, 0.0, 0.0f } }} },        // a stab
-        { 2, {{ H { 0.0, 0.2, 0.95f }, H { 0.5, 0.2, 0.8f } }} },        // two short hits
-        { 2, {{ H { 0.25, 0.2, 0.7f }, H { 0.5, 0.45, 1.0f } }} },       // a push into a hit
-        { 1, {{ H { 0.0, 0.9, 0.85f }, H { 0.0, 0.0, 0.0f } }} },        // a held chord
-        { 2, {{ H { 0.5, 0.2, 0.9f }, H { 0.75, 0.2, 0.7f } }} },        // an off-beat pair
+        { 1, {{ H { 0.0, 0.25, 1.0f } }} },                                              // a stab
+        { 2, {{ H { 0.0, 0.2, 0.95f }, H { 0.5, 0.2, 0.8f } }} },                        // two short hits
+        { 2, {{ H { 0.25, 0.2, 0.7f }, H { 0.5, 0.45, 1.0f } }} },                       // a push into a hit
+        { 1, {{ H { 0.0, 0.9, 0.85f } }} },                                              // a held chord
+        { 2, {{ H { 0.5, 0.2, 0.9f }, H { 0.75, 0.2, 0.7f } }} },                        // an off-beat pair
+        { 3, {{ H { 0.0, 0.15, 0.9f }, H { 0.25, 0.15, 0.65f }, H { 0.5, 0.3, 0.85f } }} }, // three 16ths
+        { 1, {{ H { 0.75, 0.6, 1.0f } }} },                                              // an anticipation, held over
+        { 2, {{ H { 0.0, 0.2, 0.6f }, H { 0.5, 0.3, 1.0f } }} },                         // a ghost, then the hit
     };
     return figures[juce::jlimit (0, numCompingFigures - 1, figure)];
 }

@@ -6181,8 +6181,14 @@ void FaseGroovePianoEditor::timerCallback()
     keepWindowOnScreen();
     linkButton.setToggleState (processor.isLinked(), juce::dontSendNotification);
     keyLinkButton.setToggleState (processor.isKeyLinked(), juce::dontSendNotification);
-    keyLinkButton.setEnabled (processor.isLinked());   // it works only with LINK on
-    keyLinkButton.setAlpha (processor.isLinked() ? 1.0f : 0.4f);
+    {
+        // KEY shows the key itself: "KEY  A Dorian".
+        const int key = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::key)->load());
+        const int scale = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::scale)->load());
+        const auto text = tr ("KEY") + "  " + sgk::noteName (key) + " " + tr (sgk::scaleName (scale));
+        if (keyLinkButton.getButtonText() != text)
+            keyLinkButton.setButtonText (text);
+    }
     {
         // A linked Fase Groove Guitar set to LEAD: the piano fills in, and says so.
         const auto text = processor.isGuitarLeading() ? tr ("GUITAR LEADS") : tr ("LINK");
@@ -6700,9 +6706,9 @@ void FaseGroovePianoEditor::layoutFull()
 
     // Header
     auto top = r.removeFromTop (76);
-    chordDisplayArea = top.removeFromRight (300).reduced (0, 4);
+    chordDisplayArea = top.removeFromRight (240).reduced (0, 4);   // (narrower: room for the key on KEY)
     top.removeFromRight (10);
-    tempoArea = top.removeFromRight (330).reduced (0, 4);
+    tempoArea = top.removeFromRight (390).reduced (0, 4);
     headerArea = top;
     {
         // Two rows of utilities at the right of the logo, all the same height.
@@ -6739,7 +6745,7 @@ void FaseGroovePianoEditor::layoutFull()
         auto titleRow = tempoArea.reduced (12, 6).removeFromTop (18);
         sequencerToggle.setBounds (titleRow.removeFromRight (104));
         titleRow.removeFromRight (6);
-        keyLinkButton.setBounds (titleRow.removeFromRight (70));   // KEY, beside Sequencer
+        keyLinkButton.setBounds (titleRow.removeFromRight (130));   // KEY and the key itself, beside Sequencer
         titleRow.removeFromRight (4);
         linkButton.setBounds (titleRow.removeFromRight (56));   // as in Drums and Guitar: LINK
         auto controls = tempoArea.reduced (12, 8).withTrimmedTop (22);

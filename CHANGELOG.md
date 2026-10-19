@@ -6,6 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.23.0] - 2026-10-19
+
+- Guitar leads: much more varied answers. Every bar answers (the last one too, often pushing into the next phrase; the second now and then stays quiet), one or two windows a bar on any 8th or 16th, eight kinds of answer (stab, two hits, push, held chord, off-beat pair, three 16ths, anticipation, ghost and hit), and the piano's own groove in about a third of them.
+- KEY shows the key itself ("KEY  A Dorian"); the chord display is a little narrower to make room. KEY can be switched on before LINK: it works once linked.
+
 ## [2.22.1] - 2026-10-19
 
 - Safer exports: every .mid (and .wav) is written to a temporary file first; the one already there is replaced only once the new one is complete (a full disk or no permission keeps the old file).

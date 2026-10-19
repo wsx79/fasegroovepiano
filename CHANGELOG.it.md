@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [2.23.0] - 2026-10-19
+
+- Chitarra solista: risposte molto più varie. Ogni battuta risponde (anche l'ultima, spesso con una spinta verso la frase successiva; la seconda a volte resta in silenzio), una o due finestre a battuta su qualsiasi ottavo o sedicesimo, otto tipi di risposta (colpo, due colpi, spinta, accordo tenuto, coppia in levare, tre sedicesimi, anticipo, ghost e colpo), e il groove del piano in circa un terzo dei casi.
+- TONALITÀ mostra la tonalità ("TONALITÀ  A Dorian"); il riquadro dell'accordo è un po' più stretto per fare spazio. TONALITÀ si può accendere anche prima del LINK: funziona appena collegato.
+
 ## [2.22.1] - 2026-10-19
 
 - Export più sicuri: ogni .mid (e .wav) si scrive prima in un file temporaneo; quello esistente viene sostituito solo quando il nuovo è completo (disco pieno o permessi mancanti lasciano il file vecchio).

@@ -1556,31 +1556,36 @@ namespace
     void testLinkRoles()
     {
         using P = FaseGroovePianoProcessor;
-        // Comping under a leading guitar: three to five windows in four bars, always on bars 1
-        // and 3, placed by the seed; in each the piano's own groove or an answer of its own.
+        // Comping under a leading guitar: three to eight windows in four bars, on every bar but
+        // now and then the second, placed by the seed; in each the piano's own groove or an answer of its own.
         std::set<std::string> shapes;
+        std::set<int> figures;
         int answers = 0, grooves = 0;
         for (std::uint32_t seed = 1; seed <= 40; ++seed)
         {
             std::array<P::CompingWindow, 8> w;
             const int n = P::compingWindows (seed, w);
-            CHECK (n >= 3 && n <= 5);
-            bool bar1 = false, bar3 = false;
+            CHECK (n >= 3 && n <= 8);
+            bool bar1 = false, bar3 = false, bar4 = false;
             std::string shape;
             for (int i = 0; i < n; ++i)
             {
                 bar1 = bar1 || (w[(size_t) i].start >= 0.0 && w[(size_t) i].start < 4.0);
                 bar3 = bar3 || (w[(size_t) i].start >= 8.0 && w[(size_t) i].start < 12.0);
+                bar4 = bar4 || (w[(size_t) i].start >= 12.0 && w[(size_t) i].start < 16.0);
+                if (w[(size_t) i].figure >= 0)
+                    figures.insert (w[(size_t) i].figure);
                 (w[(size_t) i].figure < 0 ? grooves : answers) += 1;
                 shape += juce::String (w[(size_t) i].start).toStdString() + ":" + std::to_string (w[(size_t) i].figure) + " ";
             }
-            CHECK (bar1 && bar3);
+            CHECK (bar1 && bar3 && bar4);   // the last bar (D) always answers too
             std::array<P::CompingWindow, 8> again;
             CHECK (P::compingWindows (seed, again) == n && again[0].start == w[0].start && again[0].figure == w[0].figure);
             shapes.insert (shape);
         }
         CHECK (shapes.size() >= 30);
-        CHECK (answers > 20 && grooves > 20);   // both kinds, often
+        CHECK (answers > 40 && grooves > 20);   // both kinds, often
+        CHECK ((int) figures.size() == P::numCompingFigures);   // every kind of answer turns up
         {
             // NEW RHYTHM: other answers.
             P p;

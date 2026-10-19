@@ -285,8 +285,8 @@ public:
     struct CompingWindow { double start = 0.0; int figure = -1; };
     static int compingWindows (std::uint32_t seed, std::array<CompingWindow, 8>& out) noexcept;
     struct CompingHit { double offset, length; float level; };
-    struct CompingFigure { int count; std::array<CompingHit, 2> hits; };
-    static constexpr int numCompingFigures = 5;
+    struct CompingFigure { int count; std::array<CompingHit, 3> hits; };
+    static constexpr int numCompingFigures = 8;
     static const CompingFigure& compingFigure (int figure) noexcept;
     /** The answers' note-ons and note-offs that fall in [from, to), on the chords of the moment. */
     static void compingAnswers (double from, double to, std::uint32_t seed, const sgk::GrooveSettings&,
