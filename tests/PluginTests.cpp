@@ -1459,12 +1459,12 @@ namespace
         CHECK (categoryOf (p) == "Deep");
         CHECK (std::abs (value (p, ParamIDs::swing) - 0.5f) < 0.01f);
 
-        // A heavier swing than the piano's (Drums goes to 1.5) stops at a full triplet shuffle.
+        // A heavier swing (up to 1.5, as Drums and Guitar) is the same in the piano.
         drums.setAttribute ("swing", 1.2);
         drums.writeTo (link);
         link.setLastModificationTime (juce::Time::getCurrentTime() + juce::RelativeTime::seconds (10.0));
         p.updateLink();
-        CHECK (std::abs (value (p, ParamIDs::swing) - 1.0f) < 0.01f);
+        CHECK (std::abs (value (p, ParamIDs::swing) - 1.2f) < 0.01f);
 
         // Our change goes to the file.
         for (size_t i = 0; i < sgk::groovePatterns().size(); ++i)
@@ -1474,6 +1474,23 @@ namespace
             CHECK (xml->getStringAttribute ("genre") == "Jackin'");
         else
             CHECK (false);
+
+        // A random or edited groove still shares the genre of its last preset, and keeps itself
+        // when another genre comes in (only the genre follows).
+        const float own = (float) sgk::groovePatterns().size();
+        p.setParameterFromUI (ParamIDs::pattern, own);
+        p.updateLink();
+        if (auto xml = juce::parseXML (link))
+            CHECK (xml->getStringAttribute ("genre") == "Jackin'");
+        drums.setAttribute ("genre", "Soulful");
+        drums.writeTo (link);
+        link.setLastModificationTime (juce::Time::getCurrentTime() + juce::RelativeTime::seconds (15.0));
+        p.updateLink();
+        CHECK (std::abs (value (p, ParamIDs::pattern) - own) < 0.5f);
+        CHECK (p.currentGenre() == 1);   // Soulful
+        for (size_t i = 0; i < sgk::groovePatterns().size(); ++i)
+            if (sgk::groovePatterns()[i].category == "Jackin'") { p.setParameterFromUI (ParamIDs::pattern, (float) i); break; }
+        p.updateLink();
 
         // The tempo and the play button: the drums started playing a second ago at 120 BPM, so
         // the piano plays from beat 2 too.

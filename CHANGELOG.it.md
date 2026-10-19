@@ -6,6 +6,13 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [Unreleased]
+
+- **LINK con Fase Groove Drums e Guitar:** lo swing arriva fino a 1,5 (lo shuffle più pesante),
+  come batteria e chitarra, così lo swing condiviso suona uguale in tutti e tre.
+- Un groove casuale o modificato condivide comunque con LINK il genere del suo ultimo preset, e
+  resta com'è quando arriva un altro genere.
+
 ## [2.19.0] - 2026-10-18
 
 ### Aggiunto

@@ -1426,7 +1426,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
 
     const int pos = mod (step, pattern.length());
 
-    const double swingDelay = (step % 2 != 0) ? std::clamp (s.swing, 0.0f, 1.0f) * stepLength / 3.0 : 0.0;
+    const double swingDelay = (step % 2 != 0) ? std::clamp (s.swing, 0.0f, 1.5f) * stepLength / 3.0 : 0.0;
     const double baseTime = (double) step * stepLength + swingDelay;
     const double human = std::clamp (s.humanize, 0.0f, 1.0f);
     const int seedSalt = (int) (s.humanizeSeed % 100003u) * 7919;
@@ -1941,7 +1941,7 @@ void GrooveEngine::collectBassLine (long long step, const GrooveSettings& s, con
     if (symbol == '.' || symbol == '=')
         return;
 
-    const double swingDelay = (step % 2 != 0) ? std::clamp (s.swing, 0.0f, 1.0f) * stepLength / 3.0 : 0.0;
+    const double swingDelay = (step % 2 != 0) ? std::clamp (s.swing, 0.0f, 1.5f) * stepLength / 3.0 : 0.0;
     const double human = std::clamp (s.humanize, 0.0f, 1.0f);
     const int seedSalt = (int) (s.humanizeSeed % 100003u) * 7919;
     const auto hv = humanizeVoices (s.humanizeStyle);

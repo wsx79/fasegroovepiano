@@ -6,6 +6,13 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+- **LINK with Fase Groove Drums and Guitar:** the swing goes up to 1.5 (the heaviest shuffle), the
+  same range as the drums and the guitar, so the shared swing sounds the same in all three.
+- A random or edited groove still shares the genre of its last preset with LINK, and keeps itself
+  when another genre comes in.
+
 ## [2.19.0] - 2026-10-18
 
 ### Added

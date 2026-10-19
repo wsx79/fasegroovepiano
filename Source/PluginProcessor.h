@@ -275,6 +275,8 @@ public:
     static juce::File linkFile();
     /** Writes the genre and swing for the others, or takes theirs (message thread, a few times a second). */
     void updateLink();
+    /** The genre shared with LINK: a preset's own, else the last preset's. */
+    int currentGenre() const;
     static juce::Array<juce::File> presetFiles();
     bool savePreset (const juce::String& name);
     bool loadPreset (const juce::File&);
@@ -386,7 +388,7 @@ private:
     juce::String linkSeenText;
     std::atomic<double> linkAnchor { -1.0 };   // the shared clock while playing, -1 = none
     LinkState localLinkState() const;
-    int currentGenre() const;
+    mutable std::atomic<int> lastGenre { 0 };   // the genre of the last preset (a random or edited groove keeps it)
     float raw (const char* id) const;
 
     std::array<std::atomic<float>*, sgk::maxProgressionLength> slotParams {};

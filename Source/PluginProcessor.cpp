@@ -108,7 +108,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
 
     for (int i = 0; i < sgk::numSegments; ++i)
         choice (ParamIDs::segment (i), "Segment " + String (i + 1), { "A", "B", "C", "D" }, i);
-    unitFloat (ParamIDs::swing, "Swing", 0.0f, 0.25f);
+    // Up to 1.5 (a dotted 16th: the heaviest shuffle), the same range as Fase Groove Drums and Guitar,
+    // so the swing shared with LINK sounds the same in all three.
+    add (std::make_unique<AudioParameterFloat> (ParameterID { ParamIDs::swing, 1 }, "Swing", NormalisableRange<float> (0.0f, 1.5f),
+                                                0.25f, AudioParameterFloatAttributes().withStringFromValueFunction (percent)));
     unitFloat (ParamIDs::gate, "Gate", 0.1f, 0.65f);
     add (std::make_unique<AudioParameterInt> (ParameterID { ParamIDs::velocity, 1 }, "Velocity", 1, 127, 118));
     unitFloat (ParamIDs::humanize, "Humanize", 0.0f, 0.3f);
@@ -2221,15 +2224,20 @@ void FaseGroovePianoProcessor::setLinked (bool on)
 
 int FaseGroovePianoProcessor::currentGenre() const
 {
+    // A preset's own genre; a random or edited groove keeps the genre of the last preset, so the
+    // linked plug-ins still follow it.
     const int pattern = juce::roundToInt (raw (ParamIDs::pattern));
     const auto& patterns = sgk::groovePatterns();
     if (! juce::isPositiveAndBelow (pattern, (int) patterns.size()))
-        return -1;
+        return lastGenre.load();
     const auto& genres = sgk::grooveCategories();
     for (size_t g = 0; g < genres.size(); ++g)
         if (patterns[(size_t) pattern].category == genres[g])
+        {
+            lastGenre = (int) g;
             return (int) g;
-    return -1;
+        }
+    return lastGenre.load();
 }
 
 FaseGroovePianoProcessor::LinkState FaseGroovePianoProcessor::localLinkState() const
@@ -2297,8 +2305,12 @@ void FaseGroovePianoProcessor::updateLink()
                 const auto genre = xml->getStringAttribute ("genre");
                 const auto& genres = sgk::grooveCategories();
                 for (size_t g = 0; g < genres.size(); ++g)
-                    if (genre == genres[g] && (int) g != currentGenre() && currentGenre() >= 0)
+                    if (genre == genres[g] && (int) g != currentGenre())
                     {
+                        // A random or edited groove stays as it is: only its genre follows.
+                        lastGenre = (int) g;
+                        if (! juce::isPositiveAndBelow (juce::roundToInt (raw (ParamIDs::pattern)), (int) sgk::groovePatterns().size()))
+                            break;
                         const auto& patterns = sgk::groovePatterns();
                         for (size_t i = 0; i < patterns.size(); ++i)
                             if (patterns[i].category == genres[g])
@@ -2308,7 +2320,7 @@ void FaseGroovePianoProcessor::updateLink()
                             }
                     }
                 if (xml->hasAttribute ("swing"))
-                    setParameterFromUI (ParamIDs::swing, juce::jlimit (0.0f, 1.0f, (float) xml->getDoubleAttribute ("swing")));
+                    setParameterFromUI (ParamIDs::swing, juce::jlimit (0.0f, 1.5f, (float) xml->getDoubleAttribute ("swing")));
                 if (xml->hasAttribute ("bpm"))
                     setParameterFromUI (ParamIDs::tempo, (float) xml->getDoubleAttribute ("bpm"));
                 if (xml->hasAttribute ("sync"))
