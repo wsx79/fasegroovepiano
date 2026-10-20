@@ -197,6 +197,7 @@ struct GrooveSettings
 
     int pattern = 0;
     float swing = 0.25f;                   // 0 = straight, 1 = full triplet shuffle
+    float bassGate = -1.0f;                 // negative: legacy shared gate; explicit family presets may separate it
     float gate = 0.55f;                    // portion of a step a non-held hit lasts
     int velocity = 96;
     float humanize = 0.25f;

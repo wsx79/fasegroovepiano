@@ -30,6 +30,8 @@ guida e lo **trascini nella DAW come clip MIDI**, per suonarlo col tuo piano, Rh
 
 **Versione attuale: [v0.23.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.23.0).** Rinumerata da 2.23.0; chi ha già una versione 2.x deve installare manualmente 0.23.0 una volta.
 
+**Preset Arranger:** nel menu degli stili trovi tredici nuove voci `Arranger: …`, coordinate con Fase Groove Arranger 0.4.7. Scegli lo stesso genere in Piano, Drums e Guitar e usa LINK per tonalità, tempo e trasporto. Il Jackin segue la direzione funky/disco indicata (Da Funk Junkies), con chops, basso articolato e chitarra percussiva. I preset precedenti restano disponibili e i progetti già salvati conservano le proprie scelte; i livelli e gli effetti della DAW partecipano sempre al mix finale. I nuovi preset separano il suono guida del basso da quello della tastiera e impostano il basso sul canale MIDI 2, opzione già presente. Il basso guida è centrato e asciutto; gli archi Jackin partono spenti ma si possono riattivare. Per pilotare strumenti esterni usa i canali 1 (tastiera), 2 (basso) e 3 (archi). Il controllo del suono guida continua a scegliere il timbro della tastiera.
+
 ## Funzioni
 
 - 🎻 **Archi:** una terza parte per dare corpo e volume, sul canale MIDI 3: 10 tipi: un pad con voice leading che tiene ogni accordo (anche alto, largo o a mezza battuta), string stab col piano o in levare, risposte nelle pause del piano, ottavi pulsanti, ottave disco e corse dentro ogni accordo. Si esportano da soli (clip *Strings ...*) o come traccia separata.

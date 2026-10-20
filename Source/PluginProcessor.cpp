@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "PluginProcessor.h"
+#include "FamilySoundProfiles.h"
 #include "PadController.h"
 #include "GuideVoice.h"
 #include "PluginEditor.h"
@@ -495,6 +496,7 @@ bool FaseGroovePianoProcessor::hasStepVelocities() const
 
 void FaseGroovePianoProcessor::resetToDefaults()
 {
+    familyGuideProfile=-1;
     for (auto* p : getParameters())
         if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*> (p))
         {
@@ -566,6 +568,20 @@ namespace
         { "Deep Minimal",         "Minor Two  i - ii",                 "Deep Minimal Stab",    8, 4, 15, 0, 0, 62, 0.20f, 0.50f, 0.20f, 0.00f, false },
         { "Soulful Lift",         "Two-Five Lift  ii - V - iii - vi",  "Soulful Sway Comp",    9, 2, 17, 0, 0, 63, 0.30f, 0.60f, 0.30f, 0.15f, false, 3, 3 },
         { "Jackin' Piano Chicago", "Chicago Shuffle  I - vi - IV - V", "Jackin' Piano Hook",   1, 0, 6, 0, 2, 66, 0.50f, 0.35f, 0.20f, 0.00f, true, 2, 5, 0 },
+        // Explicit ecosystem presets, appended so legacy indexes remain stable.
+        { fgfamily::names[0], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[1], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[2], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[3], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[4], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[5], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[6], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[7], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[8], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[9], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[10], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[11], "", "", 0,0,0,0,0,64,0,0,0,0,false },
+        { fgfamily::names[12], "", "", 0,0,0,0,0,64,0,0,0,0,false },
     };
 
     int indexOfGroove (const char* name)
@@ -845,6 +861,8 @@ juce::StringArray FaseGroovePianoProcessor::styleNames()
 
 int FaseGroovePianoProcessor::stylePreset (int index)
 {
+    const int first=(int)std::size(styles)-fgfamily::numGenres;
+    if(index>=first&&index<(int)std::size(styles))return fgfamily::progressions[(size_t)(index-first)];
     return juce::isPositiveAndBelow (index, (int) std::size (styles)) ? indexOfPreset (styles[index].progression) : -1;
 }
 
@@ -942,6 +960,59 @@ void FaseGroovePianoProcessor::applyStyle (int index)
     if (! juce::isPositiveAndBelow (index, (int) std::size (styles)))
         return;
 
+    const int familyStart=(int)std::size(styles)-fgfamily::numGenres;
+    if(index>=familyStart){
+        const int genre=index-familyStart;const auto& a=fgfamily::sound(genre);
+        setParameterFromUI(ParamIDs::tempo,(float)fgfamily::tempos[(size_t)genre]);
+        setParameterFromUI(ParamIDs::swing,fgfamily::swing[(size_t)genre]);
+        setParameterFromUI(ParamIDs::section,0);
+        setParameterFromUI(ParamIDs::velocity,100);
+        setParameterFromUI(ParamIDs::variation,2);
+        familyGuideProfile=genre;
+        clearFreeChords();
+        setParameterFromUI(ParamIDs::extension,(float)fgfamily::extensions[(size_t)genre]);
+        applyProgressionPreset(fgfamily::progressions[(size_t)genre]);
+        lastGenre=genre;
+        const auto& patterns=sgk::groovePatterns();std::vector<int> candidates;
+        for(size_t i=0;i<patterns.size();++i)if(patterns[i].category==sgk::grooveCategories()[(size_t)genre]){
+            if(genre==4&&patterns[i].name!="Disco Jack Chops"&&patterns[i].name!="Jack Chops"&&patterns[i].name!="Chicago Stab Jack"&&patterns[i].name!="Jack Stab Skips")continue;
+            candidates.push_back((int)i);
+        }
+        auto seed=[](std::uint32_t x){x^=x>>16;x*=0x7feb352dU;x^=x>>15;x*=0x846ca68bU;return x^(x>>16);}(1979);
+        auto pattern=sgk::makeVariation(patterns[(size_t)candidates[seed%candidates.size()]],seed);
+        if(a.density<.35)pattern=sgk::applyIntention(pattern,sgk::Intention::minimal,seed);
+        if(a.density>.72)pattern=sgk::addGhostNotes(pattern,seed);
+        for(size_t i=0;i<sgk::userPatternLength;++i){userRight[i]=pattern.rightHand[i%pattern.rightHand.size()];userLeft[i]=pattern.leftHand[i%pattern.leftHand.size()];}
+        resetStepVelocities();
+        setParameterFromUI(ParamIDs::pattern,(float)sgk::userPatternIndex());
+        setParameterFromUI(ParamIDs::voicing,(float)a.voicing);
+        setParameterFromUI(ParamIDs::bass,(float)sgk::bassModeForLine(fgfamily::bassLines[(size_t)genre]));
+        setParameterFromUI(ParamIDs::bassFeel,(float)fgfamily::bassFeel(genre));
+        setParameterFromUI(ParamIDs::bassChannel,1);
+        setParameterFromUI(ParamIDs::strings,(float)a.strings);
+        setParameterFromUI(ParamIDs::soundType,(float)a.piano);
+        setParameterFromUI(ParamIDs::tone,(float)a.pianoTone);
+        setParameterFromUI(ParamIDs::gate,(float)a.gate);
+        setParameterFromUI(ParamIDs::riffDensity,(float)a.density);
+        setParameterFromUI(ParamIDs::strum,(float)a.strum);
+        setParameterFromUI(ParamIDs::registerPos,genre==11?67.f:64.f);
+        setParameterFromUI(ParamIDs::humanize,genre==10?.32f:.14f);
+        setParameterFromUI(ParamIDs::realism,1);
+        setParameterFromUI(ParamIDs::octaveTop,genre==9?1.f:0.f);
+        setParameterFromUI(ParamIDs::reverb,fgfamily::pianoReverb(genre));
+        setParameterFromUI(ParamIDs::chorus,fgfamily::pianoChorus(genre));
+        setParameterFromUI(ParamIDs::pump,0);
+        setParameterFromUI(ParamIDs::volume,juce::Decibels::gainToDecibels(.45f));
+        setParameterFromUI(ParamIDs::fills,0); // fills remain optional in a repeating plugin groove
+        setParameterFromUI(ParamIDs::topLine,0);
+        setParameterFromUI(ParamIDs::movement,1);
+        setParameterFromUI(ParamIDs::approach,0);
+        setParameterFromUI(ParamIDs::grooveBars,0);
+        for(int i=0;i<sgk::numSegments;++i)setParameterFromUI(ParamIDs::segment(i),(float)i);
+        return;
+    }
+    familyGuideProfile=-1;
+
     const auto& st = styles[index];
     clearFreeChords();
 
@@ -1031,6 +1102,7 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.pattern = asInt (ParamIDs::pattern);
     s.swing = raw (ParamIDs::swing);
     s.gate = raw (ParamIDs::gate);
+    if(const int genre=familyGuideProfile.load();genre>=0)s.bassGate=fgfamily::bassGate(genre);
     s.velocity = asInt (ParamIDs::velocity);
     s.humanize = raw (ParamIDs::humanize);
     s.fillEveryBars = fillChoices[juce::jlimit (0, 4, asInt (ParamIDs::fills))];
@@ -1329,6 +1401,8 @@ void FaseGroovePianoProcessor::rollNewProgression()
 void FaseGroovePianoProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     synth.setCurrentPlaybackSampleRate (sampleRate);
+    familyGuide.prepare(sampleRate,samplesPerBlock);
+    lastFamilyGuideProfile=-2;
     reverb.setSampleRate (sampleRate);
     reverb.reset();
     chorusFx.prepare ({ sampleRate, (juce::uint32) juce::jmax (1, samplesPerBlock), 2 });
@@ -1771,16 +1845,18 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     // ---- Internal e-piano ----
     const bool soundOn = raw (ParamIDs::sound) > 0.5f;
-    if (soundWasOn && ! soundOn)
-        synth.allNotesOff (0, false);
+    const int guideProfile=familyGuideProfile.load();
+    if(guideProfile!=lastFamilyGuideProfile){synth.allNotesOff(0,false);familyGuide.reset();lastFamilyGuideProfile=guideProfile;}
+    if (soundWasOn && ! soundOn){synth.allNotesOff (0, false);familyGuide.reset();}
     soundWasOn = soundOn;
 
     if (soundOn)
     {
-        synth.renderNextBlock (buffer, outMidi, 0, numSamples);
+        if(guideProfile>=0)familyGuide.render(buffer,outMidi,guideProfile,raw(ParamIDs::soundType),raw(ParamIDs::tone),raw(ParamIDs::reverb),raw(ParamIDs::chorus));
+        else synth.renderNextBlock (buffer, outMidi, 0, numSamples);
 
         // Chorus: a gentle stereo widening for keys.
-        if (const float chorusAmount = raw (ParamIDs::chorus); chorusAmount > 0.001f && buffer.getNumChannels() > 1)
+        if (const float chorusAmount = raw (ParamIDs::chorus); guideProfile<0 && chorusAmount > 0.001f && buffer.getNumChannels() > 1)
         {
             chorusFx.setRate (0.6f);
             chorusFx.setDepth (0.25f + 0.35f * chorusAmount);
@@ -1822,6 +1898,7 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         }
 
         const float amount = raw (ParamIDs::reverb);
+        if(guideProfile<0){
         juce::Reverb::Parameters rp;
         rp.roomSize = 0.62f;
         rp.damping = 0.45f;
@@ -1834,6 +1911,8 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             reverb.processStereo (buffer.getWritePointer (0), buffer.getWritePointer (1), numSamples);
         else
             reverb.processMono (buffer.getWritePointer (0), numSamples);
+
+        }
 
         outputGain.setTargetValue (juce::Decibels::decibelsToGain (raw (ParamIDs::volume)));
         outputGain.applyGain (buffer, numSamples);
@@ -2912,6 +2991,7 @@ juce::AudioProcessorEditor* FaseGroovePianoProcessor::createEditor()
 void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
+    state.setProperty("familyGuideProfile",familyGuideProfile.load(),nullptr);
 
     juce::String right, left, locks;
     for (int i = 0; i < sgk::userPatternLength; ++i)
@@ -3024,6 +3104,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
             }
     apvts.replaceState (restored);
     const auto& state = apvts.state;
+    familyGuideProfile=juce::jlimit(-1,fgfamily::numGenres-1,(int)state.getProperty("familyGuideProfile",-1));
 
     const auto right = state.getProperty ("userRight").toString();
     const auto left  = state.getProperty ("userLeft").toString();

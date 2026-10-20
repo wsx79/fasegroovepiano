@@ -6,6 +6,12 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.25.0] - 2026-10-20
+
+- Thirteen additional `Arranger:` presets coordinate palettes, articulation and balance with Fase Groove Arranger 0.4.7, including the updated Jackin in the requested Da Funk Junkies direction.
+- Previous preset indexes and values remain available; saved projects are not rewritten and the theme and control layout stay unchanged.
+- Separate keyboard, bass and strings guide rendering in new presets; centred/filtered/dry bass and an independent bass-line gate. Older states retain the original renderer.
+
 ## [0.24.0] - 2026-10-19
 
 - Bass feel (Feel menu): Classic, Sub (the root voice-led in the low octave, E1-A2) or Sub + sidechain gaps (no bass note rings into the next beat). New instances start on Sub; older projects keep Classic.

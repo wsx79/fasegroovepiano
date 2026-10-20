@@ -6,6 +6,12 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.25.0] - 2026-10-20
+
+- Tredici preset aggiuntivi `Arranger:`: palette, articolazioni e bilanciamenti coordinati con Fase Groove Arranger 0.4.7, incluso il nuovo Jackin nella direzione Da Funk Junkies.
+- Indici e valori dei preset precedenti conservati; nessuna riscrittura automatica dei progetti salvati e nessuna modifica al tema o alla disposizione dei controlli.
+- Rendering guida separato per tastiera, basso e archi nei nuovi preset; basso centrato/filtrato/asciutto e gate indipendente per le linee di basso. Ripristino dei vecchi stati sul renderer originale.
+
 ## [0.24.0] - 2026-10-19
 
 - Carattere del basso (menu Feel): Classico, Sub (la fondamentale condotta nell'ottava bassa, Mi1-La2) o Sub + pause per il sidechain (nessuna nota di basso suona sul battito successivo). Le nuove istanze partono da Sub; i progetti esistenti restano su Classico.

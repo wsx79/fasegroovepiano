@@ -51,8 +51,8 @@ struct GuideStringsTag : public juce::SynthesiserSound
 class GuideVoice : public juce::SynthesiserVoice
 {
 public:
-    GuideVoice (const std::atomic<float>& toneParam, const std::atomic<float>& soundParam)
-        : tone (toneParam), soundChoice (soundParam) {}
+    GuideVoice (const std::atomic<float>& toneParam, const std::atomic<float>& soundParam, bool centreOutput = false)
+        : centred (centreOutput), tone (toneParam), soundChoice (soundParam) {}
 
     bool canPlaySound (juce::SynthesiserSound* s) override
     {
@@ -80,6 +80,8 @@ public:
         const double pan = juce::jlimit (-1.0, 1.0, (note - 62) / 40.0);
         panL = std::cos ((pan + 1.0) * juce::MathConstants<double>::pi * 0.25) * juce::MathConstants<double>::sqrt2;
         panR = std::sin ((pan + 1.0) * juce::MathConstants<double>::pi * 0.25) * juce::MathConstants<double>::sqrt2;
+
+        if (centred) panL = panR = 1.0;
 
         switch (sound)
         {
@@ -156,6 +158,7 @@ public:
     }
 
 private:
+    const bool centred;
     //==============================================================================
     // Cheap maths for the per-sample loops (the guide sound runs up to 24 voices):
 

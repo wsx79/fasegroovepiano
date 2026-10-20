@@ -62,6 +62,16 @@ jobs:
       - name: Engine tests
         run: ctest --test-dir build -C Release --output-on-failure
 
+      - name: Render all thirteen family profiles and retain Jackin evidence
+        if: runner.os == 'Linux'
+        run: ./build/sgk_plugin_tests_artefacts/Release/sgk_plugin_tests --family-audio family-audio
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Linux' && always()
+        with:
+          name: Family-audio-evidence
+          path: family-audio/
+
       - name: Render interface screenshots (Windows)
         if: runner.os == 'Windows'
         run: ./build/sgk_plugin_tests_artefacts/Release/sgk_plugin_tests.exe --screenshots screenshots 1

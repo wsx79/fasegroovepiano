@@ -31,6 +31,8 @@ Rhodes or synth.
 
 **Current release: [v0.23.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.23.0).** Version renumbered from 2.23.0; existing 2.x installations need one manual install of 0.23.0.
 
+**Arranger presets:** the style menu now includes thirteen `Arranger: …` entries coordinated with Fase Groove Arranger 0.4.7. Choose the same genre in Piano, Drums and Guitar and use LINK for key, tempo and transport. Jackin follows the requested funky/disco direction (Da Funk Junkies), with chopped hooks, articulated bass and percussive guitar. Earlier presets remain available and saved projects retain their settings; DAW levels and effects still contribute to the final mix. The new presets separate the bass guide sound from the keyboard and select the existing Bass on MIDI channel 2 option. The bass guide is centred and dry; Jackin strings start off and can still be enabled. External instruments use channels 1 (keyboard), 2 (bass) and 3 (strings). The guide-sound selector continues to choose the keyboard sound.
+
 ## Features
 
 - 🎻 **Strings:** a third part for body and volume, on MIDI channel 3: 10 kinds: a voice-led pad that holds every chord (also high, wide or half-bar), string stabs with the piano or on the offbeats, answers in the piano's rests, pulsing 8ths, disco octaves and runs into each chord. Exported on their own (*Strings ...* clips) or as a separate track.

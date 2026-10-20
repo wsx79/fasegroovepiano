@@ -12,6 +12,7 @@
 #include "../Source/Localisation.h"
 
 #include <cstdio>
+#include "FamilyAudioEvidence.h"
 #include <string>
 #include <algorithm>
 #include <map>
@@ -1847,9 +1848,54 @@ namespace
     }
 }
 
+namespace {
+
+    void testFamilyPresets(){
+        FaseGroovePianoProcessor p;const int first=p.styleNames().size()-fgfamily::numGenres;
+        for(int genre=0;genre<fgfamily::numGenres;++genre){
+            p.applyStyle(first+genre);const auto& a=fgfamily::sound(genre);const auto settings=p.currentSettings();
+            CHECK(p.currentGenre()==genre);
+            CHECK((int)settings.bass==sgk::bassModeForLine(fgfamily::bassLines[(size_t)genre]));
+            CHECK((int)settings.strings==a.strings);
+            CHECK(std::abs(settings.bassGate-fgfamily::bassGate(genre))<.001f);
+            CHECK(!sgk::GrooveEngine::renderClip(settings,32).empty());
+            if(genre==4){
+                auto shared=settings;shared.bassGate=-1;
+                auto held=[](const sgk::GrooveSettings& value){
+                    std::array<double,128> on{};double total=0;
+                    for(const auto& e:sgk::GrooveEngine::renderClip(value,32))if(e.part==sgk::Part::bass){if(e.isNoteOn())on[(size_t)e.note]=e.ppq;else total+=e.ppq-on[(size_t)e.note];}
+                    return total;
+                };
+                CHECK(held(settings)>held(shared));
+            }
+
+            juce::MemoryBlock state;p.getStateInformation(state);FaseGroovePianoProcessor restored;
+            restored.setStateInformation(state.getData(),(int)state.getSize());
+            CHECK(std::abs(restored.currentSettings().bassGate-settings.bassGate)<.001f);
+        }
+        // Restoring an old APVTS snapshot must leave the family renderer off,
+        // even if this instance was previously on an Arranger preset.
+        FaseGroovePianoProcessor legacy;juce::MemoryBlock old;
+        if(auto xml=legacy.apvts.copyState().createXml())juce::AudioProcessor::copyXmlToBinary(*xml,old);
+        p.setStateInformation(old.getData(),(int)old.getSize());CHECK(p.currentSettings().bassGate<0);
+        p.applyStyle(first+4);p.setParameterFromUI(ParamIDs::sequencer,0);
+        p.prepareToPlay(44100,512);
+        double energy=0,side=0;float peak=0;
+        for(int block=0;block<40;++block){
+            juce::AudioBuffer<float> audio(2,512);juce::MidiBuffer midi;
+            if(block==0)midi.addEvent(juce::MidiMessage::noteOn(2,33,(juce::uint8)110),0);
+            if(block==20)midi.addEvent(juce::MidiMessage::noteOff(2,33),0);
+            p.processBlock(audio,midi);
+            for(int i=0;i<512;++i){const float l=audio.getSample(0,i),rr=audio.getSample(1,i);CHECK(std::isfinite(l)&&std::isfinite(rr));energy+=l*l+rr*rr;side+=(l-rr)*(l-rr);peak=juce::jmax(peak,std::abs(l),std::abs(rr));}
+        }
+        CHECK(energy>.0001&&peak<.99f);CHECK(side<energy*1e-10);
+    }
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI juce;
+    if(argc>2&&juce::String(argv[1])=="--family-audio")return writeFamilyAudioEvidence<FaseGroovePianoProcessor>(juce::File::getCurrentWorkingDirectory().getChildFile(argv[2]),"Piano");
     if (argc > 2 && juce::String (argv[1]) == "--screenshots")
     {
         Localisation::setCurrent (Localisation::Language::italian);
@@ -1910,6 +1956,7 @@ int main (int argc, char** argv)
     testLinkWithDrums();
     testLinkRoles();
     testV024();
+    testFamilyPresets();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

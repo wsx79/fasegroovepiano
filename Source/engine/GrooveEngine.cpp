@@ -2181,7 +2181,7 @@ void GrooveEngine::collectBassLine (long long step, const GrooveSettings& s, con
     int gap = 1;
     while (gap < n && (line[(size_t) ((pos + gap) % n)] == '.' || line[(size_t) ((pos + gap) % n)] == '='))
         ++gap;
-    const double gate = (double) std::clamp (s.gate, 0.05f, 1.0f);
+    const double gate = (double) std::clamp (s.bassGate >= 0 ? s.bassGate : s.gate, 0.05f, 1.0f);
     const double steps = symbol == 'G' ? 0.3
                        : hold > 0      ? hold + gate
                                        : std::max (std::min ({ gate * gap, 4.0, gap - 0.08 }), std::min (gate, 0.9));

@@ -5,6 +5,7 @@
 
 #include "engine/GrooveEngine.h"
 #include "engine/HarmonyAnalyzer.h"
+#include "FamilyGuideRenderer.h"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
@@ -504,6 +505,9 @@ private:
     juce::MidiBuffer outMidi;
     std::array<int, 128> bassNoteChannels {};
 
+    std::atomic<int> familyGuideProfile{-1};
+    int lastFamilyGuideProfile=-2;
+    FamilyGuideRenderer familyGuide;
     juce::Synthesiser synth;
     juce::Reverb reverb;
     juce::dsp::Chorus<float> chorusFx;

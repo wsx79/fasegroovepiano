@@ -22,9 +22,11 @@ suonarla col tuo piano, Rhodes o synth preferito.
 
 ---
 
+**Preset Arranger:** nel menu degli stili trovi tredici nuove voci `Arranger: …`, coordinate con Fase Groove Arranger 0.4.7. Scegli lo stesso genere in Piano, Drums e Guitar e usa LINK per tonalità, tempo e trasporto. Il Jackin segue la direzione funky/disco indicata (Da Funk Junkies), con chops, basso articolato e chitarra percussiva. I preset precedenti restano disponibili e i progetti già salvati conservano le proprie scelte; i livelli e gli effetti della DAW partecipano sempre al mix finale. I nuovi preset separano il suono guida del basso da quello della tastiera e impostano il basso sul canale MIDI 2, opzione già presente. Il basso guida è centrato e asciutto; gli archi Jackin partono spenti ma si possono riattivare. Per pilotare strumenti esterni usa i canali 1 (tastiera), 2 (basso) e 3 (archi). Il controllo del suono guida continua a scegliere il timbro della tastiera.
+
 ## 1. Installazione
 
-Questa guida descrive la [v0.23.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.23.0). Controlli e posizioni sono conservati; pulsanti, menu e colori comuni hanno uno stile uniforme.
+Questa guida descrive la [v0.25.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.25.0). Controlli e posizioni sono conservati; pulsanti, menu e colori comuni hanno uno stile uniforme.
 
 ### Windows: l'installer (il modo più semplice)
 
