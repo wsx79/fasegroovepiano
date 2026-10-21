@@ -1,0 +1,105 @@
+# Copyright (C) 2026 Fabio 'Pitch' Serra
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: Publish verified family release
+on:
+  push:
+    branches: ['release/v*']
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: publish-family-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate tested source and unchanged main branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,os,re,subprocess
+          from pathlib import Path
+          m=json.loads(Path('.github/release-manifest.json').read_text())
+          repo=os.environ['GITHUB_REPOSITORY']
+          def api(path):return json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/{path}']))
+          assert re.fullmatch(r'v\d+\.\d+\.\d+',m['tag'])
+          assert os.environ['GITHUB_REF_NAME']=='release/'+m['tag']
+          assert re.fullmatch(r'[0-9a-f]{40}',m['source_sha'])
+          run=api(f"actions/runs/{m['run_id']}")
+          assert run['status']=='completed' and run['conclusion']=='success'
+          assert run['head_sha']==m['source_sha'] and run['name']=='Build'
+          jobs=api(f"actions/runs/{m['run_id']}/jobs")['jobs']
+          assert all(any(j['name']==n and j['conclusion']=='success' for j in jobs) for n in ['Linux','Windows','macOS'])
+          head=api('git/ref/heads/main')['object']['sha']
+          assert head in [m['base_sha'],m['source_sha']],head
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              for key,value in [('RELEASE_TAG',m['tag']),('SOURCE_SHA',m['source_sha']),('BUILD_RUN',m['run_id']),('PRODUCT',m['product'])]:f.write(f'{key}={value}\n')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ env.BUILD_RUN }}
+          pattern: ${{ env.PRODUCT }}-*
+          merge-multiple: true
+          path: release-assets
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ env.BUILD_RUN }}
+          name: Family-audio-evidence
+          path: family-audio
+      - name: Verify distributions and package native audio and MIDI examples
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,zipfile
+          from pathlib import Path
+          m=json.loads(Path('.github/release-manifest.json').read_text());root=Path('release-assets')
+          expected={m['product']+'-'+n+'.zip' for n in ['Windows','macOS','Linux']}|{m['product']+'-Windows-Setup.exe'}
+          assert {p.name for p in root.iterdir()}==expected
+          for name in expected:
+              p=root/name;assert p.stat().st_size>1000000,name
+              if p.suffix=='.zip':
+                  with zipfile.ZipFile(p) as z:
+                      assert z.testzip() is None
+                      assert any(n.endswith('GUIDA.md') for n in z.namelist())
+                      assert any('.vst3/' in n for n in z.namelist())
+          evidence=Path('family-audio');rows=(evidence/'profiles.tsv').read_text().splitlines();assert len(rows)==14
+          for row in rows[1:]:
+              genre,bpm,peak,rms=row.split('\t');assert 0<float(peak)<.99 and float(rms)>.00001
+          wav=list(evidence.glob('*.wav'));midi=list(evidence.glob('*.mid'));assert len(wav)==len(midi)==1
+          examples=root/(m['product']+'-'+m['tag'][1:]+'-Jackin-examples.zip')
+          with zipfile.ZipFile(examples,'w',zipfile.ZIP_DEFLATED) as z:
+              for p in sorted(evidence.iterdir()):z.write(p,p.name)
+              z.writestr('LEGGIMI.txt','Preset Arranger: Jackin\' — render nativo di 8 battute a 126 BPM e coda.\nUsa lo stesso preset in Piano, Drums e Guitar, con LINK oppure il clock della DAW.\nI file documentano il singolo plugin; il mix finale dipende anche dai livelli e dagli effetti della DAW.\n')
+          files=sorted(p for p in root.iterdir() if p.is_file())
+          (root/'SHA256SUMS.txt').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in files))
+          (root/'SOURCE.txt').write_text(f"Source: {m['source_sha']}\nVerified build: https://github.com/{m['repository']}/actions/runs/{m['run_id']}\n")
+          PY
+      - name: Promote verified source to main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,subprocess
+          from pathlib import Path
+          m=json.loads(Path('.github/release-manifest.json').read_text());repo=m['repository']
+          head=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/git/ref/heads/main']))['object']['sha']
+          assert head in [m['base_sha'],m['source_sha']]
+          if head!=m['source_sha']:
+              subprocess.run(['gh','api','--method','PATCH',f'repos/{repo}/git/refs/heads/main','-f','sha='+m['source_sha'],'-F','force=false'],check=True)
+          PY
+      - name: Publish verified packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo 'Release already exists; refusing to replace its assets.'
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" --target "$SOURCE_SHA" --title "$PRODUCT ${RELEASE_TAG#v}" --notes-file docs/FAMILY_RELEASE_NOTES.md --draft
+          gh release upload "$RELEASE_TAG" release-assets/*
+          gh release edit "$RELEASE_TAG" --draft=false --latest=true
