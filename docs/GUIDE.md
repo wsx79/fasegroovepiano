@@ -22,7 +22,7 @@ your DAW** and play it with your favourite piano, Rhodes or synth.
 
 ---
 
-**Arranger presets:** the style menu now includes thirteen `Arranger: …` entries coordinated with Fase Groove Arranger 0.4.7. Choose the same genre in Piano, Drums and Guitar and use LINK for key, tempo and transport. Jackin follows the requested funky/disco direction (Da Funk Junkies), with chopped hooks, articulated bass and percussive guitar. Earlier presets remain available and saved projects retain their settings; DAW levels and effects still contribute to the final mix. The new presets separate the bass guide sound from the keyboard and select the existing Bass on MIDI channel 2 option. The bass guide is centred and dry; Jackin strings start off and can still be enabled. External instruments use channels 1 (keyboard), 2 (bass) and 3 (strings). The guide-sound selector continues to choose the keyboard sound.
+**Arranger presets:** the style menu now includes thirteen `Arranger: …` entries coordinated with Fase Groove Arranger 0.4.7. Choose the same genre in Piano, Drums and Guitar and use LINK for key, tempo and transport. Jackin follows the requested funky/disco direction, with chopped hooks, articulated bass and percussive guitar. Earlier presets remain available and saved projects retain their settings; DAW levels and effects still contribute to the final mix. The new presets separate the bass guide sound from the keyboard and select the existing Bass on MIDI channel 2 option. The bass guide is centred and dry; Jackin strings start off and can still be enabled. External instruments use channels 1 (keyboard), 2 (bass) and 3 (strings). The guide-sound selector continues to choose the keyboard sound.
 
 ## 1. Installation
 

@@ -1585,7 +1585,9 @@ namespace
             juce::MidiBuffer none;
             p.processBlock (out, none);
         }
-        CHECK (std::abs (p.uiPpq.load() - 2.0) < 0.05);
+        // Preparation may take time on a busy host; LINK follows the shared clock.
+        const double linkedBeat = (juce::Time::getMillisecondCounterHiRes() - drums.getStringAttribute ("anchor").getDoubleValue()) * 120.0 / 60000.0;
+        CHECK (std::abs (p.uiPpq.load() - linkedBeat) < 0.05);
         drums.setAttribute ("playing", false);
         drums.setAttribute ("anchor", "-1");
         drums.writeTo (link);

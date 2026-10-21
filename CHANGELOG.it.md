@@ -8,7 +8,7 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 
 ## [0.25.0] - 2026-10-20
 
-- Tredici preset aggiuntivi `Arranger:`: palette, articolazioni e bilanciamenti coordinati con Fase Groove Arranger 0.4.7, incluso il nuovo Jackin nella direzione Da Funk Junkies.
+- Tredici preset aggiuntivi `Arranger:`: palette, articolazioni e bilanciamenti coordinati con Fase Groove Arranger 0.4.7, incluso il nuovo Jackin nella direzione funky/disco.
 - Indici e valori dei preset precedenti conservati; nessuna riscrittura automatica dei progetti salvati e nessuna modifica al tema o alla disposizione dei controlli.
 - Rendering guida separato per tastiera, basso e archi nei nuovi preset; basso centrato/filtrato/asciutto e gate indipendente per le linee di basso. Ripristino dei vecchi stati sul renderer originale.
 

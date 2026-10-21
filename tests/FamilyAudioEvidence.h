@@ -38,7 +38,7 @@ template<class Processor> int writeFamilyAudioEvidence(const juce::File& folder,
         juce::AudioBuffer<float> audio(2,blockSize);juce::MidiBuffer midi;
         double peak=0,energy=0;juce::int64 count=0;
         for(juce::int64 at=0;at<total;at+=blockSize){
-            const int n=(int)juce::jmin<juce::int64>(blockSize,total-at);
+            const int n=(int)std::min<juce::int64>(blockSize,total-at);
             audio.setSize(2,n,false,false,true);audio.clear();midi.clear();
             clock.sample=at;clock.ppq=at/rate*clock.bpm/60;clock.playing=at<music;
             p.processBlock(audio,midi);
