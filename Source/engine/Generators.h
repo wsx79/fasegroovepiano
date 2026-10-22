@@ -21,8 +21,9 @@ enum class Section { main = 0, intro, breakdown, buildup, drop, outro };
 constexpr int numSections = 6;
 const char* sectionName (int section) noexcept;
 
-/** Rewrites a groove for a song section: sparse intro/outro, sustained
-    breakdown, 8ths-then-16ths build-up, the full groove for main/drop. */
+/** Rewrites a groove for a song section. House thins the intro and drives the
+    build-up in straight 8ths then 16ths. Jackin', garage, afro, neo soul and chill
+    keep the hits they arrived with. */
 GroovePattern applySection (const GroovePattern& source, Section section);
 
 /** Loudness and bass behaviour of a section. */
@@ -46,10 +47,17 @@ void repairHolds (std::string& line);
 
 /** A brand new two-bar funky house riff (chords + bass) from a seed.
     density 0..1 goes from sparse stabs to busy 16th chops. Same seed = same riff. */
-GroovePattern makeRandomPattern (std::uint32_t seed, float density);
+/** Genre of a groove-menu category, or -1. Jackin', garage, afro, neo soul and chill
+    keep their own metric feel through sections and variations. */
+int categoryGenre (const std::string& category) noexcept;
+bool genreKeepsFeel (int genre) noexcept;
 
-/** A variation of a groove for the turnaround bars: a hit moved a 16th later here, a ghost
-    note there, a push into the next bar, a bass pick-up. Same seed = same variation. */
+/** A random riff. genre < 0, or a house-family genre, keeps the classic piano-house
+    figures (same seed, same riff). Other genres pick from their own two-bar rhythms. */
+GroovePattern makeRandomPattern (std::uint32_t seed, float density, int genre = -1);
+
+/** A variation. House moves a hit, adds a ghost and pushes into the next bar. Jackin',
+    garage, afro, neo soul and chill only touch the last bar, without that push. */
 GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed);
 
 /** The groove with a few ghost notes added (a 16th before some hits, on empty steps), and now and
@@ -77,7 +85,9 @@ std::vector<int> randomProgression (std::uint32_t seed, int length);
 
 /** The same in a scale: the minor modes move the way minor house does (i - bVII - bVI, i - iv,
     i - IV in Dorian...), the major ones as above. */
-std::vector<int> randomProgression (std::uint32_t seed, int length, int scale);
+/** genre < 0 keeps the house tables. Gospel, jackin', afro, funky, neo soul and chill
+    use their own moves. */
+std::vector<int> randomProgression (std::uint32_t seed, int length, int scale, int genre = -1);
 
 //==============================================================================
 struct ArrangementPart

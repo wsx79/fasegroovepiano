@@ -96,6 +96,8 @@ constexpr int numFillStyles = 11;
 
 /** First 16th (in the bar) a fill style takes over: most use the last beat, the gospel run two. */
 int fillStartStep (FillStyle style) noexcept;
+/** The fill a bar plays. "Mix" picks from that genre's moves; house keeps the original list. */
+FillStyle effectiveFillStyle (FillStyle style, long long bar, int genre = -1) noexcept;
 const char* fillStyleName (int style) noexcept;
 /** The first 7 bass modes follow the groove's left-hand rhythm; after them come the bass lines
     of the library (each one its own rhythm and notes). */
@@ -219,6 +221,7 @@ struct GrooveSettings
     Section section = Section::main;
     std::uint32_t riffSeed = 1;            // used when pattern == randomPatternIndex()
     float riffDensity = 0.5f;
+    int styleGenre = -1;                   // genre of a random or user groove; a library preset uses its own category
 
     std::array<int, numSegments> segmentOrder { 0, 1, 2, 3 };   // A B C D
     std::uint32_t sectionVariation = 0;    // a song section regenerated on its own (0: the groove as it is)
