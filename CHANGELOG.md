@@ -6,6 +6,12 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.28.0] - 2026-10-22
+
+- New riff, New rhythm and the dice on a part each write a new piano figure, in every genre. Gospel, jackin', jackin' piano, garage, afro, funky, neo soul and chill no longer repeat one of two grids.
+- An edited piano roll follows that new figure. The dice next to Browse still changes only the chords.
+- Changing GENRE updates a random riff that is already playing. The same house seed still builds the same house riff.
+
 ## [0.27.0] - 2026-10-22
 
 - A new random riff follows the selected genre: gospel, jackin', jackin' piano, garage, afro, funky, neo soul and chill use that genre's comping grid. Piano house, soulful, deep, '90s piano house and dance stabs keep the classic house figures, and the same seed still builds the same riff.

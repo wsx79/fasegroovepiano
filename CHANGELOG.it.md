@@ -6,6 +6,12 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.28.0] - 2026-10-22
+
+- Nuovo riff, Nuovo ritmo e il dado di una parte scrivono ciascuno una figura di piano nuova, in ogni genere. Gospel, jackin', jackin' piano, garage, afro, funky, neo soul e chill non ripetono più una di due griglie.
+- Un piano roll già modificato segue quella figura nuova. Il dado accanto a Sfoglia cambia ancora solo gli accordi.
+- Cambiare GENRE aggiorna un riff casuale già in esecuzione. Lo stesso seme house produce ancora lo stesso riff house.
+
 ## [0.27.0] - 2026-10-22
 
 - Un riff casuale nuovo segue il genere scelto: gospel, jackin', jackin' piano, garage, afro, funky, neo soul e chill usano la griglia di accompagnamento di quel genere. Piano house, soulful, deep, '90s piano house e dance stabs restano sulle figure house, e lo stesso seme produce lo stesso riff.
