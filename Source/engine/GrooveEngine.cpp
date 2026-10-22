@@ -854,45 +854,26 @@ int fillStartStep (FillStyle style) noexcept
     return style == FillStyle::gospelRun ? 8 : 12;
 }
 
-FillStyle effectiveFillStyle (FillStyle style, long long bar, int genre) noexcept
-{
-    if (style != FillStyle::mix)
-        return style;
-
-    auto pick = [bar] (const FillStyle* list, int n) noexcept
-    {
-        const auto m = (long long) n;
-        return list[(size_t) (((bar * 5 + 2) % m + m) % m)];
-    };
-
-    switch (genre)
-    {
-        case 3:  { static constexpr FillStyle list[] { FillStyle::gospelRun, FillStyle::gospelThirds, FillStyle::pentatonicUp, FillStyle::chordRoll }; return pick (list, 4); }
-        case 4:
-        case 5:  { static constexpr FillStyle list[] { FillStyle::pushStabs, FillStyle::chordChops, FillStyle::bluesLick }; return pick (list, 3); }
-        case 6:  { static constexpr FillStyle list[] { FillStyle::pushStabs, FillStyle::chordChops, FillStyle::pentatonicUp }; return pick (list, 3); }
-        case 7:  { static constexpr FillStyle list[] { FillStyle::pentatonicUp, FillStyle::bluesLick, FillStyle::chordRoll }; return pick (list, 3); }
-        case 8:  { static constexpr FillStyle list[] { FillStyle::chordChops, FillStyle::bluesLick, FillStyle::pushStabs, FillStyle::gospelThirds }; return pick (list, 4); }
-        case 10: { static constexpr FillStyle list[] { FillStyle::gospelThirds, FillStyle::pentatonicDown, FillStyle::bluesLick }; return pick (list, 3); }
-        case 11: { static constexpr FillStyle list[] { FillStyle::pentatonicUp, FillStyle::pentatonicDown, FillStyle::chordRoll }; return pick (list, 3); }
-        default: break;
-    }
-
-    static constexpr FillStyle rotation[] { FillStyle::pentatonicUp, FillStyle::chordRoll, FillStyle::gospelRun,
-                                            FillStyle::pushStabs, FillStyle::chromaticWalk, FillStyle::gospelThirds,
-                                            FillStyle::glissando, FillStyle::chordChops, FillStyle::bluesLick };
-    return pick (rotation, (int) (sizeof (rotation) / sizeof (*rotation)));
-}
-
 namespace
 {
-    /** A fill that suits the groove ("Mix" and the evolution's own fill). Genres with their own
-        moves use that list; house stays on density (busy: stabs, sparse: runs). */
-    FillStyle contextualFillStyle (const std::string& rightHand, long long bar, int genre) noexcept
+    /** The style a fill bar really plays: "Mix" picks a different one for each fill. */
+    FillStyle effectiveFillStyle (FillStyle style, long long bar) noexcept
     {
-        if (genre == 3 || genre == 4 || genre == 5 || genre == 6 || genre == 7 || genre == 8 || genre == 10 || genre == 11)
-            return effectiveFillStyle (FillStyle::mix, bar, genre);
+        if (style != FillStyle::mix)
+            return style;
 
+        static constexpr FillStyle rotation[] { FillStyle::pentatonicUp, FillStyle::chordRoll, FillStyle::gospelRun,
+                                                FillStyle::pushStabs, FillStyle::chromaticWalk, FillStyle::gospelThirds,
+                                                FillStyle::glissando, FillStyle::chordChops, FillStyle::bluesLick };
+        const auto n = (long long) (sizeof (rotation) / sizeof (*rotation));
+        return rotation[(size_t) (((bar * 5 + 2) % n + n) % n)];
+    }
+
+    /** A fill that suits the groove ("Mix" and the evolution's own fill): a busy groove gets short
+        fills (stabs, chops, a roll), a sparse one runs and glissandos, the rest something in
+        between; a different one on each fill bar. */
+    FillStyle contextualFillStyle (const std::string& rightHand, long long bar) noexcept
+    {
         int hits = 0;
         for (char c : rightHand)
             hits += (c == 'X' || c == 'x' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D') ? 1 : 0;
@@ -1077,19 +1058,6 @@ int GrooveEngine::loopLengthInSteps (const GrooveSettings& s) noexcept
     return (int) std::min<long long> (steps, 64 * 16);
 }
 
-/** Library presets use their category. A random or user groove uses the style that produced it. */
-static int settingsGenre (const GrooveSettings& s) noexcept
-{
-    const auto& patterns = groovePatterns();
-    if (s.pattern >= 0 && s.pattern < (int) patterns.size())
-    {
-        const int genre = categoryGenre (patterns[(size_t) s.pattern].category);
-        if (genre >= 0)
-            return genre;
-    }
-    return s.styleGenre;
-}
-
 GroovePattern GrooveEngine::basePattern (const GrooveSettings& s)
 {
     if (s.pattern >= userPatternIndex())
@@ -1102,14 +1070,11 @@ GroovePattern GrooveEngine::basePattern (const GrooveSettings& s)
             p.rightHand += (r == 0 ? '.' : r);
             p.leftHand  += (l == 0 ? '.' : l);
         }
-        const auto& names = grooveCategories();
-        if (s.styleGenre >= 0 && s.styleGenre < (int) names.size())
-            p.category = names[(size_t) s.styleGenre];
         return p;
     }
 
     if (s.pattern == randomPatternIndex())
-        return makeRandomPattern (s.riffSeed, s.riffDensity, s.styleGenre);
+        return makeRandomPattern (s.riffSeed, s.riffDensity);
 
     const auto& patterns = groovePatterns();
     return patterns[(size_t) std::clamp (s.pattern, 0, (int) patterns.size() - 1)];
@@ -1172,7 +1137,6 @@ int GrooveEngine::patternLength (const GrooveSettings& s) noexcept
 const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
 {
     if (s.pattern != cachedIndex || s.riffSeed != cachedSeed || s.riffDensity != cachedDensity
-        || s.styleGenre != cachedStyleGenre
         || s.section != cachedSection || s.segmentOrder != cachedOrder
         || s.userRight != cachedUserRight || s.userLeft != cachedUserLeft || s.grooveBars != cachedBars
         || s.movement != cachedMovement || s.sectionVariation != cachedSectionVariation || cachedPattern.rightHand.empty()
@@ -1195,7 +1159,6 @@ const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
         cachedBars = s.grooveBars;
         cachedMovement = s.movement;
         cachedIndex = s.pattern;
-        cachedStyleGenre = s.styleGenre;
         cachedSeed = s.riffSeed;
         cachedDensity = s.riffDensity;
         cachedSection = s.section;
@@ -1628,17 +1591,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         // the 16ths in between), and the phrase of four bars breathes (the fourth leans forward).
         if (s.realism)
         {
-            const int genre = settingsGenre (s);
-            static constexpr double housePlace[4]  { 1.0, 0.92, 0.96, 0.91 };
-            static constexpr double swungPlace[4]  { 0.55, 0.35, 0.70, 1.0 };
-            static constexpr double evenPlace[4]   { 0.90, 0.86, 0.94, 0.88 };
-            static constexpr double downPlace[4]   { 1.0, 0.72, 0.80, 0.64 };
-            static constexpr double gentlePlace[4] { 0.86, 0.78, 0.90, 0.80 };
-            const double* place = genre == 4 || genre == 6 ? swungPlace
-                                : genre == 7 ? evenPlace
-                                : genre == 10 ? downPlace
-                                : genre == 11 ? gentlePlace
-                                : housePlace;
+            static constexpr double place[4] { 1.0, 0.92, 0.96, 0.91 };
             static constexpr double phrase[4] { 1.0, 0.97, 0.99, 1.03 };
             level *= place[mod (step, 4)] * phrase[mod (barNow, 4)];
         }
@@ -1697,23 +1650,22 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
     // Fill: the end of every N bars becomes a pick-up into the next chord.
     const long long bar = floorDiv (step, 16);
     const int stepInBar = mod (step, 16);
-    const int genreNow = settingsGenre (s);
-    auto fillStyle = effectiveFillStyle (s.fillStyle, bar, genreNow);
+    auto fillStyle = effectiveFillStyle (s.fillStyle, bar);
     bool fillBar = s.fillEveryBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.fillEveryBars) == s.fillEveryBars - 1;
     const bool evolutionFill = s.evolveBars > 0 && sectionAllowsFills (s.section) && mod (bar, s.evolveBars) == s.evolveBars - 1;
     if (evolutionFill)
         fillBar = true;   // the evolution's last bar leads into the next round
     // "Mix", and the evolution's fill when the fills are off: a fill that suits this groove.
     if (s.fillStyle == FillStyle::mix || (evolutionFill && s.fillEveryBars == 0))
-        fillStyle = contextualFillStyle (normalPattern.rightHand, bar, genreNow);
+        fillStyle = contextualFillStyle (normalPattern.rightHand, bar);
     if (s.forcedFillBar >= 0)
     {
         // A song section with its own fill: only on its last bar.
         fillBar = bar == s.forcedFillBar && s.forcedFillStyle >= 0;
         if (fillBar)
             fillStyle = s.forcedFillStyle == (int) FillStyle::mix
-                            ? contextualFillStyle (normalPattern.rightHand, bar, genreNow)
-                            : effectiveFillStyle ((FillStyle) std::clamp (s.forcedFillStyle, 0, numFillStyles - 1), bar, genreNow);
+                            ? contextualFillStyle (normalPattern.rightHand, bar)
+                            : effectiveFillStyle ((FillStyle) std::clamp (s.forcedFillStyle, 0, numFillStyles - 1), bar);
     }
     const int fillStart = fillStartStep (fillStyle);
     const bool inFill = fillBar && stepInBar >= fillStart;

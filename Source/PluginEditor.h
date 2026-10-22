@@ -866,7 +866,7 @@ private:
     juce::ToggleButton freeToggle { "Free" };
 
     // Groove
-    Choice genreCombo, pattern, section, fills, fillStyle, playMode, variation, grooveBars;
+    Choice pattern, section, fills, fillStyle, playMode, variation, grooveBars;
     IconButton newRiffButton { IconButton::Icon::dice };
     Knob swing, gate, velocity, humanize, riffDensity;
 

@@ -4355,7 +4355,6 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
       movement (p.apvts, ParamIDs::movement, "Movement"),
       registerKnob (p.apvts, ParamIDs::registerPos, "Register"),
       strumKnob (p.apvts, ParamIDs::strum, "Strum"),
-      genreCombo (p.apvts, ParamIDs::genre, "Genre"),
       pattern (p.apvts, ParamIDs::pattern, "Groove"),
       section (p.apvts, ParamIDs::section, "Song section"),
       fills (p.apvts, ParamIDs::fills, "Fills"),
@@ -4581,7 +4580,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     for (juce::Component* c : std::initializer_list<juce::Component*> {
              &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &strings, &approach, &topLine, &movement, &variation, &grooveBars, &chorus, &pump, &pumpRelease, &pumpSource, &pumpRate, &sidechainMeter, &registerKnob, &strumKnob,
              &octaveToggle, &circle,
-             &diceProgression, &genreCombo, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
+             &diceProgression, &pattern, &section, &newRiffButton, &fills, &fillStyle, &playMode, &soundType,
              &swing, &gate, &velocity, &humanize, &riffDensity,
              &soundToggle, &bassChannel, &tone, &reverb, &volume, &patternView,
              &clipLengthLabel, &clipPartLabel, &clipLength, &clipPart, &dragTile, &saveButton })
@@ -4590,15 +4589,14 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     octaveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (p.apvts, ParamIDs::octaveTop, octaveToggle);
     octaveToggle.setTooltip ("Double the top note of every chord an octave higher (bright house piano)");
 
-    newRiffButton.setTooltip ("A new riff in the chosen genre (locked parts stay)");
-    genreCombo.box.setTooltip ("The genre the dice write in");
+    newRiffButton.setTooltip ("Generate a brand new random funky riff");
     for (auto* b : { &newRiffButton, &diceProgression, &rndPianoButton, &rndBassButton, &totalRandomButton })
         b->makeRandomButton();
     totalRandomButton.onClick = [this] { processor.totalRandom(); presetBox.setSelectedId (0, juce::dontSendNotification); };
     addAndMakeVisible (totalRandomButton);
     newRiffButton.onClick = [this] { if (onVelocityPage()) processor.randomizeVelocities (true, true); else processor.rollNewRiff(); };
 
-    diceProgression.setTooltip ("A random progression in the chosen genre");
+    diceProgression.setTooltip ("Random soulful-house progression");
     diceProgression.onClick = [this] { processor.rollNewProgression(); presetBox.setSelectedId (0, juce::dontSendNotification); };
 
     circle.onPick = [this] (int pc, bool minorKey)
@@ -4967,7 +4965,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         addChildComponent (vlock);
     }
 
-    newRiffButton.setTooltip ("A new riff in the chosen genre (locked parts stay)");
+    newRiffButton.setTooltip ("New random funky riff (locked parts are kept)");
     showRoll (true);
 
     saveButton.setColour (juce::TextButton::buttonColourId, Palette::background);
@@ -5576,7 +5574,7 @@ void FaseGroovePianoEditor::applyLanguage()
     for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump, &pumpRelease })
         k->refreshText();
 
-    for (auto* c : { &genreCombo, &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &strings, &approach, &topLine, &movement, &variation, &grooveBars, &pattern, &section,
+    for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &strings, &approach, &topLine, &movement, &variation, &grooveBars, &pattern, &section,
                      &fills, &fillStyle, &playMode, &bassChannel, &soundType, &pumpSource, &pumpRate })
         c->refreshText();
 
@@ -5634,11 +5632,10 @@ void FaseGroovePianoEditor::applyLanguage()
     freeToggle.setTooltip (tr ("Free chords: drag the dots anywhere on the circle, even outside the scale"));
     buildPresetMenu();
     approach.box.setTooltip (tr ("Gospel slide: on the last 16th before a chord change, play the next chord a half step above or below"));
-    newRiffButton.setTooltip (tr ("A new riff in the chosen genre (locked parts stay)"));
+    newRiffButton.setTooltip (tr ("New random funky riff (locked parts are kept)"));
     groovePrev.setTooltip (tr ("Previous groove"));
     grooveNext.setTooltip (tr ("Next groove"));
-    diceProgression.setTooltip (tr ("A random progression in the chosen genre"));
-    genreCombo.box.setTooltip (tr ("The genre the dice write in"));
+    diceProgression.setTooltip (tr ("Random soulful-house progression"));
     syncButton.setTooltip (tr ("On: follow the DAW tempo. Off: set your own BPM."));
     tempoSlider.setTooltip (tr ("Drag, or double-click to type the BPM"));
     rewindButton.setTooltip (tr ("Back to the start"));
@@ -6663,29 +6660,27 @@ void FaseGroovePianoEditor::layoutFull()
     }
     r.removeFromTop (10);
 
-    // Progression. GENRE is where Drums and Guitar put it. The preset and the length
-    // move to its right, and the chord slots take the narrower space that remains.
     progressionPanel = r.removeFromTop (128);
     {
-        genreCombo.setBounds (34, 170, 150, 44);
+        auto inner = progressionPanel.reduced (14, 8);
+        inner.removeFromTop (20);
+        auto leftCol = inner.removeFromLeft (276);
+        presetLabel.setBounds (leftCol.removeFromTop (16));
         variantsButton.setBounds (progressionPanel.getX() + 140, progressionPanel.getY() + 6, 96, 17);
-
-        auto controls = juce::Rectangle<int> (192, 128, 300, 90);
-        presetLabel.setBounds (controls.removeFromTop (16));
-        auto presetRow = controls.removeFromTop (26);
+        auto presetRow = leftCol.removeFromTop (28);
         learnButton.setBounds (presetRow.removeFromRight (58));
         presetRow.removeFromRight (4);
         diceProgression.setBounds (presetRow.removeFromRight (92));
-        presetBox.setBounds (presetRow.withTrimmedRight (4));
+        presetBox.setBounds (presetRow.withTrimmedRight (6));
         presetBrowseButton.setBounds (presetBox.getBounds());
-        controls.removeFromTop (4);
-        progLength.setBounds (controls.removeFromLeft (146).withHeight (44));
-        chordLength.setBounds (controls.withTrimmedLeft (8).withHeight (44));
+        leftCol.removeFromTop (4);
+        progLength.setBounds (leftCol.removeFromLeft (114));
+        chordLength.setBounds (leftCol.withTrimmedLeft (12));
 
-        auto slotsArea = juce::Rectangle<int> (500, 128, progressionPanel.getRight() - 14 - 500, 86);
-        const int w = juce::jmax (1, slotsArea.getWidth() / sgk::maxProgressionLength);
+        inner.removeFromLeft (14);
+        const int w = inner.getWidth() / sgk::maxProgressionLength;
         for (auto* slot : slots)
-            slot->setBounds (slotsArea.removeFromLeft (w).reduced (2, 0));
+            slot->setBounds (inner.removeFromLeft (w).reduced (3, 0));
     }
     r.removeFromTop (10);
 
