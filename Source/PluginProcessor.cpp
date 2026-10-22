@@ -2164,12 +2164,17 @@ namespace
 double FaseGroovePianoProcessor::naturalLoopBeats() const
 {
     auto s = currentSettings();
+    // Same four-bar comping cycle as the small roll (updatePianoRoll). Not while an
+    // edit is stored: refreshEditedLoop calls this every 150 ms and would retile it.
+    const bool extendForGuitar = isGuitarLeading() && ! hasEditedLoop();
     s.editedLoop = nullptr;
     const int patternBars = juce::jmax (1, sgk::GrooveEngine::patternLength (s) / 16);
     const int progressionBars = juce::jmax (1, (s.progressionLength * s.stepsPerChord + 15) / 16);
     int bars = std::lcm (patternBars, progressionBars);
     if (bars > 8)
         bars = juce::jmin (8, juce::jmax (patternBars, progressionBars));
+    if (extendForGuitar)
+        bars = juce::jmin (8, std::lcm (bars, 4));
     return bars * 4.0;
 }
 
