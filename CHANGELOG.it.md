@@ -12,6 +12,7 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 - Le variazioni di jackin', garage, afro, neo soul e chill riscrivono solo l'ultima battuta, senza la spinta house verso la battuta dopo. I groove della famiglia house tengono quella spinta.
 - Break e build-up di quei cinque generi conservano il metro del groove. Il build-up house resta sugli ottavi diritti, poi sui sedicesimi.
 - I fill Mix e l'accento del realismo seguono il genere. Un riff nuovo imposta il voicing di quel genere, e una progressione nuova usa i suoi movimenti armonici.
+- GENRE sta dove sta in Fase Groove Drums e Guitar. È il genere in cui scrivono i dadi, si salva col progetto, e scegliere un groove lo imposta sul genere di quel groove. Gli slot degli accordi sono più stretti per fargli posto.
 
 ## [0.26.0] - 2026-10-22
 

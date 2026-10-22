@@ -12,6 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Variations of jackin', garage, afro, neo soul and chill only rewrite the last bar, without the house push into the next bar. House-family grooves keep that push.
 - Break and build-up for those five genres keep the groove's metre. A house build-up still drives straight 8ths, then 16ths.
 - Mix fills and the realism accent follow the genre. Rolling a new riff sets that genre's voicing, and a new progression uses its chord moves.
+- GENRE sits where it does in Fase Groove Drums and Guitar. It is the genre the dice write in, it is saved with the project, and choosing a groove sets it to that groove's genre. The chord slots are narrower so it fits.
 
 ## [0.26.0] - 2026-10-22
 
