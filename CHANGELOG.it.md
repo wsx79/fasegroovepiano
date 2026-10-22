@@ -6,6 +6,13 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.29.0] - 2026-10-22
+
+- Nuovo riff, Nuovo ritmo e il dado di una parte scrivono di nuovo, a ogni clic, una figura di piano classica, come nella 0.26.0. Gli stabs degli archi che seguono il piano si muovono con quella figura.
+- Il selettore GENRE, le griglie di riff per genere, variazioni, fill, voicing e progressioni di genere, e gli slot degli accordi ristretti sono tolti. I groove Jackin' sono di nuovo le figure in levare della libreria.
+- Un progetto salvato con GENRE si apre ancora. Quel valore resta salvato e viene ignorato.
+- Il piano roll di quattro battute con Guitar LEAD e le altre correzioni della 0.26.0 restano.
+
 ## [0.28.0] - 2026-10-22
 
 - Nuovo riff, Nuovo ritmo e il dado di una parte scrivono ciascuno una figura di piano nuova, in ogni genere. Gospel, jackin', jackin' piano, garage, afro, funky, neo soul e chill non ripetono più una di due griglie.

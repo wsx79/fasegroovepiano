@@ -6,6 +6,13 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.29.0] - 2026-10-22
+
+- New riff, New rhythm and the dice on a part again write a new classic piano figure on every click, as in 0.26.0. String stabs that follow the piano move with that figure.
+- The GENRE combo, the per-genre riff grids, variations, fills, voicings and progressions, and the narrowed chord slots are removed. Jackin' grooves are the library's offbeat figures again.
+- A project saved with GENRE still opens. That value is kept and ignored.
+- The Guitar LEAD four-bar piano roll and the other 0.26.0 fixes stay.
+
 ## [0.28.0] - 2026-10-22
 
 - New riff, New rhythm and the dice on a part each write a new piano figure, in every genre. Gospel, jackin', jackin' piano, garage, afro, funky, neo soul and chill no longer repeat one of two grids.
