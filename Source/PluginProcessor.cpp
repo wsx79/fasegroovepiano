@@ -2273,8 +2273,15 @@ std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengt
 double FaseGroovePianoProcessor::exportBpm() const
 {
     // Not lastBpm: that is only updated while audio runs, so a tempo just typed in would be missed.
+    // Synced export reads the host now; hostBpm stays as the fallback when no playhead is published.
     const bool synced = raw (ParamIDs::tempoSync) > 0.5f;
-    return juce::jlimit (20.0, 400.0, synced ? hostBpm.load() : (double) raw (ParamIDs::tempo));
+    double bpm = synced ? hostBpm.load() : (double) raw (ParamIDs::tempo);
+    if (synced)
+        if (auto* head = getPlayHead())
+            if (auto position = head->getPosition())
+                if (auto host = position->getBpm())
+                    bpm = *host;
+    return juce::jlimit (20.0, 400.0, bpm);
 }
 
 bool FaseGroovePianoProcessor::writeMidiFileSafely (const juce::MidiFile& midi, const juce::File& target)
@@ -3248,6 +3255,14 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
             std::atomic_store (&playingNotes, share (std::move (notes)));
         }
     }
+
+    // Loaded while notes are still out: the next block releases them, then plays the restored groove.
+    wasRunning = false;
+    compingDropped.fill (false);
+    answerSounding.fill (false);
+    bassNoteChannels.fill (0);
+    pedalDown = false;
+    compingVoiced = false;
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
