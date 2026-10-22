@@ -2256,6 +2256,14 @@ std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengt
             open.erase (it);
         }
     }
+    // A hit with no note-off (it was still ringing at the clip end) ends on the loop boundary.
+    for (const auto& [id, held] : open)
+    {
+        if (held.first >= lengthInBeats - 0.01)
+            continue;
+        notes.push_back ({ held.first, juce::jmax (0.02, lengthInBeats - held.first), id % 128,
+                           juce::jlimit (1, 127, juce::roundToInt (held.second * toRelative)), (sgk::Part) (id / 128) });
+    }
     roundAndSort (notes);
     for (int i = 0; i < (int) notes.size(); ++i)
         notes[(size_t) i].origin = i;   // what the edits refer to
@@ -2265,8 +2273,15 @@ std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengt
 double FaseGroovePianoProcessor::exportBpm() const
 {
     // Not lastBpm: that is only updated while audio runs, so a tempo just typed in would be missed.
+    // Synced export reads the host now; hostBpm stays as the fallback when no playhead is published.
     const bool synced = raw (ParamIDs::tempoSync) > 0.5f;
-    return juce::jlimit (20.0, 400.0, synced ? hostBpm.load() : (double) raw (ParamIDs::tempo));
+    double bpm = synced ? hostBpm.load() : (double) raw (ParamIDs::tempo);
+    if (synced)
+        if (auto* head = getPlayHead())
+            if (auto position = head->getPosition())
+                if (auto host = position->getBpm())
+                    bpm = *host;
+    return juce::jlimit (20.0, 400.0, bpm);
 }
 
 bool FaseGroovePianoProcessor::writeMidiFileSafely (const juce::MidiFile& midi, const juce::File& target)
@@ -2747,6 +2762,9 @@ std::vector<sgk::NoteEvent> FaseGroovePianoProcessor::comping (const std::vector
             clean.push_back ({ e.ppq, e.note, 0, soundingPart[n] });
         }
     }
+    for (int n = 0; n < 128; ++n)
+        if (held[(size_t) n] > 0)
+            clean.push_back ({ length, n, 0, soundingPart[(size_t) n] });
     return clean;
 }
 
@@ -2805,7 +2823,7 @@ void FaseGroovePianoProcessor::readGuitarLead()
     if (linkOn.load() && file.existsAsFile())
         if (auto xml = juce::parseXML (file); xml != nullptr && xml->getBoolAttribute ("lead"))
             leads = juce::Time::currentTimeMillis() - xml->getStringAttribute ("time").getLargeIntValue() < 6000;
-    guitarLeads = leads;
+    guitarLeads = leads && linkOn.load();
 }
 
 void FaseGroovePianoProcessor::setLinked (bool on)
@@ -3237,6 +3255,14 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
             std::atomic_store (&playingNotes, share (std::move (notes)));
         }
     }
+
+    // Loaded while notes are still out: the next block releases them, then plays the restored groove.
+    wasRunning = false;
+    compingDropped.fill (false);
+    answerSounding.fill (false);
+    bassNoteChannels.fill (0);
+    pedalDown = false;
+    compingVoiced = false;
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

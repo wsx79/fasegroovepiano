@@ -627,6 +627,7 @@ private:
     bool changed = false;
 
     FaseGroovePianoProcessor::EditedLoop lastLoop;   // to notice an undo / a preset while open
+    int followTick = 0;                               // while open, follow a LEAD / groove change
     juce::ScrollBar scrollBar { false };
     // Toolbar, in groups: transport | tools | draws | grid | view | hear | zoom.
     IconButton rewindButton { IconButton::Icon::rewind }, playButton { IconButton::Icon::play }, stopButton { IconButton::Icon::stop };

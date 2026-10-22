@@ -1743,6 +1743,9 @@ namespace
             for (int i = 0; i < 6; ++i)
                 p.updateLink();
             CHECK (p.isGuitarLeading());
+            CHECK (std::abs (p.naturalLoopBeats() - 16.0) < 1.0e-6);   // the four-bar comping cycle
+            for (const auto& n : p.generatedLoop (16.0))
+                CHECK (n.start >= 0.0 && n.start + n.length <= 16.0 + 1.0e-6);
             writeLead (juce::Time::currentTimeMillis() - 60000);
             for (int i = 0; i < 6; ++i)
                 p.updateLink();

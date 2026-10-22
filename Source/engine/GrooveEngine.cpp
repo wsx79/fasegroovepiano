@@ -1723,8 +1723,11 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         if (fillStyle == FillStyle::gospelRun)
         {
             // Eight 16ths up the scale, ending on the note just below where the next chord lands.
-            const int idx = std::clamp (iTarget - 8 + k, 0, scaleRun.size - 1);
-            pending.push_back ({ t, scaleRun[idx], hitVelocity ('x', 0.7 + 0.04 * k, 32), std::clamp (s.gate, 0.3f, 0.9f) * stepLength });
+            if (scaleRun.size > 0)
+            {
+                const int idx = std::clamp (iTarget - 8 + k, 0, scaleRun.size - 1);
+                pending.push_back ({ t, scaleRun[idx], hitVelocity ('x', 0.7 + 0.04 * k, 32), std::clamp (s.gate, 0.3f, 0.9f) * stepLength });
+            }
         }
         else if (fillStyle == FillStyle::chromaticWalk)
         {
@@ -1749,19 +1752,24 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         else if (fillStyle == FillStyle::gospelThirds)
         {
             // Parallel thirds walking down the scale onto the next chord.
-            const int idx = std::clamp (iTarget + 4 - k, 2, scaleRun.size - 1);
-            pending.push_back ({ t, scaleRun[idx], vel, len * 0.8 });
-            pending.push_back ({ t, scaleRun[idx - 2], hitVelocity ('x', 0.8, 33), len * 0.8 });
+            // clamp requires lo <= hi; a run shorter than three notes cannot hold a third.
+            if (scaleRun.size >= 3)
+            {
+                const int idx = std::clamp (iTarget + 4 - k, 2, scaleRun.size - 1);
+                pending.push_back ({ t, scaleRun[idx], vel, len * 0.8 });
+                pending.push_back ({ t, scaleRun[idx - 2], hitVelocity ('x', 0.8, 33), len * 0.8 });
+            }
         }
         else if (fillStyle == FillStyle::glissando)
         {
             // Eight 32nd notes sweeping up the scale.
-            for (int half = 0; half < 2; ++half)
-            {
-                const int idx = std::clamp (iTarget - 8 + 2 * k + half, 0, scaleRun.size - 1);
-                pending.push_back ({ t + half * stepLength * 0.5, scaleRun[idx], hitVelocity ('x', 0.65 + 0.05 * (2 * k + half), 34 + half),
-                                     (k == lastK && half == 1 ? 1.0 : 0.45) * stepLength });
-            }
+            if (scaleRun.size > 0)
+                for (int half = 0; half < 2; ++half)
+                {
+                    const int idx = std::clamp (iTarget - 8 + 2 * k + half, 0, scaleRun.size - 1);
+                    pending.push_back ({ t + half * stepLength * 0.5, scaleRun[idx], hitVelocity ('x', 0.65 + 0.05 * (2 * k + half), 34 + half),
+                                         (k == lastK && half == 1 ? 1.0 : 0.45) * stepLength });
+                }
         }
         else if (fillStyle == FillStyle::bluesLick)
         {
@@ -1769,8 +1777,11 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             static constexpr int blues[] { 0, 3, 5, 6, 7, 10 };
             const auto lick = notesOf (s.keyRoot, blues, 6, target - 14, target + 8);
             const int start = indexAtOrBelow (lick, target + 5);
-            const int idx = std::clamp (start - k, 0, lick.size - 1);
-            pending.push_back ({ t, lick[idx], vel, len });
+            if (lick.size > 0)
+            {
+                const int idx = std::clamp (start - k, 0, lick.size - 1);
+                pending.push_back ({ t, lick[idx], vel, len });
+            }
         }
         else if (fillStyle == FillStyle::chordRoll)
         {
