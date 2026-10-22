@@ -6,6 +6,12 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.30.0] - 2026-10-22
+
+- A random riff follows the genre of the groove already playing. New riff, New rhythm and the dice on a part each write a new figure in that genre, and the next click is a different one.
+- Piano house, '90s piano house and dance stabs keep the classic offbeat house figures, and the same house seed still builds the same riff. Jackin' and jackin' piano chop swung 16ths. Garage skips beats. Deep and soulful hold 7ths and 9ths. Gospel uses a wider voicing and passing chords. Afro keeps a tresillo. Funky stays on the syncopated 16ths. Neo soul and chill sit back on extended chords.
+- The GENRE control stays hidden. A project saved with GENRE still opens and that value is still ignored.
+
 ## [0.29.0] - 2026-10-22
 
 - New riff, New rhythm and the dice on a part again write a new classic piano figure on every click, as in 0.26.0. String stabs that follow the piano move with that figure.
