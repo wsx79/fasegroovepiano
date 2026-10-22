@@ -48,6 +48,25 @@ void repairHolds (std::string& line);
     density 0..1 goes from sparse stabs to busy 16th chops. Same seed = same riff. */
 GroovePattern makeRandomPattern (std::uint32_t seed, float density);
 
+/** The same riff written in a groove-browser genre (the index of grooveCategories()).
+    Piano house, '90s piano house and dance stabs stay on the classic house figures,
+    so an old house seed still builds the same riff. Other genres keep their own
+    rhythm. Same seed and genre = same riff. */
+GroovePattern makeRandomPattern (std::uint32_t seed, float density, int genre);
+
+/** Voicing, colour, scale, swing and gate that belong to that genre. The GENRE
+    parameter is not involved: the caller already knows the genre from the groove. */
+struct GenreRiffFeel
+{
+    int voicing = 8;      // Voicing::upperTriad
+    int extension = 2;    // Extension::ninth
+    int scale = 1;        // Dorian
+    float swing = 0.45f;
+    float gate = 0.55f;
+};
+
+GenreRiffFeel genreRiffFeel (int genre) noexcept;
+
 /** A variation of a groove for the turnaround bars: a hit moved a 16th later here, a ghost
     note there, a push into the next bar, a bass pick-up. Same seed = same variation. */
 GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed);
@@ -78,6 +97,10 @@ std::vector<int> randomProgression (std::uint32_t seed, int length);
 /** The same in a scale: the minor modes move the way minor house does (i - bVII - bVI, i - iv,
     i - IV in Dorian...), the major ones as above. */
 std::vector<int> randomProgression (std::uint32_t seed, int length, int scale);
+
+/** Gospel (genre 3) walks by step, so a short progression still passes through
+    the next chord. Every other genre keeps randomProgression(seed, length, scale). */
+std::vector<int> randomProgression (std::uint32_t seed, int length, int scale, int genre);
 
 //==============================================================================
 struct ArrangementPart

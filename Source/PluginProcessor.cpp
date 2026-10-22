@@ -1132,6 +1132,7 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
     s.riffDensity = raw (ParamIDs::riffDensity);
+    s.riffGenre = currentGenre();   // the groove's own genre; the stored GENRE parameter is ignored
     s.bassFeel = juce::jlimit (0, sgk::numBassFeels - 1, asInt (ParamIDs::bassFeel));
     s.realism = raw (ParamIDs::realism) > 0.5f;
     s.editedLoop = editedLoop();
@@ -1188,6 +1189,15 @@ void FaseGroovePianoProcessor::setParameterFromUI (const juce::String& id, float
 void FaseGroovePianoProcessor::rollNewRiff()
 {
     const auto seed = juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
+    const int genre = currentGenre();
+    lastGenre = genre;
+    const auto feel = sgk::genreRiffFeel (genre);
+    setParameterFromUI (ParamIDs::voicing, (float) feel.voicing);
+    setParameterFromUI (ParamIDs::extension, (float) feel.extension);
+    setParameterFromUI (ParamIDs::scale, (float) feel.scale);
+    setParameterFromUI (ParamIDs::swing, feel.swing);
+    setParameterFromUI (ParamIDs::gate, feel.gate);
+
     const auto s = currentSettings();
     auto current = sgk::GrooveEngine::basePattern (s);
 
@@ -1200,7 +1210,7 @@ void FaseGroovePianoProcessor::rollNewRiff()
         return;
     }
 
-    const auto fresh = sgk::makeRandomPattern ((std::uint32_t) seed, s.riffDensity);
+    const auto fresh = sgk::makeRandomPattern ((std::uint32_t) seed, s.riffDensity, genre);
     for (int seg = 0; seg < sgk::numSegments; ++seg)
         if (! segmentLocked[(size_t) seg])
         {
@@ -1237,7 +1247,7 @@ void FaseGroovePianoProcessor::rerollHand (bool bass)
     }
 
     const auto seed = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
-    const auto fresh = sgk::makeRandomPattern (seed, s.riffDensity);
+    const auto fresh = sgk::makeRandomPattern (seed, s.riffDensity, currentGenre());
     const int segLength = sgk::userPatternLength / sgk::numSegments;
     for (int seg = 0; seg < sgk::numSegments; ++seg)
     {
@@ -1267,7 +1277,7 @@ void FaseGroovePianoProcessor::randomizeSegment (int segment)
         return;
 
     const auto seed = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
-    sgk::copySegment (current, sgk::makeRandomPattern (seed, s.riffDensity), segment);
+    sgk::copySegment (current, sgk::makeRandomPattern (seed, s.riffDensity, currentGenre()), segment);
     resetSegmentVelocities (segment, true, true);
     setUserPattern (current);
 }
@@ -1393,7 +1403,7 @@ void FaseGroovePianoProcessor::rollNewProgression()
     clearFreeChords();
     const int length = juce::roundToInt (raw (ParamIDs::progLength));
     const auto degrees = sgk::randomProgression ((std::uint32_t) juce::Random::getSystemRandom().nextInt(), length,
-                                                 juce::roundToInt (raw (ParamIDs::scale)));
+                                                 juce::roundToInt (raw (ParamIDs::scale)), currentGenre());
 
     for (int i = 0; i < (int) degrees.size(); ++i)
         setParameterFromUI (ParamIDs::slot (i), (float) degrees[(size_t) i]);
