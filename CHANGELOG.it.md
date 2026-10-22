@@ -6,6 +6,15 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.26.0] - 2026-10-22
+
+- Piano roll grande: finché resta aperto segue il groove corrente e una chitarra collegata in LEAD, ciclo di quattro battute compreso.
+- Una nota ancora accesa alla fine di un loop generato si chiude sul confine del loop. Lo stesso vale per una nota di accompagno ancora tenuta alla fine di una clip.
+- Guitar LEAD compare solo con LINK acceso, la stessa condizione già usata dall'audio e dall'esportazione MIDI.
+- Caricare un progetto rilascia le note ancora accese, poi suona il groove ripristinato.
+- Un'esportazione MIDI in sync legge il tempo dell'host al momento dell'export.
+- I fill non leggono oltre la fine di una scala troppo corta per contenerli.
+
 ## [0.25.2] - 2026-10-22
 
 - Piano roll grande: con una Fase Groove Guitar collegata in LEAD, l'editor si apre sul ciclo di accompagno di quattro battute (la stessa lunghezza della vista piccola), così si vedono le risposte del pianoforte sull'intero ciclo.

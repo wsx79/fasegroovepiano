@@ -6,6 +6,15 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.26.0] - 2026-10-22
+
+- Big piano roll: while it stays open it follows the current groove and a linked guitar in LEAD, including the four-bar comping cycle.
+- A note still sounding at the end of a generated loop is closed on the loop boundary. The same happens to a comping note still held at the end of a clip.
+- Guitar LEAD is shown only while LINK is on, the same condition playback and MIDI export already use.
+- Loading a project releases notes that were still sounding, then plays the restored groove.
+- A tempo-synced MIDI export reads the host tempo at the moment of export.
+- Fills no longer read past the end of a scale run that is too short to hold them.
+
 ## [0.25.2] - 2026-10-22
 
 - Big piano roll: with a linked Fase Groove Guitar set to LEAD, the large editor opens on the four-bar comping cycle, the same length as the small piano-roll view, so the piano's answers across the whole cycle are shown.
