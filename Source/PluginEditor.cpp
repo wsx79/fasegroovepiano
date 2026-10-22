@@ -2907,6 +2907,7 @@ void PianoRollEditor::show (double generatedLength)
     if (chordSpans != nullptr)
         chords = chordSpans (length);
     setVisible (true);
+    followTick = 0;
     toFront (true);
     resized();
     setZoom (gridArea().getWidth() / length, gridArea().getX());
@@ -3549,11 +3550,49 @@ void PianoRollEditor::timerCallback()
             length = processor.editedLoopLength();
         }
         else
+        {
+            const double next = juce::jmax (4.0, processor.naturalLoopBeats());
+            const bool lengthChanged = std::abs (next - length) > 1.0e-6;
+            length = next;
             notes = processor.generatedLoop (length);
+            if (chordSpans != nullptr)
+                chords = chordSpans (length);
+            if (lengthChanged)
+                setZoom (gridArea().getWidth() / length, gridArea().getX());
+        }
         selected = -1;
         clearPicks();
         updateScrollBar();
         updateStatus();
+        followTick = 0;
+    }
+    else if (drag == Drag::none && ! processor.hasEditedLoop() && ++followTick >= 5)
+    {
+        // LEAD, the groove or the chords can change while this window stays open.
+        followTick = 0;
+        const double next = juce::jmax (4.0, processor.naturalLoopBeats());
+        auto fresh = processor.generatedLoop (next);
+        auto sameNote = [] (const sgk::LoopNote& a, const sgk::LoopNote& b)
+        {
+            return juce::approximatelyEqual (a.start, b.start) && juce::approximatelyEqual (a.length, b.length)
+                   && a.note == b.note && a.velocity == b.velocity && a.part == b.part;
+        };
+        if (std::abs (next - length) > 1.0e-6 || fresh.size() != notes.size()
+            || ! std::equal (fresh.begin(), fresh.end(), notes.begin(), sameNote))
+        {
+            const bool lengthChanged = std::abs (next - length) > 1.0e-6;
+            length = next;
+            notes = std::move (fresh);
+            if (chordSpans != nullptr)
+                chords = chordSpans (length);
+            selected = -1;
+            clearPicks();
+            updateScrollBar();
+            if (lengthChanged)
+                setZoom (gridArea().getWidth() / length, gridArea().getX());
+            updateStatus();
+            repaint();
+        }
     }
 
     const double ppq = processor.uiPpq.load();
