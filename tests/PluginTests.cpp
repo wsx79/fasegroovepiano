@@ -1746,6 +1746,29 @@ namespace
             CHECK (std::abs (p.naturalLoopBeats() - 16.0) < 1.0e-6);   // the four-bar comping cycle
             for (const auto& n : p.generatedLoop (16.0))
                 CHECK (n.start >= 0.0 && n.start + n.length <= 16.0 + 1.0e-6);
+
+            // A one-bar groove: the roll is still the four bars the grid shows, and a note
+            // edited in the second bar is not pulled back onto bar 1.
+            p.setParameterFromUI (ParamIDs::grooveBars, 1.0f);
+            p.setParameterFromUI (ParamIDs::progLength, 1.0f);
+            CHECK (std::abs (p.naturalLoopBeats() - 16.0) < 1.0e-6);
+            int later = 0;
+            for (const auto& n : p.generatedLoop (16.0))
+                if (n.start >= 4.0 - 1.0e-6)
+                    ++later;
+            CHECK (later > 0);
+            auto edited = p.generatedLoop (16.0);
+            edited.push_back ({ 6.0, 0.5, 60, 100, sgk::Part::chords });
+            p.setEditedLoop (std::move (edited), 16.0);
+            CHECK (p.hasEditedLoop());
+            CHECK (std::abs (p.naturalLoopBeats() - 16.0) < 1.0e-6);
+            p.refreshEditedLoop();
+            CHECK (std::abs (p.editedLoopLength() - 16.0) < 1.0e-9);
+            bool kept = false;
+            for (const auto& n : *p.editedLoop())
+                kept = kept || (n.note == 60 && std::abs (n.start - 6.0) < 1.0e-3);
+            CHECK (kept);
+            p.clearEditedLoop();
             writeLead (juce::Time::currentTimeMillis() - 60000);
             for (int i = 0; i < 6; ++i)
                 p.updateLink();

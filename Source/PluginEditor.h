@@ -273,6 +273,7 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
+    void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 
     static constexpr float keyboardWidth = 34.0f, chordLaneHeight = 20.0f;
 
@@ -281,13 +282,14 @@ public:
 private:
     juce::Rectangle<float> noteArea() const;
     float xOf (double beat) const;
+    double pixelsPerBeatNow() const;
     void fitKeyboard();
 
     std::vector<Note> allNotes, notes;   // every instrument / the one shown
     sgk::Part partShown = sgk::Part::chords;
     juce::OwnedArray<juce::TextButton> partButtons;   // PIANO, BASS, STRINGS
     std::vector<ChordSpan> chords;
-    double length = 8.0, playhead = -1.0;
+    double length = 8.0, playhead = -1.0, scroll = 0.0, pixelsPerBeat = 0.0;   // 0: the whole loop fits
     bool mutedChords = false, mutedBass = false, edited = false;
     int lowNote = 36, highNote = 84;
 };
@@ -578,6 +580,8 @@ private:
     float rowHeight() const;
     int hitNote (juce::Point<float>, bool& onRightEdge) const;
     double snapped (double beat) const;
+    /** Loop the roll shows. Under a leading guitar this is the whole comping cycle, never one bar of it. */
+    double viewLength (double naturalBeats) const;
     void setZoom (double pixelsPerBeat, float anchorX);
     void updateScrollBar();
     void fitRange();
