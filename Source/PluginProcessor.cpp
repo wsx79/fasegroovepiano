@@ -267,8 +267,6 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     };
     liveKeyRunner.startTimer (25);
     liveKeysEnabled();   // reads the setting now, so the audio thread only reads an atomic
-    apvts.addParameterListener (ParamIDs::pattern, this);
-    apvts.addParameterListener (ParamIDs::genre, this);
 }
 
 namespace
@@ -323,8 +321,6 @@ void FaseGroovePianoProcessor::runLiveKey (int key)
 
 FaseGroovePianoProcessor::~FaseGroovePianoProcessor()
 {
-    apvts.removeParameterListener (ParamIDs::pattern, this);
-    apvts.removeParameterListener (ParamIDs::genre, this);
     linkRefresher.stopTimer();
     pads.reset();   // lights off, the Launchpad back to its own mode
 }
@@ -979,7 +975,6 @@ void FaseGroovePianoProcessor::applyStyle (int index)
         setParameterFromUI(ParamIDs::extension,(float)fgfamily::extensions[(size_t)genre]);
         applyProgressionPreset(fgfamily::progressions[(size_t)genre]);
         lastGenre=genre;
-        setParameterFromUI (ParamIDs::genre, (float) genre);
         const auto& patterns=sgk::groovePatterns();std::vector<int> candidates;
         for(size_t i=0;i<patterns.size();++i)if(patterns[i].category==sgk::grooveCategories()[(size_t)genre]){
             if(genre==4&&patterns[i].name!="Disco Jack Chops"&&patterns[i].name!="Jack Chops"&&patterns[i].name!="Chicago Stab Jack"&&patterns[i].name!="Jack Stab Skips")continue;
@@ -1137,7 +1132,6 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
     s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
     s.riffDensity = raw (ParamIDs::riffDensity);
-    s.styleGenre = juce::jlimit (0, (int) sgk::grooveCategories().size() - 1, asInt (ParamIDs::genre));
     s.bassFeel = juce::jlimit (0, sgk::numBassFeels - 1, asInt (ParamIDs::bassFeel));
     s.realism = raw (ParamIDs::realism) > 0.5f;
     s.editedLoop = editedLoop();
@@ -1191,80 +1185,30 @@ void FaseGroovePianoProcessor::setParameterFromUI (const juce::String& id, float
     }
 }
 
-namespace
-{
-    int rhythmSeed()
-    {
-        return juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
-    }
-
-    bool rhythmHit (char c) noexcept
-    {
-        return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D';
-    }
-
-    std::string attackMask (const std::string& line)
-    {
-        std::string out (line.size(), '.');
-        for (size_t i = 0; i < line.size(); ++i)
-            if (rhythmHit (line[i]))
-                out[i] = 'x';
-        return out;
-    }
-}
-
 void FaseGroovePianoProcessor::rollNewRiff()
 {
+    const auto seed = juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
     const auto s = currentSettings();
-    const auto before = sgk::GrooveEngine::basePattern (s);
+    auto current = sgk::GrooveEngine::basePattern (s);
+
     const bool anyLocked = std::any_of (segmentLocked.begin(), segmentLocked.end(), [] (bool b) { return b; });
 
-    if (s.styleGenre >= 0 && s.styleGenre < 13)
+    if (! anyLocked || current.length() != sgk::userPatternLength)
     {
-        static constexpr int voicingForGenre[] { 0, 1, 2, 1, 0, 0, 2, 4, 6, 0, 2, 3, 8 };
-        setParameterFromUI (ParamIDs::voicing, (float) voicingForGenre[s.styleGenre]);
-    }
-
-    // No locked part (or the groove is not the two-bar grid): a new seed in this genre.
-    // Another seed when the figure comes out the same, so the click is heard.
-    if (! anyLocked || before.length() != sgk::userPatternLength)
-    {
-        int seed = rhythmSeed();
-        for (int attempt = 0; attempt < 8; ++attempt)
-        {
-            seed = rhythmSeed();
-            const auto fresh = sgk::makeRandomPattern ((std::uint32_t) seed, s.riffDensity, s.styleGenre);
-            if (fresh.rightHand != before.rightHand || attempt == 7)
-                break;
-        }
         setParameterFromUI (ParamIDs::riffSeed, (float) seed);
         setParameterFromUI (ParamIDs::pattern, (float) sgk::randomPatternIndex());
-        clearEditedLoop();   // the roll and the audio follow the new figure
         return;
     }
 
-    bool anyUnlocked = false;
-    for (bool locked : segmentLocked)
-        anyUnlocked = anyUnlocked || ! locked;
-    if (! anyUnlocked)
-        return;
+    const auto fresh = sgk::makeRandomPattern ((std::uint32_t) seed, s.riffDensity);
+    for (int seg = 0; seg < sgk::numSegments; ++seg)
+        if (! segmentLocked[(size_t) seg])
+        {
+            sgk::copySegment (current, fresh, seg);
+            resetSegmentVelocities (seg, true, true);
+        }
 
-    auto current = before;
-    for (int attempt = 0; attempt < 8; ++attempt)
-    {
-        current = before;
-        const auto fresh = sgk::makeRandomPattern ((std::uint32_t) rhythmSeed(), s.riffDensity, s.styleGenre);
-        for (int seg = 0; seg < sgk::numSegments; ++seg)
-            if (! segmentLocked[(size_t) seg])
-            {
-                sgk::copySegment (current, fresh, seg);
-                resetSegmentVelocities (seg, true, true);
-            }
-        if (current.rightHand != before.rightHand || attempt == 7)
-            break;
-    }
     setUserPattern (current);
-    clearEditedLoop();
 }
 
 void FaseGroovePianoProcessor::rerollHand (bool bass)
@@ -1275,9 +1219,7 @@ void FaseGroovePianoProcessor::rerollHand (bool bass)
     if (bass && sgk::isBassLine (s.bass))
     {
         const int current = sgk::bassLineIndex ((int) s.bass);
-        int next = current;
-        for (int attempt = 0; attempt < 6 && next == current; ++attempt)
-            next = (current + 1 + juce::Random::getSystemRandom().nextInt (sgk::numBassLines - 1)) % sgk::numBassLines;
+        const int next = (current + 1 + juce::Random::getSystemRandom().nextInt (sgk::numBassLines - 1)) % sgk::numBassLines;
         setParameterFromUI (ParamIDs::bass, (float) sgk::bassModeForLine (next));
         return;
     }
@@ -1294,100 +1236,40 @@ void FaseGroovePianoProcessor::rerollHand (bool bass)
         setParameterFromUI (ParamIDs::bass, (float) sgk::stabsOwnRhythmMode);
     }
 
+    const auto seed = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
+    const auto fresh = sgk::makeRandomPattern (seed, s.riffDensity);
     const int segLength = sgk::userPatternLength / sgk::numSegments;
-    const auto beforeHand = bass ? current.leftHand : current.rightHand;
-    bool anyUnlocked = false;
     for (int seg = 0; seg < sgk::numSegments; ++seg)
-        anyUnlocked = anyUnlocked || ! segmentLocked[(size_t) seg];
-    if (! anyUnlocked)
-        return;
-
-    for (int attempt = 0; attempt < 8; ++attempt)
     {
-        auto trial = current;
-        const auto fresh = sgk::makeRandomPattern ((std::uint32_t) rhythmSeed(), s.riffDensity, s.styleGenre);
-        for (int seg = 0; seg < sgk::numSegments; ++seg)
+        if (segmentLocked[(size_t) seg])
+            continue;
+        resetSegmentVelocities (seg, ! bass, bass);
+        for (int i = seg * segLength; i < (seg + 1) * segLength; ++i)
         {
-            if (segmentLocked[(size_t) seg])
-                continue;
-            resetSegmentVelocities (seg, ! bass, bass);
-            for (int i = seg * segLength; i < (seg + 1) * segLength && i < (int) fresh.rightHand.size() && i < (int) fresh.leftHand.size(); ++i)
-            {
-                if (bass) trial.leftHand[(size_t) i]  = fresh.leftHand[(size_t) i];
-                else      trial.rightHand[(size_t) i] = fresh.rightHand[(size_t) i];
-            }
-        }
-        sgk::repairHolds (bass ? trial.leftHand : trial.rightHand);
-        const bool changed = (bass ? trial.leftHand : trial.rightHand) != beforeHand;
-        if (changed || attempt == 7)
-        {
-            current = std::move (trial);
-            break;
+            if (bass) current.leftHand[(size_t) i]  = fresh.leftHand[(size_t) i];
+            else      current.rightHand[(size_t) i] = fresh.rightHand[(size_t) i];
         }
     }
+    sgk::repairHolds (bass ? current.leftHand : current.rightHand);
 
     if (bass && ! isBassOn())
         toggleBass();
     if (bass)
         bassMuted = false;   // a new bass rhythm: you want to hear it
     setUserPattern (current);
-    if (! bass)
-        clearEditedLoop();
 }
 
 void FaseGroovePianoProcessor::randomizeSegment (int segment)
 {
     const auto s = currentSettings();
-    const auto before = sgk::GrooveEngine::basePattern (s);
-    if (before.length() != sgk::userPatternLength || segment < 0 || segment >= sgk::numSegments)
+    auto current = sgk::GrooveEngine::basePattern (s);
+    if (current.length() != sgk::userPatternLength)
         return;
 
-    const int segLength = sgk::userPatternLength / sgk::numSegments;
-    const int from = segment * segLength;
-    const auto beforeAttacks = attackMask (before.rightHand).substr ((size_t) from, (size_t) segLength);
-    auto current = before;
-    for (int attempt = 0; attempt < 16; ++attempt)
-    {
-        auto trial = before;
-        sgk::copySegment (trial, sgk::makeRandomPattern ((std::uint32_t) rhythmSeed(), s.riffDensity, s.styleGenre), segment);
-        const auto attacks = attackMask (trial.rightHand).substr ((size_t) from, (size_t) segLength);
-        if (attacks != beforeAttacks || attempt == 15)
-        {
-            current = std::move (trial);
-            break;
-        }
-    }
-
-    // A hold-only rewrite is still the same figure. Move one attack inside this part.
-    if (attackMask (current.rightHand).substr ((size_t) from, (size_t) segLength) == beforeAttacks)
-    {
-        auto& line = current.rightHand;
-        bool nudged = false;
-        for (int i = from; i + 1 < from + segLength && ! nudged; ++i)
-            if (rhythmHit (line[(size_t) i]) != rhythmHit (line[(size_t) (i + 1)]))
-            {
-                std::swap (line[(size_t) i], line[(size_t) (i + 1)]);
-                nudged = true;
-            }
-        if (! nudged)
-            for (int i = from; i < from + segLength && ! nudged; ++i)
-                if (! rhythmHit (line[(size_t) i]))
-                {
-                    line[(size_t) i] = 'x';
-                    nudged = true;
-                }
-        if (! nudged)
-            for (int i = from; i < from + segLength; ++i)
-                if (rhythmHit (line[(size_t) i]))
-                {
-                    line[(size_t) i] = '.';
-                    break;
-                }
-        sgk::repairHolds (line);
-    }
+    const auto seed = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
+    sgk::copySegment (current, sgk::makeRandomPattern (seed, s.riffDensity), segment);
     resetSegmentVelocities (segment, true, true);
     setUserPattern (current);
-    clearEditedLoop();
 }
 
 void FaseGroovePianoProcessor::setUserPattern (const sgk::GroovePattern& p)
@@ -1511,9 +1393,7 @@ void FaseGroovePianoProcessor::rollNewProgression()
     clearFreeChords();
     const int length = juce::roundToInt (raw (ParamIDs::progLength));
     const auto degrees = sgk::randomProgression ((std::uint32_t) juce::Random::getSystemRandom().nextInt(), length,
-                                                 juce::roundToInt (raw (ParamIDs::scale)),
-                                                 juce::jlimit (0, (int) sgk::grooveCategories().size() - 1,
-                                                               juce::roundToInt (raw (ParamIDs::genre))));
+                                                 juce::roundToInt (raw (ParamIDs::scale)));
 
     for (int i = 0; i < (int) degrees.size(); ++i)
         setParameterFromUI (ParamIDs::slot (i), (float) degrees[(size_t) i]);
@@ -2971,49 +2851,22 @@ void FaseGroovePianoProcessor::setLinked (bool on)
     linkAnchor = -1.0;
 }
 
-void FaseGroovePianoProcessor::parameterChanged (const juce::String& parameterID, float newValue)
-{
-    if (suppressGenreFollow.load())
-        return;
-
-    const int genres = (int) sgk::grooveCategories().size();
-    if (parameterID == ParamIDs::genre)
-    {
-        lastGenre = juce::jlimit (0, genres - 1, juce::roundToInt (newValue));
-        return;
-    }
-    if (parameterID != ParamIDs::pattern)
-        return;
-
-    const int pattern = juce::roundToInt (newValue);
-    const auto& patterns = sgk::groovePatterns();
-    if (! juce::isPositiveAndBelow (pattern, (int) patterns.size()))
-        return;
-    const int genre = sgk::categoryGenre (patterns[(size_t) pattern].category);
-    if (genre < 0)
-        return;
-    lastGenre = genre;
-    if (juce::roundToInt (raw (ParamIDs::genre)) == genre)
-        return;
-    if (auto* p = apvts.getParameter (ParamIDs::genre))
-        p->setValueNotifyingHost (p->convertTo0to1 ((float) genre));
-}
-
 int FaseGroovePianoProcessor::currentGenre() const
 {
-    // A preset's own genre. A random or edited groove uses the genre combo, so the dice and the
-    // linked plug-ins follow it.
+    // A preset's own genre; a random or edited groove keeps the genre of the last preset, so the
+    // linked plug-ins still follow it.
     const int pattern = juce::roundToInt (raw (ParamIDs::pattern));
     const auto& patterns = sgk::groovePatterns();
+    if (! juce::isPositiveAndBelow (pattern, (int) patterns.size()))
+        return lastGenre.load();
     const auto& genres = sgk::grooveCategories();
-    if (juce::isPositiveAndBelow (pattern, (int) patterns.size()))
-        for (size_t g = 0; g < genres.size(); ++g)
-            if (patterns[(size_t) pattern].category == genres[g])
-            {
-                lastGenre = (int) g;
-                return (int) g;
-            }
-    return juce::jlimit (0, (int) genres.size() - 1, juce::roundToInt (raw (ParamIDs::genre)));
+    for (size_t g = 0; g < genres.size(); ++g)
+        if (patterns[(size_t) pattern].category == genres[g])
+        {
+            lastGenre = (int) g;
+            return (int) g;
+        }
+    return lastGenre.load();
 }
 
 FaseGroovePianoProcessor::LinkState FaseGroovePianoProcessor::localLinkState() const
@@ -3095,7 +2948,6 @@ void FaseGroovePianoProcessor::updateLink()
                     {
                         // A random or edited groove stays as it is: only its genre follows.
                         lastGenre = (int) g;
-                        setParameterFromUI (ParamIDs::genre, (float) g);
                         if (! juce::isPositiveAndBelow (juce::roundToInt (raw (ParamIDs::pattern)), (int) sgk::groovePatterns().size()))
                             break;
                         const auto& patterns = sgk::groovePatterns();
@@ -3288,24 +3140,11 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
                 child.setProperty ("id", ranged->paramID, nullptr);
                 // Bass feel and realism (v0.24) start on in a new instance; a project saved before
                 // them keeps the bass and the feel it was made with.
-                float plain = ranged->paramID == ParamIDs::bassFeel || ranged->paramID == ParamIDs::realism
-                                  ? 0.0f : ranged->convertFrom0to1 (ranged->getDefaultValue());
-                // A project saved before the genre combo follows the groove it stored.
-                if (ranged->paramID == ParamIDs::genre)
-                    if (auto patternChild = restored.getChildWithProperty ("id", juce::String (ParamIDs::pattern)); patternChild.isValid())
-                    {
-                        const int pattern = juce::roundToInt ((float) patternChild.getProperty ("value"));
-                        const auto& patterns = sgk::groovePatterns();
-                        if (juce::isPositiveAndBelow (pattern, (int) patterns.size()))
-                            if (const int g = sgk::categoryGenre (patterns[(size_t) pattern].category); g >= 0)
-                                plain = (float) g;
-                    }
-                child.setProperty ("value", plain, nullptr);
+                const bool olderFeel = ranged->paramID == ParamIDs::bassFeel || ranged->paramID == ParamIDs::realism;
+                child.setProperty ("value", olderFeel ? 0.0f : ranged->convertFrom0to1 (ranged->getDefaultValue()), nullptr);
                 restored.appendChild (child, nullptr);
             }
-    suppressGenreFollow = true;
     apvts.replaceState (restored);
-    suppressGenreFollow = false;
     const auto& state = apvts.state;
     familyGuideProfile=juce::jlimit(-1,fgfamily::numGenres-1,(int)state.getProperty("familyGuideProfile",-1));
 

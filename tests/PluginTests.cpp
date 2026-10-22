@@ -1881,99 +1881,126 @@ namespace {
     void testRhythmButtonsRerollPiano()
     {
         // NEW RIFF, New rhythm (RND PIANO), the part dice and TOTAL each change the piano
-        // figure in every genre. RND BASS changes the bass and leaves the piano. RANDOM next
-        // to BROWSE changes the chords and leaves the figure. An edited loop does not keep
-        // the old piano notes once a rhythm button has written a new figure.
+        // notes. NEW RIFF also moves the string stabs. The stored GENRE value is ignored:
+        // setting it does not change the figure, and a project that still has it still plays.
+        auto onsets = [] (FaseGroovePianoProcessor& p, sgk::Part part)
+        {
+            std::vector<long long> out;
+            for (const auto& e : sgk::GrooveEngine::renderClip (p.currentSettings(), 8.0))
+                if (e.isNoteOn() && e.part == part)
+                    out.push_back (std::llround (e.ppq * 960.0));
+            return out;
+        };
         auto rightOf = [] (FaseGroovePianoProcessor& p)
         {
             return sgk::GrooveEngine::resolvePattern (p.currentSettings()).rightHand;
         };
-        auto slotsOf = [] (FaseGroovePianoProcessor& p)
+        auto attack = [] (char c)
         {
-            const auto s = p.currentSettings();
+            return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D';
+        };
+
+        FaseGroovePianoProcessor p;
+        p.setParameterFromUI (ParamIDs::strings, (float) sgk::StringsMode::stabs);
+        const auto libraryPiano = onsets (p, sgk::Part::chords);
+        const auto libraryStrings = onsets (p, sgk::Part::strings);
+        CHECK (! libraryPiano.empty() && ! libraryStrings.empty());
+
+        p.setParameterFromUI (ParamIDs::genre, 4.0f);   // Jackin': stored, not applied to the figure
+        CHECK (onsets (p, sgk::Part::chords) == libraryPiano);
+        CHECK (juce::roundToInt (value (p, ParamIDs::genre)) == 4);
+
+        bool riffChanged = false, stringsChanged = false;
+        for (int n = 0; n < 8 && ! (riffChanged && stringsChanged); ++n)
+        {
+            p.rollNewRiff();
+            riffChanged = onsets (p, sgk::Part::chords) != libraryPiano;
+            stringsChanged = onsets (p, sgk::Part::strings) != libraryStrings;
+        }
+        CHECK (riffChanged && stringsChanged);
+        CHECK (juce::roundToInt (value (p, ParamIDs::pattern)) == sgk::randomPatternIndex());
+        CHECK (juce::roundToInt (value (p, ParamIDs::genre)) == 4);
+
+        const auto secondBeforePiano = onsets (p, sgk::Part::chords);
+        const auto secondBeforeStrings = onsets (p, sgk::Part::strings);
+        bool secondPiano = false, secondStrings = false;
+        for (int n = 0; n < 8 && ! (secondPiano && secondStrings); ++n)
+        {
+            p.rollNewRiff();
+            secondPiano = onsets (p, sgk::Part::chords) != secondBeforePiano;
+            secondStrings = onsets (p, sgk::Part::strings) != secondBeforeStrings;
+        }
+        CHECK (secondPiano && secondStrings);
+
+        const int bassLine = sgk::bassModeForLine (0);
+        p.setParameterFromUI (ParamIDs::bass, (float) bassLine);
+        const auto beforeBassHand = rightOf (p);
+        p.rerollHand (true);
+        CHECK (rightOf (p) == beforeBassHand);
+        CHECK (juce::roundToInt (value (p, ParamIDs::bass)) != bassLine);
+
+        const auto beforeRhythm = onsets (p, sgk::Part::chords);
+        bool rhythmChanged = false;
+        for (int n = 0; n < 8 && ! rhythmChanged; ++n)
+        {
+            p.rerollHand (false);
+            rhythmChanged = onsets (p, sgk::Part::chords) != beforeRhythm;
+        }
+        CHECK (rhythmChanged);
+
+        bool segmentChanged = false;
+        for (int n = 0; n < 12 && ! segmentChanged; ++n)
+        {
+            const auto before = rightOf (p);
+            p.randomizeSegment (1);
+            const auto after = rightOf (p);
+            int inside = 0, outside = 0;
+            for (int i = 0; i < sgk::userPatternLength && i < (int) before.size() && i < (int) after.size(); ++i)
+            {
+                if (attack (before[(size_t) i]) == attack (after[(size_t) i]))
+                    continue;
+                if (i >= 8 && i < 16) ++inside;
+                else ++outside;
+            }
+            segmentChanged = inside > 0 && outside == 0;
+        }
+        CHECK (segmentChanged);
+
+        auto slotsOf = [] (FaseGroovePianoProcessor& proc)
+        {
+            const auto s = proc.currentSettings();
             std::string out;
             for (int i = 0; i < s.progressionLength; ++i)
                 out += std::to_string (s.progression[(size_t) i]) + ",";
             return out;
         };
-
-        for (int genre : { 0, 1, 6, 11 })
+        const auto beforeChords = slotsOf (p);
+        const auto beforeProgression = rightOf (p);
+        bool chordsChanged = false;
+        for (int n = 0; n < 12 && ! chordsChanged; ++n)
         {
-            FaseGroovePianoProcessor p;
-            p.setParameterFromUI (ParamIDs::genre, (float) genre);
-            const auto library = rightOf (p);
-
-            p.rollNewRiff();
-            const auto first = rightOf (p);
-            CHECK (first != library);
-            CHECK (juce::roundToInt (value (p, ParamIDs::pattern)) == sgk::randomPatternIndex());
-            CHECK (juce::roundToInt (value (p, ParamIDs::genre)) == genre);
-
-            p.rollNewRiff();
-            const auto second = rightOf (p);
-            CHECK (second != first);
-            CHECK (juce::roundToInt (value (p, ParamIDs::genre)) == genre);
-
-            const int bassLine = sgk::bassModeForLine (0);
-            p.setParameterFromUI (ParamIDs::bass, (float) bassLine);
-            const auto beforeBass = rightOf (p);
-            p.rerollHand (true);
-            CHECK (rightOf (p) == beforeBass);
-            CHECK (juce::roundToInt (value (p, ParamIDs::bass)) != bassLine);
-
-            const auto beforePiano = rightOf (p);
-            p.rerollHand (false);
-            const auto afterPiano = rightOf (p);
-            CHECK (afterPiano != beforePiano);
-
-            p.randomizeSegment (1);
-            const auto afterSegment = rightOf (p);
-            auto attack = [] (char c)
-            {
-                return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D';
-            };
-            int inside = 0, outside = 0;
-            for (int i = 0; i < sgk::userPatternLength && i < (int) afterPiano.size() && i < (int) afterSegment.size(); ++i)
-            {
-                if (attack (afterPiano[(size_t) i]) == attack (afterSegment[(size_t) i]))
-                    continue;
-                if (i >= 8 && i < 16) ++inside;
-                else ++outside;
-            }
-            CHECK (inside > 0);
-            CHECK (outside == 0);
-
-            const auto beforeChords = slotsOf (p);
-            const auto beforeProgression = rightOf (p);
-            bool chordsChanged = false;
-            for (int n = 0; n < 12 && ! chordsChanged; ++n)
-            {
-                p.rollNewProgression();
-                chordsChanged = slotsOf (p) != beforeChords;
-                CHECK (rightOf (p) == beforeProgression);
-            }
-            CHECK (chordsChanged);
-
-            p.setEditedLoop (p.generatedLoop (8.0), 8.0);
-            CHECK (p.hasEditedLoop());
-            const auto beforeEdit = rightOf (p);
             p.rollNewProgression();
-            CHECK (p.hasEditedLoop());
-            CHECK (rightOf (p) == beforeEdit);
-            p.rollNewRiff();
-            CHECK (! p.hasEditedLoop());
-            CHECK (rightOf (p) != beforeEdit);
+            chordsChanged = slotsOf (p) != beforeChords;
+            CHECK (rightOf (p) == beforeProgression);
         }
+        CHECK (chordsChanged);
 
         FaseGroovePianoProcessor total;
         bool totalChanged = false;
         for (int n = 0; n < 6 && ! totalChanged; ++n)
         {
-            const auto before = rightOf (total);
+            const auto before = onsets (total, sgk::Part::chords);
             total.totalRandom();
-            totalChanged = rightOf (total) != before;
+            totalChanged = onsets (total, sgk::Part::chords) != before;
         }
         CHECK (totalChanged);
+
+        juce::MemoryBlock state;
+        p.getStateInformation (state);
+        FaseGroovePianoProcessor restored;
+        restored.setStateInformation (state.getData(), (int) state.getSize());
+        CHECK (juce::roundToInt (value (restored, ParamIDs::genre)) == 4);
+        CHECK (! onsets (restored, sgk::Part::chords).empty());
     }
 
     void testFamilyPresets(){

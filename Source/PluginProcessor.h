@@ -74,8 +74,7 @@ namespace ParamIDs
 
 class PadController;
 
-class FaseGroovePianoProcessor : public juce::AudioProcessor,
-                                 private juce::AudioProcessorValueTreeState::Listener
+class FaseGroovePianoProcessor : public juce::AudioProcessor
 {
 public:
     FaseGroovePianoProcessor();
@@ -448,8 +447,6 @@ private:
     std::atomic<double> linkAnchor { -1.0 };   // the shared clock while playing, -1 = none
     LinkState localLinkState() const;
     mutable std::atomic<int> lastGenre { 0 };   // the genre of the last preset (a random or edited groove keeps it)
-    std::atomic<bool> suppressGenreFollow { false };
-    void parameterChanged (const juce::String& parameterID, float newValue) override;
     float raw (const char* id) const;
 
     std::array<std::atomic<float>*, sgk::maxProgressionLength> slotParams {};
