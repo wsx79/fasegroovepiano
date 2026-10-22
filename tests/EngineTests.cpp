@@ -1903,6 +1903,62 @@ static void testV024Fixes()
     }
 }
 
+static void testStyleCoherence()
+{
+    const GroovePattern* house = nullptr;
+    const GroovePattern* garage = nullptr;
+    for (const auto& p : groovePatterns())
+    {
+        if (p.length() < 2 || p.rightHand[(size_t) p.length() - 2] == '>' || p.rightHand[(size_t) p.length() - 2] == '=')
+            continue;
+        if (house == nullptr && p.category == "Piano House")
+            house = &p;
+        if (garage == nullptr && p.category == "Garage & UK")
+            garage = &p;
+    }
+    CHECK (house != nullptr && garage != nullptr);
+
+    int housePush = 0, garagePush = 0;
+    for (std::uint32_t seed = 1; seed <= 30; ++seed)
+    {
+        if (makeVariation (*house, seed).rightHand[(size_t) house->length() - 2] == '>') ++housePush;
+        if (makeVariation (*garage, seed).rightHand[(size_t) garage->length() - 2] == '>') ++garagePush;
+    }
+    CHECK (housePush > 10);
+    CHECK (garagePush < housePush);
+
+    const auto buildup = applySection (*garage, Section::buildup);
+    CHECK (buildup.rightHand.substr (0, buildup.rightHand.size() / 2)
+           == garage->rightHand.substr (0, garage->rightHand.size() / 2));
+    CHECK (countHits (applySection (*garage, Section::breakdown).leftHand) == 0);
+
+    for (long long bar = 0; bar < 12; ++bar)
+    {
+        const auto chill = effectiveFillStyle (FillStyle::mix, bar, 11);
+        CHECK (chill != FillStyle::glissando && chill != FillStyle::chordChops && chill != FillStyle::mix);
+        const auto uk = effectiveFillStyle (FillStyle::mix, bar, 6);
+        CHECK (uk != FillStyle::gospelRun && uk != FillStyle::glissando && uk != FillStyle::mix);
+    }
+
+    for (std::uint32_t seed = 1; seed <= 40; ++seed)
+    {
+        const auto prog = randomProgression (seed, 4, 1, 4);
+        CHECK ((int) prog.size() == 4);
+        for (size_t i = 0; i < prog.size(); ++i)
+        {
+            CHECK (prog[i] == 0 || prog[i] == 3 || prog[i] == 4 || prog[i] == 6);
+            if (i > 0) CHECK (prog[i] != prog[i - 1]);
+        }
+    }
+
+    const auto generated = makeRandomPattern (7, 0.5f, 6);
+    CHECK (wellFormed (generated));
+    CHECK (generated.category == "Garage & UK");
+    CHECK (countHits (generated.rightHand) >= 6);
+    CHECK (makeRandomPattern (7, 0.5f).rightHand == makeRandomPattern (7, 0.5f, -1).rightHand);
+    CHECK (makeRandomPattern (7, 0.5f, 0).rightHand == makeRandomPattern (7, 0.5f).rightHand);
+}
+
 int main()
 {
     testChordNames();
@@ -1915,6 +1971,7 @@ int main()
     testRandomRiffs();
     testRandomProgressions();
     testSections();
+    testStyleCoherence();
     testSegmentsAndUserPattern();
     testFillStylesStrumOctave();
     testApproachChords();

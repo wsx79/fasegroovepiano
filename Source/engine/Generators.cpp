@@ -126,10 +126,25 @@ bool sectionAllowsFills (Section section) noexcept
     return section == Section::main || section == Section::drop;
 }
 
+int categoryGenre (const std::string& category) noexcept
+{
+    const auto& names = grooveCategories();
+    for (size_t i = 0; i < names.size(); ++i)
+        if (category == names[i])
+            return (int) i;
+    return -1;
+}
+
+bool genreKeepsFeel (int genre) noexcept
+{
+    return genre == 4 || genre == 6 || genre == 7 || genre == 10 || genre == 11;
+}
+
 GroovePattern applySection (const GroovePattern& source, Section section)
 {
     GroovePattern p = source;
     const int len = p.length();
+    const bool keepFeel = genreKeepsFeel (categoryGenre (source.category));
 
     switch (section)
     {
@@ -160,6 +175,22 @@ GroovePattern applySection (const GroovePattern& source, Section section)
 
         case Section::breakdown:
         {
+            if (keepFeel)
+            {
+                // Same metre, fewer notes: ghosts and off-beat weak hits go, the bass rests.
+                for (int i = 0; i < len; ++i)
+                {
+                    char& c = p.rightHand[(size_t) i];
+                    if (c == 'g' || ((c == 'x' || c == 'u' || c == 'd') && i % 4 != 0))
+                        c = '.';
+                }
+                repairHolds (p.rightHand);
+                if (! std::any_of (p.rightHand.begin(), p.rightHand.end(), isHit))
+                    p.rightHand[0] = 'x';
+                p.leftHand.assign ((size_t) len, '.');
+                break;
+            }
+
             // Long, soft pads: one chord per bar, held almost to the end.
             for (int i = 0; i < len; ++i)
             {
@@ -173,6 +204,15 @@ GroovePattern applySection (const GroovePattern& source, Section section)
 
         case Section::buildup:
         {
+            if (keepFeel)
+            {
+                // Keep the groove's grid. The second half only hits harder.
+                for (int i = len / 2; i < len; ++i)
+                    if (p.rightHand[(size_t) i] == 'x')
+                        p.rightHand[(size_t) i] = 'X';
+                break;
+            }
+
             // Bar 1: straight 8ths, bar 2: driving 16ths; bass pumping on quarters then 8ths.
             for (int i = 0; i < len; ++i)
             {
@@ -301,10 +341,85 @@ namespace
         }
         repairHolds (r);
     }
+
+    /** Two-bar rhythm of a genre that is not piano-house. False: use the house figures. */
+    bool genreRhythm (int genre, std::uint32_t seed, const char*& right, const char*& left) noexcept
+    {
+        const bool alt = (seed & 1u) != 0;
+        switch (genre)
+        {
+            case 3: // gospel: dotted push, walking bass
+                right = alt ? "x...x..x..x...x.x...x..x..x..x.." : "x..x..x.x..x..x.x...x..x..x...x.";
+                left  = "x.....x.....x...x.....x.....x...";
+                return true;
+            case 4: // jackin': on-beat stabs
+                right = alt ? "x...x..xx...x...x...x..xx...x..." : "x...x...x...x..xx...x...x...x...";
+                left  = alt ? "x.......x...x...x.......x...x..." : "x...x...x...x...x...x...x...x...";
+                return true;
+            case 5: // jackin' piano: dry chops
+                right = alt ? "x.x...x.x...x.x.x.x...x.x...x.x." : "x...x...x.x.x...x...x...x.x.x...";
+                left  = alt ? "x.......x...x...x.......x...x..." : "x...x...x...x...x...x...x...x...";
+                return true;
+            case 6: // garage 2-step
+                right = alt ? "x..x....x...x...x..x....x...x..." : "x..x....x..x....x..x....x..x....";
+                left  = alt ? "x.......x.......x..x....x......." : "x.......x..x....x.......x..x....";
+                return true;
+            case 7: // afro tresillo
+                right = alt ? "x.x..x..x.x..x..x.x..x..x.x..x.." : "x..x..x.x..x..x.x..x..x.x..x..x.";
+                left  = "x.....x.....x...x.....x.....x...";
+                return true;
+            case 8: // funky 16ths
+                right = alt ? "x...x.x.x...x.x.x...x.x.x...x.x." : "x..x.x.xx..x.x.xx..x.x.xx..x.x.x";
+                left  = "x...x.x.x...x...x...x.x.x...x...";
+                return true;
+            case 10: // neo soul: behind the beat
+                right = alt ? "x..x....x...x...x..x....x...x..." : "x...x..x....x...x...x..x....x...";
+                left  = "x.......x.......x.......x.......";
+                return true;
+            case 11: // chill: long holds
+                right = alt ? "x=======x=======x=======x=======" : "x===....x===....x===....x===....";
+                left  = "x...............x...............";
+                return true;
+            default:
+                return false;
+        }
+    }
 }
 
-GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
+GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn, int genre)
 {
+    const char* right = nullptr;
+    const char* left = nullptr;
+    if (genreRhythm (genre, seed, right, left))
+    {
+        GroovePattern p;
+        p.rightHand = right;
+        p.leftHand = left;
+        if (p.rightHand.size() == 32 && p.leftHand.size() == 32)
+        {
+            if (densityIn < 0.35f)
+            {
+                auto thinned = p.rightHand;
+                for (int i = 0; i < 32; ++i)
+                    if (thinned[(size_t) i] == 'x' && i % 2 == 1
+                        && (i + 1 >= 32 || thinned[(size_t) (i + 1)] != '='))
+                        thinned[(size_t) i] = '.';
+                int hits = 0;
+                for (char c : thinned)
+                    hits += isHit (c) ? 1 : 0;
+                if (hits >= 6)
+                    p.rightHand = thinned;
+            }
+            repairHolds (p.rightHand);
+            repairHolds (p.leftHand);
+            const auto& names = grooveCategories();
+            if (genre >= 0 && genre < (int) names.size())
+                p.category = names[(size_t) genre];
+            p.name = "Random Riff #" + std::to_string (seed % 100000);
+            return p;
+        }
+    }
+
     auto p = makeRandomPatternRaw (seed, densityIn);
     normaliseRiff (p, std::clamp ((double) densityIn, 0.0, 1.0));
     return p;
@@ -648,6 +763,35 @@ GroovePattern addGhostNotes (const GroovePattern& source, std::uint32_t seed)
 
 GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed)
 {
+    if (genreKeepsFeel (categoryGenre (source.category)))
+    {
+        // Last bar only: a ghost, or one weak 16th dropped. No house push into the next bar.
+        Random rng (seed ^ 0xB16Eu);
+        GroovePattern p = source;
+        auto& r = p.rightHand;
+        const int len = (int) r.size();
+        const int bar = len >= 16 ? (len / 16 - 1) * 16 : 0;
+        bool changed = false;
+        if (rng.chance (0.7))
+            for (int i = bar + 1; i < len && ! changed; ++i)
+                if (r[(size_t) (i - 1)] == '.' && isHit (r[(size_t) i]))
+                {
+                    r[(size_t) (i - 1)] = 'g';
+                    changed = true;
+                }
+        if (! changed)
+            for (int i = len - 1; i >= bar; --i)
+                if (r[(size_t) i] == 'x' && i % 2 == 1)
+                {
+                    r[(size_t) i] = '.';
+                    break;
+                }
+        repairHolds (r);
+        repairHolds (p.leftHand);
+        p.name = source.name + " (variation)";
+        return p;
+    }
+
     Random rng (seed ^ 0x5EEDu);
     GroovePattern p = source;
     auto& r = p.rightHand;
@@ -799,8 +943,74 @@ std::vector<int> randomProgression (std::uint32_t seed, int length)
     return out;
 }
 
-std::vector<int> randomProgression (std::uint32_t seed, int length, int scale)
+namespace
 {
+    /** Empty means "use the house tables". Gospel, jackin', afro, funky, neo soul and chill
+        walk their own degrees and never repeat a chord immediately. */
+    std::vector<int> progressionForGenre (std::uint32_t seed, int length, int genre)
+    {
+        std::array<std::vector<int>, 7> moves;
+        std::vector<int> starts;
+        switch (genre)
+        {
+            case 3:
+                moves = {{ { 3, 4, 5 }, { 4, 0 }, { 5, 0 }, { 4, 0 }, { 0, 5 }, { 3, 1 }, { 0, 3 } }};
+                starts = { 0, 3 };
+                break;
+            case 4:
+            case 5:
+                moves = {{ { 3, 4, 3 }, { 0, 3 }, { 0, 3 }, { 0, 4 }, { 0, 3 }, { 0, 3 }, { 0, 3 } }};
+                starts = { 0, 0, 3 };
+                break;
+            case 7:
+                moves = {{ { 3 }, { 0, 3 }, { 0, 3 }, { 0, 6 }, { 0, 3 }, { 0, 3 }, { 0, 3 } }};
+                starts = { 0 };
+                break;
+            case 8:
+                moves = {{ { 3, 6, 4 }, { 0, 3 }, { 0, 4 }, { 0, 4 }, { 0, 3 }, { 0, 3 }, { 0, 3 } }};
+                starts = { 0 };
+                break;
+            case 10:
+                moves = {{ { 1, 3 }, { 2, 3, 4 }, { 3, 4 }, { 4, 1 }, { 0, 1 }, { 1, 4 }, { 1, 0 } }};
+                starts = { 1 };
+                break;
+            case 11:
+                moves = {{ { 3, 5, 3 }, { 0, 5 }, { 0, 3 }, { 0, 5 }, { 0, 5 }, { 0, 3 }, { 0, 3 } }};
+                starts = { 0, 0, 5 };
+                break;
+            default:
+                return {};
+        }
+
+        Random rng (seed ^ 0x6E5Eu);
+        length = std::clamp (length, 1, maxProgressionLength);
+        std::vector<int> out;
+        out.push_back (starts[(size_t) rng.below ((int) starts.size())]);
+        while ((int) out.size() < length)
+        {
+            const auto& options = moves[(size_t) out.back()];
+            int next = options[(size_t) rng.below ((int) options.size())];
+            if (next == out.back())
+                for (int option : options)
+                    if (option != out.back())
+                        next = option;
+            if ((int) out.size() == length - 1 && length > 2 && next == out.front())
+            {
+                for (int option : options)
+                    if (option != out.back() && option != out.front())
+                        next = option;
+            }
+            out.push_back (next);
+        }
+        return out;
+    }
+}
+
+std::vector<int> randomProgression (std::uint32_t seed, int length, int scale, int genre)
+{
+    if (const auto special = progressionForGenre (seed, length, genre); ! special.empty())
+        return special;
+
     if (! scaleIsMinor (scale))
         return randomProgression (seed, length);
 
