@@ -1197,6 +1197,20 @@ namespace
     {
         return juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
     }
+
+    bool rhythmHit (char c) noexcept
+    {
+        return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D';
+    }
+
+    std::string attackMask (const std::string& line)
+    {
+        std::string out (line.size(), '.');
+        for (size_t i = 0; i < line.size(); ++i)
+            if (rhythmHit (line[i]))
+                out[i] = 'x';
+        return out;
+    }
 }
 
 void FaseGroovePianoProcessor::rollNewRiff()
@@ -1329,16 +1343,47 @@ void FaseGroovePianoProcessor::randomizeSegment (int segment)
         return;
 
     const int segLength = sgk::userPatternLength / sgk::numSegments;
-    const auto beforeSlice = before.rightHand.substr ((size_t) (segment * segLength), (size_t) segLength);
+    const int from = segment * segLength;
+    const auto beforeAttacks = attackMask (before.rightHand).substr ((size_t) from, (size_t) segLength);
     auto current = before;
-    for (int attempt = 0; attempt < 8; ++attempt)
+    for (int attempt = 0; attempt < 16; ++attempt)
     {
         auto trial = before;
         sgk::copySegment (trial, sgk::makeRandomPattern ((std::uint32_t) rhythmSeed(), s.riffDensity, s.styleGenre), segment);
-        const auto slice = trial.rightHand.substr ((size_t) (segment * segLength), (size_t) segLength);
-        current = std::move (trial);
-        if (slice != beforeSlice || attempt == 7)
+        const auto attacks = attackMask (trial.rightHand).substr ((size_t) from, (size_t) segLength);
+        if (attacks != beforeAttacks || attempt == 15)
+        {
+            current = std::move (trial);
             break;
+        }
+    }
+
+    // A hold-only rewrite is still the same figure. Move one attack inside this part.
+    if (attackMask (current.rightHand).substr ((size_t) from, (size_t) segLength) == beforeAttacks)
+    {
+        auto& line = current.rightHand;
+        bool nudged = false;
+        for (int i = from; i + 1 < from + segLength && ! nudged; ++i)
+            if (rhythmHit (line[(size_t) i]) != rhythmHit (line[(size_t) (i + 1)]))
+            {
+                std::swap (line[(size_t) i], line[(size_t) (i + 1)]);
+                nudged = true;
+            }
+        if (! nudged)
+            for (int i = from; i < from + segLength && ! nudged; ++i)
+                if (! rhythmHit (line[(size_t) i]))
+                {
+                    line[(size_t) i] = 'x';
+                    nudged = true;
+                }
+        if (! nudged)
+            for (int i = from; i < from + segLength; ++i)
+                if (rhythmHit (line[(size_t) i]))
+                {
+                    line[(size_t) i] = '.';
+                    break;
+                }
+        sgk::repairHolds (line);
     }
     resetSegmentVelocities (segment, true, true);
     setUserPattern (current);

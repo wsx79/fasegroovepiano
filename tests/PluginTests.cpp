@@ -1928,17 +1928,17 @@ namespace {
 
             p.randomizeSegment (1);
             const auto afterSegment = rightOf (p);
+            auto attack = [] (char c)
+            {
+                return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D';
+            };
             int inside = 0, outside = 0;
             for (int i = 0; i < sgk::userPatternLength && i < (int) afterPiano.size() && i < (int) afterSegment.size(); ++i)
             {
-                if (afterPiano[(size_t) i] == afterSegment[(size_t) i])
-                    continue;
-                const bool hold = (afterPiano[(size_t) i] == '.' || afterPiano[(size_t) i] == '=')
-                               && (afterSegment[(size_t) i] == '.' || afterSegment[(size_t) i] == '=');
-                if (hold)
+                if (attack (afterPiano[(size_t) i]) == attack (afterSegment[(size_t) i]))
                     continue;
                 if (i >= 8 && i < 16) ++inside;
-                else if (i != 16) ++outside;
+                else ++outside;
             }
             CHECK (inside > 0);
             CHECK (outside == 0);
