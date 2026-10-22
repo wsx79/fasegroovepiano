@@ -1172,6 +1172,7 @@ int GrooveEngine::patternLength (const GrooveSettings& s) noexcept
 const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
 {
     if (s.pattern != cachedIndex || s.riffSeed != cachedSeed || s.riffDensity != cachedDensity
+        || s.styleGenre != cachedStyleGenre
         || s.section != cachedSection || s.segmentOrder != cachedOrder
         || s.userRight != cachedUserRight || s.userLeft != cachedUserLeft || s.grooveBars != cachedBars
         || s.movement != cachedMovement || s.sectionVariation != cachedSectionVariation || cachedPattern.rightHand.empty()
@@ -1194,6 +1195,7 @@ const GroovePattern& GrooveEngine::patternFor (const GrooveSettings& s)
         cachedBars = s.grooveBars;
         cachedMovement = s.movement;
         cachedIndex = s.pattern;
+        cachedStyleGenre = s.styleGenre;
         cachedSeed = s.riffSeed;
         cachedDensity = s.riffDensity;
         cachedSection = s.section;

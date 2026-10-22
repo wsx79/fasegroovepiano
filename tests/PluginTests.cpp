@@ -1878,6 +1878,104 @@ namespace
 
 namespace {
 
+    void testRhythmButtonsRerollPiano()
+    {
+        // NEW RIFF, New rhythm (RND PIANO), the part dice and TOTAL each change the piano
+        // figure in every genre. RND BASS changes the bass and leaves the piano. RANDOM next
+        // to BROWSE changes the chords and leaves the figure. An edited loop does not keep
+        // the old piano notes once a rhythm button has written a new figure.
+        auto rightOf = [] (FaseGroovePianoProcessor& p)
+        {
+            return sgk::GrooveEngine::resolvePattern (p.currentSettings()).rightHand;
+        };
+        auto slotsOf = [] (FaseGroovePianoProcessor& p)
+        {
+            const auto s = p.currentSettings();
+            std::string out;
+            for (int i = 0; i < s.progressionLength; ++i)
+                out += std::to_string (s.progression[(size_t) i]) + ",";
+            return out;
+        };
+
+        for (int genre : { 0, 1, 6, 11 })
+        {
+            FaseGroovePianoProcessor p;
+            p.setParameterFromUI (ParamIDs::genre, (float) genre);
+            const auto library = rightOf (p);
+
+            p.rollNewRiff();
+            const auto first = rightOf (p);
+            CHECK (first != library);
+            CHECK (juce::roundToInt (value (p, ParamIDs::pattern)) == sgk::randomPatternIndex());
+            CHECK (juce::roundToInt (value (p, ParamIDs::genre)) == genre);
+
+            p.rollNewRiff();
+            const auto second = rightOf (p);
+            CHECK (second != first);
+            CHECK (juce::roundToInt (value (p, ParamIDs::genre)) == genre);
+
+            const int bassLine = sgk::bassModeForLine (0);
+            p.setParameterFromUI (ParamIDs::bass, (float) bassLine);
+            const auto beforeBass = rightOf (p);
+            p.rerollHand (true);
+            CHECK (rightOf (p) == beforeBass);
+            CHECK (juce::roundToInt (value (p, ParamIDs::bass)) != bassLine);
+
+            const auto beforePiano = rightOf (p);
+            p.rerollHand (false);
+            const auto afterPiano = rightOf (p);
+            CHECK (afterPiano != beforePiano);
+
+            p.randomizeSegment (1);
+            const auto afterSegment = rightOf (p);
+            int inside = 0, outside = 0;
+            for (int i = 0; i < sgk::userPatternLength && i < (int) afterPiano.size() && i < (int) afterSegment.size(); ++i)
+            {
+                if (afterPiano[(size_t) i] == afterSegment[(size_t) i])
+                    continue;
+                const bool hold = (afterPiano[(size_t) i] == '.' || afterPiano[(size_t) i] == '=')
+                               && (afterSegment[(size_t) i] == '.' || afterSegment[(size_t) i] == '=');
+                if (hold)
+                    continue;
+                if (i >= 8 && i < 16) ++inside;
+                else if (i != 16) ++outside;
+            }
+            CHECK (inside > 0);
+            CHECK (outside == 0);
+
+            const auto beforeChords = slotsOf (p);
+            const auto beforeProgression = rightOf (p);
+            bool chordsChanged = false;
+            for (int n = 0; n < 12 && ! chordsChanged; ++n)
+            {
+                p.rollNewProgression();
+                chordsChanged = slotsOf (p) != beforeChords;
+                CHECK (rightOf (p) == beforeProgression);
+            }
+            CHECK (chordsChanged);
+
+            p.setEditedLoop (p.generatedLoop (8.0), 8.0);
+            CHECK (p.hasEditedLoop());
+            const auto beforeEdit = rightOf (p);
+            p.rollNewProgression();
+            CHECK (p.hasEditedLoop());
+            CHECK (rightOf (p) == beforeEdit);
+            p.rollNewRiff();
+            CHECK (! p.hasEditedLoop());
+            CHECK (rightOf (p) != beforeEdit);
+        }
+
+        FaseGroovePianoProcessor total;
+        bool totalChanged = false;
+        for (int n = 0; n < 6 && ! totalChanged; ++n)
+        {
+            const auto before = rightOf (total);
+            total.totalRandom();
+            totalChanged = rightOf (total) != before;
+        }
+        CHECK (totalChanged);
+    }
+
     void testFamilyPresets(){
         FaseGroovePianoProcessor p;const int first=p.styleNames().size()-fgfamily::numGenres;
         for(int genre=0;genre<fgfamily::numGenres;++genre){
@@ -1984,6 +2082,7 @@ int main (int argc, char** argv)
     testLinkWithDrums();
     testLinkRoles();
     testV024();
+    testRhythmButtonsRerollPiano();
     testFamilyPresets();
 
     if (failures == 0)

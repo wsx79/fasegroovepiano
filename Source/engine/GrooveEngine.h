@@ -432,6 +432,7 @@ private:
     bool cachedRealism = false;
     int cachedBars = 2, cachedMovement = 1;
     int cachedIndex = -1;
+    int cachedStyleGenre = -999;          // a genre change rebuilds a random riff
     std::uint32_t cachedSeed = 0;
     float cachedDensity = -1.0f;
     Section cachedSection = Section::main;
