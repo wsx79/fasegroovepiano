@@ -2223,7 +2223,6 @@ void FaseGroovePianoProcessor::refreshEditedLoop()
     playingLength = length;
     std::atomic_store (&playingNotes, share (std::move (carried)));
 }
-
 std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengthInBeats) const
 {
     auto s = currentSettings();
@@ -2231,9 +2230,16 @@ std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengt
     s.section = sgk::Section::main;
     const double toRelative = 118.0 / juce::jmax (1, s.velocity);
 
+    std::vector<sgk::NoteEvent> rendered = sgk::GrooveEngine::renderClip (s, lengthInBeats);
+
+    // FIX: under a leading guitar, the piano roll must show the same comping
+    // notes the plugin actually plays and exports.
+    if (guitarLeads.load() && linkOn.load())
+        rendered = comping (rendered, compingSeed(), s, lengthInBeats);
+
     std::vector<sgk::LoopNote> notes;
     std::map<int, std::pair<double, int>> open;   // note + part -> start, velocity
-    for (const auto& e : sgk::GrooveEngine::renderClip (s, lengthInBeats))
+    for (const auto& e : rendered)
     {
         const int id = e.note + 128 * (int) e.part;
         if (e.isNoteOn())
