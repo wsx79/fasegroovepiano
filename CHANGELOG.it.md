@@ -6,6 +6,13 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.27.0] - 2026-10-22
+
+- Un riff casuale nuovo segue il genere scelto: gospel, jackin', jackin' piano, garage, afro, funky, neo soul e chill usano la griglia di accompagnamento di quel genere. Piano house, soulful, deep, '90s piano house e dance stabs restano sulle figure house, e lo stesso seme produce lo stesso riff.
+- Le variazioni di jackin', garage, afro, neo soul e chill riscrivono solo l'ultima battuta, senza la spinta house verso la battuta dopo. I groove della famiglia house tengono quella spinta.
+- Break e build-up di quei cinque generi conservano il metro del groove. Il build-up house resta sugli ottavi diritti, poi sui sedicesimi.
+- I fill Mix e l'accento del realismo seguono il genere. Un riff nuovo imposta il voicing di quel genere, e una progressione nuova usa i suoi movimenti armonici.
+
 ## [0.26.0] - 2026-10-22
 
 - Piano roll grande: finché resta aperto segue il groove corrente e una chitarra collegata in LEAD, ciclo di quattro battute compreso.
