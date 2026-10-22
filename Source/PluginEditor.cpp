@@ -760,9 +760,15 @@ void PianoRollView::setContent (std::vector<Note> newNotes, std::vector<ChordSpa
         return;
     mutedBass = bassMuted;
 
+    const bool lengthChanged = ! juce::approximatelyEqual (lengthInBeats, length);
     allNotes = std::move (newNotes);
     chords = std::move (newChords);
     length = juce::jmax (1.0, lengthInBeats);
+    if (lengthChanged)
+    {
+        pixelsPerBeat = 0.0;   // show every bar of the new loop, including a four-bar comping cycle
+        scroll = 0.0;
+    }
     mutedChords = chordsMuted;
     fitKeyboard();
     repaint();
@@ -781,10 +787,37 @@ juce::Rectangle<float> PianoRollView::noteArea() const
     return getLocalBounds().toFloat().withTrimmedLeft (keyboardWidth).withTrimmedTop (chordLaneHeight);
 }
 
+double PianoRollView::pixelsPerBeatNow() const
+{
+    const auto area = noteArea();
+    const double fit = area.getWidth() / juce::jmax (1.0, length);
+    return pixelsPerBeat > 1.0 ? pixelsPerBeat : fit;
+}
+
 float PianoRollView::xOf (double beat) const
 {
     const auto area = noteArea();
-    return area.getX() + (float) (beat / length) * area.getWidth();
+    return area.getX() + (float) (beat * pixelsPerBeatNow() - scroll);
+}
+
+void PianoRollView::mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel)
+{
+    // The whole cycle is on screen until you zoom in (Ctrl + wheel); then the wheel scrolls it.
+    const auto area = noteArea();
+    const double fit = area.getWidth() / juce::jmax (1.0, length);
+    if (e.mods.isCommandDown() || e.mods.isCtrlDown())
+    {
+        const double old = pixelsPerBeatNow();
+        const double anchor = (e.position.x - area.getX() + scroll) / old;
+        pixelsPerBeat = juce::jlimit (fit, 80.0, old * (wheel.deltaY > 0 ? 1.25 : 1.0 / 1.25));
+        scroll = anchor * pixelsPerBeat - (e.position.x - area.getX());
+    }
+    else if (pixelsPerBeat > fit + 0.5)
+        scroll -= (std::abs (wheel.deltaX) > 1.0e-6f ? wheel.deltaX : wheel.deltaY) * 80.0;
+
+    const double maxScroll = juce::jmax (0.0, length * pixelsPerBeatNow() - area.getWidth());
+    scroll = juce::jlimit (0.0, maxScroll, scroll);
+    repaint();
 }
 
 void PianoRollView::paint (juce::Graphics& g)
@@ -829,6 +862,10 @@ void PianoRollView::paint (juce::Graphics& g)
                         juce::Justification::centredRight);
         }
     }
+
+    // Beat and bar lines, notes and the playhead stay in the grid (a zoomed cycle scrolls).
+    juce::Graphics::ScopedSaveState clipGrid (g);
+    g.reduceClipRegion (getLocalBounds().withTrimmedLeft ((int) keyboardWidth));
 
     // Beat and bar lines.
     const int sixteenths = (int) std::lround (length * 4.0);
@@ -2886,18 +2923,23 @@ void PianoRollEditor::refreshText()
     repaint();
 }
 
+double PianoRollEditor::viewLength (double naturalBeats) const
+{
+    const double natural = juce::jmax (4.0, naturalBeats);
+    if (! processor.hasEditedLoop())
+        return natural;
+    const double edited = processor.editedLoopLength();
+    // A note edited in bar 2 stays at that beat: the view is the whole cycle, not bar 1.
+    return processor.isGuitarLeading() ? juce::jmax (edited, natural) : edited;
+}
+
 void PianoRollEditor::show (double generatedLength)
 {
+    length = viewLength (generatedLength);
     if (processor.hasEditedLoop())
-    {
-        notes = *processor.editedLoop();
-        length = processor.editedLoopLength();
-    }
+        notes = *processor.editedLoop();   // starts are beats in the cycle; nothing is wrapped onto bar 1
     else
-    {
-        length = juce::jmax (4.0, generatedLength);
         notes = processor.generatedLoop (length);
-    }
     selected = -1;
     clearPicks();
     changed = false;
@@ -3547,11 +3589,19 @@ void PianoRollEditor::timerCallback()
         if (lastLoop != nullptr)
         {
             notes = *lastLoop;
-            length = processor.editedLoopLength();
+            const double next = viewLength (processor.naturalLoopBeats());
+            const bool lengthChanged = std::abs (next - length) > 1.0e-6;
+            length = next;
+            if (lengthChanged)
+            {
+                if (chordSpans != nullptr)
+                    chords = chordSpans (length);
+                setZoom (gridArea().getWidth() / length, gridArea().getX());   // the whole cycle, then zoom or scroll
+            }
         }
         else
         {
-            const double next = juce::jmax (4.0, processor.naturalLoopBeats());
+            const double next = viewLength (processor.naturalLoopBeats());
             const bool lengthChanged = std::abs (next - length) > 1.0e-6;
             length = next;
             notes = processor.generatedLoop (length);
@@ -3570,7 +3620,7 @@ void PianoRollEditor::timerCallback()
     {
         // LEAD, the groove or the chords can change while this window stays open.
         followTick = 0;
-        const double next = juce::jmax (4.0, processor.naturalLoopBeats());
+        const double next = viewLength (processor.naturalLoopBeats());
         auto fresh = processor.generatedLoop (next);
         auto sameNote = [] (const sgk::LoopNote& a, const sgk::LoopNote& b)
         {
@@ -5975,20 +6025,27 @@ int FaseGroovePianoEditor::shownStep() const
 
 void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
 {
-    // The loop: long enough for the groove and the progression to come round together (8 bars at most).
-    const int patternBars = juce::jmax (1, sgk::GrooveEngine::patternLength (s) / 16);
-    const int progressionBars = juce::jmax (1, (s.progressionLength * s.stepsPerChord + 15) / 16);
-    int bars = std::lcm (patternBars, progressionBars);
-    if (bars > 8)
-        bars = juce::jmin (8, juce::jmax (patternBars, progressionBars));
-    if (processor.isGuitarLeading() && ! s.playsEditedLoop())   // the whole comping cycle in view
-        bars = juce::jmin (8, std::lcm (bars, 4));
-    rollLength = s.playsEditedLoop() ? s.editedLoopLength : bars * 4.0;
+    // Same length as the step grid while a guitar leads: the whole four-bar comping
+    // cycle (naturalLoopBeats), not the one bar the groove itself repeats.
+    const bool leading = processor.isGuitarLeading();
+    const double cycle = processor.naturalLoopBeats();
+    rollLength = s.playsEditedLoop() ? s.editedLoopLength : cycle;
+    if (leading)
+        rollLength = juce::jmax (rollLength, cycle);
 
     std::vector<PianoRollView::Note> notes;
+    if (leading && s.playsEditedLoop() && s.editedLoop != nullptr)
+    {
+        // The notes as edited, on the beat they were put on. Comping them again would
+        // keep only the answer windows and drop a note placed in another bar.
+        for (const auto& n : *s.editedLoop)
+            if (n.start >= 0.0 && n.start < rollLength)
+                notes.push_back ({ n.start, n.length, n.note, n.velocity, n.part });
+    }
+    else
     {
         auto events = sgk::GrooveEngine::renderClip (s, rollLength);
-        if (processor.isGuitarLeading())   // only what the piano plays under a leading guitar
+        if (leading)   // only what the piano plays under a leading guitar
             events = FaseGroovePianoProcessor::comping (events, processor.compingSeed(), s, rollLength);
         std::map<int, std::pair<double, int>> open;   // note -> start, velocity (per part)
         std::map<int, sgk::Part> parts;
@@ -5997,6 +6054,11 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
             const int id = e.note + 128 * (int) e.part;
             if (e.isNoteOn())
             {
+                if (auto it = open.find (id); it != open.end() && e.ppq > it->second.first + 0.01)
+                {
+                    notes.push_back ({ it->second.first, juce::jmax (0.02, e.ppq - it->second.first), e.note, it->second.second, parts[id] });
+                    open.erase (it);
+                }
                 open[id] = { e.ppq, e.velocity };
                 parts[id] = e.part;
             }
