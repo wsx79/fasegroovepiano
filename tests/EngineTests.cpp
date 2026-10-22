@@ -1903,6 +1903,264 @@ static void testV024Fixes()
     }
 }
 
+static void testGenreRiffs()
+{
+    auto attack = [] (char c)
+    {
+        return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D';
+    };
+    struct Grid
+    {
+        int hits = 0, holds = 0, off8 = 0, odd = 0, pushes = 0;
+        bool skip = false, tresillo = false;
+        std::string mask;
+    };
+    auto gridOf = [&] (const std::string& line)
+    {
+        Grid g;
+        g.mask.assign (line.size(), '.');
+        for (int i = 0; i < (int) line.size(); ++i)
+        {
+            if (line[(size_t) i] == '=') ++g.holds;
+            if (line[(size_t) i] == '>') ++g.pushes;
+            if (! attack (line[(size_t) i])) continue;
+            g.mask[(size_t) i] = 'x';
+            ++g.hits;
+            if (i % 4 == 2) ++g.off8;
+            if (i % 2 == 1) ++g.odd;
+        }
+        for (int bar = 0; bar < 2 && (int) line.size() >= 32; ++bar)
+        {
+            for (int i = 0; i <= 12; ++i)
+            {
+                bool gap = true;
+                for (int k = 0; k < 4; ++k)
+                    gap = gap && ! attack (line[(size_t) (bar * 16 + i + k)]);
+                g.skip = g.skip || gap;
+            }
+            for (int i = 0; i <= 10; ++i)
+            {
+                const int a = bar * 16 + i;
+                if (attack (line[(size_t) a]) && attack (line[(size_t) (a + 3)]) && attack (line[(size_t) (a + 6)]))
+                    g.tresillo = true;
+            }
+        }
+        return g;
+    };
+    auto coloured = [] (const GenreRiffFeel& feel)
+    {
+        const auto chord = buildChord (9, feel.scale, 0, (Extension) feel.extension);
+        const auto voiced = voiceChord (chord, (Voicing) feel.voicing, 64, nullptr);
+        auto has = [&] (int interval)
+        {
+            if (interval < 0) return false;
+            const int pc = (chord.rootPc + interval) % 12;
+            auto scan = [&] (const NoteSet& notes)
+            {
+                for (int i = 0; i < notes.size; ++i)
+                    if ((notes[i] % 12 + 12) % 12 == pc) return true;
+                return false;
+            };
+            return scan (voiced.rightHand) || scan (voiced.leftHand);
+        };
+        return has (chord.seventh) || has (chord.ninth) || has (chord.eleventh) || has (chord.thirteenth);
+    };
+    auto voiceCount = [] (const GenreRiffFeel& feel)
+    {
+        const auto chord = buildChord (9, feel.scale, 0, (Extension) feel.extension);
+        const auto voiced = voiceChord (chord, (Voicing) feel.voicing, 64, nullptr);
+        return voiced.rightHand.size + voiced.leftHand.size;
+    };
+    auto voiceText = [] (const GenreRiffFeel& feel)
+    {
+        const auto chord = buildChord (9, feel.scale, 0, (Extension) feel.extension);
+        const auto voiced = voiceChord (chord, (Voicing) feel.voicing, 64, nullptr);
+        std::string out;
+        for (const NoteSet* hand : { &voiced.leftHand, &voiced.rightHand })
+            for (int i = 0; i < hand->size; ++i)
+                out += (out.empty() ? "" : " ") + std::to_string ((*hand)[i]);
+        return out;
+    };
+
+    const int seeds = 20;
+    std::vector<double> meanHits ((size_t) grooveCategories().size()), meanDur ((size_t) grooveCategories().size());
+    std::vector<int> meanOdd ((size_t) grooveCategories().size());
+
+    for (int genre = 0; genre < (int) grooveCategories().size(); ++genre)
+    {
+        const auto feel = genreRiffFeel (genre);
+        const bool house = genre == 0 || genre == 9 || genre == 12;
+        std::set<std::string> masks, rendered;
+        int consecutive = 0, faithful = 0;
+        double hitsSum = 0, durSum = 0;
+        int oddSum = 0, durNotes = 0;
+        std::string firstOnsets, pathFail, lastMiss;
+        std::string previous;
+
+        for (int n = 1; n <= seeds; ++n)
+        {
+            const auto seed = (std::uint32_t) n;
+            if (house)
+                CHECK (makeRandomPattern (seed, 0.5f, genre).rightHand == makeRandomPattern (seed, 0.5f).rightHand);
+
+            const auto written = makeRandomPattern (seed, 0.5f, genre);
+            GrooveSettings settings;
+            settings.pattern = randomPatternIndex();
+            settings.riffSeed = seed;
+            settings.riffDensity = 0.5f;
+            settings.riffGenre = genre;
+            settings.voicing = (Voicing) feel.voicing;
+            settings.extension = (Extension) feel.extension;
+            settings.scale = feel.scale;
+            settings.swing = feel.swing;
+            settings.gate = feel.gate;
+            settings.humanize = 0.0f;
+            settings.movement = 0;
+            settings.fillEveryBars = 0;
+            settings.bass = BassMode::off;
+            settings.topLine = TopLine::automatic;
+            const auto played = GrooveEngine::basePattern (settings);
+            if (written.rightHand != played.rightHand && pathFail.empty())
+                pathFail = "random groove != new riff";
+            const auto& hand = played.rightHand;
+            const auto grid = gridOf (hand);
+            if (hand.size() != 32 && pathFail.empty())
+                pathFail = "length";
+            masks.insert (grid.mask);
+            if (! previous.empty() && grid.mask != previous) ++consecutive;
+            previous = grid.mask;
+            hitsSum += grid.hits;
+            oddSum += grid.odd;
+
+            const auto events = GrooveEngine::renderClip (settings, 8.0);
+            std::map<int, double> open;
+            std::vector<double> durs;
+            std::string onset;
+            bool swung = false;
+            int sounding[128] {};
+            for (const auto& e : events)
+            {
+                if (e.part != Part::chords) continue;
+                if (e.isNoteOn())
+                {
+                    if (sounding[e.note] != 0 && pathFail.empty()) pathFail = "stuck on";
+                    sounding[e.note] = 1;
+                    open[e.note] = e.ppq;
+                    const int step = (int) std::llround (e.ppq / stepLength);
+                    onset += std::to_string (step) + ",";
+                    if (step % 2 == 1 && e.ppq > step * stepLength + 0.012)
+                        swung = true;
+                }
+                else if (open.count (e.note) != 0)
+                {
+                    durs.push_back (e.ppq - open[e.note]);
+                    open.erase (e.note);
+                    sounding[e.note] = 0;
+                }
+            }
+            for (int note = 0; note < 128; ++note)
+                if (sounding[note] != 0 && pathFail.empty()) pathFail = "hanging";
+            rendered.insert (onset);
+            double mean = 0;
+            for (double d : durs) mean += d;
+            if (! durs.empty()) mean /= (double) durs.size();
+            durSum += mean;
+            durNotes += (int) durs.size();
+            if (n == 1)
+                firstOnsets = onset;
+
+            bool ok = durNotes > 0 || ! durs.empty();
+            switch (genre)
+            {
+                case 0: case 9: case 12:
+                    ok = grid.hits >= 6 && (grid.off8 + grid.odd >= 3 || grid.pushes > 0);
+                    break;
+                case 1:
+                    ok = grid.hits <= 14 && grid.holds >= 2 && (grid.off8 > 0 || grid.odd > 0) && coloured (feel);
+                    break;
+                case 2:
+                    ok = grid.hits <= 8 && grid.holds >= 4 && coloured (feel);
+                    break;
+                case 3:
+                {
+                    const auto prog = randomProgression (seed, 2, feel.scale, genre);
+                    const int step = std::abs (prog[1] - prog[0]);
+                    ok = voiceCount (feel) >= 4 && (step == 1 || step == 6) && grid.hits >= 4;
+                    break;
+                }
+                case 4:
+                    ok = grid.hits >= 12 && grid.holds == 0 && grid.odd >= 4 && feel.swing >= 0.6f && feel.gate <= 0.35f && swung;
+                    break;
+                case 5:
+                    ok = grid.hits >= 8 && grid.holds == 0 && grid.odd >= 2 && grid.off8 >= 2 && feel.swing >= 0.55f && swung;
+                    break;
+                case 6:
+                    ok = grid.skip && grid.odd >= 1 && grid.holds == 0 && feel.swing >= 0.6f && swung && grid.hits <= 16;
+                    break;
+                case 7:
+                    ok = grid.tresillo;
+                    break;
+                case 8:
+                    ok = grid.odd >= 6 && grid.holds == 0;
+                    break;
+                case 10:
+                    ok = grid.holds >= 2 && grid.hits <= 12 && grid.off8 + grid.odd >= 2 && feel.swing >= 0.7f && coloured (feel) && swung;
+                    break;
+                case 11:
+                    ok = grid.hits <= 6 && grid.holds >= 8 && feel.gate >= 0.8f && coloured (feel);
+                    break;
+                default:
+                    ok = false;
+                    break;
+            }
+            if (ok) ++faithful;
+            else
+                lastMiss = "fidelity hits " + std::to_string (grid.hits) + " hold " + std::to_string (grid.holds)
+                         + " off " + std::to_string (grid.off8) + " odd " + std::to_string (grid.odd)
+                         + " push " + std::to_string (grid.pushes) + (grid.skip ? " skip" : "") + (grid.tresillo ? " clave" : "")
+                         + (swung ? " swing" : " noswing");
+        }
+
+        meanHits[(size_t) genre] = hitsSum / seeds;
+        meanDur[(size_t) genre] = durSum / seeds;
+        meanOdd[(size_t) genre] = oddSum / seeds;
+        const bool diverse = (int) masks.size() >= 18 && consecutive >= 17 && (int) rendered.size() >= 18;
+        const bool faith = faithful >= 18;
+        const bool pass = diverse && faith && pathFail.empty();
+        std::printf ("  %s  %s  distinct %d/20 consec %d/19 faithful %d/20  hits %.1f odd %d dur %.2f  voice [%s]  onsets %s\n",
+                     grooveCategories()[(size_t) genre], (pass ? "PASS" : "FAIL"),
+                     (int) masks.size(), consecutive, faithful, meanHits[(size_t) genre], meanOdd[(size_t) genre],
+                     meanDur[(size_t) genre], voiceText (feel).c_str(), firstOnsets.c_str());
+        if (! pass)
+            std::printf ("    %s%s\n", pathFail.c_str(), (pathFail.empty() ? lastMiss.c_str() : ""));
+        CHECK (pass);
+    }
+
+    CHECK (meanHits[2] + 2.0 < meanHits[4]);          // deep is sparser than jackin'
+    CHECK (meanDur[2] > meanDur[4] + 0.05);           // deep holds, jackin' stabs
+    CHECK (meanOdd[8] > meanOdd[2]);                  // funky syncopates more than deep
+    CHECK (randomProgression (9, 4, 1, 2) == randomProgression (9, 4, 1));
+    std::set<std::string> gospel;
+    for (std::uint32_t seed = 1; seed <= 20; ++seed)
+    {
+        const auto prog = randomProgression (seed, 4, 0, 3);
+        std::string key;
+        int steps = 0;
+        for (int i = 0; i < (int) prog.size(); ++i)
+        {
+            key += std::to_string (prog[(size_t) i]);
+            if (i > 0)
+            {
+                const int d = std::abs (prog[(size_t) i] - prog[(size_t) (i - 1)]);
+                if (d == 1 || d == 6) ++steps;
+            }
+        }
+        CHECK (steps >= 1);
+        gospel.insert (key);
+    }
+    CHECK ((int) gospel.size() >= 8);
+}
+
 int main()
 {
     testChordNames();
@@ -1913,6 +2171,7 @@ int main()
     testPushIsTied();
     testClipExport();
     testRandomRiffs();
+    testGenreRiffs();
     testRandomProgressions();
     testSections();
     testSegmentsAndUserPattern();

@@ -310,6 +310,134 @@ GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn)
     return p;
 }
 
+namespace
+{
+    std::string packBar (const char* bar)
+    {
+        std::string out;
+        for (const char* p = bar; *p != '\0'; ++p)
+            if (*p != ' ')
+                out.push_back (*p);
+        return out;
+    }
+
+    std::string twoBars (const char* const* bars, int count, std::uint32_t seed)
+    {
+        const int a = (int) (seed % (std::uint32_t) count);
+        const int b = (int) ((seed / (std::uint32_t) count) % (std::uint32_t) count);
+        return packBar (bars[a]) + packBar (bars[b]);
+    }
+
+    GroovePattern genrePattern (const std::string& right)
+    {
+        GroovePattern p;
+        p.rightHand = right;
+        p.leftHand.assign (32, '.');
+        p.leftHand[0] = 'x';
+        p.leftHand[16] = 'x';
+        repairHolds (p.rightHand);
+        repairHolds (p.leftHand);
+        return p;
+    }
+}
+
+GenreRiffFeel genreRiffFeel (int genre) noexcept
+{
+    // Indexes follow grooveCategories(): piano house through dance stabs.
+    static const GenreRiffFeel feel[] {
+        { 8, 2, 1, 0.45f, 0.48f },   // Piano House: upper-triad 9ths, offbeat
+        { 2, 2, 0, 0.28f, 0.72f },   // Soulful: rootless 9ths, a longer stab
+        { 2, 2, 1, 0.35f, 0.88f },   // Deep: rootless 9ths, held
+        { 3, 9, 0, 0.35f, 0.58f },   // Gospel: wide 13ths
+        { 0, 1, 1, 0.80f, 0.22f },   // Jackin': close 7ths, heavy swing, short
+        { 8, 1, 1, 0.65f, 0.28f },   // Jackin' Piano: upper triad, swung
+        { 2, 1, 1, 0.75f, 0.30f },   // Garage: swung, short
+        { 4, 1, 1, 0.35f, 0.50f },   // Afro: quartal
+        { 0, 10, 0, 0.30f, 0.35f },  // Funky: #9 colour, 16ths
+        { 7, 5, 0, 0.45f, 0.42f },   // '90s Piano House: octave triads, add9
+        { 2, 8, 1, 0.85f, 0.78f },   // Neo Soul: rootless 11ths, laid-back swing
+        { 3, 2, 1, 0.22f, 0.95f },   // Chill: wide 9ths, long gate
+        { 8, 0, 0, 0.12f, 0.22f },   // Dance Stabs: dry upper triads
+    };
+    const int n = (int) (sizeof (feel) / sizeof (*feel));
+    if (genre < 0 || genre >= n)
+        return feel[0];
+    return feel[genre];
+}
+
+GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn, int genre)
+{
+    // House-family grooves keep the classic loop figures, seed for seed.
+    if (genre <= 0 || genre == 9 || genre == 12 || genre > 12)
+        return makeRandomPattern (seed, densityIn);
+
+    static const char* const soulful[] {
+        "x=.. ..x. x=.. ....", "x=.. .... ..x. ....", "x... ..x. x=.. ..x.", "x=.. ...x ..x. ....",
+        "x... .... x=.. ..x.", "x=.. ..x. .... ..x.", "x=.. ..x. .... x...", "x=.. .... x... ..x.",
+    };
+    static const char* const deep[] {
+        "x=== .... .... ....", "x=== .... ..x. ....", "x=.. .... x=.. ....", "x=== ..x. .... ....",
+        "x=.. .... .... ..x.", "..x= .... x=.. ....", "x=== .... .x.. ....", ".... x=== .... ....",
+    };
+    static const char* const gospel[] {
+        "x..x ..x. x... ..x.", "x.x. ..x. x..x ....", "x... ..x. x.x. ..x.", "x..x .... x... ..x.",
+        "x.x. x... ..x. ..x.", "x... x..x ..x. ....", "x..x ..x. x.x. ....", "x... ..x. x... x..x",
+    };
+    static const char* const jackin[] {
+        "x.x. ..x. x..x .x..", "x..x .x.x ..x. x..x", ".x.x x..x .x.. x.x.", "x.xx ..x. x.x. .xx.",
+        "x..x .x.. x.x. ..x.", ".x.x ..xx x..x .x.x", "x.x. .x.x x..x ..x.", "x..x x.x. .x.x x..x",
+    };
+    static const char* const jackinPiano[] {
+        "x... ..x. x.xx ..x.", "x..x ..x. .x.x ..x.", "x... .x.x ..x. x..x", "x..x ..x. x... .x.x",
+        "..x. x..x ..x. .x..", "x... ..xx ..x. x..x", "x..x .x.. ..x. x.x.", "x.x. ..x. x..x ..x.",
+    };
+    static const char* const garage[] {
+        "x... ...x ..x. ....", "x... .... ..x. ...x", "x..x .... ..x. ....", "x... .... .x.. ...x",
+        "x... ...x .... ..x.", "x..x .... ...x ....", "x... .... ..x. .x..", "x... ..x. .... ...x",
+    };
+    static const char* const afroTail[] {
+        "x..x..x.", "x...x...", ".x.x..x.", "x..x....", "..x.x..x", "x.x..x..", "....x..x", "x..x.x..",
+    };
+    static const char* const funky[] {
+        "x.x. .x.x x..x .x.x", ".x.x x.x. .xx. x.x.", "x..x .x.x ..xx .x..", ".xx. x..x .x.x x..x",
+        "x.xx ..x. .x.x x.x.", ".x.. x.xx .x.x ..xx", "x..x .xx. x.x. .x.x", ".x.x ..x. x.xx .x.x",
+    };
+    static const char* const neo[] {
+        "x=.. .x.. .... ....", "x=.. .... ..x. ...x", ".... ..x. x=.. ...x", "x=.. .... .x.. ....",
+        "x... ..x= .... ...x", "..x. x=.. .... .x..", "x=.. ...x ..x. ....", ".... .x.. x=.. ..x.",
+    };
+    static const char* const chill[] {
+        "x=== ==== .... ....", "x=== .... x=== ....", "x=== ..x= .... ....", "x=== .... .... ..x=",
+        "x=.. ..x. x=.. ....", "..x= ==== .... ....", ".... x=== ==== ....", "x=== ==== ..x. ....",
+    };
+
+    std::string right;
+    switch (genre)
+    {
+        case 1: right = twoBars (soulful, 8, seed); break;
+        case 2: right = twoBars (deep, 8, seed); break;
+        case 3: right = twoBars (gospel, 8, seed); break;
+        case 4: right = twoBars (jackin, 8, seed); break;
+        case 5: right = twoBars (jackinPiano, 8, seed); break;
+        case 6: right = twoBars (garage, 8, seed); break;
+        case 7:
+        {
+            const int a = (int) (seed % 8u);
+            const int b = (int) ((seed / 8u) % 8u);
+            right = std::string ("x..x..x.") + packBar (afroTail[a]) + "x..x..x." + packBar (afroTail[b]);
+            break;
+        }
+        case 8: right = twoBars (funky, 8, seed); break;
+        case 10: right = twoBars (neo, 8, seed); break;
+        case 11: right = twoBars (chill, 8, seed); break;
+        default: return makeRandomPattern (seed, densityIn);
+    }
+
+    auto p = genrePattern (right);
+    p.name = "Random Riff #" + std::to_string (seed % 100000);
+    return p;
+}
+
 GroovePattern makeRandomPatternRaw (std::uint32_t seed, float densityIn)
 {
     {
@@ -829,6 +957,31 @@ std::vector<int> randomProgression (std::uint32_t seed, int length, int scale)
             next = options[(size_t) rng.below ((int) options.size())];
         out.push_back (next);
     }
+    return out;
+}
+
+std::vector<int> randomProgression (std::uint32_t seed, int length, int scale, int genre)
+{
+    if (genre != 3)
+        return randomProgression (seed, length, scale);
+
+    length = std::clamp (length, 1, maxProgressionLength);
+    // Each row starts on a step (a passing chord) and keeps walking.
+    static const int rows[][8] {
+        { 0, 1, 2, 4, 3, 2, 1, 0 },
+        { 3, 2, 1, 0, 4, 3, 2, 0 },
+        { 0, 1, 0, 2, 3, 4, 3, 0 },
+        { 5, 4, 3, 2, 1, 2, 4, 0 },
+        { 4, 3, 2, 1, 0, 1, 2, 4 },
+        { 1, 2, 3, 4, 3, 2, 0, 4 },
+        { 2, 1, 0, 4, 3, 2, 1, 0 },
+        { 6, 5, 4, 3, 2, 1, 0, 4 },
+    };
+    const int row = (int) (seed % 8u);
+    std::vector<int> out;
+    out.reserve ((size_t) length);
+    for (int i = 0; i < length; ++i)
+        out.push_back (rows[row][i % 8]);
     return out;
 }
 
