@@ -342,59 +342,162 @@ namespace
         repairHolds (r);
     }
 
-    /** Two-bar rhythm of a genre that is not piano-house. False: use the house figures. */
-    bool genreRhythm (int genre, std::uint32_t seed, const char*& right, const char*& left) noexcept
+    /** Two bars in one genre's metre. The seed picks the cells, so two rolls are not the same figure.
+        False: piano house and the house family, which keep the classic loop figures. */
+    bool genreRhythm (int genre, std::uint32_t seed, std::string& right, std::string& left)
     {
-        const bool alt = (seed & 1u) != 0;
+        Random rng (seed ^ 0xA11CEu);
+
+        auto fromCells = [&rng] (const char* const* cells, int n, int cellLen, int count)
+        {
+            std::string out;
+            out.reserve ((size_t) cellLen * (size_t) count);
+            for (int i = 0; i < count; ++i)
+                out.append (cells[rng.below (n)], (size_t) cellLen);
+            return out;
+        };
+
+        // Bar one, then bar two answers it: most beats stay, a few are a new cell.
+        auto phrase = [&] (const char* const* cells, int n, int cellLen)
+        {
+            const int perBar = 16 / cellLen;
+            auto two = fromCells (cells, n, cellLen, perBar);
+            two += two;
+            for (int i = 0; i < perBar; ++i)
+                if (rng.chance (0.62))
+                    two.replace ((size_t) (16 + i * cellLen), (size_t) cellLen, cells[rng.below (n)], (size_t) cellLen);
+            return two;
+        };
+
+        auto ensureHits = [&rng] (std::string& line, int minHits)
+        {
+            int hits = 0;
+            for (char c : line)
+                hits += isHit (c) ? 1 : 0;
+            for (int pass = 0; pass < (int) line.size() && hits < minHits; ++pass)
+            {
+                const int pos = rng.below ((int) line.size());
+                if (line[(size_t) pos] == '.' || line[(size_t) pos] == '=')
+                {
+                    line[(size_t) pos] = 'x';
+                    ++hits;
+                }
+            }
+        };
+
         switch (genre)
         {
             case 3: // gospel: dotted push, walking bass
-                right = alt ? "x...x..x..x...x.x...x..x..x..x.." : "x..x..x.x..x..x.x...x..x..x...x.";
-                left  = "x.....x.....x...x.....x.....x...";
-                return true;
+            {
+                static const char* cells[] { "x...", "x..x", "x.x.", ".x..", "x=..", "x..=" };
+                right = phrase (cells, 6, 4);
+                left.assign (32, '.');
+                for (int pos = 0; pos < 32; pos += 5 + rng.below (3))
+                    left[(size_t) pos] = 'x';
+                break;
+            }
             case 4: // jackin': on-beat stabs
-                right = alt ? "x...x..xx...x...x...x..xx...x..." : "x...x...x...x..xx...x...x...x...";
-                left  = alt ? "x.......x...x...x.......x...x..." : "x...x...x...x...x...x...x...x...";
-                return true;
+            {
+                static const char* cells[] { "x...", "x..x", "x.x.", "x=.x", "x..x", "x..." };
+                right = phrase (cells, 6, 4);
+                for (int i = 0; i < 32; i += 4)
+                    if (! isHit (right[(size_t) i]))
+                        right[(size_t) i] = 'x';
+                static const char* bass[] { "x...", "x..x", "x.x.", "x..." };
+                left = phrase (bass, 4, 4);
+                break;
+            }
             case 5: // jackin' piano: dry chops
-                right = alt ? "x.x...x.x...x.x.x.x...x.x...x.x." : "x...x...x.x.x...x...x...x.x.x...";
-                left  = alt ? "x.......x...x...x.......x...x..." : "x...x...x...x...x...x...x...x...";
-                return true;
-            case 6: // garage 2-step
-                right = alt ? "x..x....x...x...x..x....x...x..." : "x..x....x..x....x..x....x..x....";
-                left  = alt ? "x.......x.......x..x....x......." : "x.......x..x....x.......x..x....";
-                return true;
-            case 7: // afro tresillo
-                right = alt ? "x.x..x..x.x..x..x.x..x..x.x..x.." : "x..x..x.x..x..x.x..x..x.x..x..x.";
-                left  = "x.....x.....x...x.....x.....x...";
-                return true;
+            {
+                static const char* cells[] { "x.x.", "x...", ".x.x", "x..x", "x.xx", ".xx." };
+                right = phrase (cells, 6, 4);
+                static const char* bass[] { "x...", "x..x", "x.x.", "x..." };
+                left = phrase (bass, 4, 4);
+                break;
+            }
+            case 6: // garage 2-step: the skip (hit, two rests, hit)
+            {
+                static const char* cells[] { "x..x....", "x..x..x.", "x...x...", "x..x...x",
+                                              "x...x..x", "....x..x", "x..x..x.", "x..x...." };
+                right = phrase (cells, 8, 8);
+                bool skip = false;
+                for (int i = 0; i + 3 < 32 && ! skip; ++i)
+                    skip = right[(size_t) i] == 'x' && right[(size_t) (i + 1)] == '.'
+                        && right[(size_t) (i + 2)] == '.' && right[(size_t) (i + 3)] == 'x';
+                if (! skip)
+                    right.replace (0, 8, "x..x....");
+                static const char* bass[] { "x.......", "x..x....", "x....x..", "x...x..." };
+                left = phrase (bass, 4, 8);
+                break;
+            }
+            case 7: // afro tresillo (3+3+2)
+            {
+                static const char* cells[] { "x..x..x.", "x.x..x..", ".x..x..x", "x..x.x..", "x.x..x.x" };
+                right = phrase (cells, 5, 8);
+                right.replace (0, 8, "x..x..x.");
+                static const char* bass[] { "x.....x.", "x..x....", "x...x...", "x......." };
+                left = phrase (bass, 4, 8);
+                break;
+            }
             case 8: // funky 16ths
-                right = alt ? "x...x.x.x...x.x.x...x.x.x...x.x." : "x..x.x.xx..x.x.xx..x.x.xx..x.x.x";
-                left  = "x...x.x.x...x...x...x.x.x...x...";
-                return true;
+            {
+                static const char* cells[] { "x..x", ".x.x", "x.x.", "xx.x", ".xx.", "x.xx", "x..." };
+                right = phrase (cells, 7, 4);
+                static const char* bass[] { "x...", "x..x", "x.x.", "x..." };
+                left = phrase (bass, 4, 4);
+                break;
+            }
             case 10: // neo soul: behind the beat
-                right = alt ? "x..x....x...x...x..x....x...x..." : "x...x..x....x...x...x..x....x...";
-                left  = "x.......x.......x.......x.......";
-                return true;
+            {
+                static const char* cells[] { "..x.", "...x", ".x..", "x..x", "....", "x..." };
+                right = phrase (cells, 6, 4);
+                int late = 0;
+                for (int i = 0; i < 32; ++i)
+                    late += (isHit (right[(size_t) i]) && i % 4 != 0) ? 1 : 0;
+                for (int i = 0; i < 31 && late < 3; ++i)
+                    if (isHit (right[(size_t) i]) && right[(size_t) (i + 1)] == '.' && i % 4 == 0)
+                    {
+                        right[(size_t) (i + 1)] = right[(size_t) i];
+                        right[(size_t) i] = '.';
+                        ++late;
+                    }
+                static const char* bass[] { "x.......", "x....x..", "x.......", "........" };
+                left = phrase (bass, 4, 8);
+                break;
+            }
             case 11: // chill: long holds
-                right = alt ? "x=======x=======x=======x=======" : "x===....x===....x===....x===....";
-                left  = "x...............x...............";
-                return true;
+            {
+                static const char* cells[] { "x===x===", "x==.x=..", "x===.x..", "x=..x=..",
+                                              "x=.x=...", "x==.x===", "x=.x===.", "x=..x=.x" };
+                right = phrase (cells, 8, 8);
+                static const char* bass[] { "x...............", "x.......x.......", "x...........x...", "x....x.........." };
+                left = fromCells (bass, 4, 16, 2);
+                break;
+            }
             default:
                 return false;
         }
+
+        if (right.size() != 32 || left.size() != 32)
+            return false;
+        ensureHits (right, 6);
+        if (! isHit (left[0]))
+            left[0] = 'x';
+        ensureHits (left, 2);
+        repairHolds (right);
+        repairHolds (left);
+        return right.size() == 32 && left.size() == 32;
     }
 }
 
 GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn, int genre)
 {
-    const char* right = nullptr;
-    const char* left = nullptr;
+    std::string right, left;
     if (genreRhythm (genre, seed, right, left))
     {
         GroovePattern p;
-        p.rightHand = right;
-        p.leftHand = left;
+        p.rightHand = std::move (right);
+        p.leftHand = std::move (left);
         if (p.rightHand.size() == 32 && p.leftHand.size() == 32)
         {
             if (densityIn < 0.35f)

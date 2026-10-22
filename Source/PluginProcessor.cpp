@@ -1191,12 +1191,18 @@ void FaseGroovePianoProcessor::setParameterFromUI (const juce::String& id, float
     }
 }
 
+namespace
+{
+    int rhythmSeed()
+    {
+        return juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
+    }
+}
+
 void FaseGroovePianoProcessor::rollNewRiff()
 {
-    const auto seed = juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
     const auto s = currentSettings();
-    auto current = sgk::GrooveEngine::basePattern (s);
-
+    const auto before = sgk::GrooveEngine::basePattern (s);
     const bool anyLocked = std::any_of (segmentLocked.begin(), segmentLocked.end(), [] (bool b) { return b; });
 
     if (s.styleGenre >= 0 && s.styleGenre < 13)
@@ -1205,22 +1211,46 @@ void FaseGroovePianoProcessor::rollNewRiff()
         setParameterFromUI (ParamIDs::voicing, (float) voicingForGenre[s.styleGenre]);
     }
 
-    if (! anyLocked || current.length() != sgk::userPatternLength)
+    // No locked part (or the groove is not the two-bar grid): a new seed in this genre.
+    // Another seed when the figure comes out the same, so the click is heard.
+    if (! anyLocked || before.length() != sgk::userPatternLength)
     {
+        int seed = rhythmSeed();
+        for (int attempt = 0; attempt < 8; ++attempt)
+        {
+            seed = rhythmSeed();
+            const auto fresh = sgk::makeRandomPattern ((std::uint32_t) seed, s.riffDensity, s.styleGenre);
+            if (fresh.rightHand != before.rightHand || attempt == 7)
+                break;
+        }
         setParameterFromUI (ParamIDs::riffSeed, (float) seed);
         setParameterFromUI (ParamIDs::pattern, (float) sgk::randomPatternIndex());
+        clearEditedLoop();   // the roll and the audio follow the new figure
         return;
     }
 
-    const auto fresh = sgk::makeRandomPattern ((std::uint32_t) seed, s.riffDensity, s.styleGenre);
-    for (int seg = 0; seg < sgk::numSegments; ++seg)
-        if (! segmentLocked[(size_t) seg])
-        {
-            sgk::copySegment (current, fresh, seg);
-            resetSegmentVelocities (seg, true, true);
-        }
+    bool anyUnlocked = false;
+    for (bool locked : segmentLocked)
+        anyUnlocked = anyUnlocked || ! locked;
+    if (! anyUnlocked)
+        return;
 
+    auto current = before;
+    for (int attempt = 0; attempt < 8; ++attempt)
+    {
+        current = before;
+        const auto fresh = sgk::makeRandomPattern ((std::uint32_t) rhythmSeed(), s.riffDensity, s.styleGenre);
+        for (int seg = 0; seg < sgk::numSegments; ++seg)
+            if (! segmentLocked[(size_t) seg])
+            {
+                sgk::copySegment (current, fresh, seg);
+                resetSegmentVelocities (seg, true, true);
+            }
+        if (current.rightHand != before.rightHand || attempt == 7)
+            break;
+    }
     setUserPattern (current);
+    clearEditedLoop();
 }
 
 void FaseGroovePianoProcessor::rerollHand (bool bass)
@@ -1231,7 +1261,9 @@ void FaseGroovePianoProcessor::rerollHand (bool bass)
     if (bass && sgk::isBassLine (s.bass))
     {
         const int current = sgk::bassLineIndex ((int) s.bass);
-        const int next = (current + 1 + juce::Random::getSystemRandom().nextInt (sgk::numBassLines - 1)) % sgk::numBassLines;
+        int next = current;
+        for (int attempt = 0; attempt < 6 && next == current; ++attempt)
+            next = (current + 1 + juce::Random::getSystemRandom().nextInt (sgk::numBassLines - 1)) % sgk::numBassLines;
         setParameterFromUI (ParamIDs::bass, (float) sgk::bassModeForLine (next));
         return;
     }
@@ -1248,40 +1280,69 @@ void FaseGroovePianoProcessor::rerollHand (bool bass)
         setParameterFromUI (ParamIDs::bass, (float) sgk::stabsOwnRhythmMode);
     }
 
-    const auto seed = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
-    const auto fresh = sgk::makeRandomPattern (seed, s.riffDensity, s.styleGenre);
     const int segLength = sgk::userPatternLength / sgk::numSegments;
+    const auto beforeHand = bass ? current.leftHand : current.rightHand;
+    bool anyUnlocked = false;
     for (int seg = 0; seg < sgk::numSegments; ++seg)
+        anyUnlocked = anyUnlocked || ! segmentLocked[(size_t) seg];
+    if (! anyUnlocked)
+        return;
+
+    for (int attempt = 0; attempt < 8; ++attempt)
     {
-        if (segmentLocked[(size_t) seg])
-            continue;
-        resetSegmentVelocities (seg, ! bass, bass);
-        for (int i = seg * segLength; i < (seg + 1) * segLength; ++i)
+        auto trial = current;
+        const auto fresh = sgk::makeRandomPattern ((std::uint32_t) rhythmSeed(), s.riffDensity, s.styleGenre);
+        for (int seg = 0; seg < sgk::numSegments; ++seg)
         {
-            if (bass) current.leftHand[(size_t) i]  = fresh.leftHand[(size_t) i];
-            else      current.rightHand[(size_t) i] = fresh.rightHand[(size_t) i];
+            if (segmentLocked[(size_t) seg])
+                continue;
+            resetSegmentVelocities (seg, ! bass, bass);
+            for (int i = seg * segLength; i < (seg + 1) * segLength && i < (int) fresh.rightHand.size() && i < (int) fresh.leftHand.size(); ++i)
+            {
+                if (bass) trial.leftHand[(size_t) i]  = fresh.leftHand[(size_t) i];
+                else      trial.rightHand[(size_t) i] = fresh.rightHand[(size_t) i];
+            }
+        }
+        sgk::repairHolds (bass ? trial.leftHand : trial.rightHand);
+        const bool changed = (bass ? trial.leftHand : trial.rightHand) != beforeHand;
+        if (changed || attempt == 7)
+        {
+            current = std::move (trial);
+            break;
         }
     }
-    sgk::repairHolds (bass ? current.leftHand : current.rightHand);
 
     if (bass && ! isBassOn())
         toggleBass();
     if (bass)
         bassMuted = false;   // a new bass rhythm: you want to hear it
     setUserPattern (current);
+    if (! bass)
+        clearEditedLoop();
 }
 
 void FaseGroovePianoProcessor::randomizeSegment (int segment)
 {
     const auto s = currentSettings();
-    auto current = sgk::GrooveEngine::basePattern (s);
-    if (current.length() != sgk::userPatternLength)
+    const auto before = sgk::GrooveEngine::basePattern (s);
+    if (before.length() != sgk::userPatternLength || segment < 0 || segment >= sgk::numSegments)
         return;
 
-    const auto seed = (std::uint32_t) juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
-    sgk::copySegment (current, sgk::makeRandomPattern (seed, s.riffDensity, s.styleGenre), segment);
+    const int segLength = sgk::userPatternLength / sgk::numSegments;
+    const auto beforeSlice = before.rightHand.substr ((size_t) (segment * segLength), (size_t) segLength);
+    auto current = before;
+    for (int attempt = 0; attempt < 8; ++attempt)
+    {
+        auto trial = before;
+        sgk::copySegment (trial, sgk::makeRandomPattern ((std::uint32_t) rhythmSeed(), s.riffDensity, s.styleGenre), segment);
+        const auto slice = trial.rightHand.substr ((size_t) (segment * segLength), (size_t) segLength);
+        current = std::move (trial);
+        if (slice != beforeSlice || attempt == 7)
+            break;
+    }
     resetSegmentVelocities (segment, true, true);
     setUserPattern (current);
+    clearEditedLoop();
 }
 
 void FaseGroovePianoProcessor::setUserPattern (const sgk::GroovePattern& p)

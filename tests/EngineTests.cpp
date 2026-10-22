@@ -1903,6 +1903,89 @@ static void testV024Fixes()
     }
 }
 
+static std::set<int> chordSteps (const std::vector<NoteEvent>& events, double shift)
+{
+    std::set<int> steps;
+    for (const auto& e : events)
+        if (e.isNoteOn() && e.part == Part::chords)
+            steps.insert ((int) std::lround ((e.ppq - shift) * 4.0));
+    return steps;
+}
+
+static void testGenreRiffs()
+{
+    // House-family seeds stay on the classic figures. The other genres each have many figures.
+    for (std::uint32_t seed : { 1u, 7u, 100u })
+        for (float density : { 0.0f, 0.5f, 1.0f })
+        {
+            const auto house = makeRandomPattern (seed, density);
+            for (int genre : { -1, 0, 1, 2, 9, 12 })
+                CHECK (makeRandomPattern (seed, density, genre).rightHand == house.rightHand);
+        }
+
+    const int special[] { 3, 4, 5, 6, 7, 8, 10, 11 };
+    for (int genre : special)
+    {
+        std::set<std::string> rights;
+        for (std::uint32_t seed = 1; seed <= 40; ++seed)
+        {
+            const auto p = makeRandomPattern (seed, 0.5f, genre);
+            CHECK (wellFormed (p));
+            CHECK (p.length() == 32);
+            CHECK (p.category == grooveCategories()[(size_t) genre]);
+            CHECK (countHits (p.rightHand) >= 6);
+            CHECK (makeRandomPattern (seed, 0.5f, genre).rightHand == p.rightHand);
+            rights.insert (p.rightHand);
+
+            if (genre == 4)
+            {
+                int downbeats = 0;
+                for (int i = 0; i < 32; i += 4)
+                    downbeats += isHitChar (p.rightHand[(size_t) i]) ? 1 : 0;
+                CHECK (downbeats >= 6);
+            }
+            if (genre == 6)
+            {
+                bool skip = false;
+                for (int i = 0; i + 3 < 32; ++i)
+                    skip = skip || (p.rightHand[(size_t) i] == 'x' && p.rightHand[(size_t) (i + 1)] == '.'
+                                    && p.rightHand[(size_t) (i + 2)] == '.' && p.rightHand[(size_t) (i + 3)] == 'x');
+                CHECK (skip);
+            }
+            if (genre == 7)
+                CHECK (p.rightHand.compare (0, 8, "x..x..x.") == 0);
+            if (genre == 11)
+                CHECK (p.rightHand.find ('=') != std::string::npos);
+        }
+        std::printf ("  genre %d riffs: %d distinct of 40\n", genre, (int) rights.size());
+        CHECK (rights.size() > 8);
+    }
+
+    // The playing engine rebuilds when only the genre changes (the cache used to keep the old riff).
+    GrooveSettings s;
+    s.pattern = randomPatternIndex();
+    s.riffSeed = 19;
+    s.riffDensity = 0.5f;
+    s.humanize = 0.0f;
+    s.swing = 0.0f;
+    s.realism = false;
+    s.movement = 0;
+    s.bass = BassMode::off;
+    s.styleGenre = 6;
+    GrooveSettings gospel = s;
+    gospel.styleGenre = 3;
+    CHECK (GrooveEngine::resolvePattern (s).rightHand != GrooveEngine::resolvePattern (gospel).rightHand);
+
+    GrooveEngine live;
+    std::vector<NoteEvent> first, second;
+    live.render (0.0, 8.0, s, first);
+    live.allNotesOff (8.0, first);
+    live.render (8.0, 16.0, gospel, second);
+    const auto fresh = GrooveEngine::renderClip (gospel, 8.0);
+    CHECK (chordSteps (second, 8.0) == chordSteps (fresh, 0.0));
+    CHECK (chordSteps (first, 0.0) != chordSteps (second, 8.0));
+}
+
 static void testStyleCoherence()
 {
     const GroovePattern* house = nullptr;
@@ -1971,6 +2054,7 @@ int main()
     testRandomRiffs();
     testRandomProgressions();
     testSections();
+    testGenreRiffs();
     testStyleCoherence();
     testSegmentsAndUserPattern();
     testFillStylesStrumOctave();
