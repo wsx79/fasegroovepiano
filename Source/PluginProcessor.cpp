@@ -2256,6 +2256,14 @@ std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengt
             open.erase (it);
         }
     }
+    // A hit with no note-off (it was still ringing at the clip end) ends on the loop boundary.
+    for (const auto& [id, held] : open)
+    {
+        if (held.first >= lengthInBeats - 0.01)
+            continue;
+        notes.push_back ({ held.first, juce::jmax (0.02, lengthInBeats - held.first), id % 128,
+                           juce::jlimit (1, 127, juce::roundToInt (held.second * toRelative)), (sgk::Part) (id / 128) });
+    }
     roundAndSort (notes);
     for (int i = 0; i < (int) notes.size(); ++i)
         notes[(size_t) i].origin = i;   // what the edits refer to
@@ -2747,6 +2755,9 @@ std::vector<sgk::NoteEvent> FaseGroovePianoProcessor::comping (const std::vector
             clean.push_back ({ e.ppq, e.note, 0, soundingPart[n] });
         }
     }
+    for (int n = 0; n < 128; ++n)
+        if (held[(size_t) n] > 0)
+            clean.push_back ({ length, n, 0, soundingPart[(size_t) n] });
     return clean;
 }
 
@@ -2805,7 +2816,7 @@ void FaseGroovePianoProcessor::readGuitarLead()
     if (linkOn.load() && file.existsAsFile())
         if (auto xml = juce::parseXML (file); xml != nullptr && xml->getBoolAttribute ("lead"))
             leads = juce::Time::currentTimeMillis() - xml->getStringAttribute ("time").getLargeIntValue() < 6000;
-    guitarLeads = leads;
+    guitarLeads = leads && linkOn.load();
 }
 
 void FaseGroovePianoProcessor::setLinked (bool on)

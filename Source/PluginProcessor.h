@@ -278,8 +278,9 @@ public:
     void setLinked (bool on);
     static juce::File linkFile();
     /** A linked Fase Groove Guitar set to LEAD: the piano only fills in a chord now and then
-        (a few answers in four bars, placed by compingSeed()), the bass as usual. */
-    bool isGuitarLeading() const noexcept { return guitarLeads.load(); }
+        (a few answers in four bars, placed by compingSeed()), the bass as usual.
+        LINK has to be on, the same condition processBlock and the export already use. */
+    bool isGuitarLeading() const noexcept { return guitarLeads.load() && linkOn.load(); }
     /** KEY (with LINK on): the same key and scale in every linked plug-in that has KEY on. */
     void setKeyLinked (bool on);
     bool isKeyLinked() const noexcept { return keyLinked.load(); }
