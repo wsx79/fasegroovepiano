@@ -2161,6 +2161,166 @@ static void testGenreRiffs()
     CHECK ((int) gospel.size() >= 8);
 }
 
+/** Dice test: every genre rolled with many seeds. Measures how much really changes from roll to
+    roll in the MIDI that plays (onsets, bass rhythm, accents, lengths, pitches), that a seed always
+    gives the same riff, that no seed pattern repeats systematically, and that each roll keeps the
+    rhythmic identity of its genre. */
+static void testGenreDiversity()
+{
+    auto hit = [] (char c) { return isHitChar (c); };
+    const int numSeeds = 48;
+    const int numGenres = (int) grooveCategories().size();
+
+    for (int genre = 0; genre < numGenres; ++genre)
+    {
+        const auto feel = genreRiffFeel (genre);
+        const bool house = genre == 0 || genre == 9 || genre == 12;
+        std::set<std::string> rhOnsets, bassOnsets, accents, lengths, pitches;
+        std::map<std::string, int> maskCount;
+        int faithful = 0, deterministic = 0, repeats = 0;
+
+        auto settingsFor = [&] (std::uint32_t seed)
+        {
+            GrooveSettings s;
+            s.pattern = randomPatternIndex();
+            s.riffSeed = seed;
+            s.riffDensity = 0.5f;
+            s.riffGenre = genre;
+            s.voicing = (Voicing) feel.voicing;
+            s.extension = (Extension) feel.extension;
+            s.scale = feel.scale;
+            s.swing = feel.swing;
+            s.gate = feel.gate;
+            s.humanize = 0.0f;
+            s.movement = 0;
+            s.bass = BassMode::root;
+            const auto prog = randomProgression (seed, 4, feel.scale, genre);
+            for (int i = 0; i < 4; ++i)
+                s.progression[(size_t) i] = prog[(size_t) i];
+            s.progressionLength = 4;
+            s.stepsPerChord = 8;
+            return s;
+        };
+
+        for (int k = 0; k < numSeeds; ++k)
+        {
+            const auto seed = (std::uint32_t) (1 + (k * 7919) % 99999);
+            const auto s = settingsFor (seed);
+            const auto events = GrooveEngine::renderClip (s, 8.0);
+
+            std::string rh, bass, acc, len, pit;
+            std::map<int, double> open;
+            for (const auto& e : events)
+            {
+                const int step = (int) std::llround (e.ppq / stepLength);
+                if (e.isNoteOn())
+                {
+                    if (e.part == Part::bass) bass += std::to_string (step) + ",";
+                    else
+                    {
+                        rh += std::to_string (step) + ",";
+                        acc += std::to_string (e.velocity / 8) + ",";
+                        pit += std::to_string (e.note) + ",";
+                        open[e.note] = e.ppq;
+                    }
+                }
+                else if (e.part != Part::bass && open.count (e.note) != 0)
+                {
+                    len += std::to_string ((int) std::lround ((e.ppq - open[e.note]) / (stepLength / 2))) + ",";
+                    open.erase (e.note);
+                }
+            }
+            rhOnsets.insert (rh);
+            bassOnsets.insert (bass);
+            accents.insert (acc);
+            lengths.insert (len);
+            pitches.insert (pit);
+
+            // Same seed, same riff and the same MIDI.
+            const auto again = GrooveEngine::renderClip (settingsFor (seed), 8.0);
+            bool same = again.size() == events.size();
+            for (size_t i = 0; same && i < events.size(); ++i)
+                same = again[i].ppq == events[i].ppq && again[i].note == events[i].note && again[i].velocity == events[i].velocity;
+            if (same && makeRandomPattern (seed, 0.5f, genre).rightHand == makeRandomPattern (seed, 0.5f, genre).rightHand)
+                ++deterministic;
+
+            // No systematic repetition: a seed 64 further on is another riff.
+            const auto p = makeRandomPattern (seed, 0.5f, genre);
+            const auto q = makeRandomPattern (seed + 64u, 0.5f, genre);
+            if (p.rightHand == q.rightHand && p.leftHand == q.leftHand)
+                ++repeats;
+
+            // The genre's rhythmic identity.
+            const auto& r = p.rightHand;
+            int hits = 0, holds = 0, odd = 0, off8 = 0;
+            bool skip = false, tresillo = false;
+            for (int i = 0; i < 32; ++i)
+            {
+                holds += r[(size_t) i] == '=' ? 1 : 0;
+                if (! hit (r[(size_t) i])) continue;
+                ++hits;
+                odd += i % 2;
+                off8 += i % 4 == 2 ? 1 : 0;
+            }
+            for (int bar = 0; bar < 2; ++bar)
+                for (int i = bar * 16; i <= bar * 16 + 12; ++i)
+                {
+                    skip = skip || (! hit (r[(size_t) i]) && ! hit (r[(size_t) i + 1]) && ! hit (r[(size_t) i + 2]) && ! hit (r[(size_t) i + 3]));
+                    if (i + 6 < 32 && hit (r[(size_t) i]) && hit (r[(size_t) i + 3]) && hit (r[(size_t) i + 6]))
+                        tresillo = true;
+                }
+            const int bassHits = (int) std::count_if (p.leftHand.begin(), p.leftHand.end(), hit);
+            bool ok = false;
+            switch (genre)
+            {
+                case 0: case 9: case 12: ok = hits >= 6 && off8 + odd >= 3; break;
+                case 1: ok = holds >= 2 && hits <= 16; break;
+                case 2: ok = holds >= 3 && hits <= 10; break;
+                case 3: ok = hits >= 4 && bassHits >= 6; break;
+                case 4: ok = odd >= 4 && holds == 0 && bassHits >= 4; break;
+                case 5: ok = odd >= 2 && holds == 0; break;
+                case 6: ok = skip && holds == 0; break;
+                case 7: ok = tresillo; break;
+                case 8: ok = odd >= 6 && holds == 0 && bassHits >= 6; break;
+                case 10: ok = holds >= 2 && hits <= 14; break;
+                case 11: ok = holds >= 6 && hits <= 8; break;
+                default: break;
+            }
+            faithful += ok ? 1 : 0;
+            ++maskCount[r];
+        }
+
+        int mostCommon = 0;
+        for (const auto& m : maskCount)
+            mostCommon = std::max (mostCommon, m.second);
+
+        // Sparse and busy settings really differ (on average over the seeds).
+        int sparse = 0, busy = 0;
+        for (int k = 0; k < numSeeds; ++k)
+        {
+            const auto seed = (std::uint32_t) (1 + (k * 7919) % 99999);
+            const auto a = makeRandomPattern (seed, 0.0f, genre).rightHand;
+            const auto b = makeRandomPattern (seed, 1.0f, genre).rightHand;
+            sparse += (int) std::count_if (a.begin(), a.end(), hit);
+            busy += (int) std::count_if (b.begin(), b.end(), hit);
+        }
+
+        const bool pass = (int) rhOnsets.size() >= numSeeds * 3 / 5 && (int) bassOnsets.size() >= 3
+                       // (house loops keep a steady touch, only the first stab of a bar leans; garage has
+                       // few stabs, so few velocity sequences are possible at all)
+                       && (int) accents.size() >= (house || genre == 6 ? numSeeds / 3 : numSeeds / 2) && (int) lengths.size() >= numSeeds / 2
+                       && (int) pitches.size() >= 8 && mostCommon <= numSeeds / 6
+                       && deterministic == numSeeds && repeats <= numSeeds / 10
+                       && faithful >= numSeeds * 85 / 100 && sparse < busy;
+        std::printf ("  dice %-18s %s  onsets %d bass %d accents %d lengths %d pitches %d /%d  top %d  repeat64 %d  "
+                     "faithful %d  hits sparse %.1f busy %.1f\n",
+                     grooveCategories()[(size_t) genre], pass ? "PASS" : "FAIL", (int) rhOnsets.size(), (int) bassOnsets.size(),
+                     (int) accents.size(), (int) lengths.size(), (int) pitches.size(), numSeeds, mostCommon, repeats, faithful,
+                     sparse / (double) numSeeds, busy / (double) numSeeds);
+        CHECK (pass);
+    }
+}
+
 int main()
 {
     testChordNames();
@@ -2172,6 +2332,7 @@ int main()
     testClipExport();
     testRandomRiffs();
     testGenreRiffs();
+    testGenreDiversity();
     testRandomProgressions();
     testSections();
     testSegmentsAndUserPattern();

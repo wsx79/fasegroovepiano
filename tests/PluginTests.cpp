@@ -2045,6 +2045,92 @@ namespace {
     }
 }
 
+namespace {
+
+    void testRiffGenreAndRestoreWhilePlaying()
+    {
+        using P = FaseGroovePianoProcessor;
+
+        // A random riff written in a genre reopens in that genre (not as a house riff).
+        {
+            P a;
+            const auto& patterns = sgk::groovePatterns();
+            int jackin = -1;
+            for (int i = 0; i < (int) patterns.size() && jackin < 0; ++i)
+                if (patterns[(size_t) i].category == std::string ("Jackin'"))
+                    jackin = i;
+            CHECK (jackin >= 0);
+            a.setParameterFromUI (ParamIDs::pattern, (float) jackin);
+            CHECK (a.currentGenre() == 4);
+            a.rollNewRiff();
+            CHECK (juce::roundToInt (value (a, ParamIDs::pattern)) == sgk::randomPatternIndex());
+            CHECK (a.currentSettings().riffGenre == 4);
+
+            juce::MemoryBlock data;
+            a.getStateInformation (data);
+            P b;
+            b.setStateInformation (data.getData(), (int) data.getSize());
+            CHECK (b.currentSettings().riffGenre == 4);
+            CHECK (sgk::GrooveEngine::basePattern (a.currentSettings()).rightHand
+                   == sgk::GrooveEngine::basePattern (b.currentSettings()).rightHand);
+            CHECK (sgk::GrooveEngine::basePattern (a.currentSettings()).leftHand
+                   == sgk::GrooveEngine::basePattern (b.currentSettings()).leftHand);
+        }
+
+        // A project loaded while the groove plays with the pedal down: the next block lifts the
+        // pedal and releases every note; nothing hangs once the transport stops.
+        {
+            P p;
+            p.setParameterFromUI (ParamIDs::sound, 0.0f);
+            p.setParameterFromUI (ParamIDs::pedalCC, 1.0f);
+            PlayHead head;
+            p.setPlayHead (&head);
+            const double sr = 44100.0;
+            p.prepareToPlay (sr, 512);
+            int sounding[17][128] {};
+            bool pedal = false, liftedAfterLoad = false;
+            auto run = [&] (int blocks, bool watchLift)
+            {
+                for (int b = 0; b < blocks; ++b)
+                {
+                    juce::AudioBuffer<float> buffer (2, 512);
+                    juce::MidiBuffer midi;
+                    p.processBlock (buffer, midi);
+                    for (const auto meta : midi)
+                    {
+                        const auto m = meta.getMessage();
+                        if (m.isController() && m.getControllerNumber() == 64)
+                        {
+                            pedal = m.getControllerValue() > 0;
+                            if (watchLift && b == 0 && ! pedal) liftedAfterLoad = true;
+                        }
+                        else if (m.isNoteOn()) sounding[m.getChannel()][m.getNoteNumber()] = 1;
+                        else if (m.isNoteOff()) sounding[m.getChannel()][m.getNoteNumber()] = 0;
+                    }
+                    if (head.playing)
+                        head.ppq += 512 / sr * head.bpm / 60.0;
+                }
+            };
+            for (int guard = 0; guard < 400 && ! pedal; ++guard)
+                run (1, false);
+            CHECK (pedal);
+            juce::MemoryBlock data;
+            p.getStateInformation (data);
+            p.setStateInformation (data.getData(), (int) data.getSize());
+            run (1, true);
+            CHECK (liftedAfterLoad);
+            head.playing = false;
+            run (2, false);
+            bool any = pedal;
+            for (auto& ch : sounding)
+                for (int n : ch)
+                    any = any || n != 0;
+            CHECK (! any);
+            p.setPlayHead (nullptr);
+        }
+    }
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI juce;
@@ -2111,6 +2197,7 @@ int main (int argc, char** argv)
     testV024();
     testRhythmButtonsRerollPiano();
     testFamilyPresets();
+    testRiffGenreAndRestoreWhilePlaying();
 
     if (failures == 0)
         std::printf ("All plug-in tests passed.\n");

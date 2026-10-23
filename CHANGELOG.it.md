@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.0] - 2026-10-23
+
+- I riff casuali di Soulful, Deep, Gospel, Jackin', Jackin' Piano, Garage, Afro, Funky & Disco, Neo Soul e Chill sono molto più vari: DENSITY ora funziona, e ogni lancio aggiunge accenti, ghost, spinte, un giro sull'ultimo tempo, lo skip garage e una linea di basso del genere (prima un solo colpo di basso per battuta). Le progressioni gospel casuali hanno molti più esiti. I generi house suonano come prima.
+- Corretto: caricare un progetto mentre suona poteva lasciare il pedale abbassato e note di risposta appese; il genere del riff casuale viene salvato (un riff jackin' non si riapre più come house); il loop modificato non alloca più memoria nel thread audio; i parametri si leggono senza allocare.
+
 ## [0.30.0] - 2026-10-22
 
 - Un riff casuale segue il genere del groove già in esecuzione. Nuovo riff, Nuovo ritmo e il dado di una parte scrivono ciascuno una figura nuova di quel genere, e il clic successivo è diverso.

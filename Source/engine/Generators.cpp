@@ -339,6 +339,163 @@ namespace
         repairHolds (p.leftHand);
         return p;
     }
+
+    /** The touch of a genre riff, on top of its comping grid (which the seed picks and keeps):
+        accents where that style leans, ghost notes before hits, a turn on the last beat, a push
+        into the next loop, the density control, and a bass figure of the genre that locks to it.
+        Every choice comes from the seed, so the same seed and genre give the same riff. */
+    void shapeGenreRiff (GroovePattern& p, int genre, std::uint32_t seed, double density)
+    {
+        enum { soulful = 1, deep, gospel, jackin, jackinPiano, garage, afro, funky, neo = 10, chill };
+        Random rng (seed * 0x9E3779B1u + (std::uint32_t) genre * 0x85EBCA6Bu + 0x2545F491u);
+
+        auto& r = p.rightHand;
+        const int len = (int) r.size();
+        if (len != 32)
+            return;
+
+        // Genres that stab and never hold (their grids carry no '=').
+        const bool stabbed = genre == jackin || genre == jackinPiano || genre == garage || genre == funky;
+        auto hits = [&] { return (int) std::count_if (r.begin(), r.end(), isHit); };
+        auto inHold = [&] (int i) { return i > 0 && r[(size_t) i - 1] == '='; };
+        auto tresilloStep = [] (int i) { const int k = i % 16; return k == 0 || k == 3 || k == 6; };
+
+        // ---- density: a sparse setting leaves out a weak 16th, a busy one adds an "&" ----
+        if (density < 0.35)
+            for (int i = 1; i < len; i += 2)
+                if (r[(size_t) i] == 'x' && hits() > 6 && ! (genre == afro && tresilloStep (i))
+                    && (i + 1 >= len || r[(size_t) i + 1] != '=') && rng.chance ((0.35 - density) * 1.6))
+                    r[(size_t) i] = '.';
+        auto hasGap = [&]   // garage skips: somewhere a whole beat without a hit
+        {
+            for (int i = 0; i + 3 < len; ++i)
+                if (! isHit (r[(size_t) i]) && ! isHit (r[(size_t) i + 1]) && ! isHit (r[(size_t) i + 2]) && ! isHit (r[(size_t) i + 3]))
+                    return true;
+            return false;
+        };
+        if (density > 0.65)
+        {
+            // Pads and deep chords stay sparse; garage adds its skipping 16th, never filling every gap.
+            const int cap = genre == deep ? 8 : genre == chill ? 6 : len;
+            const int first = genre == garage ? 3 : 2;
+            for (int i = first; i < len; i += 4)
+                if (r[(size_t) i] == '.' && ! inHold (i) && hits() < cap && rng.chance ((density - 0.65) * 1.2))
+                {
+                    r[(size_t) i] = 'x';
+                    if (genre == garage && ! hasGap())
+                        r[(size_t) i] = '.';
+                }
+        }
+
+        // ---- the turn: now and then the last beat of the loop answers with another cell ----
+        static const char* const turns[12][3] {
+            {}, { "x=..", "..x=", "x..x" }, { "..x=", "x=..", ".x=." }, { "x.x.", ".x.x", "x..x" },
+            { ".x.x", "x.xx", "..xx" }, { "..xx", ".x.x", "x..x" }, { "...x", ".x..", "..x." },
+            { "..x.", ".x..", "x..x" }, { ".xx.", "x.xx", ".x.x" }, {}, { "..x.", "...x", ".x.." },
+            { "..x=", "x===", "...." },
+        };
+        if (genre >= 0 && genre < 12 && turns[genre][0] != nullptr && rng.chance (0.4))
+        {
+            const char* cell = turns[genre][rng.below (3)];
+            for (int k = 0; k < 4; ++k)
+                r[(size_t) 28 + (size_t) k] = cell[k];
+        }
+
+        // ---- garage: a stab on an "&" now and then slips a 16th late, the 2-step skip ----
+        if (genre == garage)
+            for (int i = 2; i + 1 < len; i += 4)
+                if (r[(size_t) i] == 'x' && r[(size_t) i + 1] == '.' && i % 16 != 0 && rng.chance (0.3))
+                {
+                    r[(size_t) i] = '.';
+                    r[(size_t) i + 1] = 'x';
+                }
+
+        // ---- push into the next loop: held where the style holds, a short anticipation where it stabs ----
+        if ((genre == soulful || genre == deep || genre == gospel || genre == neo) && rng.chance (0.4))
+        {
+            r[30] = '>';
+            r[31] = '=';
+        }
+        else if (stabbed && genre != garage && r[30] != '=' && ! isHit (r[30]) && rng.chance (0.3))
+            r[31] = '>';
+        repairHolds (r);
+
+        // ---- accents: the first hit of each bar, then where the style leans ----
+        for (int bar = 0; bar < 2; ++bar)
+            for (int i = bar * 16; i < bar * 16 + 16; ++i)
+                if (r[(size_t) i] == 'x') { r[(size_t) i] = 'X'; break; }
+        for (int i = 0; i < len; ++i)
+        {
+            if (r[(size_t) i] != 'x')
+                continue;
+            double lean = 0.0;
+            switch (genre)
+            {
+                case jackin: case jackinPiano: lean = i % 4 == 2 ? 0.5 : 0.0; break;     // the jacking "&"
+                case funky:   lean = i % 8 == 4 ? 0.6 : i % 4 == 3 ? 0.25 : 0.0; break; // 2 and 4, the "a"
+                case gospel:  lean = i % 8 == 4 ? 0.55 : 0.0; break;                     // the backbeat
+                case garage:  lean = i % 2 == 1 ? 0.5 : i % 4 == 2 ? 0.3 : 0.0; break;   // the skipped 16th, the offbeat
+                case afro:    lean = tresilloStep (i) ? 0.5 : 0.0; break;                // the tresillo
+                case soulful: case neo: lean = i % 4 == 2 ? 0.2 : 0.0; break;
+                case deep: case chill: lean = i % 8 == 0 ? 0.35 : 0.0; break;            // a chord on 1 or 3
+                default: break;
+            }
+            if (lean > 0.0 && rng.chance (lean))
+                r[(size_t) i] = 'X';
+        }
+
+        // ---- ghost notes: a soft 16th before a hit, where the style plays them ----
+        double ghost = 0.0;
+        switch (genre)
+        {
+            case funky: ghost = 0.35; break;
+            case jackin: ghost = 0.25; break;
+            case jackinPiano: case gospel: ghost = 0.18; break;
+            case neo: ghost = 0.12; break;
+            case afro: case soulful: ghost = 0.08; break;
+            default: break;
+        }
+        ghost *= 0.5 + density;
+        if (ghost > 0.0)
+            for (int i = 1; i + 1 < len; ++i)
+                if (r[(size_t) i] == '.' && i % 4 != 0 && ! inHold (i) && isHit (r[(size_t) i + 1]) && r[(size_t) i + 1] != 'g'
+                    && rng.chance (ghost))
+                    r[(size_t) i] = 'g';
+
+        // ---- the bass: a figure of the genre, the same in both bars or answered in the second ----
+        static const std::vector<std::vector<const char*>> bassBars {
+            {},
+            { "x=.....x..x.....", "x==...x...x.....", "x=......x=......", "x.....x.x.......", "x==.......x..x.." },
+            { "x==.......x.....", "x===......x=....", "x=......x=......", "x==....x........", "x=.......x=.....", "x==...x=........" },
+            { "x...x...x...x...", "x..x..x.x...x...", "x=..x=..x=..x..x", "x...x..xx...x..." },
+            { "x.x...x.x.x...x.", "..x...x...x...x.", "x..x..x...x..x..", "x.....x.x.....x.", "x.xx..x...x.x..." },
+            { "x.x...x.x.x...x.", "x.....x...x..x..", "x..x..x...x..x..", "x.....x.x.....x.", "..x...x...x...x." },
+            { "x.......x.x.....", "x......x..x.....", "x..x......x.....", "x.........x..x..", "x.....x....x...." },
+            { "x..x..x.........", "x..x..x...x.....", "x.....x...x..x..", "x..x..x...x..x.." },
+            { "x.x...x.x.x...x.", "x..x.x..x..x.x..", "x.xx..x.x.x..x..", "x...x.x.x..x..x.", "x.x..xx.x.x..x.." },
+            {},
+            { "x=....x...x.....", "x=.......x..x...", "x==....x..x.....", "x.......x=...x.." },
+            { "x===....x===....", "x=======........", "x===......x=....", "x=======...x=...", "x===...x=......." },
+        };
+        if (genre > 0 && genre < (int) bassBars.size() && ! bassBars[(size_t) genre].empty())
+        {
+            const auto& figures = bassBars[(size_t) genre];
+            const int n = (int) figures.size();
+            const int a = rng.below (n);
+            const int b = rng.chance (0.65) ? a : rng.below (n);
+            std::string left = std::string (figures[(size_t) a]) + figures[(size_t) b];
+            if (genre == funky || genre == jackin)   // dead notes between the bass hits
+                for (int i = 1; i + 1 < 32; ++i)
+                    if (left[(size_t) i] == '.' && left[(size_t) i - 1] != '=' && left[(size_t) i + 1] == 'x' && rng.chance (0.2))
+                        left[(size_t) i] = 'g';
+            if (r[30] == '>' && ! stabbed && rng.chance (0.6))
+            {
+                left[30] = '>'; left[31] = '='; left[0] = 'x';
+            }
+            p.leftHand = left;
+            repairHolds (p.leftHand);
+        }
+    }
 }
 
 GenreRiffFeel genreRiffFeel (int genre) noexcept
@@ -434,6 +591,7 @@ GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn, int genre)
     }
 
     auto p = genrePattern (right);
+    shapeGenreRiff (p, genre, seed, std::clamp ((double) densityIn, 0.0, 1.0));
     p.name = "Random Riff #" + std::to_string (seed % 100000);
     return p;
 }
@@ -977,11 +1135,21 @@ std::vector<int> randomProgression (std::uint32_t seed, int length, int scale, i
         { 2, 1, 0, 4, 3, 2, 1, 0 },
         { 6, 5, 4, 3, 2, 1, 0, 4 },
     };
+    // The seed picks the row, then where in it the walk starts: any point whose next chord is a
+    // step away (so the walk still begins by step), which gives far more than eight progressions.
     const int row = (int) (seed % 8u);
+    int starts[8] {}, numStarts = 0;
+    for (int i = 0; i < 8; ++i)
+    {
+        const int d = std::abs (rows[row][(i + 1) % 8] - rows[row][i]);
+        if (d == 1 || d == 6)
+            starts[numStarts++] = i;
+    }
+    const int start = numStarts > 0 ? starts[(seed / 8u) % (std::uint32_t) numStarts] : 0;
     std::vector<int> out;
     out.reserve ((size_t) length);
     for (int i = 0; i < length; ++i)
-        out.push_back (rows[row][i % 8]);
+        out.push_back (rows[row][(start + i) % 8]);
     return out;
 }
 

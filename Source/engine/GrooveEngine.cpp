@@ -2667,7 +2667,9 @@ void GrooveEngine::render (double startPpq, double endPpq, const GrooveSettings&
         for (auto k = (long long) std::floor (startPpq / length) - 1; k <= (long long) std::floor (endPpq / length); ++k)
             for (const auto& n : *s.editedLoop)
                 if ((n.part != Part::bass || s.bass != BassMode::off)   // bass off (PIANO only) silences the edited bass too
-                    && (n.part != Part::strings || s.strings != StringsMode::off))
+                    && (n.part != Part::strings || s.strings != StringsMode::off)
+                    // only this block's notes: a long loop must not fill (and grow) the queue every block
+                    && (double) k * length + n.start >= startPpq && (double) k * length + n.start < endPpq)
                     pending.push_back ({ (double) k * length + n.start, n.note,
                                          std::clamp ((int) std::lround (n.velocity * scale), 1, 127),
                                          std::max (0.02, n.length), false, n.part });

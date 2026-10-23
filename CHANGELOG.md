@@ -6,6 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.0] - 2026-10-23
+
+- Random riffs in Soulful, Deep, Gospel, Jackin', Jackin' Piano, Garage, Afro, Funky & Disco, Neo Soul and Chill are much more varied: DENSITY now works, and every roll adds accents, ghost notes, pushes, a last-beat turn, the garage skip and a bass line of the genre (before, a single bass hit per bar). Gospel random progressions have many more outcomes. The house genres play as before.
+- Fixed: loading a project while playing could leave the sustain pedal down and answer notes hanging; a random riff's genre is saved (a jackin' riff no longer reopens as house); an edited loop no longer allocates memory on the audio thread; parameters are read without allocating.
+
 ## [0.30.0] - 2026-10-22
 
 - A random riff follows the genre of the groove already playing. New riff, New rhythm and the dice on a part each write a new figure in that genre, and the next click is a different one.

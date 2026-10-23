@@ -1425,6 +1425,7 @@ void FaseGroovePianoProcessor::prepareToPlay (double sampleRate, int samplesPerB
     // Room for the largest blocks (offline rendering too): no growing on the audio thread.
     events.reserve ((size_t) juce::jmax (8192, samplesPerBlock / 2));
     answerEvents.reserve ((size_t) juce::jmax (1024, samplesPerBlock / 8));
+    outMidi.ensureSize ((size_t) juce::jmax (8192, samplesPerBlock));   // the MIDI out of a block: no growing on the audio thread
     answerSounding.fill (false);
     sidechainLevel.assign ((size_t) juce::jmax (8192, 2 * samplesPerBlock), 0.0f);
     lastOutput.assign ((size_t) juce::jmax (1, samplesPerBlock), 0.0f);
@@ -1496,6 +1497,12 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         sidechainMeter = juce::jmax (blockPeak, sidechainMeter.load() * 0.8f);   // for the meter in the UI
     }
     buffer.clear();
+
+    if (stateRestored.exchange (false))
+    {
+        wasRunning = false;      // a restart: everything sounding is released below
+        compingVoiced = false;
+    }
 
     auto settings = currentSettings();
 
@@ -2191,6 +2198,17 @@ double FaseGroovePianoProcessor::naturalLoopBeats() const
     return bars * 4.0;
 }
 
+void FaseGroovePianoProcessor::retirePlaying (EditedLoop next)
+{
+    // The audio thread may still hold the notes being replaced (a copy in its settings): keep them
+    // here until it has let go, so their memory is never freed on the audio thread.
+    if (auto old = std::atomic_exchange (&playingNotes, std::move (next)); old != nullptr)
+        retiredLoops.push_back (std::move (old));
+    retiredLoops.erase (std::remove_if (retiredLoops.begin(), retiredLoops.end(),
+                                        [] (const EditedLoop& l) { return l.use_count() <= 1; }),
+                        retiredLoops.end());
+}
+
 void FaseGroovePianoProcessor::setEditedLoop (std::vector<sgk::LoopNote> notes, double lengthInBeats)
 {
     const double length = juce::jlimit (4.0, 64.0 * 4.0, lengthInBeats);
@@ -2203,12 +2221,12 @@ void FaseGroovePianoProcessor::setEditedLoop (std::vector<sgk::LoopNote> notes, 
     playingLength = length;
     std::atomic_store (&editedBase, share (std::move (base)));
     std::atomic_store (&editedNotes, share (notes));
-    std::atomic_store (&playingNotes, share (std::move (notes)));
+    retirePlaying (share (std::move (notes)));
 }
 
 void FaseGroovePianoProcessor::clearEditedLoop()
 {
-    std::atomic_store (&playingNotes, EditedLoop());
+    retirePlaying (EditedLoop());
     std::atomic_store (&editedNotes, EditedLoop());
     std::atomic_store (&editedBase, EditedLoop());
     editedLength = 0.0;
@@ -2239,7 +2257,7 @@ void FaseGroovePianoProcessor::refreshEditedLoop()
     lastGenerated = std::move (now);
     lastGeneratedLength = length;
     playingLength = length;
-    std::atomic_store (&playingNotes, share (std::move (carried)));
+    retirePlaying (share (std::move (carried)));
 }
 std::vector<sgk::LoopNote> FaseGroovePianoProcessor::generatedLoop (double lengthInBeats) const
 {
@@ -3079,6 +3097,7 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("soloBass", chordsMuted.load(), nullptr);
     state.setProperty ("bassMuted", bassMuted.load(), nullptr);
     state.setProperty ("lastGroove", lastGrooveName, nullptr);
+    state.setProperty ("riffGenre", lastGenre.load(), nullptr);   // the genre a random riff is written in
     state.setProperty ("linkDrums", linkOn.load(), nullptr);
     state.setProperty ("linkKey", keyLinked.load(), nullptr);
     {
@@ -3202,6 +3221,9 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     chordsMuted = (bool) state.getProperty ("soloBass", false);
     bassMuted = (bool) state.getProperty ("bassMuted", false);
     lastGrooveName = state.getProperty ("lastGroove", juce::String()).toString();
+    // A random riff is written in the genre of the groove before it: without this it would reopen
+    // as a house riff. (Older projects have no value: the house riff they played then.)
+    lastGenre = juce::jlimit (0, (int) sgk::grooveCategories().size() - 1, (int) state.getProperty ("riffGenre", 0));
     keyLinked = (bool) state.getProperty ("linkKey", false);
     setLinked ((bool) state.getProperty ("linkDrums", false));
     {
@@ -3275,17 +3297,14 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
             lastGeneratedLength = length;
             std::atomic_store (&editedBase, share (std::move (base)));
             std::atomic_store (&editedNotes, share (notes));
-            std::atomic_store (&playingNotes, share (std::move (notes)));
+            retirePlaying (share (std::move (notes)));
         }
     }
 
-    // Loaded while notes are still out: the next block releases them, then plays the restored groove.
-    wasRunning = false;
-    compingDropped.fill (false);
-    answerSounding.fill (false);
-    bassNoteChannels.fill (0);
-    pedalDown = false;
-    compingVoiced = false;
+    // Loaded while notes are still out: the next block releases them (groove notes, the piano's
+    // answers, the pedal), then plays the restored groove. The audio thread does it itself: its
+    // note bookkeeping is not touched from here, or what is sounding could no longer be released.
+    stateRestored = true;
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

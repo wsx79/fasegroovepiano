@@ -403,6 +403,8 @@ public:
 
 private:
     EditedLoop editedNotes, editedBase, playingNotes;   // the edits, the notes they were made on, what plays
+    std::vector<EditedLoop> retiredLoops;              // message thread: replaced notes the audio thread may still hold
+    void retirePlaying (EditedLoop next);
     std::atomic<double> editedLength { 0.0 }, playingLength { 0.0 };
     std::vector<sgk::LoopNote> lastGenerated;           // message thread: to notice a change
     double lastGeneratedLength = 0.0;
@@ -526,6 +528,7 @@ private:
     double internalPpq = 0.0;
     double expectedNextPpq = 0.0;
     bool wasRunning = false;
+    std::atomic<bool> stateRestored { false };   // set by setStateInformation, handled by the next block
     bool soundWasOn = true;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FaseGroovePianoProcessor)
