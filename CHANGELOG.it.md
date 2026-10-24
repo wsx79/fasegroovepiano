@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.4] - 2026-10-24
+
+- La logica di accompagnamento condivisa con l'Arranger ora sta nel motore (un solo file per entrambi). MIDI invariato.
+- La finestra di aggiornamento viene dal modulo comune FaseGroove.
+
 ## [0.31.3] - 2026-10-24
 
 - I riff casuali variano di più: ogni lancio sceglie uno dei voicing e dei colori del genere (con swing e gate ritoccati) e la seconda battuta risponde alla prima con un colpo anticipato o un pick-up.

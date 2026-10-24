@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(FaseGroovePiano VERSION 0.31.3 LANGUAGES C CXX)
+project(FaseGroovePiano VERSION 0.31.4 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,7 +20,8 @@ add_library(sgk_engine STATIC
     Source/engine/Theory.cpp
     Source/engine/GrooveEngine.cpp
     Source/engine/Generators.cpp
-    Source/engine/HarmonyAnalyzer.cpp)
+    Source/engine/HarmonyAnalyzer.cpp
+    Source/engine/Comping.cpp)
 target_include_directories(sgk_engine PUBLIC Source/engine)
 set_target_properties(sgk_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -86,7 +87,8 @@ if(SGK_BUILD_PLUGIN)
         ThirdParty/fasegroove-common/CircleOfFifths.cpp
         ThirdParty/fasegroove-common/Branding.cpp
         ThirdParty/fasegroove-common/Localisation.cpp
-        ThirdParty/fasegroove-common/Updater.cpp)
+        ThirdParty/fasegroove-common/Updater.cpp
+        ThirdParty/fasegroove-common/UpdateOverlay.cpp)
     target_include_directories(FaseGroovePiano PUBLIC ThirdParty/fasegroove-common)
 
     target_compile_definitions(FaseGroovePiano PUBLIC

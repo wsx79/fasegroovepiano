@@ -6,6 +6,7 @@
 #include "LinkFile.h"
 #include "RawParameters.h"
 
+#include "engine/Comping.h"
 #include "engine/GrooveEngine.h"
 #include "engine/HarmonyAnalyzer.h"
 #include "FamilyGuideRenderer.h"
@@ -77,7 +78,8 @@ namespace ParamIDs
 
 class PadController;
 
-class FaseGroovePianoProcessor : public juce::AudioProcessor
+class FaseGroovePianoProcessor : public juce::AudioProcessor,
+                                 public sgk::Comping   // the comping under a leading guitar (engine/Comping.h)
 {
 public:
     FaseGroovePianoProcessor();
@@ -288,33 +290,9 @@ public:
     /** KEY (with LINK on): the same key and scale in every linked plug-in that has KEY on. */
     void setKeyLinked (bool on);
     bool isKeyLinked() const noexcept { return keyLinked.load(); }
-    static bool compingKeeps (double ppq, std::uint32_t seed) noexcept;
-    /** One window of the four-bar comping cycle: where (beats in the cycle) and what plays there,
-        the piano's own groove (figure -1) or an answer of its own (a figure). */
-    struct CompingWindow { double start = 0.0; int figure = -1; };
-    static int compingWindows (std::uint32_t seed, std::array<CompingWindow, 8>& out) noexcept;
-    struct CompingHit { double offset, length; float level; };
-    struct CompingFigure { int count; std::array<CompingHit, 3> hits; };
-    static constexpr int numCompingFigures = 8;
-    static const CompingFigure& compingFigure (int figure) noexcept;
-    /** The answers' note-ons and note-offs that fall in [from, to), on the chords of the moment. */
-    static void compingAnswers (double from, double to, std::uint32_t seed, const sgk::GrooveSettings&,
-                                std::vector<sgk::NoteEvent>& out);
-    /** The same on a progression already voiced (the audio thread voices it only when it changes). */
-    static void compingAnswers (double from, double to, std::uint32_t seed, const sgk::GrooveSettings&,
-                                const std::array<sgk::VoicedChord, sgk::maxProgressionLength>& voiced,
-                                std::vector<sgk::NoteEvent>& out);
-    /** One hit of the answers in the four-bar cycle (beats), ended before the next one starts. */
-    struct CompingSpan { double on = 0.0, off = 0.0; float level = 1.0f; int id = 0; };
-    static int compingHits (std::uint32_t seed, std::array<CompingSpan, 24>& out) noexcept;
+    // The comping itself (compingKeeps, compingAnswers, comping, compingPattern...): sgk::Comping.
     /** The comping's seed: the groove and its riff seed (NEW RHYTHM gives other answers). */
     std::uint32_t compingSeed() const;
-    /** The events as the piano plays them under a leading guitar: the chord and fill notes
-        outside compingKeeps() left out (each with its note-off), the bass and strings as they are. */
-    static std::vector<sgk::NoteEvent> comping (const std::vector<sgk::NoteEvent>& events, std::uint32_t seed,
-                                               const sgk::GrooveSettings&, double length);
-    /** The groove as the grid shows it then: four bars, the right hand only on the comping beats. */
-    static sgk::GroovePattern compingPattern (const sgk::GroovePattern&, std::uint32_t seed);
     /** Writes the genre and swing for the others, or takes theirs (message thread, a few times a second). */
     void updateLink();
     /** The genre shared with LINK: a preset's own, else the last preset's. */

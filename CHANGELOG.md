@@ -6,6 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.4] - 2026-10-24
+
+- The comping logic shared with the Arranger now lives in the engine (one file for both). MIDI unchanged.
+- The update overlay comes from the shared FaseGroove module.
+
 ## [0.31.3] - 2026-10-24
 
 - Random riffs vary more: each roll picks one of the genre's voicings and colours (with swing and gate nudged), and the second bar answers the first with an early hit or a pick-up.
