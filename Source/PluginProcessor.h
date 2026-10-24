@@ -13,6 +13,8 @@
 
 #include <array>
 #include <atomic>
+#include <string_view>
+#include <unordered_map>
 
 namespace ParamIDs
 {
@@ -378,6 +380,8 @@ public:
     int clipLengthInBars (int bars) const;
 
     juce::AudioProcessorValueTreeState apvts;
+    /** A parameter's current value, by its ID (a cached lookup, safe on any thread). */
+    float raw (const char* id) const;
 
     std::atomic<bool> previewOn { false };   // play the groove without the host transport
     // Transport of the preview: play resumes where pause left it; stop and rewind go back to the start.
@@ -408,6 +412,11 @@ private:
     std::atomic<double> editedLength { 0.0 }, playingLength { 0.0 };
     std::vector<sgk::LoopNote> lastGenerated;           // message thread: to notice a change
     double lastGeneratedLength = 0.0;
+    // message thread: what lastGenerated was last checked against (no regeneration while it holds)
+    sgk::GrooveSettings lastCheckedSettings;
+    double lastCheckedLength = 0.0;
+    bool lastCheckedComping = false, lastCheckedValid = false;
+    std::uint32_t lastCheckedSeed = 0;
     struct Refresher : juce::Timer
     {
         std::function<void()> callback;
@@ -446,10 +455,31 @@ private:
     };
     LinkState linkShared;                      // what the link file says (or what we wrote)
     juce::String linkSeenText;
+    // A file polled for changes: read again only when its date or size changed, or it was
+    // written in the last few seconds (a coarse file clock could hide a quick rewrite).
+    struct PolledFile
+    {
+        juce::Time modified;
+        juce::int64 size = -1;
+        juce::String text;
+        const juce::String& read (const juce::File& file)
+        {
+            const auto t = file.getLastModificationTime();
+            const auto n = file.getSize();
+            if (n != size || t != modified || (juce::Time::getCurrentTime() - t).inMilliseconds() < 3000)
+            {
+                text = file.loadFileAsString();
+                modified = t;
+                size = n;
+            }
+            return text;
+        }
+    };
+    PolledFile linkPolled, leadPolled;   // message thread
     std::atomic<double> linkAnchor { -1.0 };   // the shared clock while playing, -1 = none
     LinkState localLinkState() const;
     mutable std::atomic<int> lastGenre { 0 };   // the genre of the last preset (a random or edited groove keeps it)
-    float raw (const char* id) const;
+    std::unordered_map<std::string_view, std::atomic<float>*> paramValues;   // every parameter by ID, filled once
 
     std::array<std::atomic<float>*, sgk::maxProgressionLength> slotParams {};
     std::array<std::atomic<float>*, sgk::numSegments> segmentParams {};

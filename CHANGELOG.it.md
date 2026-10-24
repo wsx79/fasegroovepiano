@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.1] - 2026-10-24
+
+- Più leggero: il groove non si ricostruisce più se le impostazioni non sono cambiate, l'editor fa meno lavoro a ogni ciclo, il chorus degli archi si salta quando il mix è a 0 e il riverbero non si reimposta se non cambia. Il suono non cambia.
+- L'aggiornamento automatico non contiene più il ponte per la vecchia numerazione 2.x.
+
 ## [0.31.0] - 2026-10-23
 
 - I riff casuali di Soulful, Deep, Gospel, Jackin', Jackin' Piano, Garage, Afro, Funky & Disco, Neo Soul e Chill sono molto più vari: DENSITY ora funziona, e ogni lancio aggiunge accenti, ghost, spinte, un giro sull'ultimo tempo, lo skip garage e una linea di basso del genere (prima un solo colpo di basso per battuta). Le progressioni gospel casuali hanno molti più esiti. I generi house suonano come prima.

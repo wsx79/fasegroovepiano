@@ -426,6 +426,7 @@ private:
     juce::ListBox list;
     std::vector<Entry> entries;
     juce::StringArray favouriteNames;
+    juce::StringArray recentNames;     // read when the browser opens, like the favourites
     int genre = firstCategory, currentPreset = -1;
     Mode mode = Mode::grooves;
     bool quiet = false;   // selecting without playing (when the browser opens)
@@ -822,6 +823,18 @@ private:
     int uiTicks = 0;
     int shownStep() const;
     sgk::GroovePattern shownPattern;   // the groove shown, worked out 10 times a second
+    // What the slow tick works out from the settings, kept until they change.
+    struct TickCache
+    {
+        bool valid = false;
+        sgk::GrooveSettings settings;
+        std::array<sgk::Chord, sgk::maxProgressionLength> chords;
+        std::array<sgk::VoicedChord, sgk::maxProgressionLength> voiced;
+        sgk::GrooveEngine::HarmonyScores harmony;
+        sgk::GroovePattern pattern;
+        std::vector<CircleOfFifths::ChordMark> marks, diatonic;
+        std::vector<float> moves;
+    } tickCache;
     void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override { pendingSnapshot = 8; }
     void showStyleMenu();
     void confirmReset();

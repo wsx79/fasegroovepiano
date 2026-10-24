@@ -221,6 +221,10 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     : AudioProcessor (makeBuses()),
       apvts (*this, nullptr, "FaseGroovePiano", createLayout())
 {
+    for (auto* p : getParameters())
+        if (auto* withId = dynamic_cast<juce::AudioProcessorParameterWithID*> (p))
+            paramValues[std::string_view (withId->paramID.toRawUTF8())] = apvts.getRawParameterValue (withId->paramID);
+
     auto& toneParam = *apvts.getRawParameterValue (ParamIDs::tone);
     auto& soundParam = *apvts.getRawParameterValue (ParamIDs::soundType);
 
@@ -264,9 +268,12 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
         }
         for (int i = 0; i < count; ++i)
             runLiveKey (keys[i]);
+        // Switched off: only a slow look for the setting being switched on (here or in another instance).
+        const int interval = liveKeysEnabled() ? 25 : 250;
+        if (liveKeyRunner.getTimerInterval() != interval)
+            liveKeyRunner.startTimer (interval);
     };
-    liveKeyRunner.startTimer (25);
-    liveKeysEnabled();   // reads the setting now, so the audio thread only reads an atomic
+    liveKeyRunner.startTimer (liveKeysEnabled() ? 25 : 250);   // also reads the setting now, so the audio thread only reads an atomic
 }
 
 namespace
@@ -1077,7 +1084,10 @@ void FaseGroovePianoProcessor::totalRandom()
 
 float FaseGroovePianoProcessor::raw (const char* id) const
 {
-    return apvts.getRawParameterValue (id)->load();
+    if (const auto it = paramValues.find (id); it != paramValues.end() && it->second != nullptr)
+        return it->second->load();
+    jassertfalse;   // not a parameter of this plug-in
+    return 0.0f;
 }
 
 sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
@@ -2216,6 +2226,7 @@ void FaseGroovePianoProcessor::setEditedLoop (std::vector<sgk::LoopNote> notes, 
     auto base = generatedLoop (length);
 
     lastGenerated = base;
+    lastCheckedValid = false;
     lastGeneratedLength = length;
     editedLength = length;
     playingLength = length;
@@ -2232,6 +2243,7 @@ void FaseGroovePianoProcessor::clearEditedLoop()
     editedLength = 0.0;
     playingLength = 0.0;
     lastGenerated.clear();
+    lastCheckedValid = false;
 }
 
 void FaseGroovePianoProcessor::refreshEditedLoop()
@@ -2242,6 +2254,21 @@ void FaseGroovePianoProcessor::refreshEditedLoop()
         return;
 
     const double length = naturalLoopBeats();
+    // What generatedLoop() reads: when none of it changed since the last check, neither did the notes.
+    auto settings = currentSettings();
+    settings.editedLoop = nullptr;
+    settings.section = sgk::Section::main;
+    const bool compingOn = guitarLeads.load() && linkOn.load();
+    const auto seed = compingSeed();
+    if (lastCheckedValid && juce::exactlyEqual (length, lastCheckedLength) && compingOn == lastCheckedComping
+        && seed == lastCheckedSeed && sgk::GrooveEngine::sameSettings (settings, lastCheckedSettings))
+        return;
+    lastCheckedSettings = settings;
+    lastCheckedLength = length;
+    lastCheckedComping = compingOn;
+    lastCheckedSeed = seed;
+    lastCheckedValid = true;
+
     auto now = generatedLoop (length);
     auto same = [] (const sgk::LoopNote& a, const sgk::LoopNote& b)
     {
@@ -2862,7 +2889,7 @@ void FaseGroovePianoProcessor::readGuitarLead()
     bool leads = false;
     const auto file = linkFile().getSiblingFile ("GuitarLead.xml");
     if (linkOn.load() && file.existsAsFile())
-        if (auto xml = juce::parseXML (file); xml != nullptr && xml->getBoolAttribute ("lead"))
+        if (auto xml = juce::parseXML (leadPolled.read (file)); xml != nullptr && xml->getBoolAttribute ("lead"))
             leads = juce::Time::currentTimeMillis() - xml->getStringAttribute ("time").getLargeIntValue() < 6000;
     guitarLeads = leads && linkOn.load();
 }
@@ -2964,7 +2991,7 @@ void FaseGroovePianoProcessor::updateLink()
     // Someone else changed it: take what changed (their genre: the first groove of it, unless
     // this one is already of that genre).
     if (file.existsAsFile())
-        if (const auto text = file.loadFileAsString(); text != linkSeenText)
+        if (const auto text = linkPolled.read (file); text != linkSeenText)
         {
             linkSeenText = text;
             if (auto xml = juce::parseXML (text); xml != nullptr && xml->getStringAttribute ("instance") != me)
@@ -3294,6 +3321,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
             editedLength = length;
             playingLength = length;
             lastGenerated = base;
+            lastCheckedValid = false;
             lastGeneratedLength = length;
             std::atomic_store (&editedBase, share (std::move (base)));
             std::atomic_store (&editedNotes, share (notes));

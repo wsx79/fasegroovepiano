@@ -378,6 +378,10 @@ public:
     };
     static HarmonyKey harmonyKey (const GrooveSettings& s) noexcept;
 
+    /** True when every field of the two settings is the same (editedLoop by pointer): what is
+        generated from them is then the same too. A new GrooveSettings field must be added here. */
+    static bool sameSettings (const GrooveSettings& a, const GrooveSettings& b) noexcept;
+
     /** The bass root of every slot: C2..B2 (classic), or in the low octave voice-led from chord
         to chord (sub feels: the nearest to the root before, the loop point included). */
     static void bassRoots (const GrooveSettings& s, const std::array<Chord, maxProgressionLength>& chords,

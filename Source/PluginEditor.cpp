@@ -1398,6 +1398,7 @@ void GrooveBrowser::refreshText()
     importButton.setButtonText (tr ("Import a MIDI file..."));
     importButton.setVisible (mode == Mode::progressions);
     favouriteNames = loadList (favouritesKey());
+    recentNames = loadList (recentKey());
 
     const auto& cats = categories();
     for (int i = 0; i < genreButtons.size(); ++i)
@@ -1450,7 +1451,7 @@ int GrooveBrowser::genreOfCurrent() const
         return firstCategory;
     }
 
-    const int current = pickCurrent >= 0 ? pickCurrent : juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pattern)->load());
+    const int current = pickCurrent >= 0 ? pickCurrent : juce::roundToInt (processor.raw (ParamIDs::pattern));
     const auto& patterns = sgk::groovePatterns();
     if (current >= (int) patterns.size())
         return firstCategory + (int) cats.size() + 1;   // Generate
@@ -1504,7 +1505,6 @@ void GrooveBrowser::rebuildList()
     entries.clear();
     const auto query = search.getText().trim();
     const auto& cats = categories();
-    const auto recentNames = loadList (recentKey());
 
     // Which names to list for Favourites / Recent (in that order).
     const juce::StringArray* byName = query.isEmpty() && genre == favourites ? &favouriteNames
@@ -1634,7 +1634,7 @@ void GrooveBrowser::rebuildList()
     list.repaint();
 
     // Show the groove (or progression) that is playing now.
-    const int current = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pattern)->load());
+    const int current = juce::roundToInt (processor.raw (ParamIDs::pattern));
     quiet = true;
     list.deselectAllRows();
     for (int r = 0; r < (int) entries.size(); ++r)
@@ -1686,6 +1686,7 @@ void GrooveBrowser::choose (int row)
         while (names.size() > 12)
             names.remove (names.size() - 1);
         saveList (recentKey(), names);
+        recentNames = names;
     }
 }
 
@@ -1907,7 +1908,7 @@ void VoicingCoach::refreshText()
 void VoicingCoach::show()
 {
     // A = the voicing you use now, B = a different one worth comparing.
-    const int current = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::voicing)->load());
+    const int current = juce::roundToInt (processor.raw (ParamIDs::voicing));
     const int other = current == (int) sgk::Voicing::rootless ? (int) sgk::Voicing::drop2 : (int) sgk::Voicing::rootless;
     boxA.setSelectedId (current + 1, juce::dontSendNotification);
     boxB.setSelectedId (other + 1, juce::dontSendNotification);
@@ -1925,7 +1926,7 @@ void VoicingCoach::update()
     s.voicing = (sgk::Voicing) juce::jlimit (0, sgk::numVoicings - 1, boxB.getSelectedId() - 1);
     reportB = sgk::GrooveEngine::voicingReport (s);
 
-    const int current = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::voicing)->load());
+    const int current = juce::roundToInt (processor.raw (ParamIDs::voicing));
     hearA.setToggleState (current == boxA.getSelectedId() - 1, juce::dontSendNotification);
     hearB.setToggleState (current == boxB.getSelectedId() - 1 && ! hearA.getToggleState(), juce::dontSendNotification);
     repaint();
@@ -4402,8 +4403,8 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     rangeSlider.onDragEnd = [this]
     {
         // Snap the thumbs to what the parameters accept.
-        rangeSlider.setMinAndMaxValues (processor.apvts.getRawParameterValue (ParamIDs::chordLow)->load(),
-                                        processor.apvts.getRawParameterValue (ParamIDs::chordHigh)->load(), juce::dontSendNotification);
+        rangeSlider.setMinAndMaxValues (processor.raw (ParamIDs::chordLow),
+                                        processor.raw (ParamIDs::chordHigh), juce::dontSendNotification);
     };
     rangeLabel.setFont (font (10.0f, true));
     rangeLabel.setBorderSize ({});
@@ -4451,13 +4452,13 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     feelStyleButton.onClick = [this]
     {
         // How Humanize is shared between the voices: a short menu, ticked on the current one.
-        const int style = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::humanizeStyle)->load());
+        const int style = juce::roundToInt (processor.raw (ParamIDs::humanizeStyle));
         juce::PopupMenu menu;
         for (int i = 0; i < sgk::numHumanizeStyles; ++i)
             menu.addItem (i + 1, tr (sgk::humanizeStyleName (i)), true, i == style);
 
         // The feel of the whole part: realism, the bass's register, the pedal.
-        auto value = [this] (const char* id) { return processor.apvts.getRawParameterValue (id)->load(); };
+        auto value = [this] (const char* id) { return processor.raw (id); };
         menu.addSeparator();
         menu.addItem (100, tr ("Groove realism"), true, value (ParamIDs::realism) > 0.5f);
         juce::PopupMenu bassFeel;
@@ -4473,7 +4474,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
             if (safe == nullptr || result <= 0)
                 return;
             auto& p = safe->processor;
-            auto flip = [&p] (const char* id) { p.setParameterFromUI (id, p.apvts.getRawParameterValue (id)->load() > 0.5f ? 0.0f : 1.0f); };
+            auto flip = [&p] (const char* id) { p.setParameterFromUI (id, p.raw (id) > 0.5f ? 0.0f : 1.0f); };
             if (result == 100)      flip (ParamIDs::realism);
             else if (result == 300) flip (ParamIDs::pedalCC);
             else if (result >= 200) p.setParameterFromUI (ParamIDs::bassFeel, (float) (result - 200));
@@ -4603,7 +4604,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     {
         processor.setParameterFromUI (ParamIDs::key, (float) pc);
 
-        const int currentScale = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::scale)->load());
+        const int currentScale = juce::roundToInt (processor.raw (ParamIDs::scale));
         if (sgk::scaleIsMinor (currentScale) != minorKey)
             processor.setParameterFromUI (ParamIDs::scale, minorKey ? 1.0f : 0.0f);   // Dorian / Major
     };
@@ -4617,7 +4618,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         }
         else
         {
-            const int key = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::key)->load());
+            const int key = juce::roundToInt (processor.raw (ParamIDs::key));
             processor.setFreeChord (slot, sgk::freeChordCode (rootPc - key, minorChord));
         }
         presetBox.setSelectedId (0, juce::dontSendNotification);
@@ -4999,7 +5000,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     strumDirButton.setColour (juce::TextButton::textColourOffId, Palette::accent);
     strumDirButton.onClick = [this]
     {
-        const int now = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::strumDir)->load());
+        const int now = juce::roundToInt (processor.raw (ParamIDs::strumDir));
         processor.setParameterFromUI (ParamIDs::strumDir, (float) ((now + 1) % 3));
     };
     addAndMakeVisible (strumDirButton);
@@ -5029,7 +5030,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         slots[i]->onInvert = [this, i] (int delta)
         {
             const auto id = ParamIDs::inversion (i);
-            const int now = juce::roundToInt (processor.apvts.getRawParameterValue (id)->load());
+            const int now = juce::roundToInt (processor.raw (id.toRawUTF8()));
             processor.setParameterFromUI (id, (float) juce::jlimit (-3, 3, now + delta));
         };
 
@@ -5284,7 +5285,7 @@ void FaseGroovePianoEditor::showPresetMenu()
 void FaseGroovePianoEditor::stepGroove (int direction)
 {
     const auto order = GrooveBrowser::menuOrder();
-    const int current = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pattern)->load());
+    const int current = juce::roundToInt (processor.raw (ParamIDs::pattern));
     const auto it = std::find (order.begin(), order.end(), current);
     int index = it == order.end() ? (direction > 0 ? -1 : 0) : (int) (it - order.begin());
     index = (index + direction + (int) order.size()) % (int) order.size();
@@ -6083,8 +6084,8 @@ void FaseGroovePianoEditor::timerCallback()
     keyLinkButton.setToggleState (processor.isKeyLinked(), juce::dontSendNotification);
     {
         // KEY shows the key itself: "KEY  A Dorian".
-        const int key = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::key)->load());
-        const int scale = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::scale)->load());
+        const int key = juce::roundToInt (processor.raw (ParamIDs::key));
+        const int scale = juce::roundToInt (processor.raw (ParamIDs::scale));
         const auto text = tr ("KEY") + "  " + sgk::noteName (key) + " " + tr (sgk::scaleName (scale));
         if (keyLinkButton.getButtonText() != text)
             keyLinkButton.setButtonText (text);
@@ -6145,9 +6146,30 @@ void FaseGroovePianoEditor::timerCallback()
     if (heldRoot >= 0)
         s.keyRoot = heldRoot;
 
-    std::array<sgk::Chord, sgk::maxProgressionLength> chords;
-    std::array<sgk::VoicedChord, sgk::maxProgressionLength> voiced;
-    sgk::GrooveEngine::voiceProgression (s, chords, voiced);
+    // Chords, harmony, the groove and the circle's marks depend on the settings only.
+    if (! tickCache.valid || ! sgk::GrooveEngine::sameSettings (s, tickCache.settings))
+    {
+        auto& c = tickCache;
+        c.valid = true;
+        c.settings = s;
+        sgk::GrooveEngine::voiceProgression (s, c.chords, c.voiced);
+        c.harmony = sgk::GrooveEngine::harmonyScores (s, c.chords, c.voiced);
+        c.pattern = sgk::GrooveEngine::resolvePattern (s);
+        c.marks.clear();
+        c.moves.clear();
+        for (int i = 0; i < s.progressionLength; ++i)
+        {
+            c.marks.push_back ({ c.chords[(size_t) i].rootPc, c.chords[(size_t) i].third == 3, {}, c.harmony.slot[(size_t) i] });
+            c.moves.push_back (c.harmony.transition[(size_t) i]);
+        }
+        c.diatonic.clear();
+        for (int d = 0; d < 7; ++d)
+        {
+            const auto chord = sgk::buildChord (s.keyRoot, s.scale, d, s.extension);
+            c.diatonic.push_back ({ chord.rootPc, chord.third == 3, juce::String::fromUTF8 (sgk::romanNumeral (d, chord).c_str()) });
+        }
+    }
+    const auto& chords = tickCache.chords;
 
     // LEARN: chords heard on the MIDI keyboard fill the progression.
     learnButton.setToggleState (processor.learnMode.load(), juce::dontSendNotification);
@@ -6193,7 +6215,7 @@ void FaseGroovePianoEditor::timerCallback()
     }
 
     const int playingSlot = processor.uiSlot.load();
-    const auto harmony = sgk::GrooveEngine::harmonyScores (s, chords, voiced);
+    const auto& harmony = tickCache.harmony;
 
     for (int i = 0; i < sgk::maxProgressionLength; ++i)
     {
@@ -6233,14 +6255,14 @@ void FaseGroovePianoEditor::timerCallback()
     }
 
     {
-        const bool external = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::pumpSource)->load()) == 1;
+        const bool external = juce::roundToInt (processor.raw (ParamIDs::pumpSource)) == 1;
         sidechainMeter.setVisible (external && processor.advancedView);
-        sidechainMeter.setState (processor.sidechainMeter.load(), processor.apvts.getRawParameterValue (ParamIDs::pump)->load() < 0.001f);
+        sidechainMeter.setState (processor.sidechainMeter.load(), processor.raw (ParamIDs::pump) < 0.001f);
         processor.sidechainMeter = processor.sidechainMeter.load() * 0.7f;   // falls when nothing arrives
     }
 
     const bool bassOn = processor.isBassHeard();
-    shownPattern = sgk::GrooveEngine::resolvePattern (s);
+    shownPattern = tickCache.pattern;
     if (processor.isGuitarLeading())
         shownPattern = FaseGroovePianoProcessor::compingPattern (shownPattern, processor.compingSeed());
     patternView.setInterceptsMouseClicks (! processor.isGuitarLeading(), false);   // the comping view is to look at
@@ -6251,8 +6273,8 @@ void FaseGroovePianoEditor::timerCallback()
 
     if (rangeSlider.isVisible())
     {
-        const int low = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::chordLow)->load());
-        const int high = juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::chordHigh)->load());
+        const int low = juce::roundToInt (processor.raw (ParamIDs::chordLow));
+        const int high = juce::roundToInt (processor.raw (ParamIDs::chordHigh));
         if (! rangeSlider.isMouseButtonDown()
             && (juce::roundToInt (rangeSlider.getMinValue()) != low || juce::roundToInt (rangeSlider.getMaxValue()) != high))
             rangeSlider.setMinAndMaxValues (low, high, juce::dontSendNotification);
@@ -6281,11 +6303,16 @@ void FaseGroovePianoEditor::timerCallback()
     dragTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + clipLength.getText()
                           + (processor.isGuitarLeading() ? juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("GUITAR LEADS") : juce::String()));
     if (songOverlay.isVisible())
+    {
         songOverlay.songTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("Song"));
-    if (songOverlay.isVisible())
         songOverlay.sectionsTile.setSubtitle (clipPart.getText() + juce::String::fromUTF8 ("  \xc2\xb7  ") + tr ("One clip per section"));
+    }
 
-    feelStyleButton.setButtonText (tr ("Feel") + ": " + tr (sgk::humanizeStyleName (juce::roundToInt (processor.apvts.getRawParameterValue (ParamIDs::humanizeStyle)->load()))) + "  " + juce::String::fromUTF8 ("\xe2\x96\xbe"));
+    {
+        const juce::String feelText = tr ("Feel") + ": " + tr (sgk::humanizeStyleName (juce::roundToInt (processor.raw (ParamIDs::humanizeStyle)))) + "  " + juce::String::fromUTF8 ("\xe2\x96\xbe");
+        if (feelStyleButton.getButtonText() != feelText)
+            feelStyleButton.setButtonText (feelText);
+    }
     {
         const bool pianoHeard = ! processor.chordsMuted.load() || ! bassOn;
         hearPianoButton.setToggleState (pianoHeard, juce::dontSendNotification);
@@ -6314,20 +6341,8 @@ void FaseGroovePianoEditor::timerCallback()
         velocityLocks[i]->setToggleState (processor.isVelocityLocked (part), juce::dontSendNotification);
     }
 
-    std::vector<CircleOfFifths::ChordMark> marks;
-    std::vector<float> moves;
-    for (int i = 0; i < s.progressionLength; ++i)
-    {
-        marks.push_back ({ chords[(size_t) i].rootPc, chords[(size_t) i].third == 3, {}, harmony.slot[(size_t) i] });
-        moves.push_back (harmony.transition[(size_t) i]);
-    }
-    std::vector<CircleOfFifths::ChordMark> diatonic;
-    for (int d = 0; d < 7; ++d)
-    {
-        const auto chord = sgk::buildChord (s.keyRoot, s.scale, d, s.extension);
-        diatonic.push_back ({ chord.rootPc, chord.third == 3, juce::String::fromUTF8 (sgk::romanNumeral (d, chord).c_str()) });
-    }
-    circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), tr (sgk::scaleName (s.scale)), marks, moves, playingSlot, diatonic);
+    circle.setState (s.keyRoot, sgk::scaleIsMinor (s.scale), tr (sgk::scaleName (s.scale)), tickCache.marks, tickCache.moves,
+                     playingSlot, tickCache.diatonic);
 
 
     const bool synced = syncButton.getToggleState();
@@ -6335,12 +6350,17 @@ void FaseGroovePianoEditor::timerCallback()
     dawTempo.setVisible (synced);
     // The standalone app has no DAW: its tempo comes from a MIDI clock, when one is sent to it.
     const bool standalone = processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone;
-    dawTempo.setText (processor.clockSync.load() ? juce::String (processor.hostBpm.load(), 1) + " BPM  " + tr ("(MIDI clock)")
-                      : standalone ? tr ("No DAW: send it MIDI clock")
-                                   : juce::String (processor.hostBpm.load(), 1) + " BPM  " + tr ("(DAW)"),
-                      juce::dontSendNotification);
-    dawTempo.setTooltip (standalone ? tr ("The standalone app can't read your DAW's tempo. In your DAW send MIDI clock to the port the app listens to (enable it in the app's Options > Audio/MIDI settings), or turn SYNC DAW off and set the BPM.")
-                                    : juce::String());
+    {
+        const juce::String tempoText = processor.clockSync.load() ? juce::String (processor.hostBpm.load(), 1) + " BPM  " + tr ("(MIDI clock)")
+                                       : standalone ? tr ("No DAW: send it MIDI clock")
+                                                    : juce::String (processor.hostBpm.load(), 1) + " BPM  " + tr ("(DAW)");
+        if (dawTempo.getText() != tempoText)
+            dawTempo.setText (tempoText, juce::dontSendNotification);
+        const juce::String tempoTip = standalone ? tr ("The standalone app can't read your DAW's tempo. In your DAW send MIDI clock to the port the app listens to (enable it in the app's Options > Audio/MIDI settings), or turn SYNC DAW off and set the BPM.")
+                                                 : juce::String();
+        if (dawTempo.getTooltip() != tempoTip)
+            dawTempo.setTooltip (tempoTip);
+    }
 }
 
 void FaseGroovePianoEditor::drawPanel (juce::Graphics& g, juce::Rectangle<int> area, const juce::String& title)

@@ -17,6 +17,8 @@ class FamilyGuideRenderer {
         juce::Reverb reverb;
         juce::dsp::Chorus<float> chorus;
         juce::dsp::StateVariableTPTFilter<float> filter;
+        float reverbWet=-1.f;    // the wet level last given to the reverb (-1: none yet)
+        int chorusRampLeft=0;    // samples until the chorus's mix ramp after prepare() has ended
         explicit Part(int kind){
             for(int i=0;i<48;++i)synth.addVoice(new GuideVoice(tone,sound,kind==1));
             if(kind==2)synth.addSound(new GuideStringsTag(3));else synth.addSound(new GuideSoundTag);
@@ -26,6 +28,7 @@ class FamilyGuideRenderer {
             synth.setCurrentPlaybackSampleRate(rate);audio.setSize(2,capacity);
             reverb.setSampleRate(rate);chorus.prepare({rate,(juce::uint32)capacity,2});
             chorus.setRate(.35f);chorus.setDepth(.25f);
+            chorusRampLeft=(int)std::ceil(rate*.05)+1;reverbWet=-1.f;   // the mixer's 50 ms smoothing
             filter.prepare({rate,(juce::uint32)capacity,2});filter.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
             reset();
         }
@@ -62,9 +65,18 @@ public:
                     p->filter.process(juce::dsp::ProcessContextReplacing<float>(block));
                 }else{
                     const float chorus=kind==0?keyChorus:0.f;
-                    p->chorus.setMix(chorus*.5f);juce::dsp::AudioBlock<float> b(p->audio);auto block=b.getSubBlock(0,(size_t)count);p->chorus.process(juce::dsp::ProcessContextReplacing<float>(block));
-                    juce::Reverb::Parameters rp;rp.roomSize=.4f;rp.wetLevel=(kind==0?keyReverb:.18f)*.4f;rp.dryLevel=.5f;rp.width=1;
-                    p->reverb.setParameters(rp);p->reverb.processStereo(p->audio.getWritePointer(0),p->audio.getWritePointer(1),count);
+                    // The strings' chorus is always at mix 0: once the ramp from its default mix has
+                    // ended it returns its input unchanged, so it is skipped.
+                    if(kind==0||p->chorusRampLeft>0){
+                        if(kind!=0)p->chorusRampLeft-=count;
+                        p->chorus.setMix(chorus*.5f);juce::dsp::AudioBlock<float> b(p->audio);auto block=b.getSubBlock(0,(size_t)count);p->chorus.process(juce::dsp::ProcessContextReplacing<float>(block));
+                    }
+                    const float wet=(kind==0?keyReverb:.18f)*.4f;
+                    if(! juce::exactlyEqual(wet,p->reverbWet)){   // the other parameters never change
+                        juce::Reverb::Parameters rp;rp.roomSize=.4f;rp.wetLevel=wet;rp.dryLevel=.5f;rp.width=1;
+                        p->reverb.setParameters(rp);p->reverbWet=wet;
+                    }
+                    p->reverb.processStereo(p->audio.getWritePointer(0),p->audio.getWritePointer(1),count);
                 }
                 const float gain=(float)(kind==0?profile.pianoGain:kind==1?profile.bassGain*.5:profile.stringsGain);
                 for(int ch=0;ch<output.getNumChannels();++ch){

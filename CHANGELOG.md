@@ -6,6 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.1] - 2026-10-24
+
+- Lighter: the groove is no longer rebuilt when its settings haven't changed, the editor does less work on every tick, the strings chorus is skipped when its mix is 0 and the reverb is not reset when unchanged. No change to the sound.
+- The updater no longer carries the old 2.x numbering bridge.
+
 ## [0.31.0] - 2026-10-23
 
 - Random riffs in Soulful, Deep, Gospel, Jackin', Jackin' Piano, Garage, Afro, Funky & Disco, Neo Soul and Chill are much more varied: DENSITY now works, and every roll adds accents, ghost notes, pushes, a last-beat turn, the garage skip and a bass line of the genre (before, a single bass hit per bar). Gospel random progressions have many more outcomes. The house genres play as before.

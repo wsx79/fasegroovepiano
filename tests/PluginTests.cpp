@@ -685,9 +685,6 @@ namespace
     void testUpdateSwap()
     {
         CHECK (Updater::isNewer ("v1.18.1", "1.18.0"));
-        CHECK (! Updater::isNewer ("v2.23.0", "0.23.0"));
-        CHECK (Updater::isNewer ("v0.23.1", "2.23.0"));
-        CHECK (! Updater::isNewer ("v2.22.1", "0.23.0"));
         CHECK (! Updater::isNewer ("1.18.0", "1.18.0"));
         CHECK (! Updater::isNewer ("v1.9.0", "1.18.0"));
 

@@ -933,11 +933,50 @@ namespace
     }
 }
 
+namespace
+{
+    /** The settings file kept open for reading; it is opened again when its date or size changed
+        or it was written in the last few seconds (another instance, or a coarse file clock).
+        Writes still go through a fresh file, so they never overwrite another instance's keys. */
+    struct SettingsCache : juce::DeletedAtShutdown
+    {
+        ~SettingsCache() override { clearSingletonInstance(); }
+
+        template <typename Fn>
+        auto read (Fn&& fn)
+        {
+            const juce::ScopedLock sl (lock);
+            return fn (current());
+        }
+        void invalidate() { const juce::ScopedLock sl (lock); size = -2; }
+
+        JUCE_DECLARE_SINGLETON_INLINE (SettingsCache, false)
+
+    private:
+        juce::PropertiesFile& current()
+        {
+            const auto f = settings != nullptr ? settings->getFile() : juce::File();
+            const auto t = f.getLastModificationTime();
+            const auto n = f.getSize();
+            if (settings == nullptr || n != size || t != modified || (juce::Time::getCurrentTime() - t).inMilliseconds() < 3000)
+            {
+                settings = openSettings();
+                modified = settings->getFile().getLastModificationTime();
+                size = settings->getFile().getSize();
+            }
+            return *settings;
+        }
+
+        juce::CriticalSection lock;
+        std::unique_ptr<juce::PropertiesFile> settings;
+        juce::Time modified;
+        juce::int64 size = -2;
+    };
+}
+
 bool tipsEnabled()
 {
-    if (auto settings = openSettings())
-        return settings->getBoolValue ("tips", true);
-    return true;
+    return SettingsCache::getInstance()->read ([] (juce::PropertiesFile& settings) { return settings.getBoolValue ("tips", true); });
 }
 
 void setTipsEnabled (bool enabled)
@@ -947,13 +986,12 @@ void setTipsEnabled (bool enabled)
         settings->setValue ("tips", enabled);
         settings->saveIfNeeded();
     }
+    SettingsCache::getInstance()->invalidate();
 }
 
 juce::String setting (const char* key, const juce::String& fallback)
 {
-    if (auto settings = openSettings())
-        return settings->getValue (key, fallback);
-    return fallback;
+    return SettingsCache::getInstance()->read ([&] (juce::PropertiesFile& settings) { return settings.getValue (key, fallback); });
 }
 
 void setSetting (const char* key, const juce::var& value)
@@ -963,6 +1001,7 @@ void setSetting (const char* key, const juce::var& value)
         settings->setValue (key, value);
         settings->saveIfNeeded();
     }
+    SettingsCache::getInstance()->invalidate();
 }
 
 void setCurrent (Language language)

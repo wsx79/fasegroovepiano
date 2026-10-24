@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <tuple>
 
 namespace sgk
 {
@@ -1397,6 +1398,24 @@ void GrooveEngine::keepInRange (VoicedChord& v, int low, int high) noexcept
         kept.sort();
         *hand = kept;
     }
+}
+
+bool GrooveEngine::sameSettings (const GrooveSettings& a, const GrooveSettings& b) noexcept
+{
+    auto fields = [] (const GrooveSettings& s)
+    {
+        return std::tie (s.keyRoot, s.scale, s.extension, s.voicing, s.centre, s.bass, s.strings,
+                         s.progression, s.progressionLength, s.freeChords, s.stepsPerChord,
+                         s.pattern, s.swing, s.bassGate, s.gate, s.velocity, s.humanize, s.fillEveryBars,
+                         s.fillStyle, s.strum, s.octaveTop, s.approach, s.topLine, s.inversions,
+                         s.variationEvery, s.evolveBars, s.rangeLow, s.rangeHigh, s.grooveBars, s.movement,
+                         s.strumDirection, s.bpm, s.section, s.riffSeed, s.riffDensity, s.riffGenre,
+                         s.segmentOrder, s.sectionVariation, s.humanizeStyle, s.humanizeSeed,
+                         s.forcedFillBar, s.forcedFillStyle, s.editedLoop, s.editedLoopLength,
+                         s.userRight, s.userLeft, s.userVelRight, s.userVelLeft, s.velocityOrder,
+                         s.bassFeel, s.realism);
+    };
+    return fields (a) == fields (b);
 }
 
 GrooveEngine::HarmonyKey GrooveEngine::harmonyKey (const GrooveSettings& s) noexcept

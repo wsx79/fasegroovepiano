@@ -288,7 +288,11 @@ void PadController::timerCallback()
         }
     }
 
-    if (! enabled())
+    // Switched off: only a slow look for the setting being switched on.
+    const int interval = enabled() ? 40 : 250;
+    if (getTimerInterval() != interval)
+        startTimer (interval);
+    if (interval != 40)
         return;
 
     if (inputs.empty() || ledOutput == nullptr)

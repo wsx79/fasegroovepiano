@@ -77,7 +77,6 @@ namespace Updater
 
         /** Starts a check. manual = true also reports "up to date" / "failed" and ignores skipped versions. */
         void start (bool manual);
-        bool isBusy() const { return isThreadRunning(); }
 
         /** Called on the message thread when a check ends. */
         std::function<void (const Result&, bool manual)> onResult;
