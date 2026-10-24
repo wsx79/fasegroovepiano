@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.6] - 2026-10-24
+
+- Il piano roll mostra l'intera frase Realism (le altre versioni nel terzo e quarto giro), così ogni nota che suona è visibile.
+- Le luci del passo e il playhead seguono il suono senza ritardo: la posizione viene portata avanti tra un blocco audio e l'altro e disegnata a 60 Hz, ridisegnando solo ciò che si muove.
+
 ## [0.31.5] - 2026-10-24
 
 - Piano roll: le parti non selezionate (basso, archi, piano) compaiono in trasparenza dietro quella mostrata e la tastiera le comprende tutte quando stanno in quattro ottave, così ogni nota che senti è visibile.

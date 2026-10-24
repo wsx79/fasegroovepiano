@@ -295,6 +295,46 @@ namespace
             for (int count : channel) CHECK (count == 0);
     }
 
+    void testRollMatchesPlayback()
+    {
+        // Every note the piano plays over a phrase is in the roll (renderClip over the roll length,
+        // the whole realism phrase, with its other takes).
+        for (int trial = 0; trial < 8; ++trial)
+        {
+            FaseGroovePianoProcessor p;
+            p.setParameterFromUI (ParamIDs::sound, 0.0f);
+            if (trial > 0) p.rollNewRiff();
+            PlayHead head;
+            p.setPlayHead (&head);
+            const double sr = 44100.0;
+            p.prepareToPlay (sr, 512);
+            const auto s = p.currentSettings();
+            const double phrase = juce::jmin (32.0, 4.0 * sgk::GrooveEngine::patternLength (s) * sgk::stepLength);
+            std::set<std::pair<int, int>> shown, played;
+            for (const auto& e : sgk::GrooveEngine::renderClip (s, phrase))
+                if (e.isNoteOn())
+                    shown.insert ({ (int) std::floor (e.ppq * 4.0 + 0.3), e.note });
+            head.playing = true;
+            head.ppq = 0.0;
+            while (head.ppq < phrase - 0.5)
+            {
+                juce::AudioBuffer<float> buffer (2, 256);
+                juce::MidiBuffer midi;
+                const double start = head.ppq;
+                p.processBlock (buffer, midi);
+                for (const auto meta : midi)
+                    if (meta.getMessage().isNoteOn())
+                        played.insert ({ (int) std::floor ((start + meta.samplePosition / sr * head.bpm / 60.0) * 4.0 + 0.3), meta.getMessage().getNoteNumber() });
+                head.ppq += 256 / sr * head.bpm / 60.0;
+            }
+            int missing = 0;
+            for (const auto& v : played)
+                missing += shown.count (v) == 0 ? 1 : 0;
+            CHECK (missing == 0);
+
+        }
+    }
+
     void testTransport()
     {
         FaseGroovePianoProcessor p;
@@ -2144,6 +2184,7 @@ int main (int argc, char** argv)
     testPresetFiles();
     testMidiExport();
     testChannelChangeWhilePlaying();
+    testRollMatchesPlayback();
     testTransport();
     testMidiImport();
     testBassLineControls();

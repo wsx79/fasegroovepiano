@@ -570,6 +570,9 @@ public:
 private:
     void timerCallback() override;
     void scrollBarMoved (juce::ScrollBar*, double) override;
+    /** The playhead where the sound is (PlayClock), 60 times a second while the window is open. */
+    void showPlayhead();
+    juce::TimedCallback playheadTimer { [this] { if (isVisible()) showPlayhead(); else playheadTimer.stopTimer(); } };
 
     juce::Rectangle<float> card() const { return getLocalBounds().toFloat().reduced (14.0f); }
     juce::Rectangle<float> gridArea() const;       // notes (under the chord lane)
@@ -752,6 +755,10 @@ public:
 
 private:
     void timerCallback() override;
+    /** The step lights and the roll's playhead, 60 times a second from the processor's PlayClock
+        (each view repaints only what changes). */
+    void showPlayPosition();
+    juce::TimedCallback playTimer { [this] { showPlayPosition(); } };
     void loadPreset (int index);
     void layoutFull();
 

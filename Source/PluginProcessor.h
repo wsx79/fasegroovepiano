@@ -4,6 +4,7 @@
 #pragma once
 
 #include "LinkFile.h"
+#include "PlayClock.h"
 #include "RawParameters.h"
 
 #include "engine/Comping.h"
@@ -380,6 +381,19 @@ public:
     std::atomic<int> uiStep { -1 };      // current 16th within the pattern, -1 = stopped
     std::atomic<int> uiSlot { -1 };      // current chord slot, -1 = stopped
     std::atomic<double> uiPpq { -1.0 };  // playing position in beats, -1 = stopped (for the piano roll)
+    std::atomic<int> uiSteps { 16 };     // the pattern's length in steps, for displayStep()
+    FaseGroove::PlayClock playClock;     // where the sound is now (PlayClock.h)
+    /** Message thread: the position and the step heard now, moved on from the last block (-1 = stopped). */
+    double displayPpq() const noexcept { return playClock.position(); }
+    int displayStep() const noexcept
+    {
+        const double ppq = playClock.position();
+        if (ppq < 0.0)
+            return -1;
+        const auto step = (long long) std::floor (ppq / sgk::stepLength);
+        const int n = std::max (1, uiSteps.load());
+        return (int) (((step % n) + n) % n);
+    }
     std::atomic<int> uiHeldRoot { -1 };  // root picked by a held key (hold mode)
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();

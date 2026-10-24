@@ -6,6 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.6] - 2026-10-24
+
+- Piano roll shows the whole Realism phrase (its other takes in the third and fourth groove), so every note that plays is on screen.
+- The step lights and the playhead follow the sound without lag: the position is carried forward between audio blocks and drawn at 60 Hz, redrawing only what moves.
+
 ## [0.31.5] - 2026-10-24
 
 - Piano roll: the parts not shown (bass, strings, piano) appear faintly behind the one being shown, and the keyboard fits them all when they fit in four octaves, so every note you hear is on screen.

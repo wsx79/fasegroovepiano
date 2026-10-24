@@ -783,12 +783,41 @@ void PianoRollView::setContent (std::vector<Note> newNotes, std::vector<ChordSpa
     repaint();
 }
 
+namespace
+{
+    /** True when a note or a chord starts or ends between two playhead positions (or the playhead
+        jumped back, started or stopped): what is lit as sounding then changes. */
+    template <typename Notes>
+    bool soundingChanges (double from, double to, const Notes& notes, const std::vector<PianoRollView::ChordSpan>& chords)
+    {
+        if (from < 0.0 || to < 0.0 || to < from)
+            return true;
+        auto crossed = [from, to] (double t) { return t > from && t <= to; };
+        for (const auto& n : notes)
+            if (crossed (n.start) || crossed (n.start + n.length))
+                return true;
+        for (const auto& c : chords)
+            if (crossed (c.start) || crossed (c.start + c.length))
+                return true;
+        return false;
+    }
+}
+
 void PianoRollView::setPlayhead (double beat)
 {
     if (std::abs (beat - playhead) < 1.0e-4)
         return;
+    // Only the playhead's own strips, unless a note or chord lights up or goes out on the way.
+    const bool all = soundingChanges (playhead, beat, allNotes, chords);
+    const float before = xOf (playhead), after = xOf (beat);
     playhead = beat;
-    repaint();
+    if (all || std::abs (after - before) > 40.0f)
+    {
+        repaint();
+        return;
+    }
+    const auto h = getHeight();
+    repaint (juce::Rectangle<float> (juce::jmin (before, after) - 2.0f, 0.0f, std::abs (after - before) + 4.0f, (float) h).getSmallestIntegerContainer());
 }
 
 juce::Rectangle<float> PianoRollView::noteArea() const
@@ -2976,6 +3005,7 @@ void PianoRollEditor::show (double generatedLength)
     setZoom (gridArea().getWidth() / length, gridArea().getX());
     grabKeyboardFocus();
     startTimerHz (30);
+    playheadTimer.startTimerHz (60);
     updateStatus();
 }
 
@@ -3666,10 +3696,17 @@ void PianoRollEditor::timerCallback()
         }
     }
 
-    const double ppq = processor.uiPpq.load();
+    showPlayhead();
+}
+
+void PianoRollEditor::showPlayhead()
+{
+    const double ppq = processor.displayPpq();
     const double now = ppq < 0.0 ? -1.0 : std::fmod (ppq, length);
     if (std::abs (now - playhead) > 1.0e-4)
     {
+        const bool all = soundingChanges (playhead, now, notes, chords);
+        const float before = xOf (playhead);
         playhead = now;
 
         // FOLLOW: when the playhead leaves the view, turn the page (not while you drag a note).
@@ -3682,9 +3719,16 @@ void PianoRollEditor::timerCallback()
                 scroll = now * pixelsPerBeat - 8.0;
                 updateScrollBar();
                 repaint();
+                return;
             }
         }
-        repaint (gridArea().withTrimmedTop (-PianoRollView::chordLaneHeight).toNearestInt().expanded (2));
+        const auto grid = gridArea().withTrimmedTop (-PianoRollView::chordLaneHeight);
+        const float after = xOf (now);
+        if (all || before < 0.0f || std::abs (after - before) > 40.0f)
+            repaint (grid.toNearestInt().expanded (2));
+        else
+            repaint (grid.withX (juce::jmin (before, after) - 2.0f).withWidth (std::abs (after - before) + 4.0f).getIntersection (grid.expanded (2.0f))
+                         .getSmallestIntegerContainer());
     }
 }
 
@@ -4970,6 +5014,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     addMouseListener (this, true);   // the undo history: see mouseUp
     pendingSnapshot = 1;
     startTimerHz (30);
+    playTimer.startTimerHz (60);
     uiTicks = 2;   // the next tick refreshes everything
     timerCallback();
 }
@@ -5896,7 +5941,7 @@ void FaseGroovePianoEditor::updateVelocityView (const sgk::GrooveSettings& s)
         bass.message = tr ("A bass line from the library plays its own levels: write the bass in the grid to set them here");
     }
 
-    velocityView.setState (chords, bass, processor.uiStep.load());
+    velocityView.setState (chords, bass, processor.displayStep());
 }
 
 std::vector<PianoRollView::ChordSpan> FaseGroovePianoEditor::chordSpansFor (const sgk::GrooveSettings& s, double length) const
@@ -5916,8 +5961,8 @@ int FaseGroovePianoEditor::shownStep() const
 {
     // Under a leading guitar the grid shows the four-bar comping cycle: the step in it.
     if (! processor.isGuitarLeading())
-        return processor.uiStep.load();
-    const double ppq = processor.uiPpq.load();
+        return processor.displayStep();
+    const double ppq = processor.displayPpq();
     if (ppq < 0.0)
         return -1;
     return (int) (((long long) std::floor (ppq / sgk::stepLength)) % 64);
@@ -5932,6 +5977,10 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
     rollLength = s.playsEditedLoop() ? s.editedLoopLength : cycle;
     if (leading)
         rollLength = juce::jmax (rollLength, cycle);
+    // Realism plays other takes in the third and fourth groove of a phrase: show the whole
+    // phrase, so the roll holds every note that plays.
+    if (s.realism && ! s.playsEditedLoop())
+        rollLength = juce::jmax (rollLength, juce::jmin (32.0, 4.0 * sgk::GrooveEngine::patternLength (s) * sgk::stepLength));
 
     std::vector<PianoRollView::Note> notes;
     if (leading && s.playsEditedLoop() && s.editedLoop != nullptr)
@@ -5977,6 +6026,18 @@ void FaseGroovePianoEditor::updatePianoRoll (const sgk::GrooveSettings& s)
     pianoRoll.setEdited (s.playsEditedLoop());
     const double ppq = processor.uiPpq.load();
     pianoRoll.setPlayhead (ppq < 0.0 ? -1.0 : std::fmod (ppq, rollLength));
+}
+
+void FaseGroovePianoEditor::showPlayPosition()
+{
+    const bool bassHeard = processor.isBassHeard();
+    patternView.setState (shownPattern, shownStep(), bassHeard, ! processor.chordsMuted.load() || ! bassHeard);
+    if (rollShown && rollLength > 0.0)
+    {
+        // The roll's playhead keeps up with the sound too (its notes are rebuilt on the slow tick).
+        const double ppq = processor.displayPpq();
+        pianoRoll.setPlayhead (ppq < 0.0 ? -1.0 : std::fmod (ppq, rollLength));
+    }
 }
 
 void FaseGroovePianoEditor::timerCallback()
@@ -6035,14 +6096,7 @@ void FaseGroovePianoEditor::timerCallback()
     // less work while the plug-in is open.
     if ((++uiTicks % 3) != 0 && ! pendingSnapshot)
     {
-        const bool bassHeard = processor.isBassHeard();
-        patternView.setState (shownPattern, shownStep(), bassHeard, ! processor.chordsMuted.load() || ! bassHeard);
-        if (rollShown && rollLength > 0.0)
-        {
-            // The roll's playhead keeps up with the sound too (its notes are rebuilt on the slow tick).
-            const double ppq = processor.uiPpq.load();
-            pianoRoll.setPlayhead (ppq < 0.0 ? -1.0 : std::fmod (ppq, rollLength));
-        }
+        // (the step and the roll's playhead: showPlayPosition, 60 times a second)
         const bool previewing = processor.previewOn.load();
         playButton.setIcon (previewing ? IconButton::Icon::pause : IconButton::Icon::play);
         playButton.setToggleState (previewing, juce::dontSendNotification);
