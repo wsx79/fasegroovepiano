@@ -20,15 +20,13 @@
 
 using namespace sgk;
 
-static int failures = 0;
+#include "TestSupport.h"
 
 static bool isHitChar (char c)
 {
     return c == 'X' || c == 'x' || c == 'g' || c == '>' || c == 'u' || c == 'U' || c == 'd' || c == 'D';
 }
 
-#define CHECK(cond) \
-    do { if (! (cond)) { std::printf ("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++failures; } } while (0)
 
 static void checkName (int key, int scale, int degree, Extension ext, const std::string& expected)
 {

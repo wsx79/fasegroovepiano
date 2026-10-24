@@ -1,25 +1,8 @@
-// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
-// SPDX-License-Identifier: AGPL-3.0-or-later
-
-#include "Localisation.h"
-
-#include <atomic>
-#include <unordered_map>
-
-namespace Localisation
-{
-namespace
-{
-    struct Entry { const char* en; const char* it; const char* es; const char* fr; const char* de; const char* pt; };
-
-    // clang-format off
-    const Entry table[] {
         // ---- Panels ----
         { "TEMPO", "TEMPO", "TEMPO", "TEMPO", "TEMPO", "ANDAMENTO" },
         { "PROGRESSION", "PROGRESSIONE", "PROGRESIÓN", "PROGRESSION", "AKKORDFOLGE", "PROGRESSÃO" },
         { "HARMONY & SCALES", "ARMONIA E SCALE", "ARMONÍA Y ESCALAS", "HARMONIE ET GAMMES", "HARMONIE & SKALEN", "HARMONIA E ESCALAS" },
         { "CIRCLE OF FIFTHS", "CIRCOLO DELLE QUINTE", "CÍRCULO DE QUINTAS", "CYCLE DES QUINTES", "QUINTENZIRKEL", "CÍRCULO DAS QUINTAS" },
-        { "GROOVE", "GROOVE", "GROOVE", "GROOVE", "GROOVE", "GROOVE" },
         { "GUIDE SOUND & MIDI OUT", "SUONO GUIDA E MIDI OUT", "SONIDO GUÍA Y SALIDA MIDI", "SON GUIDE ET SORTIE MIDI", "GUIDE-SOUND & MIDI-AUSGANG", "SOM GUIA E SAÍDA MIDI" },
         { "RHYTHM GRID", "GRIGLIA RITMICA", "REJILLA RÍTMICA", "GRILLE RYTHMIQUE", "RHYTHMUSRASTER", "GRADE RÍTMICA" },
         { "MIDI CLIP", "CLIP MIDI", "CLIP MIDI", "CLIP MIDI", "MIDI-CLIP", "CLIPE MIDI" },
@@ -35,56 +18,33 @@ namespace
         { "Left-hand bass", "Basso mano sinistra", "Bajo mano izquierda", "Basse main gauche", "Bass linke Hand", "Baixo mão esquerda" },
         { "Register", "Registro", "Registro", "Registre", "Lage", "Registro" },
         { "Strum", "Arpeggiato", "Rasgueo", "Arpège", "Anschlag", "Dedilhado" },
-        { "Groove", "Groove", "Groove", "Groove", "Groove", "Groove" },
-        { "Song section", "Sezione del brano", "Sección", "Section du morceau", "Song-Teil", "Seção da música" },
         { "Fills", "Fill", "Rellenos", "Fills", "Fills", "Viradas" },
         { "Fill style", "Stile fill", "Estilo de relleno", "Style de fill", "Fill-Stil", "Estilo da virada" },
         { "Play mode", "Modalità play", "Modo de reproducción", "Mode de lecture", "Wiedergabe", "Modo de reprodução" },
-        { "Swing", "Swing", "Swing", "Swing", "Swing", "Swing" },
         { "Gate", "Gate", "Gate", "Gate", "Gate", "Gate" },
         { "Velocity", "Dinamica", "Dinámica", "Vélocité", "Dynamik", "Velocidade" },
-        { "Humanize", "Umanizza", "Humano", "Humain", "Human", "Humano" },
-        { "Density", "Densità", "Densidad", "Densité", "Dichte", "Densidade" },
         { "Sound", "Suono", "Sonido", "Son", "Klang", "Som" },
         { "MIDI out", "Uscita MIDI", "Salida MIDI", "Sortie MIDI", "MIDI-Ausgang", "Saída MIDI" },
-        { "Tone", "Timbro", "Tono", "Timbre", "Klangfarbe", "Timbre" },
-        { "Reverb", "Riverbero", "Reverb", "Réverb", "Hall", "Reverb" },
-        { "Volume", "Volume", "Volumen", "Volume", "Lautstärke", "Volume" },
-        { "Clip length", "Lunghezza clip", "Longitud del clip", "Longueur du clip", "Clip-Länge", "Duração do clipe" },
-        { "Notes", "Note", "Notas", "Notes", "Noten", "Notas" },
         { "chord", "accordo", "acorde", "accord", "Akkord", "acorde" },
         { "chords", "accordi", "acordes", "accords", "Akkorde", "acordes" },
-        { "Language", "Lingua", "Idioma", "Langue", "Sprache", "Idioma" },
-        { "Interface size", "Dimensione interfaccia", "Tamaño de la interfaz", "Taille de l'interface", "Größe der Oberfläche", "Tamanho da interface" },
 
         // ---- Buttons ----
         { "DICE", "DADO", "DADO", "DÉ", "WÜRFEL", "DADO" },
         { "NEW RIFF", "NUOVO RIFF", "NUEVO RIFF", "NOUVEAU RIFF", "NEUER RIFF", "NOVO RIFF" },
         { "PREVIEW", "ASCOLTA", "ESCUCHAR", "ÉCOUTER", "VORHÖREN", "OUVIR" },
-        { "SYNC DAW", "SYNC DAW", "SYNC DAW", "SYNC DAW", "SYNC DAW", "SYNC DAW" },
         { "KEY", "TONALITÀ", "TONALIDAD", "TONALITÉ", "TONART", "TONALIDADE" },
         { "Same key (with LINK on): the key and the scale stay the same in Fase Groove Piano and Guitar (change them in either one)", "Stessa tonalità (con LINK attivo): tonalità e scala restano uguali in Fase Groove Piano e Guitar (cambiale in uno qualsiasi)", "Misma tonalidad (con LINK activo): la tonalidad y la escala son las mismas en Fase Groove Piano y Guitar (cámbialas en cualquiera)", "Même tonalité (avec LINK) : la tonalité et la gamme restent les mêmes dans Fase Groove Piano et Guitar (changez-les dans l'un ou l'autre)", "Gleiche Tonart (mit LINK): Tonart und Skala bleiben in Fase Groove Piano und Guitar gleich (in beiden änderbar)", "Mesma tonalidade (com LINK ativo): a tonalidade e a escala ficam iguais no Fase Groove Piano e Guitar (mude em qualquer um)" },
         { "GUITAR LEADS", "CHITARRA SOLISTA", "GUITARRA SOLISTA", "GUITARE SOLISTE", "GITARRE FÜHRT", "GUITARRA SOLISTA" },
         { "Link with Fase Groove Drums and Guitar: the same genre, swing, tempo and play button in all of them, on the same beat (change it in any one)", "Collega con Fase Groove Drums e Guitar: stesso genere, swing, tempo e tasto play in tutti, sullo stesso battito (cambialo in uno qualsiasi)", "Enlaza con Fase Groove Drums y Guitar: el mismo género, swing, tempo y botón play en todos, en el mismo pulso (cámbialo en cualquiera)", "Lier à Fase Groove Drums et Guitar : même genre, swing, tempo et bouton lecture dans tous, sur le même temps (changez-le dans n'importe lequel)", "Mit Fase Groove Drums und Guitar verbinden: gleiches Genre, Swing, Tempo und Play-Taste in allen, auf demselben Schlag (in jedem änderbar)", "Liga com o Fase Groove Drums e Guitar: o mesmo género, swing, tempo e botão play em todos, no mesmo tempo (mude em qualquer um)" },
         { "LINK DRUMS", "LINK DRUMS", "LINK DRUMS", "LINK DRUMS", "LINK DRUMS", "LINK DRUMS" },
         { "Link with Fase Groove Drums: the same genre, swing, tempo and play button in both, on the same beat (change it in either one)", "Collega a Fase Groove Drums: stesso genere, swing, tempo e play in entrambi, sullo stesso beat (cambialo in uno dei due)", "Enlaza con Fase Groove Drums: el mismo género, swing, tempo y play en ambos, en el mismo beat (cámbialo en cualquiera)", "Lier à Fase Groove Drums : même genre, swing, tempo et lecture dans les deux, sur le même temps (change-le dans l'un ou l'autre)", "Mit Fase Groove Drums verbinden: dasselbe Genre, Swing, Tempo und Play in beiden, auf demselben Beat (in einem davon ändern)", "Ligar ao Fase Groove Drums: o mesmo gênero, swing, tempo e play nos dois, no mesmo tempo (mude em qualquer um)" },
-        { "Guide sound", "Suono guida", "Sonido guía", "Son guide", "Guide-Sound", "Som guia" },
         { "Top +8va", "Ottava sopra", "Octava arriba", "Octave haute", "Oktave oben", "Oitava acima" },
         { "Save .mid...", "Salva .mid...", "Guardar .mid...", "Enregistrer .mid...", ".mid speichern...", "Salvar .mid..." },
         { "Mini window while dragging", "Finestra mini durante il drag", "Ventana mini al arrastrar", "Mini fenêtre pendant le glisser", "Mini-Fenster beim Ziehen", "Janela mini ao arrastar" },
-        { "OPTIONS", "OPZIONI", "OPCIONES", "OPTIONS", "OPTIONEN", "OPÇÕES" },
-        { "SETTINGS", "IMPOSTAZIONI", "AJUSTES", "RÉGLAGES", "EINSTELLUNGEN", "AJUSTES" },
-        { "ABOUT", "INFO", "ACERCA DE", "À PROPOS", "ÜBER", "SOBRE" },
-        { "CLOSE", "CHIUDI", "CERRAR", "FERMER", "SCHLIESSEN", "FECHAR" },
         { "RND", "RND", "ALE", "ALÉ", "ZUF", "ALE" },
         { "LOCK", "BLOCCA", "FIJAR", "BLOQ.", "SPERRE", "TRAVAR" },
         { "BASS: ON", "BASSO: ON", "BAJO: ON", "BASSE : ON", "BASS: AN", "BAIXO: ON" },
         { "BASS: OFF", "BASSO: OFF", "BAJO: OFF", "BASSE : OFF", "BASS: AUS", "BAIXO: OFF" },
-        { "DRAG MIDI TO DAW", "TRASCINA MIDI NELLA DAW", "ARRASTRA EL MIDI A LA DAW", "GLISSER LE MIDI DANS LA DAW", "MIDI IN DIE DAW ZIEHEN", "ARRASTE O MIDI PARA A DAW" },
-        { "SOURCE CODE", "CODICE SORGENTE", "CÓDIGO FUENTE", "CODE SOURCE", "QUELLCODE", "CÓDIGO-FONTE" },
-        { "DONATE: Ko-fi", "DONA: Ko-fi", "DONAR: Ko-fi", "DON : Ko-fi", "SPENDEN: Ko-fi", "DOAR: Ko-fi" },
-        { "DONATE: PayPal", "DONA: PayPal", "DONAR: PayPal", "DON : PayPal", "SPENDEN: PayPal", "DOAR: PayPal" },
-        { "SPOTIFY", "SPOTIFY", "SPOTIFY", "SPOTIFY", "SPOTIFY", "SPOTIFY" },
 
         // ---- Texts ----
         { "Load a progression...", "Carica una progressione...", "Carga una progresión...", "Charger une progression...", "Akkordfolge laden...", "Carregar uma progressão..." },
@@ -93,21 +53,16 @@ namespace
         { "Bass off  -  click BASS to turn it back on", "Basso spento  -  clicca BASSO per riaccenderlo", "Bajo apagado  -  pulsa BAJO para activarlo", "Basse coupée  -  cliquez sur BASSE pour la rallumer", "Bass aus  -  BASS klicken zum Einschalten", "Baixo desligado  -  clique em BAIXO para ligar" },
         { "CHORDS", "ACCORDI", "ACORDES", "ACCORDS", "AKKORDE", "ACORDES" },
         { "BASS", "BASSO", "BAJO", "BASSE", "BASS", "BAIXO" },
-        { "by", "di", "de", "par", "von", "por" },
         { "HOLD: ", "TIENI: ", "MANTENER: ", "MAINTIEN : ", "HALTEN: ", "SEGURAR: " },
-        { "(DAW)", "(DAW)", "(DAW)", "(DAW)", "(DAW)", "(DAW)" },
-        { "Settings are saved for all your projects.", "Le impostazioni valgono per tutti i tuoi progetti.", "Los ajustes se guardan para todos tus proyectos.", "Les réglages s'appliquent à tous vos projets.", "Einstellungen gelten für alle Projekte.", "Os ajustes valem para todos os seus projetos." },
 
         // ---- Grid menu ----
         { "Bass", "Basso", "Bajo", "Basse", "Bass", "Baixo" },
         { "Chords", "Accordi", "Acordes", "Accords", "Akkorde", "Acordes" },
-        { "step", "passo", "paso", "pas", "Schritt", "passo" },
         { "Hit", "Colpo", "Golpe", "Coup", "Anschlag", "Toque" },
         { "Accent", "Accento", "Acento", "Accent", "Akzent", "Acento" },
         { "Ghost note", "Ghost note", "Nota fantasma", "Ghost note", "Ghost Note", "Ghost note" },
         { "Push (anticipate the next chord)", "Push (anticipa l'accordo successivo)", "Push (anticipa el siguiente acorde)", "Push (anticipe l'accord suivant)", "Push (nächsten Akkord vorziehen)", "Push (antecipa o próximo acorde)" },
         { "Hold (tie from the previous note)", "Tieni (lega la nota precedente)", "Mantener (liga la nota anterior)", "Tenir (lie la note précédente)", "Halten (vorherige Note binden)", "Segurar (liga a nota anterior)" },
-        { "Rest", "Pausa", "Silencio", "Silence", "Pause", "Pausa" },
 
         // ---- Tooltips ----
         { "Double the top note of every chord an octave higher (bright house piano)", "Raddoppia all'ottava la nota alta di ogni accordo (piano house brillante)", "Duplica una octava arriba la nota más alta de cada acorde (piano house brillante)", "Double la note aiguë de chaque accord à l'octave (piano house brillant)", "Verdoppelt den höchsten Ton jedes Akkords eine Oktave höher (helles House-Piano)", "Dobra a nota mais aguda de cada acorde uma oitava acima (piano house brilhante)" },
@@ -124,18 +79,10 @@ namespace
         { "Keep this part when you press NEW RIFF", "Mantieni questa parte quando premi NUOVO RIFF", "Mantén esta parte al pulsar NUEVO RIFF", "Garde cette partie avec NOUVEAU RIFF", "Diesen Teil bei NEUER RIFF behalten", "Mantém esta parte ao premir NOVO RIFF" },
 
         // ---- About ----
-        { "Version", "Versione", "Versión", "Version", "Version", "Versão" },
         { "funky piano grooves for soulful & deep house", "groove di piano funky per soulful e deep house", "grooves de piano funky para soulful y deep house", "grooves de piano funky pour la soulful et la deep house", "Funky-Piano-Grooves für Soulful & Deep House", "grooves de piano funky para soulful e deep house" },
-        { "CREATED BY", "CREATO DA", "CREADO POR", "CRÉÉ PAR", "ERSTELLT VON", "CRIADO POR" },
-        { "DJ & Producer", "DJ e Producer", "DJ y productor", "DJ et producteur", "DJ & Produzent", "DJ e produtor" },
-        { "CODE", "CODICE", "CÓDIGO", "CODE", "CODE", "CÓDIGO" },
-        { "AI coding assistant", "assistente di programmazione AI", "asistente de programación IA", "assistant de programmation IA", "KI-Programmierassistent", "assistente de programação IA" },
         { "Free & open source - GNU AGPL v3", "Gratuito e open source - GNU AGPL v3", "Gratis y de código abierto - GNU AGPL v3", "Gratuit et open source - GNU AGPL v3", "Kostenlos & Open Source - GNU AGPL v3", "Gratuito e open source - GNU AGPL v3" },
-        { "Listen to my productions on Spotify", "Ascolta le mie produzioni su Spotify", "Escucha mis producciones en Spotify", "Écoutez mes productions sur Spotify", "Hör meine Produktionen auf Spotify", "Ouça as minhas produções no Spotify" },
-        { "Built with JUCE", "Realizzato con JUCE", "Hecho con JUCE", "Réalisé avec JUCE", "Erstellt mit JUCE", "Feito com JUCE" },
 
         // ---- Menu items (parameter choices) ----
-        { "Off", "Spenti", "Desactivado", "Désactivé", "Aus", "Desligado" },
         { "Every 2 bars", "Ogni 2 battute", "Cada 2 compases", "Toutes les 2 mesures", "Alle 2 Takte", "A cada 2 compassos" },
         { "Every 4 bars", "Ogni 4 battute", "Cada 4 compases", "Toutes les 4 mesures", "Alle 4 Takte", "A cada 4 compassos" },
         { "Every 8 bars", "Ogni 8 battute", "Cada 8 compases", "Toutes les 8 mesures", "Alle 8 Takte", "A cada 8 compassos" },
@@ -146,7 +93,6 @@ namespace
         { "8 bars", "8 battute", "8 compases", "8 mesures", "8 Takte", "8 compassos" },
         { "16 bars", "16 battute", "16 compases", "16 mesures", "16 Takte", "16 compassos" },
         { "32 bars", "32 battute", "32 compases", "32 mesures", "32 Takte", "32 compassos" },
-        { "Full loop", "Loop completo", "Loop completo", "Boucle complète", "Ganzer Loop", "Loop completo" },
         { "Song: intro > drop > outro", "Brano: intro > drop > outro", "Tema: intro > drop > outro", "Morceau : intro > drop > outro", "Song: Intro > Drop > Outro", "Música: intro > drop > outro" },
         { "Chords + bass", "Accordi + basso", "Acordes + bajo", "Accords + basse", "Akkorde + Bass", "Acordes + baixo" },
         { "Chords only", "Solo accordi", "Solo acordes", "Accords seuls", "Nur Akkorde", "Só acordes" },
@@ -155,8 +101,6 @@ namespace
         { "Hold a key", "Tieni premuto un tasto", "Mantén una tecla", "Maintenir une touche", "Taste halten", "Segure uma tecla" },
         { "All on channel 1", "Tutto sul canale 1", "Todo en el canal 1", "Tout sur le canal 1", "Alles auf Kanal 1", "Tudo no canal 1" },
         { "Bass on channel 2", "Basso sul canale 2", "Bajo en el canal 2", "Basse sur le canal 2", "Bass auf Kanal 2", "Baixo no canal 2" },
-        { "Main groove", "Groove principale", "Groove principal", "Groove principal", "Haupt-Groove", "Groove principal" },
-        { "Break", "Break", "Break", "Break", "Break", "Break" },
         { "Build-up", "Build-up", "Subida", "Montée", "Build-up", "Subida" },
         { "Root", "Fondamentale", "Fundamental", "Fondamentale", "Grundton", "Fundamental" },
         { "Octaves", "Ottave", "Octavas", "Octaves", "Oktaven", "Oitavas" },
@@ -178,40 +122,6 @@ namespace
         { "* User pattern *", "* Pattern utente *", "* Patrón de usuario *", "* Motif utilisateur *", "* Eigenes Pattern *", "* Padrão do usuário *" },
 
         // ---- v1.11: standalone window (JUCE texts) and tips ----
-        { "Audio/MIDI Settings...", "Impostazioni audio/MIDI...", "Ajustes de audio/MIDI...", "Réglages audio/MIDI...", "Audio/MIDI-Einstellungen...", "Configurações de áudio/MIDI..." },
-        { "Audio/MIDI Settings", "Impostazioni audio/MIDI", "Ajustes de audio/MIDI", "Réglages audio/MIDI", "Audio/MIDI-Einstellungen", "Configurações de áudio/MIDI" },
-        { "Save current state...", "Salva lo stato attuale...", "Guardar el estado actual...", "Enregistrer l'état actuel...", "Aktuellen Zustand speichern...", "Salvar o estado atual..." },
-        { "Load a saved state...", "Carica uno stato salvato...", "Cargar un estado guardado...", "Charger un état enregistré...", "Gespeicherten Zustand laden...", "Carregar um estado salvo..." },
-        { "Reset to default state", "Ripristina lo stato iniziale", "Restablecer el estado inicial", "Rétablir l'état par défaut", "Auf Standard zurücksetzen", "Restaurar o estado padrão" },
-        { "Save current state", "Salva lo stato attuale", "Guardar el estado actual", "Enregistrer l'état actuel", "Aktuellen Zustand speichern", "Salvar o estado atual" },
-        { "Load a saved state", "Carica uno stato salvato", "Cargar un estado guardado", "Charger un état enregistré", "Gespeicherten Zustand laden", "Carregar um estado salvo" },
-        { "Error whilst saving", "Errore durante il salvataggio", "Error al guardar", "Erreur lors de l'enregistrement", "Fehler beim Speichern", "Erro ao salvar" },
-        { "Error whilst loading", "Errore durante il caricamento", "Error al cargar", "Erreur lors du chargement", "Fehler beim Laden", "Erro ao carregar" },
-        { "Couldn't write to the specified file!", "Impossibile scrivere il file indicato!", "¡No se pudo escribir el archivo!", "Impossible d'écrire le fichier !", "Datei konnte nicht geschrieben werden!", "Não foi possível gravar o arquivo!" },
-        { "Couldn't read from the specified file!", "Impossibile leggere il file indicato!", "¡No se pudo leer el archivo!", "Impossible de lire le fichier !", "Datei konnte nicht gelesen werden!", "Não foi possível ler o arquivo!" },
-        { "Audio device type:", "Tipo di dispositivo audio:", "Tipo de dispositivo de audio:", "Type de périphérique audio :", "Audiogerät-Typ:", "Tipo de dispositivo de áudio:" },
-        { "Device:", "Dispositivo:", "Dispositivo:", "Périphérique :", "Gerät:", "Dispositivo:" },
-        { "Output:", "Uscita:", "Salida:", "Sortie :", "Ausgang:", "Saída:" },
-        { "Input:", "Ingresso:", "Entrada:", "Entrée :", "Eingang:", "Entrada:" },
-        { "Sample rate:", "Frequenza di campionamento:", "Frecuencia de muestreo:", "Fréquence d'échantillonnage :", "Abtastrate:", "Taxa de amostragem:" },
-        { "Audio buffer size:", "Dimensione del buffer audio:", "Tamaño del búfer de audio:", "Taille du tampon audio :", "Audio-Puffergröße:", "Tamanho do buffer de áudio:" },
-        { "Active MIDI inputs:", "Ingressi MIDI attivi:", "Entradas MIDI activas:", "Entrées MIDI actives :", "Aktive MIDI-Eingänge:", "Entradas MIDI ativas:" },
-        { "MIDI Output:", "Uscita MIDI:", "Salida MIDI:", "Sortie MIDI :", "MIDI-Ausgang:", "Saída MIDI:" },
-        { "Active output channels:", "Canali di uscita attivi:", "Canales de salida activos:", "Canaux de sortie actifs :", "Aktive Ausgangskanäle:", "Canais de saída ativos:" },
-        { "Active input channels:", "Canali di ingresso attivi:", "Canales de entrada activos:", "Canaux d'entrée actifs :", "Aktive Eingangskanäle:", "Canais de entrada ativos:" },
-        { "Test", "Prova", "Probar", "Tester", "Test", "Testar" },
-        { "Plays a test tone", "Suona un tono di prova", "Reproduce un tono de prueba", "Joue un son de test", "Spielt einen Testton", "Toca um tom de teste" },
-        { "Control Panel", "Pannello di controllo", "Panel de control", "Panneau de configuration", "Systemsteuerung", "Painel de controle" },
-        { "Reset Device", "Reimposta dispositivo", "Reiniciar dispositivo", "Réinitialiser le périphérique", "Gerät zurücksetzen", "Reiniciar dispositivo" },
-        { "Show advanced settings...", "Mostra impostazioni avanzate...", "Mostrar ajustes avanzados...", "Afficher les réglages avancés...", "Erweiterte Einstellungen...", "Mostrar configurações avançadas..." },
-        { "No MIDI inputs available", "Nessun ingresso MIDI disponibile", "No hay entradas MIDI", "Aucune entrée MIDI disponible", "Keine MIDI-Eingänge verfügbar", "Nenhuma entrada MIDI disponível" },
-        { "none", "nessuno", "ninguno", "aucun", "keiner", "nenhum" },
-        { "OK", "OK", "Aceptar", "OK", "OK", "OK" },
-        { "Options", "Opzioni", "Opciones", "Options", "Optionen", "Opções" },
-        { "Mute audio input", "Silenzia l'ingresso audio", "Silenciar la entrada de audio", "Couper l'entrée audio", "Audioeingang stummschalten", "Silenciar a entrada de áudio" },
-        { "Feedback Loop:", "Rischio di feedback:", "Bucle de realimentación:", "Boucle de larsen :", "Rückkopplung:", "Realimentação:" },
-        { "Audio input is muted to avoid feedback loop", "L'ingresso audio è silenziato per evitare il feedback", "La entrada de audio está silenciada para evitar realimentación", "L'entrée audio est coupée pour éviter le larsen", "Der Audioeingang ist stummgeschaltet, um Rückkopplung zu vermeiden", "A entrada de áudio está silenciada para evitar realimentação" },
-        { "Show tips when the mouse rests on a control", "Mostra i suggerimenti quando il mouse resta fermo su un comando", "Mostrar consejos al dejar el ratón sobre un control", "Afficher des astuces quand la souris reste sur une commande", "Tipps zeigen, wenn die Maus auf einem Element ruht", "Mostrar dicas quando o mouse para sobre um controle" },
 
         // ---- v1.11: tips ----
         { "How many chords the progression has (1 to 8)", "Quanti accordi ha la progressione (da 1 a 8)", "Cuántos acordes tiene la progresión (de 1 a 8)", "Nombre d'accords de la progression (1 à 8)", "Wie viele Akkorde die Folge hat (1 bis 8)", "Quantos acordes tem a progressão (de 1 a 8)" },
@@ -246,7 +156,6 @@ namespace
         { "Which notes go into the clip: chords and bass, chords only or bass only", "Quali note vanno nella clip: accordi e basso, solo accordi o solo basso", "Qué notas van en el clip: acordes y bajo, solo acordes o solo bajo", "Quelles notes vont dans le clip : accords et basse, accords seuls ou basse seule", "Welche Töne in den Clip kommen: Akkorde und Bass, nur Akkorde oder nur Bass", "Quais notas vão no clipe: acordes e baixo, só acordes ou só baixo" },
         { "Drag this onto a track in your DAW to drop the groove as a MIDI clip", "Trascinalo su una traccia della DAW per inserire il groove come clip MIDI", "Arrástralo a una pista de tu DAW para soltar el groove como clip MIDI", "Fais-le glisser sur une piste de ta DAW pour déposer le groove en clip MIDI", "Auf eine Spur in deiner DAW ziehen, um den Groove als MIDI-Clip abzulegen", "Arraste para uma faixa da DAW para soltar o groove como clipe MIDI" },
         { "Save the clip, or every part at once, as .mid files", "Salva la clip, o tutte le parti insieme, come file .mid", "Guarda el clip, o todas las partes a la vez, como archivos .mid", "Enregistre le clip, ou toutes les parties d'un coup, en fichiers .mid", "Speichert den Clip oder alle Teile auf einmal als .mid-Dateien", "Salva o clipe, ou todas as partes de uma vez, como arquivos .mid" },
-        { "Language, interface size, tips and credits", "Lingua, dimensione dell'interfaccia, suggerimenti e crediti", "Idioma, tamaño de la interfaz, consejos y créditos", "Langue, taille de l'interface, astuces et crédits", "Sprache, Fenstergröße, Tipps und Credits", "Idioma, tamanho da interface, dicas e créditos" },
         { "Scale degree of this chord; the small arrows change its inversion", "Grado della scala di questo accordo; le frecce piccole ne cambiano il rivolto", "Grado de la escala de este acorde; las flechas cambian su inversión", "Degré de la gamme de cet accord ; les petites flèches changent son renversement", "Stufe dieses Akkords; die kleinen Pfeile ändern seine Umkehrung", "Grau da escala deste acorde; as setinhas mudam sua inversão" },
 
         // ---- v1.12: strum ----
@@ -280,7 +189,6 @@ namespace
         { "Rising", "In salita", "Ascendente", "Montante", "Steigend", "Subindo" },
         { "Falling", "In discesa", "Descendente", "Descendante", "Fallend", "Descendo" },
         { "Arch", "Ad arco", "En arco", "En arche", "Bogen", "Em arco" },
-        { "Variation", "Variazione", "Variación", "Variation", "Variation", "Variação" },
         { "Groove length", "Lunghezza groove", "Duración del groove", "Longueur du groove", "Groove-Länge", "Duração do groove" },
         { "Chorus", "Chorus", "Chorus", "Chorus", "Chorus", "Chorus" },
         { "Pump", "Pompa", "Bombeo", "Pompage", "Pumpen", "Pump" },
@@ -290,21 +198,15 @@ namespace
         { "Gospel Organ (Leslie)", "Organo gospel (Leslie)", "Órgano gospel (Leslie)", "Orgue gospel (Leslie)", "Gospel-Orgel (Leslie)", "Órgão gospel (Leslie)" },
         { "Warm Pad", "Pad caldo", "Pad cálido", "Nappe chaude", "Warmes Pad", "Pad quente" },
         { "LEARN", "IMPARA", "APRENDER", "APPRENDRE", "LERNEN", "APRENDER" },
-        { "PRESETS", "PRESET", "PRESETS", "PRESETS", "PRESETS", "PRESETS" },
         { "Save your own setups and load them in any project", "Salva le tue impostazioni e caricale in qualsiasi progetto", "Guarda tus ajustes y cárgalos en cualquier proyecto", "Enregistre tes réglages et charge-les dans n'importe quel projet", "Eigene Einstellungen speichern und in jedem Projekt laden", "Salve seus ajustes e carregue-os em qualquer projeto" },
         { "Learn: play chords on your MIDI keyboard, they fill the progression slot by slot (press again to stop)", "Impara: suona gli accordi sulla tastiera MIDI, riempiono la progressione slot dopo slot (premi di nuovo per fermare)", "Aprender: toca acordes en tu teclado MIDI, llenan la progresión uno a uno (pulsa otra vez para parar)", "Apprendre : joue des accords sur ton clavier MIDI, ils remplissent la progression case par case (appuie à nouveau pour arrêter)", "Lernen: Akkorde auf dem MIDI-Keyboard spielen, sie füllen die Akkordfolge Feld für Feld (nochmals drücken zum Stoppen)", "Aprender: toque acordes no teclado MIDI, eles preenchem a progressão um a um (pressione de novo para parar)" },
-        { "Undo (Ctrl+Z)", "Annulla (Ctrl+Z)", "Deshacer (Ctrl+Z)", "Annuler (Ctrl+Z)", "Rückgängig (Strg+Z)", "Desfazer (Ctrl+Z)" },
-        { "Redo (Ctrl+Shift+Z)", "Ripeti (Ctrl+Maiusc+Z)", "Rehacer (Ctrl+Mayús+Z)", "Rétablir (Ctrl+Maj+Z)", "Wiederholen (Strg+Umschalt+Z)", "Refazer (Ctrl+Shift+Z)" },
         { "The melody the top notes of the chords draw across the progression", "La melodia che disegnano le note alte degli accordi lungo la progressione", "La melodía que dibujan las notas altas de los acordes en la progresión", "La mélodie que dessinent les notes aiguës des accords dans la progression", "Die Melodie der obersten Akkordtöne über die Akkordfolge", "A melodia que as notas agudas dos acordes desenham na progressão" },
         { "Every 4 or 8 bars the last bar plays a variation of the groove, so the loop never feels static. Evolve: over 8 or 16 bars the same groove grows - as written, then ghost notes, then a variation, then a fill into the next round", "Ogni 4 o 8 battute l'ultima battuta suona una variazione del groove, così il loop non è mai statico. Evoluzione: in 8 o 16 battute lo stesso groove cresce - com'è scritto, poi ghost note, poi una variazione, poi un fill verso il giro successivo", "Cada 4 u 8 compases el último compás toca una variación del groove, así el loop nunca es estático. Evolución: en 8 o 16 compases el mismo groove crece - tal cual, luego ghost notes, luego una variación, luego un fill hacia la vuelta siguiente", "Toutes les 4 ou 8 mesures la dernière joue une variation du groove, la boucle n'est jamais statique. Évolution : sur 8 ou 16 mesures le même groove grandit - tel quel, puis des ghost notes, puis une variation, puis un fill vers le tour suivant", "Alle 4 oder 8 Takte spielt der letzte Takt eine Variation, so wirkt der Loop nie statisch. Entwicklung: über 8 oder 16 Takte wächst derselbe Groove - wie geschrieben, dann Ghost Notes, dann eine Variation, dann ein Fill in die nächste Runde", "A cada 4 ou 8 compassos o último toca uma variação do groove, o loop nunca fica estático. Evolução: em 8 ou 16 compassos o mesmo groove cresce - como escrito, depois ghost notes, depois uma variação, depois um fill para a próxima volta" },
         { "1 bar, 2 bars, or 4 bars (the groove followed by a variation of it)", "1 battuta, 2 battute o 4 battute (il groove seguito da una sua variazione)", "1 compás, 2 compases o 4 compases (el groove seguido de una variación)", "1 mesure, 2 mesures ou 4 mesures (le groove suivi d'une variation)", "1 Takt, 2 Takte oder 4 Takte (der Groove und dann eine Variation)", "1 compasso, 2 compassos ou 4 compassos (o groove seguido de uma variação)" },
         { "Save current settings as...", "Salva le impostazioni attuali come...", "Guardar los ajustes actuales como...", "Enregistrer les réglages actuels sous...", "Aktuelle Einstellungen speichern als...", "Salvar os ajustes atuais como..." },
         { "No presets yet", "Ancora nessun preset", "Aún no hay presets", "Aucun preset pour l'instant", "Noch keine Presets", "Ainda sem presets" },
         { "Delete", "Elimina", "Eliminar", "Supprimer", "Löschen", "Excluir" },
-        { "Open the presets folder", "Apri la cartella dei preset", "Abrir la carpeta de presets", "Ouvrir le dossier des presets", "Preset-Ordner öffnen", "Abrir a pasta de presets" },
-        { "Save preset", "Salva preset", "Guardar preset", "Enregistrer le preset", "Preset speichern", "Salvar preset" },
         { "Name:", "Nome:", "Nombre:", "Nom :", "Name:", "Nome:" },
-        { "My groove", "Il mio groove", "Mi groove", "Mon groove", "Mein Groove", "Meu groove" },
         { "Save", "Salva", "Guardar", "Enregistrer", "Speichern", "Salvar" },
         { "Save this clip as .mid...", "Salva questa clip come .mid...", "Guardar este clip como .mid...", "Enregistrer ce clip en .mid...", "Diesen Clip als .mid speichern...", "Salvar este clipe como .mid..." },
         { "Save all parts to a folder...", "Salva tutte le parti in una cartella...", "Guardar todas las partes en una carpeta...", "Enregistrer toutes les parties dans un dossier...", "Alle Teile in einen Ordner speichern...", "Salvar todas as partes numa pasta..." },
@@ -322,8 +224,6 @@ namespace
         { "Mix (changes every fill)", "Misto (cambia a ogni fill)", "Mezcla (cambia en cada relleno)", "Mélange (change à chaque fill)", "Mix (wechselt bei jedem Fill)", "Mistura (muda a cada virada)" },
 
         // ---- v1.7 styles, reset, genres ----
-        { "STYLE", "STILE", "ESTILO", "STYLE", "STIL", "ESTILO" },
-        { "RESET", "RESET", "REINICIAR", "RÉINIT.", "RESET", "REINICIAR" },
         { "Cancel", "Annulla", "Cancelar", "Annuler", "Abbrechen", "Cancelar" },
         { "Ready-made styles (the key stays)", "Stili pronti (la tonalità resta)", "Estilos listos (la tonalidad se mantiene)", "Styles prêts (la tonalité reste)", "Fertige Stile (die Tonart bleibt)", "Estilos prontos (o tom fica)" },
         { "Ready-made setups by genre: progression, voicing, groove, feel and sound in one click (the key stays)",
@@ -398,7 +298,6 @@ namespace
           "Neuer Zufallsrhythmus nur für den Bass: das Piano bleibt",
           "Novo ritmo aleatório só para o baixo: o piano fica" },
         // ---- v1.17 my grooves ----
-        { "MY GROOVES", "I MIEI GROOVE", "MIS GROOVES", "MES GROOVES", "MEINE GROOVES", "MEUS GROOVES" },
         { "Save the rhythm grid as your own groove, or load one you saved (Documents/Fase Groove Piano/Grooves)",
           "Salva la griglia ritmica come groove tuo, o carica uno che hai salvato (Documenti/Fase Groove Piano/Grooves)",
           "Guarda la cuadrícula rítmica como tu propio groove, o carga uno guardado (Documentos/Fase Groove Piano/Grooves)",
@@ -411,7 +310,6 @@ namespace
           "Noch keine gespeicherten Grooves", "Nenhum groove salvo ainda" },
         { "Open the Fase Groove Piano folder", "Apri la cartella Fase Groove Piano", "Abrir la carpeta Fase Groove Piano",
           "Ouvrir le dossier Fase Groove Piano", "Ordner Fase Groove Piano öffnen", "Abrir a pasta Fase Groove Piano" },
-        { "Save groove", "Salva groove", "Guardar groove", "Enregistrer le groove", "Groove speichern", "Salvar groove" },
         // ---- v1.18 solo ----
         { "SOLO PIANO", "SOLO PIANO", "SOLO PIANO", "SOLO PIANO", "SOLO PIANO", "SÓ PIANO" },
         { "SOLO BASS", "SOLO BASSO", "SOLO BAJO", "SOLO BASSE", "SOLO BASS", "SÓ BAIXO" },
@@ -438,8 +336,6 @@ namespace
           "Cliquez sur un groove pour l'entendre, double-clic ou Entrée pour fermer. L'étoile le garde en favori.",
           "Klicke auf einen Groove, um ihn zu hören; Doppelklick oder Enter schließt. Der Stern macht ihn zum Favoriten.",
           "Clique num groove para ouvi-lo, duplo clique ou Enter para fechar. A estrela guarda-o nos favoritos." },
-        { "Previous groove", "Groove precedente", "Groove anterior", "Groove précédent", "Vorheriger Groove", "Groove anterior" },
-        { "Next groove", "Groove successivo", "Groove siguiente", "Groove suivant", "Nächster Groove", "Próximo groove" },
         // ---- v1.18 browsers ----
         { "Search a progression...", "Cerca una progressione...", "Buscar una progresión...", "Chercher une progression...", "Progression suchen...", "Procurar uma progressão..." },
         { "Click a groove to hear it, double-click or Enter to close",
@@ -456,28 +352,6 @@ namespace
           "Clique numa progressão para ouvi-la, duplo clique ou Enter para fechar. A estrela guarda-a nos favoritos." },
         { "Progressions", "Progressioni", "Progresiones", "Progressions", "Progressionen", "Progressões" },
         // ---- v1.18 smart update ----
-        { "INSTALL NOW updates it with the setup, without the wizard (same folders and parts). Close your DAW if it asks.",
-          "INSTALLA ORA aggiorna con il setup, senza procedura guidata (stesse cartelle e componenti). Chiudi la DAW se te lo chiede.",
-          "INSTALAR AHORA actualiza con el instalador, sin asistente (mismas carpetas y partes). Cierra tu DAW si lo pide.",
-          "INSTALLER met à jour avec l'installateur, sans assistant (mêmes dossiers et composants). Fermez votre DAW s'il le demande.",
-          "JETZT INSTALLIEREN aktualisiert mit dem Setup, ohne Assistent (gleiche Ordner und Teile). Schließe die DAW, wenn es fragt.",
-          "INSTALAR AGORA atualiza com o instalador, sem assistente (mesmas pastas e partes). Feche sua DAW se ele pedir." },
-        { "INSTALL NOW replaces the files of this copy where they are. Then restart your DAW.",
-          "INSTALLA ORA sostituisce i file di questa copia dove si trovano. Poi riavvia la DAW.",
-          "INSTALAR AHORA reemplaza los archivos de esta copia donde están. Luego reinicia tu DAW.",
-          "INSTALLER remplace les fichiers de cette copie là où ils sont. Puis redémarrez votre DAW.",
-          "JETZT INSTALLIEREN ersetzt die Dateien dieser Kopie an Ort und Stelle. Dann die DAW neu starten.",
-          "INSTALAR AGORA substitui os arquivos desta cópia onde estão. Depois reinicie sua DAW." },
-        { "Updated to version", "Aggiornato alla versione", "Actualizado a la versión", "Mis à jour vers la version", "Aktualisiert auf Version", "Atualizado para a versão" },
-        { "Restart your DAW (or the app) to use the new version.", "Riavvia la DAW (o l'app) per usare la nuova versione.",
-          "Reinicia tu DAW (o la app) para usar la nueva versión.", "Redémarrez votre DAW (ou l'app) pour utiliser la nouvelle version.",
-          "Starte die DAW (oder die App) neu, um die neue Version zu nutzen.", "Reinicie sua DAW (ou o app) para usar a nova versão." },
-        { "The files could not be replaced automatically: the download is shown, copy it as the first time.",
-          "Non è stato possibile sostituire i file in automatico: ti mostro il download, copialo come la prima volta.",
-          "No se pudieron reemplazar los archivos automáticamente: se muestra la descarga, cópiala como la primera vez.",
-          "Les fichiers n'ont pas pu être remplacés automatiquement : le téléchargement est affiché, copiez-le comme la première fois.",
-          "Die Dateien konnten nicht automatisch ersetzt werden: der Download wird angezeigt, kopiere ihn wie beim ersten Mal.",
-          "Não foi possível substituir os arquivos automaticamente: o download é mostrado, copie-o como da primeira vez." },
         // ---- v1.19 favourites and MIDI analyzer ----
         { "Favourites", "Preferiti", "Favoritos", "Favoris", "Favoriten", "Favoritos" },
         { "Recent", "Recenti", "Recientes", "Récents", "Zuletzt", "Recentes" },
@@ -531,18 +405,9 @@ namespace
           "Voicing Coach: compara dos voicings de tu progresión", "Voicing Coach : comparez deux voicings de votre progression",
           "Voicing-Coach: vergleiche zwei Voicings deiner Progression", "Voicing Coach: compare dois voicings da sua progressão" },
         // ---- v1.22 song and morph ----
-        { "NEW VARIATION", "NUOVA VARIAZIONE", "NUEVA VARIACIÓN", "NOUVELLE VARIATION", "NEUE VARIATION", "NOVA VARIAÇÃO" },
-        { "ORIGINAL", "ORIGINALE", "ORIGINAL", "ORIGINAL", "ORIGINAL", "ORIGINAL" },
         { "SAVE EACH SECTION AS .MID...", "SALVA OGNI SEZIONE IN .MID...", "GUARDAR CADA SECCIÓN EN .MID...", "ENREGISTRER CHAQUE SECTION EN .MID...", "JEDEN TEIL ALS .MID SPEICHERN...", "SALVAR CADA SEÇÃO EM .MID..." },
-        { "Song arrangement", "Arrangiamento del brano", "Arreglo de la canción", "Arrangement du morceau", "Song-Arrangement", "Arranjo da música" },
         { "Bars of each section (- leaves it out) and a NEW VARIATION of the groove for one section only: the others stay as they are. Used by Clip length > Song, by Song section while playing, and by SAVE EACH SECTION.", "Battute di ogni sezione (- la toglie) e una NUOVA VARIAZIONE del groove per una sola sezione: le altre restano com'erano. Vale per Lunghezza clip > Brano, per Sezione del brano mentre suona e per SALVA OGNI SEZIONE.", "Compases de cada sección (- la quita) y una NUEVA VARIACIÓN del groove solo para una sección: las demás no cambian. Se usa en Longitud del clip > Canción, en Sección mientras suena y en GUARDAR CADA SECCIÓN.", "Mesures de chaque section (- la retire) et une NOUVELLE VARIATION du groove pour une seule section : les autres ne changent pas. Utilisé par Longueur du clip > Morceau, par Section en lecture et par ENREGISTRER CHAQUE SECTION.", "Takte jedes Teils (- lässt ihn weg) und eine NEUE VARIATION des Grooves nur für einen Teil: die anderen bleiben. Gilt für Clip-Länge > Song, für den Song-Teil beim Spielen und für JEDEN TEIL SPEICHERN.", "Compassos de cada seção (- tira-a) e uma NOVA VARIAÇÃO do groove só para uma seção: as outras ficam iguais. Vale para Duração do clip > Música, para Seção durante a reprodução e para SALVAR CADA SEÇÃO." },
-        { "left out", "tolta", "quitada", "retirée", "weggelassen", "retirada" },
-        { "own variation", "variazione propria", "variación propia", "variation propre", "eigene Variation", "variação própria" },
-        { "the groove as it is", "il groove così com'è", "el groove tal cual", "le groove tel quel", "der Groove wie er ist", "o groove como está" },
-        { "Total", "Totale", "Total", "Total", "Gesamt", "Total" },
-        { "bars", "battute", "compases", "mesures", "Takte", "compassos" },
         { "KEEP", "TIENI", "MANTENER", "GARDER", "BEHALTEN", "MANTER" },
-        { "CANCEL", "ANNULLA", "CANCELAR", "ANNULER", "ABBRECHEN", "CANCELAR" },
         { "Groove morph", "Morphing del groove", "Morphing del groove", "Morphing du groove", "Groove-Morphing", "Morphing do groove" },
         { "From", "Da", "Desde", "De", "Von", "De" },
         { "(locked parts stay as they are)", "(le parti bloccate restano com'erano)", "(las partes bloqueadas no cambian)", "(les parties verrouillées ne changent pas)", "(gesperrte Teile bleiben)", "(as partes bloqueadas ficam iguais)" },
@@ -583,10 +448,8 @@ namespace
         { "Original", "Originale", "Original", "Original", "Original", "Original" },
         { "HEAR", "ASCOLTA", "ESCUCHAR", "ÉCOUTER", "HÖREN", "OUVIR" },
         { "Chromatic", "Cromatica", "Cromática", "Chromatique", "Chromatisch", "Cromática" },
-        { "NEW FEEL", "NUOVO FEEL", "NUEVO FEEL", "NOUVEAU FEEL", "NEUES FEEL", "NOVO FEEL" },
         { "Another humanization of the same groove (repeatable: saved with the project)", "Un'altra umanizzazione dello stesso groove (ripetibile: si salva nel progetto)", "Otra humanización del mismo groove (repetible: se guarda en el proyecto)", "Une autre humanisation du même groove (répétable : enregistrée avec le projet)", "Eine andere Humanisierung desselben Grooves (wiederholbar: im Projekt gespeichert)", "Outra humanização do mesmo groove (repetível: salva no projeto)" },
         { "How Humanize is shared: Even, Pianist (the top note sings), Laid-back bass, Tight bass. Click to change", "Come si divide l'umanizzazione: Uniforme, Pianista (la nota in alto canta), Basso rilassato, Basso stretto. Clicca per cambiare", "Cómo se reparte la humanización: Uniforme, Pianista (la nota alta canta), Bajo relajado, Bajo justo. Haz clic para cambiar", "Répartition de l'humanisation : Égale, Pianiste (la note du haut chante), Basse décontractée, Basse serrée. Cliquez pour changer", "Wie Humanize verteilt wird: Gleichmäßig, Pianist (die Oberstimme singt), Lässiger Bass, Straffer Bass. Klicken zum Wechseln", "Como a humanização é dividida: Uniforme, Pianista (a nota de cima canta), Baixo relaxado, Baixo justo. Clique para mudar" },
-        { "Feel", "Feel", "Feel", "Feel", "Feel", "Feel" },
         { "Even", "Uniforme", "Uniforme", "Égale", "Gleichmäßig", "Uniforme" },
         { "Pianist", "Pianista", "Pianista", "Pianiste", "Pianist", "Pianista" },
         { "Laid-back bass", "Basso rilassato", "Bajo relajado", "Basse décontractée", "Lässiger Bass", "Baixo relaxado" },
@@ -597,49 +460,15 @@ namespace
         { "Sub + sidechain gaps", "Sub + pause per il sidechain", "Sub + huecos para sidechain", "Sub + espaces pour sidechain", "Sub + Sidechain-Lücken", "Sub + pausas para sidechain" },
         { "Pedal & expression (CC64 / CC11)", "Pedale ed espressione (CC64 / CC11)", "Pedal y expresión (CC64 / CC11)", "Pédale et expression (CC64 / CC11)", "Pedal & Ausdruck (CC64 / CC11)", "Pedal e expressão (CC64 / CC11)" },
         { "Tight bass", "Basso stretto", "Bajo justo", "Basse serrée", "Straffer Bass", "Baixo justo" },
-        { "Fill: as set", "Fill: come impostato", "Fill: como esté", "Fill : comme réglé", "Fill: wie eingestellt", "Fill: como definido" },
-        { "No fill", "Nessun fill", "Sin fill", "Pas de fill", "Kein Fill", "Sem fill" },
-        { "Fill", "Fill", "Fill", "Fill", "Fill", "Fill" },
         { "Bars of each section (- leaves it out), a NEW VARIATION of the groove for one section only, and the fill that leads out of it. Used by Clip length > Song, by Song section while playing (you hear the fill as it loops), and by SAVE EACH SECTION.", "Battute di ogni sezione (- la toglie), una NUOVA VARIAZIONE del groove per una sola sezione e il fill che la chiude. Vale per Lunghezza clip > Brano, per la Sezione del brano mentre suona (senti il fill mentre gira) e per SALVA OGNI SEZIONE.", "Compases de cada sección (- la quita), una NUEVA VARIACIÓN del groove para una sola sección y el fill que la cierra. Se usa en Longitud del clip > Canción, en Sección mientras suena (oyes el fill en bucle) y en GUARDAR CADA SECCIÓN.", "Mesures de chaque section (- la retire), une NOUVELLE VARIATION du groove pour une seule section et le fill qui la termine. Utilisé par Longueur du clip > Morceau, par Section en lecture (vous entendez le fill en boucle) et par ENREGISTRER CHAQUE SECTION.", "Takte jedes Teils (- lässt ihn weg), eine NEUE VARIATION des Grooves nur für einen Teil und der Fill, der ihn abschließt. Gilt für Clip-Länge > Song, für den Song-Teil beim Spielen (du hörst den Fill im Loop) und für JEDEN TEIL SPEICHERN.", "Compassos de cada seção (- tira-a), uma NOVA VARIAÇÃO do groove só para uma seção e o fill que a fecha. Vale para Duração do clip > Música, para Seção durante a reprodução (ouve o fill em loop) e para SALVAR CADA SEÇÃO." },
         { "Separate tracks", "Tracce separate", "Pistas separadas", "Pistes séparées", "Getrennte Spuren", "Faixas separadas" },
         // ---- v1.15 updates ----
-        { "Check for updates automatically (GitHub)", "Controlla gli aggiornamenti in automatico (GitHub)", "Buscar actualizaciones automáticamente (GitHub)",
-          "Rechercher les mises à jour automatiquement (GitHub)", "Automatisch nach Updates suchen (GitHub)", "Procurar atualizações automaticamente (GitHub)" },
-        { "CHECK NOW", "CONTROLLA ORA", "BUSCAR AHORA", "VÉRIFIER", "JETZT PRÜFEN", "VERIFICAR AGORA" },
-        { "CHECKING...", "CONTROLLO...", "BUSCANDO...", "VÉRIFICATION...", "PRÜFE...", "VERIFICANDO..." },
-        { "INSTALL NOW", "INSTALLA ORA", "INSTALAR AHORA", "INSTALLER", "JETZT INSTALLIEREN", "INSTALAR AGORA" },
-        { "LATER", "PIÙ TARDI", "MÁS TARDE", "PLUS TARD", "SPÄTER", "MAIS TARDE" },
-        { "SKIP THIS VERSION", "SALTA QUESTA VERSIONE", "OMITIR ESTA VERSIÓN", "IGNORER CETTE VERSION", "VERSION ÜBERSPRINGEN", "PULAR ESTA VERSÃO" },
-        { "New version", "Nuova versione", "Nueva versión", "Nouvelle version", "Neue Version", "Nova versão" },
-        { "downloaded", "scaricata", "descargada", "téléchargée", "heruntergeladen", "baixada" },
-        { "You have", "Hai la", "Tienes la", "Vous avez la", "Du hast", "Você tem a" },
-        { "What's new:", "Cosa c'è di nuovo:", "Novedades:", "Nouveautés :", "Neu:", "Novidades:" },
-        { "You have the latest version.", "Hai già l'ultima versione.", "Ya tienes la última versión.", "Vous avez déjà la dernière version.",
-          "Du hast bereits die neueste Version.", "Você já tem a versão mais recente." },
-        { "Could not check for updates. Check your internet connection and try again.",
-          "Impossibile controllare gli aggiornamenti. Controlla la connessione a internet e riprova.",
-          "No se pudo buscar actualizaciones. Comprueba tu conexión a internet e inténtalo de nuevo.",
-          "Impossible de vérifier les mises à jour. Vérifiez votre connexion internet et réessayez.",
-          "Updates konnten nicht geprüft werden. Prüfe deine Internetverbindung und versuche es erneut.",
-          "Não foi possível verificar atualizações. Verifique sua conexão com a internet e tente novamente." },
         { "INSTALL NOW starts the installer. Close your DAW when it asks, then reopen it.",
           "INSTALLA ORA avvia l'installer. Chiudi la DAW quando te lo chiede, poi riaprila.",
           "INSTALAR AHORA abre el instalador. Cierra tu DAW cuando te lo pida y vuelve a abrirla.",
           "INSTALLER lance l'installateur. Fermez votre DAW quand il le demande, puis rouvrez-la.",
           "JETZT INSTALLIEREN startet das Setup. Schließe deine DAW, wenn es danach fragt, und öffne sie dann wieder.",
           "INSTALAR AGORA abre o instalador. Feche sua DAW quando ele pedir e depois abra de novo." },
-        { "INSTALL NOW opens the zip: copy the plug-ins to the same folders as the first time, then restart your DAW.",
-          "INSTALLA ORA apre lo zip: copia i plug-in nelle stesse cartelle della prima volta, poi riavvia la DAW.",
-          "INSTALAR AHORA abre el zip: copia los plug-ins en las mismas carpetas que la primera vez y reinicia tu DAW.",
-          "INSTALLER ouvre le zip : copiez les plug-ins dans les mêmes dossiers que la première fois, puis redémarrez votre DAW.",
-          "JETZT INSTALLIEREN öffnet das Zip: kopiere die Plug-ins in dieselben Ordner wie beim ersten Mal und starte die DAW neu.",
-          "INSTALAR AGORA abre o zip: copie os plug-ins para as mesmas pastas da primeira vez e reinicie sua DAW." },
-        { "INSTALL NOW shows the downloaded zip: copy the plug-ins to the same folders as the first time.",
-          "INSTALLA ORA mostra lo zip scaricato: copia i plug-in nelle stesse cartelle della prima volta.",
-          "INSTALAR AHORA muestra el zip descargado: copia los plug-ins en las mismas carpetas que la primera vez.",
-          "INSTALLER affiche le zip téléchargé : copiez les plug-ins dans les mêmes dossiers que la première fois.",
-          "JETZT INSTALLIEREN zeigt das heruntergeladene Zip: kopiere die Plug-ins in dieselben Ordner wie beim ersten Mal.",
-          "INSTALAR AGORA mostra o zip baixado: copie os plug-ins para as mesmas pastas da primeira vez." },
         // ---- v1.14 dance pack ----
         { "Chromatic & borrowed", "Cromatiche e prestiti", "Cromáticas y prestadas", "Chromatiques et empruntées", "Chromatisch & entlehnt", "Cromáticas e emprestadas" },
         { "Octave triads (disco)", "Triadi in ottava (disco)", "Tríadas en octava (disco)", "Triades à l'octave (disco)", "Oktav-Dreiklänge (Disco)", "Tríades em oitava (disco)" },
@@ -682,8 +511,6 @@ namespace
         { "BOTH", "TUTTI", "AMBOS", "LES DEUX", "BEIDE", "AMBOS" },
         { "PIANO", "PIANO", "PIANO", "PIANO", "PIANO", "PIANO" },
         { "EXPORT MIDI", "ESPORTA MIDI", "EXPORTAR MIDI", "EXPORTER LE MIDI", "MIDI EXPORTIEREN", "EXPORTAR MIDI" },
-        { "FULL SONG...", "BRANO INTERO...", "CANCIÓN ENTERA...", "MORCEAU ENTIER...", "GANZER SONG...", "MÚSICA INTEIRA..." },
-        { "SAVE .MID...", "SALVA .MID...", "GUARDAR .MID...", "ENREGISTRER .MID...", ".MID SPEICHERN...", "SALVAR .MID..." },
         { "Every note the plug-in plays: chords, bass and fills, with the chord names", "Tutte le note che suona il plug-in: accordi, basso e fill, con i nomi degli accordi", "Todas las notas que toca el plug-in: acordes, bajo y rellenos, con los nombres de los acordes", "Toutes les notes jouées par le plug-in : accords, basse et fills, avec le nom des accords", "Alle Noten, die das Plug-in spielt: Akkorde, Bass und Fills, mit den Akkordnamen", "Todas as notas que o plug-in toca: acordes, baixo e viradas, com os nomes dos acordes" },
         { "The rhythm grid: click the steps to write your own groove", "La griglia ritmica: clicca sui passi per scrivere il tuo groove", "La rejilla rítmica: haz clic en los pasos para escribir tu groove", "La grille rythmique : cliquez sur les pas pour écrire votre groove", "Das Rhythmusraster: Klicke auf die Schritte, um deinen Groove zu schreiben", "A grade rítmica: clique nos passos para escrever o seu groove" },
         { "Hear the piano and the bass", "Ascolta piano e basso", "Escucha el piano y el bajo", "Écouter le piano et la basse", "Klavier und Bass hören", "Ouvir o piano e o baixo" },
@@ -692,11 +519,7 @@ namespace
         { "No notes: the piano and the bass are both silent", "Nessuna nota: piano e basso sono entrambi muti", "Sin notas: el piano y el bajo están en silencio", "Aucune note : le piano et la basse sont muets", "Keine Noten: Klavier und Bass sind stumm", "Sem notas: o piano e o baixo estão em silêncio" },
         { "Morph towards...", "Morph verso...", "Morph hacia...", "Morph vers...", "Morph zu...", "Morph para..." },
         { "Click the groove to morph towards: genres on the left, or type its name.", "Clicca il groove verso cui fare il morph: generi a sinistra, oppure scrivi il nome.", "Haz clic en el groove de destino: géneros a la izquierda, o escribe su nombre.", "Cliquez sur le groove visé : genres à gauche, ou tapez son nom.", "Klicke auf den Ziel-Groove: Genres links, oder tippe seinen Namen.", "Clique no groove de destino: gêneros à esquerda, ou digite o nome." },
-        { "ONE .MID PER SECTION...", "UN .MID PER SEZIONE...", "UN .MID POR SECCIÓN...", "UN .MID PAR SECTION...", "EINE .MID PRO TEIL...", "UM .MID POR SEÇÃO..." },
-        { "SAVE SONG .MID...", "SALVA BRANO .MID...", "GUARDAR CANCIÓN .MID...", "ENREGISTRER LE MORCEAU .MID...", "SONG ALS .MID SPEICHERN...", "SALVAR MÚSICA .MID..." },
-        { "Drag the whole song (every section, with markers) onto a track in your DAW", "Trascina il brano intero (tutte le sezioni, con i marker) su una traccia della DAW", "Arrastra la canción entera (todas las secciones, con marcadores) a una pista de tu DAW", "Glissez le morceau entier (toutes les sections, avec marqueurs) sur une piste de votre DAW", "Ziehe den ganzen Song (alle Teile, mit Markern) auf eine Spur deiner DAW", "Arraste a música inteira (todas as seções, com marcadores) para uma faixa da sua DAW" },
         { "Bars of each section (- leaves it out), its own variation of the groove and the fill that leads out of it. Then drag or save the whole song.", "Battute di ogni sezione (- la toglie), la sua variazione del groove e il fill con cui esce. Poi trascina o salva il brano intero.", "Compases de cada sección (- la quita), su propia variación del groove y el relleno de salida. Luego arrastra o guarda la canción entera.", "Mesures de chaque section (- la retire), sa variation du groove et le fill de sortie. Puis glissez ou enregistrez le morceau entier.", "Takte jedes Teils (- lässt ihn weg), seine eigene Groove-Variation und das Fill am Ende. Dann den ganzen Song ziehen oder speichern.", "Compassos de cada seção (- remove), a sua variação do groove e a virada de saída. Depois arraste ou salve a música inteira." },
-        { "Section", "Sezione", "Sección", "Section", "Teil", "Seção" },
         { "Bars", "Battute", "Compases", "Mesures", "Takte", "Compassos" },
         { "Fill out", "Fill in uscita", "Relleno de salida", "Fill de sortie", "Fill am Ende", "Virada de saída" },
         { "Song", "Brano", "Canción", "Morceau", "Song", "Música" },
@@ -738,24 +561,16 @@ namespace
         { "Play / stop the preview (space bar)", "Avvia / ferma l'ascolto (barra spaziatrice)", "Reproducir / parar la escucha (barra espaciadora)", "Lecture / arrêt de l'écoute (barre d'espace)", "Vorhören starten / stoppen (Leertaste)", "Tocar / parar a escuta (barra de espaço)" },
         { "Hear", "Ascolta", "Escuchar", "Écouter", "Hören", "Ouvir" },
         { "notes selected", "note selezionate", "notas seleccionadas", "notes sélectionnées", "Noten ausgewählt", "notas selecionadas" },
-        { "Full screen", "Schermo intero", "Pantalla completa", "Plein écran", "Vollbild", "Tela cheia" },
-        { "Exit full screen", "Esci da schermo intero", "Salir de pantalla completa", "Quitter le plein écran", "Vollbild verlassen", "Sair da tela cheia" },
         { "Select: drag a rectangle with MOVE (or Shift + drag), Ctrl / Shift + click to add, Ctrl + A for all; then drag, arrows, Delete, QUANTIZE and the velocity lane work on all of them.", "Selezione: trascina un rettangolo con SPOSTA (o Shift + trascina), Ctrl / Shift + clic per aggiungere, Ctrl + A per tutte; poi trascina, frecce, Canc, QUANTIZZA e la corsia della dinamica lavorano su tutte.", "Selección: arrastra un rectángulo con MOVER (o Shift + arrastrar), Ctrl / Shift + clic para añadir, Ctrl + A para todas; luego arrastrar, flechas, Supr, CUANTIZAR y el carril de velocity actúan sobre todas.", "Sélection : tracez un rectangle avec DÉPLACER (ou Maj + glisser), Ctrl / Maj + clic pour ajouter, Ctrl + A pour tout ; ensuite glisser, flèches, Suppr, QUANTIFIER et la bande de vélocité agissent sur toutes.", "Auswahl: mit BEWEGEN ein Rechteck ziehen (oder Umschalt + ziehen), Strg / Umschalt + Klick zum Hinzufügen, Strg + A für alle; dann wirken Ziehen, Pfeile, Entf, QUANTISIEREN und die Velocity-Spur auf alle.", "Seleção: arraste um retângulo com MOVER (ou Shift + arrastar), Ctrl / Shift + clique para adicionar, Ctrl + A para todas; depois arrastar, setas, Delete, QUANTIZAR e a faixa de velocity agem em todas." },
-        { "TRANSPORT & TEMPO", "TRASPORTO E TEMPO", "TRANSPORTE Y TEMPO", "TRANSPORT ET TEMPO", "TRANSPORT & TEMPO", "TRANSPORTE E ANDAMENTO" },
-        { "Transport", "Trasporto", "Transporte", "Transport", "Transport", "Transporte" },
         { "Tools", "Strumenti", "Herramientas", "Outils", "Werkzeuge", "Ferramentas" },
         { "Zoom", "Zoom", "Zoom", "Zoom", "Zoom", "Zoom" },
         { "Follow", "Segui", "Seguir", "Suivre", "Folgen", "Seguir" },
-        { "Back to the start", "Torna all'inizio", "Volver al inicio", "Retour au début", "Zurück zum Anfang", "Voltar ao início" },
         { "Play / pause the groove without starting the DAW (space bar)", "Avvia / metti in pausa il groove senza avviare la DAW (barra spaziatrice)", "Reproduce / pausa el groove sin arrancar la DAW (barra espaciadora)", "Lecture / pause du groove sans lancer la DAW (barre d'espace)", "Groove abspielen / pausieren, ohne die DAW zu starten (Leertaste)", "Tocar / pausar o groove sem iniciar a DAW (barra de espaço)" },
         { "Stop (the next play starts from the top)", "Stop (il prossimo play riparte dall'inizio)", "Stop (la próxima reproducción empieza desde el inicio)", "Stop (la prochaine lecture repart du début)", "Stopp (das nächste Abspielen beginnt am Anfang)", "Parar (o próximo play começa do início)" },
         { "Hear the piano (lit) or mute it: exported clips keep everything", "Senti il piano (acceso) o lo zittisci: le clip esportate tengono tutto", "Escucha el piano (encendido) o siléncialo: los clips exportados lo conservan todo", "Écouter le piano (allumé) ou le couper : les clips exportés gardent tout", "Klavier hören (an) oder stummschalten: exportierte Clips behalten alles", "Ouvir o piano (aceso) ou silenciá-lo: os clipes exportados mantêm tudo" },
         { "Hear the bass (lit) or switch it off", "Senti il basso (acceso) o lo spegni", "Escucha el bajo (encendido) o apágalo", "Écouter la basse (allumée) ou la couper", "Bass hören (an) oder ausschalten", "Ouvir o baixo (aceso) ou desligá-lo" },
         { "Show or hide the piano notes (hidden notes are greyed out and can't be touched)", "Mostra o nascondi le note del piano (quelle nascoste sono grigie e non si toccano)", "Muestra u oculta las notas del piano (las ocultas quedan en gris y no se tocan)", "Afficher ou masquer les notes du piano (masquées : grisées et intouchables)", "Klaviernoten zeigen oder ausblenden (ausgeblendete sind grau und gesperrt)", "Mostrar ou ocultar as notas do piano (as ocultas ficam cinza e não se tocam)" },
         { "Show or hide the bass notes (hidden notes are greyed out and can't be touched)", "Mostra o nascondi le note del basso (quelle nascoste sono grigie e non si toccano)", "Muestra u oculta las notas del bajo (las ocultas quedan en gris y no se tocan)", "Afficher ou masquer les notes de la basse (masquées : grisées et intouchables)", "Bassnoten zeigen oder ausblenden (ausgeblendete sind grau und gesperrt)", "Mostrar ou ocultar as notas do baixo (as ocultas ficam cinza e não se tocam)" },
-        { "View", "Vista", "Vista", "Vue", "Ansicht", "Vista" },
-        { "New rhythm", "Nuovo ritmo", "Nuevo ritmo", "Nouveau rythme", "Neuer Rhythmus", "Novo ritmo" },
-        { "RANDOM", "CASUALE", "ALEATORIO", "ALÉATOIRE", "ZUFALL", "ALEATÓRIO" },
         { "Lush 11ths (m11, maj9#11)", "11e ricche (m11, maj9#11)", "11as ricas (m11, maj9#11)", "11es riches (m11, maj9#11)", "Volle 11er (m11, maj9#11)", "11as ricas (m11, maj9#11)" },
         { "Soulful 13ths", "13e soulful", "13as soulful", "13es soulful", "Soulful-13er", "13as soulful" },
         { "Funky 7#9", "7#9 funky", "7#9 funky", "7#9 funky", "Funky 7#9", "7#9 funky" },
@@ -783,7 +598,6 @@ namespace
         { "Connected:", "Collegato:", "Conectado:", "Connecté :", "Verbunden:", "Conectado:" },
         { "The Launchpad is in use by another program: in your DAW's MIDI settings set its control surface to None and switch off its ports (Push: switch off Track and Remote on its User Port)", "Il Launchpad è usato da un altro programma: nelle impostazioni MIDI della DAW imposta la sua control surface su Nessuna e spegni le sue porte (Push: spegni Track e Remote sulla sua User Port)", "El Launchpad lo usa otro programa: en los ajustes MIDI de tu DAW pon su superficie de control en Ninguna y apaga sus puertos (Push: apaga Track y Remote en su User Port)", "Le Launchpad est utilisé par un autre programme : dans les réglages MIDI de votre DAW, réglez sa surface de contrôle sur Aucune et désactivez ses ports (Push : désactivez Track et Remote sur son User Port)", "Das Launchpad wird von einem anderen Programm benutzt: stelle in den MIDI-Einstellungen deiner DAW seine Control Surface auf Keine und schalte seine Ports aus (Push: Track und Remote am User Port ausschalten)", "O Launchpad está em uso por outro programa: nas configurações MIDI da sua DAW ponha a superfície de controle em Nenhuma e desligue as portas (Push: desligue Track e Remote na User Port)" },
         { "Used by another Fase Groove Piano in this project", "Usato da un altro Fase Groove Piano in questo progetto", "Lo usa otro Fase Groove Piano en este proyecto", "Utilisé par un autre Fase Groove Piano dans ce projet", "Wird von einem anderen Fase Groove Piano in diesem Projekt benutzt", "Usado por outro Fase Groove Piano neste projeto" },
-        { "TOTAL", "TUTTO", "TODO", "TOUT", "ALLES", "TUDO" },
         { "Total random: style, key, progression, groove, harmony, bass, sound and feel all at once (undo with the arrow, RESET to start over)", "Random totale: stile, tonalità, progressione, groove, armonia, basso, suono e feel tutti insieme (annulla con la freccia, RESET per ripartire da zero)", "Aleatorio total: estilo, tonalidad, progresión, groove, armonía, bajo, sonido y feel a la vez (deshaz con la flecha, RESET para empezar de cero)", "Aléatoire total : style, tonalité, progression, groove, harmonie, basse, son et feel d'un coup (annulez avec la flèche, RESET pour repartir de zéro)", "Totaler Zufall: Stil, Tonart, Progression, Groove, Harmonie, Bass, Sound und Feel auf einmal (Rückgängig mit dem Pfeil, RESET für den Neuanfang)", "Aleatório total: estilo, tom, progressão, groove, harmonia, baixo, som e feel de uma vez (desfaça com a seta, RESET para recomeçar)" },
         { "Piano off  -  click PIANO to turn it back on", "Piano spento  -  clicca PIANO per riaccenderlo", "Piano apagado  -  pulsa PIANO para activarlo", "Piano coupé  -  cliquez sur PIANO pour le rallumer", "Piano aus  -  PIANO klicken zum Einschalten", "Piano desligado  -  clique em PIANO para ligar" },
         { "ADVANCED", "AVANZATE", "AVANZADO", "AVANCÉ", "ERWEITERT", "AVANÇADO" },
@@ -806,13 +620,10 @@ namespace
         { "Live keys: the lowest octave of your keyboard controls the groove (MIDI notes 24-35)", "Tasti live: l'ottava più bassa della tastiera comanda il groove (note MIDI 24-35)", "Teclas en vivo: la octava más grave del teclado controla el groove (notas MIDI 24-35)", "Touches live : l'octave la plus grave du clavier pilote le groove (notes MIDI 24-35)", "Live-Tasten: die tiefste Oktave deiner Tastatur steuert den Groove (MIDI-Noten 24-35)", "Teclas ao vivo: a oitava mais grave do teclado controla o groove (notas MIDI 24-35)" },
         { "White keys: C intro, D main, E break, F build-up, G drop, A outro. Black keys: C# fill in the next bar, D# new riff, F# hear piano, G# hear bass, A# sequencer on/off. B: play / pause.", "Tasti bianchi: Do intro, Re main, Mi break, Fa build-up, Sol drop, La outro. Tasti neri: Do# fill nella battuta dopo, Re# nuovo riff, Fa# ascolta piano, Sol# ascolta basso, La# sequencer on/off. Si: play / pausa.", "Teclas blancas: Do intro, Re main, Mi break, Fa build-up, Sol drop, La outro. Teclas negras: Do# fill en el compás siguiente, Re# nuevo riff, Fa# oír piano, Sol# oír bajo, La# secuenciador on/off. Si: play / pausa.", "Touches blanches : Do intro, Ré main, Mi break, Fa build-up, Sol drop, La outro. Touches noires : Do# fill à la mesure suivante, Ré# nouveau riff, Fa# écouter piano, Sol# écouter basse, La# séquenceur on/off. Si : lecture / pause.", "Weiße Tasten: C Intro, D Main, E Break, F Build-up, G Drop, A Outro. Schwarze Tasten: C# Fill im nächsten Takt, D# neuer Riff, F# Piano hören, G# Bass hören, A# Sequencer an/aus. H: Play / Pause.", "Teclas brancas: Dó intro, Ré main, Mi break, Fá build-up, Sol drop, Lá outro. Teclas pretas: Dó# fill no compasso seguinte, Ré# novo riff, Fá# ouvir piano, Sol# ouvir baixo, Lá# sequenciador on/off. Si: play / pausa." },
         { "Drag only the section picked on the timeline above (click a section to pick it)", "Trascina solo la sezione scelta sulla linea del tempo in alto (clicca una sezione per sceglierla)", "Arrastra solo la sección elegida en la línea de tiempo de arriba (haz clic en una sección para elegirla)", "Glissez seulement la section choisie sur la ligne du temps en haut (cliquez sur une section pour la choisir)", "Nur den oben auf der Zeitleiste gewählten Abschnitt ziehen (klicke einen Abschnitt, um ihn zu wählen)", "Arraste só a seção escolhida na linha do tempo acima (clique numa seção para escolhê-la)" },
-        { "No section", "Nessuna sezione", "Ninguna sección", "Aucune section", "Kein Abschnitt", "Nenhuma seção" },
         { "Bars of each section (- leaves it out), its own variation of the groove and the fill that leads out of it. Drag the whole song, or click a section on the timeline and drag just that one.", "Battute di ogni sezione (- la toglie), la sua variazione del groove e il fill che la chiude. Trascina il brano intero, oppure clicca una sezione sulla linea del tempo e trascina solo quella.", "Compases de cada sección (- la quita), su variación del groove y el fill que la cierra. Arrastra la canción entera, o haz clic en una sección de la línea de tiempo y arrastra solo esa.", "Mesures de chaque section (- l'enlève), sa variation du groove et le fill qui la termine. Glissez le morceau entier, ou cliquez une section sur la ligne du temps et glissez seulement celle-là.", "Takte jedes Abschnitts (- lässt ihn weg), seine Groove-Variation und der Fill, der ihn abschließt. Ziehe den ganzen Song, oder klicke einen Abschnitt auf der Zeitleiste und ziehe nur diesen.", "Compassos de cada seção (- a remove), sua variação do groove e o fill que a fecha. Arraste a música inteira, ou clique numa seção da linha do tempo e arraste só essa." },
         { "(MIDI clock)", "(MIDI clock)", "(MIDI clock)", "(MIDI clock)", "(MIDI-Clock)", "(MIDI clock)" },
         { "No DAW: send it MIDI clock", "Niente DAW: manda il MIDI clock", "Sin DAW: envía MIDI clock", "Pas de DAW : envoyez le MIDI clock", "Keine DAW: MIDI-Clock senden", "Sem DAW: envie MIDI clock" },
         { "The standalone app can't read your DAW's tempo. In your DAW send MIDI clock to the port the app listens to (enable it in the app's Options > Audio/MIDI settings), or turn SYNC DAW off and set the BPM.", "L'app standalone non può leggere il tempo della DAW. Nella DAW manda il MIDI clock alla porta che l'app ascolta (attivala nelle Opzioni > Impostazioni audio/MIDI dell'app), oppure spegni SYNC DAW e imposta i BPM.", "La app standalone no puede leer el tempo de tu DAW. En la DAW envía MIDI clock al puerto que escucha la app (actívalo en Opciones > Ajustes de audio/MIDI de la app), o apaga SYNC DAW y fija los BPM.", "L'app autonome ne peut pas lire le tempo de votre DAW. Dans la DAW, envoyez le MIDI clock au port écouté par l'app (activez-le dans Options > Réglages audio/MIDI de l'app), ou coupez SYNC DAW et réglez le BPM.", "Die Standalone-App kann das Tempo deiner DAW nicht lesen. Sende in der DAW MIDI-Clock an den Port, den die App hört (in den Optionen > Audio/MIDI-Einstellungen der App aktivieren), oder schalte SYNC DAW aus und stelle das BPM ein.", "O app standalone não lê o tempo da sua DAW. Na DAW envie MIDI clock para a porta que o app escuta (ative em Opções > Configurações de áudio/MIDI do app), ou desligue SYNC DAW e defina o BPM." },
-        { "DRAG THIS SECTION", "TRASCINA LA SEZIONE", "ARRASTRA LA SECCIÓN", "GLISSER LA SECTION", "ABSCHNITT ZIEHEN", "ARRASTE A SEÇÃO" },
-        { "DRAG THE WHOLE SONG", "TRASCINA IL BRANO", "ARRASTRA LA CANCIÓN", "GLISSER LE MORCEAU", "GANZEN SONG ZIEHEN", "ARRASTE A MÚSICA" },
         { "Everything", "Tutto", "Todo", "Tout", "Alles", "Tudo" },
         { "Piano only", "Solo piano", "Solo piano", "Piano seul", "Nur Piano", "Só piano" },
         { "TRACKS", "TRACCE", "PISTAS", "PISTES", "SPUREN", "FAIXAS" },
@@ -835,7 +646,6 @@ namespace
         { "Half-bar pad", "Pad a mezza battuta", "Pad de media parte", "Nappe à la demi-mesure", "Pad halbtaktig", "Pad de meio compasso" },
         { "Disco octaves", "Ottave disco", "Octavas disco", "Octaves disco", "Disco-Oktaven", "Oitavas disco" },
         { "Rise into chords", "Salita negli accordi", "Subida a los acordes", "Montée vers les accords", "Lauf in die Akkorde", "Subida nos acordes" },
-        { "DRAG ALL SECTIONS", "TRASCINA TUTTE LE SEZIONI", "ARRASTRA TODAS LAS SECCIONES", "GLISSER TOUTES LES SECTIONS", "ALLE ABSCHNITTE ZIEHEN", "ARRASTE TODAS AS SEÇÕES" },
         { "One clip per section", "Una clip per sezione", "Un clip por sección", "Un clip par section", "Ein Clip pro Abschnitt", "Um clipe por seção" },
         { "Drag every section at once, each as its own clip (intro, main groove, break...): the DAW puts them one after another", "Trascina tutte le sezioni insieme, ognuna come clip a sé (intro, groove principale, break...): la DAW le mette una dopo l'altra", "Arrastra todas las secciones a la vez, cada una como su propio clip (intro, groove principal, break...): la DAW las pone una tras otra", "Glisse toutes les sections d'un coup, chacune en clip séparé (intro, groove principal, break...) : la DAW les place l'une après l'autre", "Zieht alle Abschnitte auf einmal, jeden als eigenen Clip (Intro, Hauptgroove, Break...): die DAW legt sie hintereinander", "Arraste todas as seções de uma vez, cada uma como seu próprio clipe (intro, groove principal, break...): a DAW as coloca uma depois da outra" },
         { "Strings", "Archi", "Cuerdas", "Cordes", "Streicher", "Cordas" },
@@ -864,203 +674,3 @@ namespace
         { "How fast the sound comes back after each duck", "Quanto velocemente il suono torna su dopo ogni abbassamento", "Lo rápido que vuelve el sonido tras cada bajada", "La vitesse à laquelle le son revient après chaque baisse", "Wie schnell der Sound nach jedem Ducking zurückkommt", "Quão rápido o som volta depois de cada abaixamento" },
         { "Tempo: the duck follows the beat. Sidechain input: it follows the track you send to the plug-in's sidechain input (e.g. the kick)", "Tempo: l'abbassamento segue il battito. Ingresso sidechain: segue la traccia che mandi all'ingresso sidechain del plug-in (es. la cassa)", "Tempo: la bajada sigue el pulso. Entrada sidechain: sigue la pista que envías a la entrada sidechain del plug-in (p. ej. el bombo)", "Tempo : la baisse suit le temps. Entrée sidechain : elle suit la piste envoyée à l'entrée sidechain du plug-in (ex. le kick)", "Tempo: das Ducking folgt dem Beat. Sidechain-Eingang: es folgt der Spur, die du an den Sidechain-Eingang des Plug-ins schickst (z. B. die Kick)", "Tempo: o abaixamento segue a batida. Entrada sidechain: segue a faixa que você envia à entrada sidechain do plug-in (ex. o bumbo)" },
         { "How often the tempo sidechain ducks: every beat, 8th, half bar or 16th", "Ogni quanto si abbassa il sidechain a tempo: ogni battito, ottavo, mezza battuta o sedicesimo", "Cada cuánto baja el sidechain a tempo: cada pulso, corchea, media barra o semicorchea", "La fréquence du sidechain au tempo : chaque temps, croche, demi-mesure ou double croche", "Wie oft der Tempo-Sidechain duckt: jeder Schlag, Achtel, halber Takt oder Sechzehntel", "Com que frequência o sidechain a tempo abaixa: cada batida, colcheia, meio compasso ou semicolcheia" },
-    };
-    // clang-format on
-
-    std::atomic<int> currentLanguage { 0 };
-
-    const std::unordered_map<std::string, const Entry*>& index()
-    {
-        static const auto map = []
-        {
-            std::unordered_map<std::string, const Entry*> m;
-            for (const auto& e : table)
-                m[e.en] = &e;
-            return m;
-        }();
-        return map;
-    }
-
-    std::unique_ptr<juce::PropertiesFile> openSettings()
-    {
-        juce::PropertiesFile::Options o;
-        o.applicationName = "Fase Groove Piano";
-        o.folderName = "Fase Groove Piano";
-        o.filenameSuffix = ".settings";
-        o.osxLibrarySubFolder = "Application Support";
-        return std::make_unique<juce::PropertiesFile> (o);
-    }
-}
-
-const char* languageName (int language) noexcept
-{
-    static const char* const names[numLanguages] { "English", "Italiano", "Español", "Français", "Deutsch", "Português" };
-    return names[juce::jlimit (0, numLanguages - 1, language)];
-}
-
-Language current() noexcept
-{
-    return (Language) currentLanguage.load();
-}
-
-namespace
-{
-    /** JUCE's own texts (the Standalone window's Options menu and audio settings use TRANS). */
-    void applyToJuce()
-    {
-        static const char* const juceTexts[] {
-            "Audio/MIDI Settings...", "Audio/MIDI Settings", "Save current state...", "Load a saved state...",
-            "Reset to default state", "Save current state", "Load a saved state", "Error whilst saving",
-            "Error whilst loading", "Couldn't write to the specified file!", "Couldn't read from the specified file!",
-            "Audio device type:", "Device:", "Output:", "Input:", "Sample rate:", "Audio buffer size:",
-            "Active MIDI inputs:", "MIDI Output:", "Active output channels:", "Active input channels:", "Test",
-            "Plays a test tone", "Control Panel", "Reset Device", "Show advanced settings...",
-            "No MIDI inputs available", "none", "OK"
-        };
-
-        if (currentLanguage.load() == 0)
-        {
-            juce::LocalisedStrings::setCurrentMappings (nullptr);
-            return;
-        }
-
-        juce::String text ("language: Fase Groove Piano\n");
-        for (auto* key : juceTexts)
-            text << "\"" << juce::String (key).replace ("\"", "\\\"") << "\" = \""
-                 << tr (key).replace ("\"", "\\\"") << "\"\n";
-
-        juce::LocalisedStrings::setCurrentMappings (new juce::LocalisedStrings (text, false));
-    }
-}
-
-namespace
-{
-    /** The settings file kept open for reading; it is opened again when its date or size changed
-        or it was written in the last few seconds (another instance, or a coarse file clock).
-        Writes still go through a fresh file, so they never overwrite another instance's keys. */
-    struct SettingsCache : juce::DeletedAtShutdown
-    {
-        ~SettingsCache() override { clearSingletonInstance(); }
-
-        template <typename Fn>
-        auto read (Fn&& fn)
-        {
-            const juce::ScopedLock sl (lock);
-            return fn (current());
-        }
-        void invalidate() { const juce::ScopedLock sl (lock); size = -2; }
-
-        JUCE_DECLARE_SINGLETON_INLINE (SettingsCache, false)
-
-    private:
-        juce::PropertiesFile& current()
-        {
-            const auto f = settings != nullptr ? settings->getFile() : juce::File();
-            const auto t = f.getLastModificationTime();
-            const auto n = f.getSize();
-            if (settings == nullptr || n != size || t != modified || (juce::Time::getCurrentTime() - t).inMilliseconds() < 3000)
-            {
-                settings = openSettings();
-                modified = settings->getFile().getLastModificationTime();
-                size = settings->getFile().getSize();
-            }
-            return *settings;
-        }
-
-        juce::CriticalSection lock;
-        std::unique_ptr<juce::PropertiesFile> settings;
-        juce::Time modified;
-        juce::int64 size = -2;
-    };
-}
-
-bool tipsEnabled()
-{
-    return SettingsCache::getInstance()->read ([] (juce::PropertiesFile& settings) { return settings.getBoolValue ("tips", true); });
-}
-
-void setTipsEnabled (bool enabled)
-{
-    if (auto settings = openSettings())
-    {
-        settings->setValue ("tips", enabled);
-        settings->saveIfNeeded();
-    }
-    SettingsCache::getInstance()->invalidate();
-}
-
-juce::String setting (const char* key, const juce::String& fallback)
-{
-    return SettingsCache::getInstance()->read ([&] (juce::PropertiesFile& settings) { return settings.getValue (key, fallback); });
-}
-
-void setSetting (const char* key, const juce::var& value)
-{
-    if (auto settings = openSettings())
-    {
-        settings->setValue (key, value);
-        settings->saveIfNeeded();
-    }
-    SettingsCache::getInstance()->invalidate();
-}
-
-void setCurrent (Language language)
-{
-    currentLanguage = juce::jlimit (0, numLanguages - 1, (int) language);
-    applyToJuce();
-
-    if (auto settings = openSettings())
-    {
-        settings->setValue ("language", currentLanguage.load());
-        settings->saveIfNeeded();
-    }
-}
-
-void loadSaved()
-{
-    if (auto settings = openSettings(); settings != nullptr && settings->containsKey ("language"))
-    {
-        currentLanguage = juce::jlimit (0, numLanguages - 1, settings->getIntValue ("language"));
-        applyToJuce();
-        return;
-    }
-
-    // First run: follow the computer's language.
-    const auto system = juce::SystemStats::getUserLanguage().toLowerCase();
-    static const char* const codes[numLanguages] { "en", "it", "es", "fr", "de", "pt" };
-    for (int i = 0; i < numLanguages; ++i)
-        if (system.startsWith (codes[i]))
-            currentLanguage = i;
-    applyToJuce();
-}
-
-juce::String upper (const juce::String& text)
-{
-    juce::String out;
-    for (auto c : text)
-    {
-        if (c >= 0xe0 && c <= 0xfe && c != 0xf7)
-            c -= 0x20;   // Latin-1: à -> À, é -> É, ñ -> Ñ ...
-        else
-            c = juce::CharacterFunctions::toUpperCase (c);
-        out += juce::String::charToString (c);
-    }
-    return out;
-}
-
-juce::String tr (const juce::String& english)
-{
-    const int lang = currentLanguage.load();
-    if (lang == 0)
-        return english;
-
-    const auto& map = index();
-    const auto it = map.find (english.toStdString());
-    if (it == map.end())
-        return english;
-
-    const Entry& e = *it->second;
-    const char* text = lang == 1 ? e.it : lang == 2 ? e.es : lang == 3 ? e.fr : lang == 4 ? e.de : e.pt;
-    return juce::String::fromUTF8 (text);
-}
-}

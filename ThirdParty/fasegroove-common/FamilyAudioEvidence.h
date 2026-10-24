@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #pragma once
 #include <cmath>
-#include "../Source/FamilySoundProfiles.h"
+#include "FamilySoundProfiles.h"
 #include <cstdio>
 
 // Native processor-level evidence, with the real host clock, internal guide

@@ -1,8 +1,9 @@
-// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// Fase Groove family - Copyright (C) 2026 Fabio 'Pitch' Serra
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "CircleOfFifths.h"
-#include "PluginEditor.h"
+#include "FamilyTheme.h"
+#include "Localisation.h"
 
 namespace
 {
@@ -23,10 +24,6 @@ namespace
 
     float angleOf (int index) { return -juce::MathConstants<float>::halfPi + index * segment; }
 
-    juce::Font font (float h, bool bold)
-    {
-        return juce::Font (juce::FontOptions (h).withStyle (bold ? "Bold" : "Regular"));
-    }
 }
 
 //==============================================================================
@@ -422,4 +419,11 @@ void CircleOfFifths::paint (juce::Graphics& g)
     };
     item (legend.removeFromLeft (legend.getWidth() * 0.55f), harmonyColour (1.0f), tr ("sounds great"));
     item (legend, harmonyColour (0.0f), tr ("clashes"));
+}
+
+juce::Font CircleOfFifths::font (float h, bool bold) const
+{
+    if (familyFont)
+        return FamilyTheme::font (h, bold);
+    return juce::Font (juce::FontOptions (h).withStyle (bold ? "Bold" : "Regular"));
 }

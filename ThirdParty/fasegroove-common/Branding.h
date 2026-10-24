@@ -1,20 +1,22 @@
-// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// Fase Groove family - Copyright (C) 2026 Fabio 'Pitch' Serra
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #pragma once
 
-// App identity: the Fase Groove Piano logo (icon + wordmark) and the credits
+// App identity (shared by the family): the product's logo (icon + wordmark) and the credits
 // artwork. Shared by the editor, the About page and the icon/README renders.
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
 namespace Branding
 {
-    inline constexpr const char* appName   = "Fase Groove Piano";
-    inline constexpr const char* tagline   = "funky piano grooves for soulful & deep house";
+    /** Defined by each product (Source/Product.cpp). */
+    extern const char* const appName;
+    extern const char* const tagline;
+    extern const char* const sourceUrl;
+
     inline constexpr const char* artist    = "Fabio 'Pitch' Serra";
     inline constexpr const char* licence   = "Free & open source - GNU AGPL v3";
-    inline constexpr const char* sourceUrl = "https://github.com/wsx79/fasegroovepiano";
 
     /** Donation pages (an empty URL hides its button). */
     inline constexpr const char* kofiUrl   = "https://ko-fi.com/fabios1979";
@@ -23,13 +25,13 @@ namespace Branding
     /** Fabio 'Pitch' Serra's artist page on Spotify (empty hides the button). */
     inline constexpr const char* spotifyUrl = "https://open.spotify.com/artist/29iQGuXML8LEw3xRp1dNRP";
 
-    /** The square app icon (slanted groove keys). */
+    /** The square app icon (FaseGroove::ProductInfo::iconSvg). */
     std::unique_ptr<juce::Drawable> createIcon();
 
     /** Fabio 'Pitch' Serra's FS PITCH logo (white on transparent). */
     juce::Image artistLogo();
 
-    /** "FASE" + "GROOVE PIANO", slanted like the FS logo, fitted inside `area`. */
+    /** "FASE" + the product's wordmark (e.g. "GROOVE PIANO"), slanted like the FS logo, fitted inside `area`. */
     void drawWordmark (juce::Graphics&, juce::Rectangle<float> area);
 
     /** Icon on the left, wordmark on the right. */

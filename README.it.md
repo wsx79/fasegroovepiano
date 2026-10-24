@@ -221,8 +221,10 @@ Source/engine/Generators.*    riff casuali, progressioni casuali, sezioni del br
 Source/GuideVoice.h           suoni guida: Rhodes, Soulful Grand, House Piano, House Organ
 Source/PluginProcessor.*      parametri, tempo/sincronizzazione, MIDI in/out, esportazione clip
 Source/PluginEditor.*         interfaccia grafica e pagina crediti
-Source/CircleOfFifths.*       circolo delle quinte interattivo
-Source/Branding.*             logo, nome, link
+Source/Product.cpp            nome, link e testi del prodotto per il modulo comune
+Source/Translations.inc       le traduzioni proprie del prodotto
+ThirdParty/fasegroove-common/ modulo comune della famiglia (aggiornamenti, traduzioni, logo, tema, circolo delle quinte),
+                              copiato dal repo fasegroove con scripts/sync.sh: si modifica lì
 Resources/                    logo dell'app (SVG), icona, logo FS PITCH
 installer/windows/            installer per Windows (script Inno Setup, icona, immagini, testi)
 tests/EngineTests.cpp         test del motore (nessuna dipendenza da JUCE)
@@ -233,5 +235,5 @@ Per aggiungere un groove, aggiungi una riga in `groovePatterns()` (`GrooveEngine
 ogni carattere è un sedicesimo: `X` accento, `x` colpo, `g` ghost note, `>` anticipo (suona
 l'accordo successivo), `=` tieni, `.` pausa.
 
-I link di donazione e del codice sorgente sono in `Source/Branding.h` (`kofiUrl`, `paypalUrl`,
-`sourceUrl`). Se un link è vuoto, il pulsante corrispondente viene nascosto.
+I link di donazione e del codice sorgente sono in `ThirdParty/fasegroove-common/Branding.h` (`kofiUrl`,
+`paypalUrl`) e in `Source/Product.cpp` (`sourceUrl`). Se un link è vuoto, il pulsante corrispondente viene nascosto.

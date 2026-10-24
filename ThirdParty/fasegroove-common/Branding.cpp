@@ -1,9 +1,9 @@
-// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// Fase Groove family - Copyright (C) 2026 Fabio 'Pitch' Serra
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "Branding.h"
 
-#include <BinaryData.h>
+#include "ProductInfo.h"
 
 namespace
 {
@@ -59,12 +59,14 @@ namespace Branding
 {
     std::unique_ptr<juce::Drawable> createIcon()
     {
-        return juce::Drawable::createFromImageData (BinaryData::fgp_icon_svg, BinaryData::fgp_icon_svgSize);
+        const auto& p = FaseGroove::product();
+        return p.iconSvg != nullptr ? juce::Drawable::createFromImageData (p.iconSvg, (size_t) p.iconSvgSize) : nullptr;
     }
 
     juce::Image artistLogo()
     {
-        return juce::ImageCache::getFromMemory (BinaryData::fs_pitch_logo_png, BinaryData::fs_pitch_logo_pngSize);
+        const auto& p = FaseGroove::product();
+        return p.artistLogoPng != nullptr ? juce::ImageCache::getFromMemory (p.artistLogoPng, p.artistLogoPngSize) : juce::Image();
     }
 
     void drawWordmark (juce::Graphics& g, juce::Rectangle<float> area)
@@ -78,7 +80,7 @@ namespace Branding
         drawSlanted (g, "FASE", top, top.getHeight() * 1.18f, 0.04f);
 
         g.setColour (juce::Colours::white);
-        drawSlanted (g, "GROOVE PIANO", area, area.getHeight() * 1.05f, 0.32f);
+        drawSlanted (g, FaseGroove::product().wordmark, area, area.getHeight() * 1.05f, 0.32f);
     }
 
     void drawFullLogo (juce::Graphics& g, juce::Rectangle<float> area)

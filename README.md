@@ -217,8 +217,10 @@ Source/engine/Generators.*    random riffs, random progressions, song sections, 
 Source/GuideVoice.h           guide sounds: Rhodes, Soulful Grand, House Piano, House Organ
 Source/PluginProcessor.*      parameters, tempo sync, MIDI in/out, clip export, user pattern
 Source/PluginEditor.*         user interface and credits page
-Source/CircleOfFifths.*       interactive circle of fifths
-Source/Branding.*             logo, name, links
+Source/Product.cpp            name, links and texts of this product for the shared module
+Source/Translations.inc       this product's own translations
+ThirdParty/fasegroove-common/ shared family module (updater, translations, logo, theme, circle of fifths),
+                              copied from the fasegroove repo by its scripts/sync.sh: edit it there
 Resources/                    app logo (SVG), icon, FS PITCH logo
 installer/windows/            Windows installer (Inno Setup script, icon, wizard images, texts)
 tests/EngineTests.cpp         engine tests (no JUCE dependency)
@@ -229,5 +231,5 @@ To add a groove, add a line to `groovePatterns()` in `GrooveEngine.cpp`: each ch
 16th note: `X` accent, `x` hit, `g` ghost note, `>` push (plays the next chord early),
 `=` hold, `.` rest.
 
-Donation and source-code links live in `Source/Branding.h` (`kofiUrl`, `paypalUrl`, `sourceUrl`);
+Donation and source-code links live in `ThirdParty/fasegroove-common/Branding.h` (`kofiUrl`, `paypalUrl`) and `Source/Product.cpp` (`sourceUrl`);
 an empty link hides its button.

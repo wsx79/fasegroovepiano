@@ -1,4 +1,4 @@
-// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// Fase Groove family - Copyright (C) 2026 Fabio 'Pitch' Serra
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #pragma once
@@ -33,6 +33,9 @@ public:
         `rootPc` / `minor` describe it. */
     std::function<void (int slot, int degree, int rootPc, bool minor)> onMoveChord;
 
+    /** Draws its texts with the family typeface (Inter) instead of the default one (the arranger). */
+    void setFamilyFont (bool shouldUseFamilyFont)   { familyFont = shouldUseFamilyFont; repaint(); }
+
     /** Free mode: every chord of the circle is a drop target, even outside the scale. */
     void setFreeMode (bool shouldBeFree)   { freeMode = shouldBeFree; repaint(); }
 
@@ -66,6 +69,7 @@ private:
     void updateTooltip (juce::Point<float>);
 
     float outerRadius() const;
+    juce::Font font (float h, bool bold) const;
     float ringSplit() const { return outerRadius() * 0.68f; }
     float innerRadius() const { return outerRadius() * 0.38f; }
 
@@ -76,6 +80,7 @@ private:
     std::vector<float> moves;
     int dragging = -1;
     bool freeMode = false;
+    bool familyFont = false;
     juce::Point<float> dragPos;
     int playing = -1;
     Hit hover;

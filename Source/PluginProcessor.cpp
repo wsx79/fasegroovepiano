@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "PluginProcessor.h"
+#include "LinkFile.h"
+#include "MidiExport.h"
 #include "FamilySoundProfiles.h"
 #include "PadController.h"
 #include "GuideVoice.h"
@@ -2354,16 +2356,7 @@ double FaseGroovePianoProcessor::exportBpm() const
 
 bool FaseGroovePianoProcessor::writeMidiFileSafely (const juce::MidiFile& midi, const juce::File& target)
 {
-    juce::TemporaryFile temp (target);
-    {
-        juce::FileOutputStream out (temp.getFile());
-        if (! out.openedOk() || ! midi.writeTo (out))
-            return false;
-        out.flush();
-        if (out.getStatus().failed())
-            return false;
-    }
-    return temp.overwriteTargetFileWithTemporary();
+    return FaseGroove::writeMidiFileSafely (midi, target);
 }
 
 juce::MidiFile FaseGroovePianoProcessor::createMidiClip (int bars, ClipPart part) const
@@ -3075,7 +3068,7 @@ void FaseGroovePianoProcessor::updateLink()
     }
     file.getParentDirectory().createDirectory();
     if (xml.writeTo (file))
-        linkSeenText = file.loadFileAsString();
+        linkSeenText = xml.toString();   // what was just written: no need to read it back
     linkShared = now;
 }
 

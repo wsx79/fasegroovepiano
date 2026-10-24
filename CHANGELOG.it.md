@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.2] - 2026-10-24
+
+- Il cursore del piano roll e le luci dei passi seguono di nuovo il suono (erano in ritardo dalla 0.31.1).
+- Il codice comune FaseGroove (aggiornamenti, tema, link e scrittura MIDI) ora viene dal modulo comune; il suono e i progetti salvati non cambiano.
+
 ## [0.31.1] - 2026-10-24
 
 - Più leggero: il groove non si ricostruisce più se le impostazioni non sono cambiate, l'editor fa meno lavoro a ogni ciclo, il chorus degli archi si salta quando il mix è a 0 e il riverbero non si reimposta se non cambia. Il suono non cambia.

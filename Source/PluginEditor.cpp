@@ -6135,6 +6135,12 @@ void FaseGroovePianoEditor::timerCallback()
     {
         const bool bassHeard = processor.isBassHeard();
         patternView.setState (shownPattern, shownStep(), bassHeard, ! processor.chordsMuted.load() || ! bassHeard);
+        if (rollShown && rollLength > 0.0)
+        {
+            // The roll's playhead keeps up with the sound too (its notes are rebuilt on the slow tick).
+            const double ppq = processor.uiPpq.load();
+            pianoRoll.setPlayhead (ppq < 0.0 ? -1.0 : std::fmod (ppq, rollLength));
+        }
         const bool previewing = processor.previewOn.load();
         playButton.setIcon (previewing ? IconButton::Icon::pause : IconButton::Icon::play);
         playButton.setToggleState (previewing, juce::dontSendNotification);

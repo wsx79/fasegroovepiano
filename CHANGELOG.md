@@ -6,6 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.2] - 2026-10-24
+
+- The piano roll playhead and the step lights follow the sound again (they lagged since 0.31.1).
+- Shared FaseGroove code (updater, theme, link and MIDI writing helpers) now comes from the common module; no change to the sound or to saved projects.
+
 ## [0.31.1] - 2026-10-24
 
 - Lighter: the groove is no longer rebuilt when its settings haven't changed, the editor does less work on every tick, the strings chorus is skipped when its mix is 0 and the reverb is not reset when unchanged. No change to the sound.

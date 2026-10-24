@@ -1,31 +1,35 @@
-// Fase Groove Piano - Copyright (C) 2026 Fabio 'Pitch' Serra
+// Fase Groove family - Copyright (C) 2026 Fabio 'Pitch' Serra
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #include "Updater.h"
 #include "Localisation.h"
+#include "ProductInfo.h"
 
 
 namespace Updater
 {
 namespace
 {
-    constexpr const char* latestReleaseApi = "https://api.github.com/repos/wsx79/fasegroovepiano/releases/latest";
-    constexpr const char* rawBase = "https://raw.githubusercontent.com/wsx79/fasegroovepiano/";
+    const auto& info = FaseGroove::product();
+    const juce::String repo (info.repo);
+    const juce::String assetPrefix (info.assetPrefix);
+    const juce::String latestReleaseApi ("https://api.github.com/repos/wsx79/" + repo + "/releases/latest");
+    const juce::String rawBase ("https://raw.githubusercontent.com/wsx79/" + repo + "/");
 
-    const char* assetName (InstallKind kind)
+    juce::String assetName (InstallKind kind)
     {
        #if JUCE_WINDOWS
-        return kind == InstallKind::installer ? "FaseGroovePiano-Windows-Setup.exe" : "FaseGroovePiano-Windows.zip";
+        return assetPrefix + (kind == InstallKind::installer ? "-Windows-Setup.exe" : "-Windows.zip");
        #elif JUCE_MAC
         juce::ignoreUnused (kind);
-        return "FaseGroovePiano-macOS.zip";
+        return assetPrefix + "-macOS.zip";
        #else
         juce::ignoreUnused (kind);
-        return "FaseGroovePiano-Linux.zip";
+        return assetPrefix + "-Linux.zip";
        #endif
     }
 
-    const juce::String productName ("Fase Groove Piano");
+    const juce::String productName (info.productName);
 
     /** The plug-in bundle (or app) this code is running from. */
     juce::File runningBundle()
@@ -271,7 +275,7 @@ namespace
         args.insert (2, "--max-time");
         args.insert (3, "600");
         args.insert (4, "-A");
-        args.insert (5, "FaseGroovePiano-Updater");
+        args.insert (5, assetPrefix + "-Updater");
 
         juce::ChildProcess process;
         if (! process.start (args, output != nullptr ? juce::ChildProcess::wantStdOut : 0))
@@ -314,7 +318,7 @@ namespace
     {
         return juce::URL (url).createInputStream (juce::URL::InputStreamOptions (juce::URL::ParameterHandling::inAddress)
                                                       .withConnectionTimeoutMs (15000)
-                                                      .withExtraHeaders ("User-Agent: FaseGroovePiano-Updater\r\nAccept: application/vnd.github+json"));
+                                                      .withExtraHeaders ("User-Agent: " + assetPrefix + "-Updater\r\nAccept: application/vnd.github+json"));
     }
    #endif
 
@@ -385,7 +389,7 @@ namespace
         auto downloads = juce::File::getSpecialLocation (juce::File::userHomeDirectory).getChildFile ("Downloads");
         if (! downloads.isDirectory())
             downloads = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory);
-        return downloads.getChildFile ("Fase Groove Piano updates");
+        return downloads.getChildFile (productName + " updates");
     }
 
     /** Markdown -> plain text that reads well in a text box. */
@@ -574,7 +578,7 @@ bool firstAutoCheckThisSession()
 }
 
 //==============================================================================
-Checker::Checker() : juce::Thread ("Fase Groove Piano update check") {}
+Checker::Checker() : juce::Thread (productName + " update check") {}
 
 Checker::~Checker()
 {
@@ -639,7 +643,7 @@ void Checker::run()
         const auto folder = downloadsFolder();
         folder.createDirectory();
         auto file = folder.getChildFile (juce::File::createLegalFileName (juce::String (assetName (result.kind))
-                                             .replace ("FaseGroovePiano-", "FaseGroovePiano-" + result.version + "-")));
+                                             .replace (assetPrefix + "-", assetPrefix + "-" + result.version + "-")));
         if (! file.existsAsFile() || file.getSize() == 0)
             if (! fetchFile (*this, assetUrl, file))
                 return;

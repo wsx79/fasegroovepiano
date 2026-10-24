@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "LinkFile.h"
+
 #include "engine/GrooveEngine.h"
 #include "engine/HarmonyAnalyzer.h"
 #include "FamilyGuideRenderer.h"
@@ -455,27 +457,7 @@ private:
     };
     LinkState linkShared;                      // what the link file says (or what we wrote)
     juce::String linkSeenText;
-    // A file polled for changes: read again only when its date or size changed, or it was
-    // written in the last few seconds (a coarse file clock could hide a quick rewrite).
-    struct PolledFile
-    {
-        juce::Time modified;
-        juce::int64 size = -1;
-        juce::String text;
-        const juce::String& read (const juce::File& file)
-        {
-            const auto t = file.getLastModificationTime();
-            const auto n = file.getSize();
-            if (n != size || t != modified || (juce::Time::getCurrentTime() - t).inMilliseconds() < 3000)
-            {
-                text = file.loadFileAsString();
-                modified = t;
-                size = n;
-            }
-            return text;
-        }
-    };
-    PolledFile linkPolled, leadPolled;   // message thread
+    FaseGroove::PolledFile linkPolled, leadPolled;   // message thread (LinkFile.h)
     std::atomic<double> linkAnchor { -1.0 };   // the shared clock while playing, -1 = none
     LinkState localLinkState() const;
     mutable std::atomic<int> lastGenre { 0 };   // the genre of the last preset (a random or edited groove keeps it)

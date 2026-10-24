@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(FaseGroovePiano VERSION 0.31.1 LANGUAGES C CXX)
+project(FaseGroovePiano VERSION 0.31.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,6 +27,7 @@ set_target_properties(sgk_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 if(SGK_BUILD_TESTS)
     enable_testing()
     add_executable(sgk_engine_tests tests/EngineTests.cpp)
+    target_include_directories(sgk_engine_tests PRIVATE ThirdParty/fasegroove-common)
     target_link_libraries(sgk_engine_tests PRIVATE sgk_engine)
     add_test(NAME engine COMMAND sgk_engine_tests)
 endif()
@@ -79,11 +80,14 @@ if(SGK_BUILD_PLUGIN)
     target_sources(FaseGroovePiano PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp
-        Source/CircleOfFifths.cpp
-        Source/Branding.cpp
-        Source/Localisation.cpp
-        Source/Updater.cpp
-        Source/PadController.cpp)
+        Source/PadController.cpp
+        Source/Product.cpp
+        # The family's shared module, vendored by fasegroove/scripts/sync.sh (do not edit here).
+        ThirdParty/fasegroove-common/CircleOfFifths.cpp
+        ThirdParty/fasegroove-common/Branding.cpp
+        ThirdParty/fasegroove-common/Localisation.cpp
+        ThirdParty/fasegroove-common/Updater.cpp)
+    target_include_directories(FaseGroovePiano PUBLIC ThirdParty/fasegroove-common)
 
     target_compile_definitions(FaseGroovePiano PUBLIC
         JUCE_WEB_BROWSER=0
