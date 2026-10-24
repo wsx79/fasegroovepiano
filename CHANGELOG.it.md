@@ -6,6 +6,10 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.5] - 2026-10-24
+
+- Piano roll: le parti non selezionate (basso, archi, piano) compaiono in trasparenza dietro quella mostrata e la tastiera le comprende tutte quando stanno in quattro ottave, così ogni nota che senti è visibile.
+
 ## [0.31.4] - 2026-10-24
 
 - La logica di accompagnamento condivisa con l'Arranger ora sta nel motore (un solo file per entrambi). MIDI invariato.

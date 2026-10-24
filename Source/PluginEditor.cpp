@@ -740,12 +740,21 @@ void PianoRollView::fitKeyboard()
             notes.push_back (n);
 
     // The keyboard follows the notes, with a little room around them (two octaves at least).
+    // The other parts show faintly behind (everything that sounds is on screen) when they fit
+    // in four octaves with the part shown.
     int low = 127, high = 0;
     for (const auto& n : notes)
     {
         low = juce::jmin (low, n.note);
         high = juce::jmax (high, n.note);
     }
+    int allLow = low, allHigh = high;
+    for (const auto& n : allNotes)
+    {
+        allLow = juce::jmin (allLow, n.note);
+        allHigh = juce::jmax (allHigh, n.note);
+    }
+    if (allHigh - allLow <= 48) { low = allLow; high = allHigh; }
     if (low > high) { low = 48; high = 72; }
     low -= 2; high += 2;
     while (high - low < 24) { --low; ++high; }
@@ -888,6 +897,17 @@ void PianoRollView::paint (juce::Graphics& g)
         g.setColour (now ? Palette::background : Palette::text);
         g.setFont (font (11.5f, true));
         g.drawFittedText (c.name, block.reduced (5.0f, 0.0f).toNearestInt(), juce::Justification::centredLeft, 1, 0.6f);
+    }
+
+    // The other parts, faint: what sounds but is not the part being shown.
+    for (const auto& n : allNotes)
+    {
+        if ((n.part == sgk::Part::fill ? sgk::Part::chords : n.part) == partShown || n.note < lowNote || n.note > highNote)
+            continue;
+        const float x0 = xOf (n.start), x1 = xOf (juce::jmin (n.start + n.length, length));
+        auto r = juce::Rectangle<float> (x0, yOf (n.note), juce::jmax (2.0f, x1 - x0), rowH).reduced (0.5f, rowH > 5.0f ? 0.75f : 0.25f);
+        g.setColour (partColour (n.part).withAlpha (0.2f));
+        g.fillRoundedRectangle (r, juce::jmin (2.5f, rowH * 0.4f));
     }
 
     // Notes: piano (orange), bass (pink), fills (blue); brighter while they sound.

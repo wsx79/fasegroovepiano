@@ -6,6 +6,10 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.5] - 2026-10-24
+
+- Piano roll: the parts not shown (bass, strings, piano) appear faintly behind the one being shown, and the keyboard fits them all when they fit in four octaves, so every note you hear is on screen.
+
 ## [0.31.4] - 2026-10-24
 
 - The comping logic shared with the Arranger now lives in the engine (one file for both). MIDI unchanged.
