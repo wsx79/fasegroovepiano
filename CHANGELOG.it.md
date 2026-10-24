@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.3] - 2026-10-24
+
+- I riff casuali variano di più: ogni lancio sceglie uno dei voicing e dei colori del genere (con swing e gate ritoccati) e la seconda battuta risponde alla prima con un colpo anticipato o un pick-up.
+- Interno più leggero: parametri letti da un'unica tabella condivisa, timer con TimedCallback di JUCE (modulo comune FaseGroove). Suono invariato.
+
 ## [0.31.2] - 2026-10-24
 
 - Il cursore del piano roll e le luci dei passi seguono di nuovo il suono (erano in ritardo dalla 0.31.1).

@@ -223,9 +223,7 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     : AudioProcessor (makeBuses()),
       apvts (*this, nullptr, "FaseGroovePiano", createLayout())
 {
-    for (auto* p : getParameters())
-        if (auto* withId = dynamic_cast<juce::AudioProcessorParameterWithID*> (p))
-            paramValues[std::string_view (withId->paramID.toRawUTF8())] = apvts.getRawParameterValue (withId->paramID);
+    rawParams.cache (apvts);
 
     auto& toneParam = *apvts.getRawParameterValue (ParamIDs::tone);
     auto& soundParam = *apvts.getRawParameterValue (ParamIDs::soundType);
@@ -251,31 +249,30 @@ FaseGroovePianoProcessor::FaseGroovePianoProcessor()
     events.reserve (1024);
 
     // Edits made in the piano roll follow the settings: a change carries them over to the new notes.
-    editRefresher.callback = [this] { refreshEditedLoop(); };
     editRefresher.startTimer (150);
-    linkRefresher.callback = [this] { updateLink(); };
     linkRefresher.startTimer (150);
 
     pads = std::make_unique<PadController> (*this);
 
-    // Live keys pressed in the audio thread run here, on the message thread.
-    liveKeyRunner.callback = [this]
-    {
-        int keys[32];
-        int count = 0;
-        {
-            const auto scope = liveKeyFifo.read (liveKeyFifo.getNumReady());
-            for (int i = 0; i < scope.blockSize1; ++i) keys[count++] = liveKeyBuffer[(size_t) (scope.startIndex1 + i)];
-            for (int i = 0; i < scope.blockSize2; ++i) keys[count++] = liveKeyBuffer[(size_t) (scope.startIndex2 + i)];
-        }
-        for (int i = 0; i < count; ++i)
-            runLiveKey (keys[i]);
-        // Switched off: only a slow look for the setting being switched on (here or in another instance).
-        const int interval = liveKeysEnabled() ? 25 : 250;
-        if (liveKeyRunner.getTimerInterval() != interval)
-            liveKeyRunner.startTimer (interval);
-    };
+    // Live keys pressed in the audio thread run on the message thread (runLiveKeys).
     liveKeyRunner.startTimer (liveKeysEnabled() ? 25 : 250);   // also reads the setting now, so the audio thread only reads an atomic
+}
+
+void FaseGroovePianoProcessor::runLiveKeys()
+{
+    int keys[32];
+    int count = 0;
+    {
+        const auto scope = liveKeyFifo.read (liveKeyFifo.getNumReady());
+        for (int i = 0; i < scope.blockSize1; ++i) keys[count++] = liveKeyBuffer[(size_t) (scope.startIndex1 + i)];
+        for (int i = 0; i < scope.blockSize2; ++i) keys[count++] = liveKeyBuffer[(size_t) (scope.startIndex2 + i)];
+    }
+    for (int i = 0; i < count; ++i)
+        runLiveKey (keys[i]);
+    // Switched off: only a slow look for the setting being switched on (here or in another instance).
+    const int interval = liveKeysEnabled() ? 25 : 250;
+    if (liveKeyRunner.getTimerInterval() != interval)
+        liveKeyRunner.startTimer (interval);
 }
 
 namespace
@@ -1084,14 +1081,6 @@ void FaseGroovePianoProcessor::totalRandom()
     setParameterFromUI (ParamIDs::humanize, 0.1f + 0.35f * r.nextFloat());
 }
 
-float FaseGroovePianoProcessor::raw (const char* id) const
-{
-    if (const auto it = paramValues.find (id); it != paramValues.end() && it->second != nullptr)
-        return it->second->load();
-    jassertfalse;   // not a parameter of this plug-in
-    return 0.0f;
-}
-
 sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
 {
     sgk::GrooveSettings s;
@@ -1203,7 +1192,7 @@ void FaseGroovePianoProcessor::rollNewRiff()
     const auto seed = juce::Random::getSystemRandom().nextInt ({ 1, 100000 });
     const int genre = currentGenre();
     lastGenre = genre;
-    const auto feel = sgk::genreRiffFeel (genre);
+    const auto feel = sgk::genreRiffFeel (genre, (std::uint32_t) seed);   // each roll its own voicing and colour
     setParameterFromUI (ParamIDs::voicing, (float) feel.voicing);
     setParameterFromUI (ParamIDs::extension, (float) feel.extension);
     setParameterFromUI (ParamIDs::scale, (float) feel.scale);

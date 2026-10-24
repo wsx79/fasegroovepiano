@@ -67,6 +67,10 @@ struct GenreRiffFeel
 
 GenreRiffFeel genreRiffFeel (int genre) noexcept;
 
+/** A take of the genre's feel: one of its idiomatic voicings and colours, swing and gate
+    nudged. Seed 0 gives genreRiffFeel(genre). */
+GenreRiffFeel genreRiffFeel (int genre, std::uint32_t seed) noexcept;
+
 /** A variation of a groove for the turnaround bars: a hit moved a 16th later here, a ghost
     note there, a push into the next bar, a bass pick-up. Same seed = same variation. */
 GroovePattern makeVariation (const GroovePattern& source, std::uint32_t seed);

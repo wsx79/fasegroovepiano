@@ -1986,6 +1986,15 @@ static void testGenreRiffs()
 
     for (int genre = 0; genre < (int) grooveCategories().size(); ++genre)
     {
+        // Rolled takes change voicing and colour, seed 0 stays on the reference feel.
+        std::set<std::pair<int, int>> takes;
+        for (std::uint32_t seed = 1; seed <= 40; ++seed)
+            takes.insert ({ genreRiffFeel (genre, seed).voicing, genreRiffFeel (genre, seed).extension });
+        CHECK (takes.size() >= 3);
+        CHECK (genreRiffFeel (genre, 0).voicing == genreRiffFeel (genre).voicing);
+    }
+    for (int genre = 0; genre < (int) grooveCategories().size(); ++genre)
+    {
         const auto feel = genreRiffFeel (genre);
         const bool house = genre == 0 || genre == 9 || genre == 12;
         std::set<std::string> masks, rendered;

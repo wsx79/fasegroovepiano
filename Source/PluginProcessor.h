@@ -4,6 +4,7 @@
 #pragma once
 
 #include "LinkFile.h"
+#include "RawParameters.h"
 
 #include "engine/GrooveEngine.h"
 #include "engine/HarmonyAnalyzer.h"
@@ -15,8 +16,6 @@
 
 #include <array>
 #include <atomic>
-#include <string_view>
-#include <unordered_map>
 
 namespace ParamIDs
 {
@@ -383,7 +382,7 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
     /** A parameter's current value, by its ID (a cached lookup, safe on any thread). */
-    float raw (const char* id) const;
+    float raw (juce::StringRef id) const { return rawParams (id); }
 
     std::atomic<bool> previewOn { false };   // play the groove without the host transport
     // Transport of the preview: play resumes where pause left it; stop and rewind go back to the start.
@@ -419,11 +418,8 @@ private:
     double lastCheckedLength = 0.0;
     bool lastCheckedComping = false, lastCheckedValid = false;
     std::uint32_t lastCheckedSeed = 0;
-    struct Refresher : juce::Timer
-    {
-        std::function<void()> callback;
-        void timerCallback() override { if (callback) callback(); }
-    } editRefresher, linkRefresher;
+    juce::TimedCallback editRefresher { [this] { refreshEditedLoop(); } };
+    juce::TimedCallback linkRefresher { [this] { updateLink(); } };
     std::atomic<bool> linkOn { false };
     std::atomic<bool> guitarLeads { false };
     std::atomic<bool> keyLinked { false };
@@ -461,7 +457,7 @@ private:
     std::atomic<double> linkAnchor { -1.0 };   // the shared clock while playing, -1 = none
     LinkState localLinkState() const;
     mutable std::atomic<int> lastGenre { 0 };   // the genre of the last preset (a random or edited groove keeps it)
-    std::unordered_map<std::string_view, std::atomic<float>*> paramValues;   // every parameter by ID, filled once
+    FaseGroove::RawParameters rawParams;       // every parameter by ID, filled once (RawParameters.h)
 
     std::array<std::atomic<float>*, sgk::maxProgressionLength> slotParams {};
     std::array<std::atomic<float>*, sgk::numSegments> segmentParams {};
@@ -487,7 +483,8 @@ private:
     std::array<int, 32> liveKeyBuffer {};
     std::atomic<bool> liveFillRequested { false };
     long long liveFillBar = -1;
-    Refresher liveKeyRunner;
+    void runLiveKeys();   // message thread: the live keys the audio thread queued
+    juce::TimedCallback liveKeyRunner { [this] { runLiveKeys(); } };
     float sidechainEnvelope = 0.0f;
     static BusesProperties makeBuses();
 

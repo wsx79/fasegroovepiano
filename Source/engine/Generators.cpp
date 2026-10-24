@@ -522,6 +522,37 @@ GenreRiffFeel genreRiffFeel (int genre) noexcept
     return feel[genre];
 }
 
+GenreRiffFeel genreRiffFeel (int genre, std::uint32_t seed) noexcept
+{
+    // Each genre's idiomatic voicings and colours (voicing, extension); the first is the reference feel.
+    static const std::vector<std::pair<int, int>> takes[] {
+        { { 8, 2 }, { 8, 5 }, { 1, 2 }, { 7, 5 }, { 0, 1 } },    // Piano House
+        { { 2, 2 }, { 1, 2 }, { 6, 9 }, { 2, 8 }, { 9, 2 } },    // Soulful
+        { { 2, 2 }, { 2, 3 }, { 3, 2 }, { 4, 8 }, { 1, 1 } },    // Deep
+        { { 3, 9 }, { 6, 9 }, { 9, 9 }, { 1, 2 }, { 2, 4 } },    // Gospel
+        { { 0, 1 }, { 8, 1 }, { 5, 1 }, { 1, 2 } },              // Jackin'
+        { { 8, 1 }, { 8, 2 }, { 7, 5 }, { 0, 1 } },              // Jackin' Piano
+        { { 2, 1 }, { 2, 2 }, { 1, 2 }, { 5, 1 } },              // Garage
+        { { 4, 1 }, { 4, 6 }, { 10, 6 }, { 2, 2 }, { 3, 4 } },   // Afro
+        { { 0, 10 }, { 5, 10 }, { 1, 1 }, { 8, 1 } },            // Funky
+        { { 7, 5 }, { 8, 5 }, { 7, 0 }, { 0, 4 } },              // '90s Piano House
+        { { 2, 8 }, { 2, 2 }, { 6, 9 }, { 9, 3 } },              // Neo Soul
+        { { 3, 2 }, { 3, 4 }, { 9, 2 }, { 2, 8 } },              // Chill
+        { { 8, 0 }, { 7, 0 }, { 8, 6 }, { 0, 5 } },              // Dance Stabs
+    };
+    auto feel = genreRiffFeel (genre);
+    if (seed == 0 || genre < 0 || genre >= (int) (sizeof (takes) / sizeof (*takes)))
+        return feel;
+    Random rng (seed ^ 0x51ED270Bu);
+    const auto& list = takes[genre];
+    const auto take = list[(size_t) (rng.next() % (std::uint32_t) list.size())];
+    feel.voicing = take.first;
+    feel.extension = take.second;
+    feel.swing = (float) std::clamp (feel.swing + (rng.uniform() - 0.5) * 0.1, 0.0, 1.0);
+    feel.gate = (float) std::clamp (feel.gate + (rng.uniform() - 0.5) * 0.16, 0.1, 1.0);
+    return feel;
+}
+
 GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn, int genre)
 {
     // House-family grooves keep the classic loop figures, seed for seed.
@@ -588,6 +619,29 @@ GroovePattern makeRandomPattern (std::uint32_t seed, float densityIn, int genre)
         case 10: right = twoBars (neo, 8, seed); break;
         case 11: right = twoBars (chill, 8, seed); break;
         default: return makeRandomPattern (seed, densityIn);
+    }
+
+    // The second bar answers the first: sometimes a hit lands a 16th early, sometimes a
+    // pick-up leads back into the loop, so two takes on the same figures still differ.
+    {
+        Random answer (seed ^ 0xA5F1523Du);
+        const int len = (int) right.size();
+        auto free = [&] (int i) { return i > 0 && i < len && right[(size_t) i] == '.' && right[(size_t) i - 1] != '='; };
+        if (len == 32 && answer.chance (0.55))
+        {
+            std::vector<int> movable;
+            for (int i = 17; i < len; ++i)
+                if (right[(size_t) i] == 'x' && (i + 1 >= len || right[(size_t) i + 1] != '=') && free (i - 1))
+                    movable.push_back (i);
+            if (! movable.empty())
+            {
+                const int i = movable[(size_t) (answer.next() % (std::uint32_t) movable.size())];
+                right[(size_t) i] = '.';
+                right[(size_t) i - 1] = 'x';
+            }
+        }
+        if (len == 32 && genre != 2 && genre != 11 && answer.chance (0.3) && free (len - 2) && right[(size_t) len - 1] == '.')
+            right[(size_t) len - 2] = 'x';
     }
 
     auto p = genrePattern (right);
