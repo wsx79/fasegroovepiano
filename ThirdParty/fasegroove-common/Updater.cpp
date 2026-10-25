@@ -5,6 +5,22 @@
 #include "Localisation.h"
 #include "ProductInfo.h"
 
+#include <juce_cryptography/juce_cryptography.h>
+
+#include <array>
+#include <atomic>
+#if JUCE_WINDOWS
+ #include <process.h>
+#else
+ #include <unistd.h>
+#endif
+
+// This build's version: the plug-ins' and the apps' own macro.
+#if defined (JucePlugin_VersionString)
+ #define FASEGROOVE_VERSION_STRING JucePlugin_VersionString
+#else
+ #define FASEGROOVE_VERSION_STRING JUCE_APPLICATION_VERSION_STRING
+#endif
 
 namespace Updater
 {
@@ -31,6 +47,9 @@ namespace
 
     const juce::String productName (info.productName);
 
+    // Limits: a release page or changelog, a download, and how long each may take.
+    constexpr juce::int64 maxTextBytes = 1024 * 1024, maxDownloadBytes = 256 * 1024 * 1024;
+
     /** The plug-in bundle (or app) this code is running from. */
     juce::File runningBundle()
     {
@@ -45,8 +64,11 @@ namespace
     /** The same product in the unpacked zip (VST3/, AU/, Standalone/). */
     juce::File stagedCounterpart (const juce::File& staged, const juce::File& target)
     {
-        if (target.hasFileExtension ("vst3"))      return staged.getChildFile ("VST3").getChildFile (target.getFileName());
-        if (target.hasFileExtension ("component")) return staged.getChildFile ("AU").getChildFile (target.getFileName());
+        if (! info.updatesAppOnly)
+        {
+            if (target.hasFileExtension ("vst3"))      return staged.getChildFile ("VST3").getChildFile (target.getFileName());
+            if (target.hasFileExtension ("component")) return staged.getChildFile ("AU").getChildFile (target.getFileName());
+        }
         return staged.getChildFile ("Standalone").getChildFile (target.getFileName());
     }
 
@@ -60,6 +82,20 @@ namespace
 
     bool unpack (const juce::File& zip, const juce::File& folder)
     {
+        // Every entry stays inside the folder: no absolute path, drive or "..".
+        {
+            juce::ZipFile checked (zip);
+            if (checked.getNumEntries() == 0)
+                return false;
+            for (int i = 0; i < checked.getNumEntries(); ++i)
+            {
+                const auto name = checked.getEntry (i)->filename.replace ("\\", "/");
+                juce::StringArray parts;
+                parts.addTokens (name, "/", {});
+                if (name.startsWithChar ('/') || name.containsChar (':') || parts.contains (".."))
+                    return false;
+            }
+        }
         folder.deleteRecursively();
         if (! folder.createDirectory())
             return false;
@@ -79,34 +115,37 @@ namespace
     }
 
     /** Every copy of the plug-in we can update: the running one, its neighbours from the same zip,
-        and the usual plug-in folders. */
+        and the usual plug-in folders (an app: only itself). */
     juce::Array<juce::File> updateTargets (const juce::File& staged)
     {
         juce::Array<juce::File> candidates;
         const auto running = runningBundle();
         candidates.add (running);
 
-        const auto zipRoot = running.getParentDirectory().getParentDirectory();
-        candidates.add (zipRoot.getChildFile ("VST3").getChildFile (productName + ".vst3"));
-        candidates.add (zipRoot.getChildFile ("AU").getChildFile (productName + ".component"));
-       #if JUCE_WINDOWS
-        candidates.add (zipRoot.getChildFile ("Standalone").getChildFile (productName + ".exe"));
-        candidates.add (running.getSiblingFile (productName + ".exe"));
-        candidates.add (running.getSiblingFile (productName + ".vst3"));
-       #elif JUCE_MAC
-        candidates.add (zipRoot.getChildFile ("Standalone").getChildFile (productName + ".app"));
-        const auto home = juce::File::getSpecialLocation (juce::File::userHomeDirectory);
-        for (const auto& base : { home, juce::File ("/") })
+        if (! info.updatesAppOnly)
         {
-            candidates.add (base.getChildFile ("Library/Audio/Plug-Ins/VST3").getChildFile (productName + ".vst3"));
-            candidates.add (base.getChildFile ("Library/Audio/Plug-Ins/Components").getChildFile (productName + ".component"));
+            const auto zipRoot = running.getParentDirectory().getParentDirectory();
+            candidates.add (zipRoot.getChildFile ("VST3").getChildFile (productName + ".vst3"));
+            candidates.add (zipRoot.getChildFile ("AU").getChildFile (productName + ".component"));
+           #if JUCE_WINDOWS
+            candidates.add (zipRoot.getChildFile ("Standalone").getChildFile (productName + ".exe"));
+            candidates.add (running.getSiblingFile (productName + ".exe"));
+            candidates.add (running.getSiblingFile (productName + ".vst3"));
+           #elif JUCE_MAC
+            candidates.add (zipRoot.getChildFile ("Standalone").getChildFile (productName + ".app"));
+            const auto home = juce::File::getSpecialLocation (juce::File::userHomeDirectory);
+            for (const auto& base : { home, juce::File ("/") })
+            {
+                candidates.add (base.getChildFile ("Library/Audio/Plug-Ins/VST3").getChildFile (productName + ".vst3"));
+                candidates.add (base.getChildFile ("Library/Audio/Plug-Ins/Components").getChildFile (productName + ".component"));
+            }
+            candidates.add (juce::File ("/Applications").getChildFile (productName + ".app"));
+            candidates.add (home.getChildFile ("Applications").getChildFile (productName + ".app"));
+           #else
+            candidates.add (zipRoot.getChildFile ("Standalone").getChildFile (productName));
+            candidates.add (juce::File::getSpecialLocation (juce::File::userHomeDirectory).getChildFile (".vst3").getChildFile (productName + ".vst3"));
+           #endif
         }
-        candidates.add (juce::File ("/Applications").getChildFile (productName + ".app"));
-        candidates.add (home.getChildFile ("Applications").getChildFile (productName + ".app"));
-       #else
-        candidates.add (zipRoot.getChildFile ("Standalone").getChildFile (productName));
-        candidates.add (juce::File::getSpecialLocation (juce::File::userHomeDirectory).getChildFile (".vst3").getChildFile (productName + ".vst3"));
-       #endif
 
         juce::Array<juce::File> targets;
         for (const auto& f : candidates)
@@ -273,9 +312,12 @@ namespace
         args.insert (0, "curl");
         args.insert (1, "-sSfL");
         args.insert (2, "--max-time");
-        args.insert (3, "600");
+        args.insert (3, output != nullptr ? "15" : "600");   // a page, or a download
         args.insert (4, "-A");
         args.insert (5, assetPrefix + "-Updater");
+        // Gives up on a dead or crawling connection, and on a file bigger than any release.
+        args.addArray ({ "--connect-timeout", "10", "--speed-time", "15", "--speed-limit", "1024",
+                         "--max-filesize", juce::String (maxDownloadBytes) });
 
         juce::ChildProcess process;
         if (! process.start (args, output != nullptr ? juce::ChildProcess::wantStdOut : 0))
@@ -295,6 +337,11 @@ namespace
                 const int n = process.readProcessOutput (buffer, (int) sizeof (buffer));
                 if (n > 0) out.write (buffer, (size_t) n);
                 else juce::Thread::sleep (20);
+                if ((juce::int64) out.getDataSize() > maxTextBytes)
+                {
+                    process.kill();
+                    return false;
+                }
             }
             else
             {
@@ -327,12 +374,22 @@ namespace
        #if JUCE_LINUX || JUCE_BSD
         return curl (thread, { url }, &text) && text.isNotEmpty();
        #else
-        juce::ignoreUnused (thread);
         auto stream = open (url);
         if (stream == nullptr)
             return false;
-        text = stream->readEntireStreamAsString();
-        return text.isNotEmpty();
+        juce::MemoryOutputStream data;
+        while (! thread.threadShouldExit() && ! stream->isExhausted())
+        {
+            char buffer[4096];
+            const int n = stream->read (buffer, (int) sizeof (buffer));
+            if (n <= 0)
+                break;
+            data.write (buffer, (size_t) n);
+            if ((juce::int64) data.getDataSize() > maxTextBytes)
+                return false;
+        }
+        text = data.toUTF8();
+        return text.isNotEmpty() && ! thread.threadShouldExit();
        #endif
     }
 
@@ -360,7 +417,7 @@ namespace
             juce::HeapBlock<char> buffer (65536);
             for (;;)
             {
-                if (thread.threadShouldExit())
+                if (thread.threadShouldExit() || out.getPosition() > maxDownloadBytes)
                 {
                     out.flush();
                     partial.deleteFile();
@@ -460,7 +517,7 @@ juce::String changelogSection (const juce::String& changelog, const juce::String
         {
             if (inside)
                 break;
-            inside = line.startsWith ("## [" + v + "]");
+            inside = line.startsWith ("## [" + v + "]") || line.startsWith ("## " + v + " ") || line == "## " + v;
             continue;
         }
         if (inside)
@@ -471,12 +528,25 @@ juce::String changelogSection (const juce::String& changelog, const juce::String
 
 InstallKind installKind()
 {
-    const auto bundle = runningBundle();
+    return testing::installKindFor (runningBundle());
+}
+
+InstallKind testing::installKindFor (const juce::File& bundle)
+{
    #if JUCE_WINDOWS
-    // The setup installs into Program Files (VST3 in Common Files); anything else was copied by hand.
-    for (auto location : { juce::File::globalApplicationsDirectory, juce::File::globalApplicationsDirectoryX86 })
-        if (bundle.isAChildOf (juce::File::getSpecialLocation (location)))
+    if (info.setupMarker != nullptr)
+    {
+        // The setup leaves its marker and its uninstaller next to the app, in any folder.
+        if (bundle.getSiblingFile (info.setupMarker).existsAsFile() && bundle.getSiblingFile ("unins000.exe").existsAsFile())
             return InstallKind::installer;
+    }
+    else
+    {
+        // The setup installs into Program Files (VST3 in Common Files); anything else was copied by hand.
+        for (auto location : { juce::File::globalApplicationsDirectory, juce::File::globalApplicationsDirectoryX86 })
+            if (bundle.isAChildOf (juce::File::getSpecialLocation (location)))
+                return InstallKind::installer;
+    }
    #endif
     return bundle.exists() && bundle.getParentDirectory().hasWriteAccess() ? InstallKind::portable : InstallKind::manual;
 }
@@ -488,18 +558,39 @@ bool isStandaloneApp()
 
 namespace
 {
-    /** Opens the (just updated) standalone app again, a moment after this one has quit. */
-    bool relaunchLater()
+    /** Opens the (just updated) standalone app again: once this process has ended
+        (relaunchWhenClosed: the path goes as an argument, never into shell code), else a moment
+        after this one has quit. */
+    bool relaunchLater (const juce::File& app)
     {
-        const auto app = runningBundle();
-       #if JUCE_MAC
         juce::ChildProcess p;
+        if (info.relaunchWhenClosed)
+        {
+           #if JUCE_WINDOWS
+            const auto helper = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                    .getNonexistentChildFile (assetPrefix + "-relaunch", ".ps1", false);
+            if (! helper.replaceWithText ("param([int]$OwnerPid,[string]$App)\nWait-Process -Id $OwnerPid -ErrorAction SilentlyContinue\n"
+                                          "Start-Process -FilePath $App\nRemove-Item -LiteralPath $PSCommandPath\n"))
+                return false;
+            return p.start (juce::StringArray { "powershell.exe", "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden",
+                                                "-ExecutionPolicy", "Bypass", "-File", helper.getFullPathName(),
+                                                "-OwnerPid", juce::String (_getpid()), "-App", app.getFullPathName() }, 0);
+           #else
+            #if JUCE_MAC
+            const juce::String launch ("exec /usr/bin/open -n \"$1\"");
+            #else
+            const juce::String launch ("exec \"$1\"");
+            #endif
+            return p.start (juce::StringArray { "/bin/sh", "-c", "while kill -0 \"$2\" 2>/dev/null; do sleep 0.2; done; " + launch,
+                                                "fg-update", app.getFullPathName(), juce::String ((juce::int64) getpid()) }, 0);
+           #endif
+        }
+       #if JUCE_MAC
         return p.start (juce::StringArray { "/bin/sh", "-c", "sleep 1; open -n \"" + app.getFullPathName() + "\"" }, 0);
        #elif JUCE_WINDOWS
         // The old .exe was renamed by the swap: the new one is at the same path.
         return app.startAsProcess();
        #else
-        juce::ChildProcess p;
         return p.start (juce::StringArray { "/bin/sh", "-c", "sleep 1; \"" + app.getFullPathName() + "\" &" }, 0);
        #endif
     }
@@ -509,17 +600,30 @@ InstallReport install (const Result& result)
 {
     InstallReport report;
 
+    // Only the file checked against the release: anything else is neither run nor unpacked.
+    if (! testing::verifyDownload (result.file, result.digest))
+        return report;
+    // Linux resolves /proc/self/exe to the renamed old image after a swap: the path now.
+    const auto app = runningBundle();
+
     if (result.kind == InstallKind::installer && result.file.existsAsFile())
     {
         // Same setup, no wizard: it keeps the folders and parts you chose last time and asks to
         // close the DAW only if the plug-in is in use. In the standalone app the setup reopens it
         // when it is done (RELAUNCH), and the app quits so its files can be replaced.
         const bool standalone = isStandaloneApp();
-        report.installerStarted = report.done
-            = result.file.startAsProcess (standalone ? "/SILENT /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1" : "/SILENT /NORESTART");
+        juce::String args (standalone ? "/SILENT /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1" : "/SILENT /NORESTART");
+        if (info.setupMarker != nullptr)
+            args << " /DIR=\"" << app.getParentDirectory().getFullPathName() << "\"";   // the folder it was installed in
+        report.installerStarted = report.done = result.file.startAsProcess (args);
         report.relaunching = report.done && standalone;
         if (report.done)
             return report;
+        if (info.setupMarker != nullptr)
+        {
+            result.file.revealToUser();
+            return report;
+        }
     }
 
     if (result.kind == InstallKind::portable && result.staged.isDirectory())
@@ -531,7 +635,7 @@ InstallReport install (const Result& result)
             for (const auto& t : targets)
                 report.updated.add (t.getFullPathName());
             report.done = true;
-            report.relaunching = isStandaloneApp() && relaunchLater();
+            report.relaunching = isStandaloneApp() && relaunchLater (app);
             return report;
         }
     }
@@ -557,6 +661,44 @@ namespace testing
     {
         return Updater::replaceAll (staged, targets, failAfterSteps);
     }
+
+    bool unpack (const juce::File& zip, const juce::File& folder)
+    {
+        return Updater::unpack (zip, folder);
+    }
+
+    bool verifyDownload (const juce::File& file, const juce::String& digest)
+    {
+        const auto hash = digest.fromFirstOccurrenceOf ("sha256:", false, false).toLowerCase();
+        if (! digest.startsWith ("sha256:") || hash.length() != 64 || ! hash.containsOnly ("0123456789abcdef")
+            || ! file.existsAsFile() || file.getSize() <= 0 || file.getSize() > maxDownloadBytes)
+            return false;
+        auto input = file.createInputStream();
+        return input != nullptr && juce::SHA256 (*input).toHexString() == hash;
+    }
+
+    juce::String releaseAsset (const juce::var& release, InstallKind kind, juce::String& digest)
+    {
+        // A published release (no draft, no pre-release), its own asset for this platform, at the
+        // address GitHub gives it, with its checksum.
+        digest.clear();
+        const auto tag = release.getProperty ("tag_name", {}).toString();
+        if (tag.isEmpty() || ! tag.containsOnly ("vV0123456789.") || (bool) release.getProperty ("draft", false)
+            || (bool) release.getProperty ("prerelease", false))
+            return {};
+        const auto name = assetName (kind);
+        const auto expected = "https://github.com/wsx79/" + repo + "/releases/download/" + tag + "/" + name;
+        if (auto* assets = release.getProperty ("assets", {}).getArray())
+            for (const auto& a : *assets)
+                if (a.getProperty ("name", {}).toString() == name && a.getProperty ("browser_download_url", {}).toString() == expected)
+                {
+                    digest = a.getProperty ("digest", {}).toString();
+                    if (digest.startsWith ("sha256:") && digest.length() == 71)
+                        return expected;
+                }
+        digest.clear();
+        return {};
+    }
 }
 
 void cleanupAfterUpdate()
@@ -567,8 +709,8 @@ void cleanupAfterUpdate()
         leftovers = bundle.findChildFiles (juce::File::findFiles, true, "*.old");
     leftovers.add (bundle.getSiblingFile (bundle.getFileName() + ".old"));
     for (const auto& f : leftovers)
-        if (f.existsAsFile())
-            f.deleteFile();   // fails quietly while something still has it loaded
+        if (f.exists())
+            f.deleteRecursively();   // fails quietly while something still has it loaded
 }
 
 bool firstAutoCheckThisSession()
@@ -582,7 +724,7 @@ Checker::Checker() : juce::Thread (productName + " update check") {}
 
 Checker::~Checker()
 {
-    stopThread (4000);
+    stopThread (info.updatesAppOnly ? 18000 : 4000);   // (a plug-in must not hold up the DAW)
 }
 
 void Checker::start (bool manual)
@@ -606,12 +748,17 @@ void Checker::run()
 
         const auto release = juce::JSON::parse (json);
         const auto tag = release.getProperty ("tag_name", {}).toString();
-        if (tag.isEmpty())
+        if (release.getProperty ("message", {}).toString() == "Not Found")
+        {
+            result.status = Result::Status::noRelease;
+            return;
+        }
+        if (tag.isEmpty() || (bool) release.getProperty ("draft", false) || (bool) release.getProperty ("prerelease", false))
             return;
 
         result.version = tag.trimCharactersAtStart ("vV");
         result.kind = installKind();
-        if (! isNewer (tag, JucePlugin_VersionString))
+        if (! isNewer (tag, FASEGROOVE_VERSION_STRING))
         {
             result.status = Result::Status::upToDate;
             return;
@@ -622,11 +769,7 @@ void Checker::run()
             return;
         }
 
-        juce::String assetUrl;
-        if (auto* assets = release.getProperty ("assets", {}).getArray())
-            for (auto& asset : *assets)
-                if (asset.getProperty ("name", {}).toString() == assetName (result.kind))
-                    assetUrl = asset.getProperty ("browser_download_url", {}).toString();
+        const auto assetUrl = testing::releaseAsset (release, result.kind, result.digest);
         if (assetUrl.isEmpty())
             return;
 
@@ -644,9 +787,12 @@ void Checker::run()
         folder.createDirectory();
         auto file = folder.getChildFile (juce::File::createLegalFileName (juce::String (assetName (result.kind))
                                              .replace (assetPrefix + "-", assetPrefix + "-" + result.version + "-")));
-        if (! file.existsAsFile() || file.getSize() == 0)
-            if (! fetchFile (*this, assetUrl, file))
+        if (! testing::verifyDownload (file, result.digest))   // (one already downloaded and intact is kept)
+            if (! fetchFile (*this, assetUrl, file) || ! testing::verifyDownload (file, result.digest))
+            {
+                file.deleteFile();
                 return;
+            }
 
         result.file = file;
 

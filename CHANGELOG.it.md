@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.7] - 2026-10-25
+
+- Aggiornamenti più sicuri: il download viene controllato (SHA-256, percorsi dell'archivio, limiti di dimensione e tempo) e la versione installata resta intatta se qualcosa va storto. Stesso avviso e stessi pulsanti.
+- Traduzioni dal modulo comune FaseGroove, con ricerca più veloce. Testi invariati.
+
 ## [0.31.6] - 2026-10-24
 
 - Il piano roll mostra l'intera frase Realism (le altre versioni nel terzo e quarto giro), così ogni nota che suona è visibile.

@@ -14,6 +14,7 @@
 #include <cstdio>
 #include "FamilyAudioEvidence.h"
 #include "TestSupport.h"
+#include "TestUpdater.h"
 #include "TestPlayHead.h"
 #include <string>
 #include <algorithm>
@@ -2194,6 +2195,7 @@ int main (int argc, char** argv)
     testExportTempoAndChannels();
     testSectionFillsNoStuckNotes();
     testUpdateSwap();
+    FaseGrooveTests::checkUpdaterSafeguards();
     testEditedNotes();
     testLibrary();
     testRandomPianoKeepsBass();

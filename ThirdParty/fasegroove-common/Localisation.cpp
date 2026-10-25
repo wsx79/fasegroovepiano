@@ -4,7 +4,9 @@
 #include "Localisation.h"
 #include "ProductInfo.h"
 
+#include <array>
 #include <atomic>
+#include <iterator>
 #include <unordered_map>
 
 namespace Localisation
@@ -20,19 +22,77 @@ namespace
 
     std::atomic<int> currentLanguage { 0 };
 
-    const std::unordered_map<std::string, const Entry*>& index()
+    std::string lowerCase (const char* text) { return juce::String::fromUTF8 (text).toLowerCase().toStdString(); }
+
+    struct Index
     {
-        static const auto map = []
+        std::unordered_map<std::string, const Entry*> exact;     // the English text as written
+        std::unordered_map<std::string, const Entry*> anyCase;   // looseTranslationKeys: lower case, then the Italian
+    };
+
+    const Index& index()
+    {
+        static const auto built = []
         {
-            std::unordered_map<std::string, const Entry*> m;
-            for (const auto& e : commonTable)
-                m[e.en] = &e;
+            Index index;
+            const bool loose = FaseGroove::product().looseTranslationKeys;
             const auto own = productTranslations();
-            for (std::size_t i = 0; i < own.size; ++i)
-                m[own.rows[i].en] = &own.rows[i];   // a later row wins, as in a single table
-            return m;
+            // A product's row wins over a common one: the later row by its English text, the first
+            // one (the product's first) by its Italian text; an English key keeps its row.
+            const Table common { commonTable, std::size (commonTable) };
+            for (const auto& table : { common, own })
+                for (std::size_t i = 0; i < table.size; ++i)
+                {
+                    index.exact[table.rows[i].en] = &table.rows[i];
+                    if (loose)
+                        index.anyCase[lowerCase (table.rows[i].en)] = &table.rows[i];
+                }
+            if (loose)
+                for (const auto& table : { own, common })
+                    for (std::size_t i = 0; i < table.size; ++i)
+                        index.anyCase.emplace (lowerCase (table.rows[i].it), &table.rows[i]);
+            return index;
         }();
-        return map;
+        return built;
+    }
+
+    const Entry* find (const juce::String& text)
+    {
+        const auto& i = index();
+        if (const auto it = i.exact.find (text.toStdString()); it != i.exact.end())
+            return it->second;
+        if (FaseGroove::product().looseTranslationKeys)
+            if (const auto it = i.anyCase.find (text.toLowerCase().toStdString()); it != i.anyCase.end())
+                return it->second;
+        return nullptr;
+    }
+
+    juce::String translate (const juce::String& english, int lang)
+    {
+        const bool loose = FaseGroove::product().looseTranslationKeys;
+        if (lang == 0 && ! loose)
+            return english;
+
+        const auto* e = find (english);
+        if (e == nullptr)
+        {
+            if (loose)
+            {
+                // "Verse 2", "Part B": the name translated, its number or letter as it is.
+                const auto split = english.lastIndexOfChar (' ');
+                if (split > 0)
+                {
+                    const auto prefix = english.substring (0, split), suffix = english.substring (split + 1);
+                    if (suffix.containsOnly ("0123456789ABCD") && find (prefix) != nullptr)
+                        return tr (prefix) + " " + suffix;
+                }
+            }
+            return english;
+        }
+
+        const char* text = lang == 0 ? e->en : lang == 1 ? e->it : lang == 2 ? e->es : lang == 3 ? e->fr : lang == 4 ? e->de : e->pt;
+        const auto translated = juce::String::fromUTF8 (text);
+        return loose && english == english.toUpperCase() ? translated.toUpperCase() : translated;
     }
 
     std::unique_ptr<juce::PropertiesFile> openSettings()
@@ -283,17 +343,16 @@ juce::String upper (const juce::String& text)
 
 juce::String tr (const juce::String& english)
 {
-    const int lang = currentLanguage.load();
-    if (lang == 0)
-        return english;
+    const int lang = juce::jlimit (0, numLanguages - 1, currentLanguage.load());
 
-    const auto& map = index();
-    const auto it = map.find (english.toStdString());
-    if (it == map.end())
-        return english;
-
-    const Entry& e = *it->second;
-    const char* text = lang == 1 ? e.it : lang == 2 ? e.es : lang == 3 ? e.fr : lang == 4 ? e.de : e.pt;
-    return juce::String::fromUTF8 (text);
+    // Many paints call tr(): each language's results are kept (per thread, so no lock is needed).
+    struct Hash { size_t operator() (const juce::String& s) const noexcept { return (size_t) s.hashCode64(); } };
+    thread_local std::array<std::unordered_map<juce::String, juce::String, Hash>, numLanguages> cache;
+    auto& known = cache[(size_t) lang];
+    if (const auto hit = known.find (english); hit != known.end())
+        return hit->second;
+    if (known.size() > 4096)
+        known.clear();
+    return known[english] = translate (english, lang);
 }
 }
