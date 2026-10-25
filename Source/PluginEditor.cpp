@@ -4827,7 +4827,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
     auto openRollEditor = [this]
     {
         updatePianoRoll (processor.currentSettings());
-        rollEditor.show (processor.naturalLoopBeats());
+        rollEditor.show (rollLength);   // the same bars as the small roll (the whole Realism phrase when on)
         rollEditor.editPart (pianoRoll.shownPart());   // the big roll opens on the instrument you were looking at
     };
     expandRollButton.onClick = openRollEditor;
