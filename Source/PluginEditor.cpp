@@ -5006,6 +5006,7 @@ FaseGroovePianoEditor::FaseGroovePianoEditor (FaseGroovePianoProcessor& p)
         k->setAccent (Palette::accent);
     rangeLabel.setColour (juce::Label::textColourId, Palette::accent);
 
+    bindTexts();
     applyLanguage();
 
     // Read the saved size first: setting the limits resizes (and re-saves) the window.
@@ -5512,14 +5513,159 @@ void FaseGroovePianoEditor::buildPresetMenu()
     presetBox.setSelectedId (selected, juce::dontSendNotification);
 }
 
+void FaseGroovePianoEditor::bindTexts()
+{
+    // Fixed texts and tips, set again on every language change (Localisation::bind*).
+    Localisation::bindText (harmonyTabs[0], "PIANO");
+    Localisation::bindText (harmonyTabs[1], "BASS");
+    Localisation::bindText (harmonyTabs[2], "STRINGS");
+    Localisation::bindTip (harmonyTabs[0], "The piano's own controls: voicing, register, strum, top line, movement, range");
+    Localisation::bindTip (harmonyTabs[1], "The bass: what the left hand plays under the chords");
+    Localisation::bindTip (harmonyTabs[2], "The strings: a pad or stabs that follow the chords, on MIDI channel 3");
+    Localisation::bindLabel (presetLabel, "Progression presets");
+    Localisation::bindLabel (clipLengthLabel, "Clip length");
+    Localisation::bindLabel (clipPartLabel, "Notes");
+    Localisation::bindText (diceProgression, "RANDOM");
+    Localisation::bindText (newRiffButton, "NEW RIFF");
+    Localisation::bindText (syncButton, "SYNC DAW");
+    Localisation::bindText (linkButton, "LINK");
+    Localisation::bindText (keyLinkButton, "KEY");
+    Localisation::bindTip (keyLinkButton, "Same key (with LINK on): the key and the scale stay the same in Fase Groove Piano and Guitar (change them in either one)");
+    Localisation::bindTip (linkButton, "Link with Fase Groove Drums and Guitar: the same genre, swing, tempo and play button in all of them, on the same beat (change it in any one)");
+    Localisation::bindText (sequencerToggle, "Sequencer");
+    Localisation::bindTip (sequencerToggle, "Off: the groove doesn't play with the DAW, e.g. when the dragged MIDI clip plays on this track (no doubled notes). Incoming MIDI still plays the guide sound; the play button still previews.");
+    Localisation::bindText (optionsButton, "OPTIONS");
+    Localisation::bindText (styleMenuButton, "STYLE");
+    Localisation::bindTip (styleMenuButton, "Ready-made setups by genre: progression, voicing, groove, feel and sound in one click (the key stays)");
+    Localisation::bindText (resetButton, "RESET");
+    Localisation::bindText (presetsButton, "PRESETS");
+    Localisation::bindText (totalRandomButton, "TOTAL");
+    Localisation::bindTip (totalRandomButton, "Total random: style, key, progression, groove, harmony, bass, sound and feel all at once (undo with the arrow, RESET to start over)");
+    Localisation::bindTip (presetsButton, "Save your own setups and load them in any project");
+    Localisation::bindText (learnButton, "LEARN");
+    Localisation::bindTip (learnButton, "Learn: play chords on your MIDI keyboard, they fill the progression slot by slot (press again to stop)");
+    Localisation::bindTip (undoButton, "Undo (Ctrl+Z)");
+    Localisation::bindTip (redoButton, "Redo (Ctrl+Shift+Z)");
+    Localisation::bindTip (movement.box, "Voicing movement: some hits play the chord an inversion up or down so the riff moves instead of repeating the same chord");
+    Localisation::bindTip (topLine.box, "The melody the top notes of the chords draw across the progression");
+    Localisation::bindTip (variation.box, "Every 4 or 8 bars the last bar plays a variation of the groove, so the loop never feels static. Evolve: over 8 or 16 bars the same groove grows - as written, then ghost notes, then a variation, then a fill into the next round");
+    Localisation::bindTip (grooveBars.box, "1 bar, 2 bars, or 4 bars (the groove followed by a variation of it)");
+    Localisation::bindTip (resetButton, "Put every setting back to its default (the language stays)");
+    Localisation::bindText (soundToggle, "Guide sound");
+    Localisation::bindText (octaveToggle, "Top +8va");
+    Localisation::bindText (saveButton, "SAVE .MID...");
+    Localisation::bindText (shrinkToggle, "Mini window while dragging");
+    Localisation::bindTip (octaveToggle, "Double the top note of every chord an octave higher (bright house piano)");
+    Localisation::bindText (freeToggle, "Free chords");
+    Localisation::bindTip (freeToggle, "Free chords: drag the dots anywhere on the circle, even outside the scale");
+    Localisation::bindTip (approach.box, "Gospel slide: on the last 16th before a chord change, play the next chord a half step above or below");
+    Localisation::bindTip (newRiffButton, "New random funky riff (locked parts are kept)");
+    Localisation::bindTip (groovePrev, "Previous groove");
+    Localisation::bindTip (grooveNext, "Next groove");
+    Localisation::bindTip (diceProgression, "Random soulful-house progression");
+    Localisation::bindTip (syncButton, "On: follow the DAW tempo. Off: set your own BPM.");
+    Localisation::bindTip (tempoSlider, "Drag, or double-click to type the BPM");
+    Localisation::bindTip (rewindButton, "Back to the start");
+    Localisation::bindTip (playButton, "Play / pause the groove without starting the DAW (space bar)");
+    Localisation::bindTip (stopButton, "Stop (the next play starts from the top)");
+    Localisation::bindTip (shrinkToggle, "Shrink the plug-in window while you drag a clip, so you can see your DAW");
+    Localisation::bindTip (patternView, "Click a step: hit > accent > ghost > rest.  Right-click: more options");
+    Localisation::bindTip (hearPianoButton, "Hear the piano (lit) or mute it: exported clips keep everything");
+    Localisation::bindTip (hearBassButton, "Hear the bass (lit) or switch it off");
+    Localisation::bindTip (hearStringsButton, "Strings on (lit) or off: they hold the chords for body, on MIDI channel 3");
+    Localisation::bindTip (strings.box, "The strings: a pad that holds each chord, higher, wider, or stabs with the piano. MIDI channel 3");
+    Localisation::bindText (rndPianoButton, "PIANO");
+    Localisation::bindText (myGroovesButton, "MY GROOVES");
+    Localisation::bindTip (myGroovesButton, "Save the rhythm grid as your own groove, or load one you saved (Documents/Fase Groove Piano/Grooves)");
+    Localisation::bindText (rndBassButton, "BASS");
+    Localisation::bindText (variantsButton, "VARIANTS");
+    Localisation::bindTip (variantsButton, "Chord variations: more soulful, gospel, deep or chromatic versions of your progression, to hear and keep");
+    Localisation::bindText (newFeelButton, "NEW FEEL");
+    Localisation::bindTip (newFeelButton, "Another humanization of the same groove (repeatable: saved with the project)");
+    Localisation::bindTip (feelStyleButton, "How Humanize is shared: Even, Pianist (the top note sings), Laid-back bass, Tight bass. Click to change");
+    Localisation::bindTip (dnaButton, "Musical DNA: variations by intention (more soulful, funkier, more minimal, more energy, more sophisticated)");
+    Localisation::bindText (songButton, "FULL SONG...");
+    Localisation::bindText (rollTab, "PIANO ROLL");
+    Localisation::bindText (expandRollButton, "EDIT NOTES");
+    Localisation::bindTip (expandRollButton, "Open the piano roll big, zoom in and edit the notes one by one (or double-click the piano roll)");
+    Localisation::bindText (generatedButton, "BACK TO GENERATED");
+    Localisation::bindTip (generatedButton, "Forget your edits: the plug-in plays the generated notes again");
+    Localisation::bindText (gridTab, "EDIT GRID");
+    Localisation::bindText (velocityTab, "VELOCITY");
+    Localisation::bindTip (velocityTab, "The velocity of every hit, as faders: drag to set it, double-click for automatic");
+    Localisation::bindTip (velocityView, "Drag a fader up or down (or across several) to set the velocity. Double-click: automatic again. Right-click: reset");
+    Localisation::bindTip (rollTab, "Every note the plug-in plays: chords, bass and fills, with the chord names");
+    Localisation::bindTip (gridTab, "The rhythm grid: click the steps to write your own groove");
+    Localisation::bindText (hearPianoButton, "PIANO");
+    Localisation::bindText (hearBassButton, "BASS");
+    Localisation::bindText (hearStringsButton, "STRINGS");
+    Localisation::bindText (morphButton, "MORPH");
+    Localisation::bindTip (songButton, "The whole song: arrange the sections, then drag or save it as one .mid, or one .mid per section");
+    Localisation::bindTip (morphButton, "Morph the groove step by step towards another one (locked parts stay)");
+    Localisation::bindTip (coachButton, "Voicing Coach: compare two voicings of your progression");
+    Localisation::bindTip (progLength.box, "How many chords the progression has (1 to 8)");
+    Localisation::bindTip (chordLength.box, "How long each chord lasts, from half a bar to 4 bars");
+    Localisation::bindTip (key.box, "The key of the song");
+    Localisation::bindTip (scale.box, "Scale or mode: Dorian is the deep house classic");
+    Localisation::bindTip (extension.box, "How rich the chords are: triads, 7ths, 9ths, 11ths/13ths, 6/9, sus...");
+    Localisation::bindTip (voicing.box, "How the chord notes are spread on the keyboard");
+    Localisation::bindTip (bass.box, "What the left hand plays");
+    registerKnob.setTip ("Moves the right hand up or down the keyboard");
+    strumKnob.setTip ("Rolls the chord notes like a pianist instead of hitting them all together");
+    Localisation::bindTip (strumDirButton, "Direction of the roll: up, down, or alternating (up on the beat, down off it). Click to change");
+    Localisation::bindTip (pattern.box, "The rhythm of both hands, grouped by genre");
+    Localisation::bindTip (section.box, "Reshapes the groove for intro, main, break, build-up, drop and outro");
+    Localisation::bindTip (fills.box, "How often a fill leads into the next chord");
+    Localisation::bindTip (fillStyle.box, "What the fill plays");
+    Localisation::bindTip (playMode.box, "Play with the DAW, or while you hold a key (the key you hold sets the key)");
+    swing.setTip ("Delays the off-beat 16ths for a shuffled, human feel");
+    gate.setTip ("How long the chords ring: from short stabs to long chords");
+    velocity.setTip ("How hard the notes are played");
+    humanize.setTip ("Small timing and dynamics variations, like a real player");
+    riffDensity.setTip ("Random riffs only: from sparse stabs to busy chops");
+    Localisation::bindTip (soundType.box, "The guide sound you hear (the MIDI stays the same)");
+    Localisation::bindTip (bassChannel.box, "Bass on the same MIDI channel, or on channel 2 to play it with another instrument");
+    tone.setTip ("Brightness of the guide sound");
+    reverb.setTip ("Reverb on the guide sound");
+    volume.setTip ("Volume of the guide sound");
+    chorus.setTip ("Widens the guide sound");
+    pump.setTip ("Sidechain depth: ducks the guide sound like a kick sidechain");
+    pumpRelease.setTip ("How fast the sound comes back after each duck");
+    Localisation::bindTip (pumpSource.box, "Tempo: the duck follows the beat. Sidechain input: it follows the track you send to the plug-in's sidechain input (e.g. the kick)");
+    Localisation::bindTip (sidechainMeter, "The signal arriving at the sidechain input: if it stays grey, nothing is routed to the plug-in");
+    Localisation::bindTip (pumpRate.box, "How often the tempo sidechain ducks: every beat, 8th, half bar or 16th");
+    Localisation::bindTip (soundToggle, "Turns the built-in guide sound on or off (the MIDI keeps playing)");
+    Localisation::bindTip (presetBox, "Ready-made progressions, grouped by style (they also set the scale)");
+    Localisation::bindTip (presetBrowseButton, "Ready-made progressions, grouped by style (they also set the scale)");
+    Localisation::bindTip (rangeSlider, "The chords' range: no chord note goes below the left thumb or above the right one (notes outside move by an octave)");
+    Localisation::bindTip (clipLength, "How long the exported MIDI clip is");
+    Localisation::bindTip (clipPart, "Which notes go into the clip: everything, piano only, bass only, strings only or separate tracks");
+    Localisation::bindTip (dragTile, "Drag this onto a track in your DAW to drop the groove as a MIDI clip");
+    Localisation::bindTip (saveButton, "Save the clip, or every part at once, as .mid files");
+    Localisation::bindTip (optionsButton, "Language, interface size, tips and credits");
+    Localisation::bind (presetBox, [this] { presetBox.setTextWhenNothingSelected (tr ("Load a progression...")); });
+    Localisation::bindItems (clipLength, { "Full loop", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars", "32 bars",
+                                           "Song: intro > drop > outro" });
+    Localisation::bindItems (clipPart, { "Everything", "Piano only", "Bass only", "Separate tracks", "Strings only" });   // by ClipPart
+
+    for (int i = 0; i < sgk::numSegments; ++i)
+    {
+        velocityDice[i]->setButtonText ({});
+        segmentDice[i]->setButtonText ({});
+        Localisation::bindTip (*velocityBoxes[i], "Whose velocities play here (A-D): e.g. A A A A gives every half bar the accents of the first");
+        Localisation::bindTip (*velocityDice[i], "New random velocities for this part (the rhythm stays)");
+        Localisation::bindText (*velocityLocks[i], "LOCK");
+        Localisation::bindTip (*velocityLocks[i], "Keep these velocities when you press the random buttons");
+        Localisation::bindTip (*segmentBoxes[i], "Which part (A-D) plays here: combine parts like A A B C");
+        Localisation::bindTip (*segmentDice[i], "New random rhythm for this part");
+        Localisation::bindText (*segmentLocks[i], "LOCK");
+        Localisation::bindTip (*segmentLocks[i], "Keep this part when you press NEW RIFF");
+    }
+}
+
 void FaseGroovePianoEditor::applyLanguage()
 {
-    harmonyTabs[0].setButtonText (tr ("PIANO"));
-    harmonyTabs[1].setButtonText (tr ("BASS"));
-    harmonyTabs[2].setButtonText (tr ("STRINGS"));
-    harmonyTabs[0].setTooltip (tr ("The piano's own controls: voicing, register, strum, top line, movement, range"));
-    harmonyTabs[1].setTooltip (tr ("The bass: what the left hand plays under the chords"));
-    harmonyTabs[2].setTooltip (tr ("The strings: a pad or stabs that follow the chords, on MIDI channel 3"));
+    // (the fixed texts and tips follow the language by themselves: bindTexts)
     pianoRoll.showPart (pianoRoll.shownPart());   // its PIANO / BASS / STRINGS buttons
 #if ! FGP_SHARED_WIDGETS   // (the family knob follows the language by itself)
     for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump, &pumpRelease })
@@ -5530,94 +5676,8 @@ void FaseGroovePianoEditor::applyLanguage()
                      &fills, &fillStyle, &playMode, &bassChannel, &soundType, &pumpSource, &pumpRate })
         c->refreshText();
 
-    presetLabel.setText (Localisation::upper (tr ("Progression presets")), juce::dontSendNotification);
-    presetBox.setTextWhenNothingSelected (tr ("Load a progression..."));
-    clipLengthLabel.setText (Localisation::upper (tr ("Clip length")), juce::dontSendNotification);
-    clipPartLabel.setText (Localisation::upper (tr ("Notes")), juce::dontSendNotification);
-
-    static const char* const lengths[] { "Full loop", "1 bar", "2 bars", "4 bars", "8 bars", "16 bars", "32 bars",
-                                         "Song: intro > drop > outro" };
-    const int selectedLength = clipLength.getSelectedId();
-    for (int i = 0; i < clipLength.getNumItems(); ++i)
-        clipLength.changeItemText (i + 1, tr (lengths[i]));
-    clipLength.setSelectedId (selectedLength, juce::dontSendNotification);
-
-    static const char* const parts[] { "Everything", "Piano only", "Bass only", "Separate tracks", "Strings only" };   // by ClipPart
-    const int selectedPart = clipPart.getSelectedId();
-    for (int id = 1; id <= 5; ++id)
-        clipPart.changeItemText (id, tr (parts[id - 1]));
-    clipPart.setSelectedId (selectedPart, juce::dontSendNotification);
-
-    diceProgression.setButtonText (tr ("RANDOM"));
-    newRiffButton.setButtonText (tr ("NEW RIFF"));
-    syncButton.setButtonText (tr ("SYNC DAW"));
-    linkButton.setButtonText (tr ("LINK"));
-    keyLinkButton.setButtonText (tr ("KEY"));
-    keyLinkButton.setTooltip (tr ("Same key (with LINK on): the key and the scale stay the same in Fase Groove Piano and Guitar (change them in either one)"));
-    linkButton.setTooltip (tr ("Link with Fase Groove Drums and Guitar: the same genre, swing, tempo and play button in all of them, on the same beat (change it in any one)"));
-    sequencerToggle.setButtonText (tr ("Sequencer"));
-    sequencerToggle.setTooltip (tr ("Off: the groove doesn't play with the DAW, e.g. when the dragged MIDI clip plays on this track (no doubled notes). Incoming MIDI still plays the guide sound; the play button still previews."));
-    optionsButton.setButtonText (tr ("OPTIONS"));
-    styleMenuButton.setButtonText (tr ("STYLE"));
-    styleMenuButton.setTooltip (tr ("Ready-made setups by genre: progression, voicing, groove, feel and sound in one click (the key stays)"));
-    resetButton.setButtonText (tr ("RESET"));
-    presetsButton.setButtonText (tr ("PRESETS"));
-    totalRandomButton.setButtonText (tr ("TOTAL"));
-    totalRandomButton.setTooltip (tr ("Total random: style, key, progression, groove, harmony, bass, sound and feel all at once (undo with the arrow, RESET to start over)"));
-    presetsButton.setTooltip (tr ("Save your own setups and load them in any project"));
-    learnButton.setButtonText (tr ("LEARN"));
-    learnButton.setTooltip (tr ("Learn: play chords on your MIDI keyboard, they fill the progression slot by slot (press again to stop)"));
-    undoButton.setTooltip (tr ("Undo (Ctrl+Z)"));
-    redoButton.setTooltip (tr ("Redo (Ctrl+Shift+Z)"));
-    movement.box.setTooltip (tr ("Voicing movement: some hits play the chord an inversion up or down so the riff moves instead of repeating the same chord"));
-    topLine.box.setTooltip (tr ("The melody the top notes of the chords draw across the progression"));
-    variation.box.setTooltip (tr ("Every 4 or 8 bars the last bar plays a variation of the groove, so the loop never feels static. Evolve: over 8 or 16 bars the same groove grows - as written, then ghost notes, then a variation, then a fill into the next round"));
-    grooveBars.box.setTooltip (tr ("1 bar, 2 bars, or 4 bars (the groove followed by a variation of it)"));
-    resetButton.setTooltip (tr ("Put every setting back to its default (the language stays)"));
-    soundToggle.setButtonText (tr ("Guide sound"));
-    octaveToggle.setButtonText (tr ("Top +8va"));
-    saveButton.setButtonText (tr ("SAVE .MID..."));
-    shrinkToggle.setButtonText (tr ("Mini window while dragging"));
-
-    octaveToggle.setTooltip (tr ("Double the top note of every chord an octave higher (bright house piano)"));
-    freeToggle.setButtonText (tr ("Free chords"));
-    freeToggle.setTooltip (tr ("Free chords: drag the dots anywhere on the circle, even outside the scale"));
     buildPresetMenu();
-    approach.box.setTooltip (tr ("Gospel slide: on the last 16th before a chord change, play the next chord a half step above or below"));
-    newRiffButton.setTooltip (tr ("New random funky riff (locked parts are kept)"));
-    groovePrev.setTooltip (tr ("Previous groove"));
-    grooveNext.setTooltip (tr ("Next groove"));
-    diceProgression.setTooltip (tr ("Random soulful-house progression"));
-    syncButton.setTooltip (tr ("On: follow the DAW tempo. Off: set your own BPM."));
-    tempoSlider.setTooltip (tr ("Drag, or double-click to type the BPM"));
-    rewindButton.setTooltip (tr ("Back to the start"));
-    playButton.setTooltip (tr ("Play / pause the groove without starting the DAW (space bar)"));
-    stopButton.setTooltip (tr ("Stop (the next play starts from the top)"));
-    shrinkToggle.setTooltip (tr ("Shrink the plug-in window while you drag a clip, so you can see your DAW"));
-    patternView.setTooltip (tr ("Click a step: hit > accent > ghost > rest.  Right-click: more options"));
-    hearPianoButton.setTooltip (tr ("Hear the piano (lit) or mute it: exported clips keep everything"));
-    hearBassButton.setTooltip (tr ("Hear the bass (lit) or switch it off"));
-    hearStringsButton.setTooltip (tr ("Strings on (lit) or off: they hold the chords for body, on MIDI channel 3"));
-    strings.box.setTooltip (tr ("The strings: a pad that holds each chord, higher, wider, or stabs with the piano. MIDI channel 3"));
-    rndPianoButton.setButtonText (tr ("PIANO"));
-    myGroovesButton.setButtonText (tr ("MY GROOVES"));
-    myGroovesButton.setTooltip (tr ("Save the rhythm grid as your own groove, or load one you saved (Documents/Fase Groove Piano/Grooves)"));
-    rndBassButton.setButtonText (tr ("BASS"));
     updateRandomTips();
-
-    for (int i = 0; i < sgk::numSegments; ++i)
-    {
-        velocityBoxes[i]->setTooltip (tr ("Whose velocities play here (A-D): e.g. A A A A gives every half bar the accents of the first"));
-        velocityDice[i]->setButtonText ({});
-        velocityDice[i]->setTooltip (tr ("New random velocities for this part (the rhythm stays)"));
-        velocityLocks[i]->setButtonText (tr ("LOCK"));
-        velocityLocks[i]->setTooltip (tr ("Keep these velocities when you press the random buttons"));
-        segmentBoxes[i]->setTooltip (tr ("Which part (A-D) plays here: combine parts like A A B C"));
-        segmentDice[i]->setButtonText ({});
-        segmentDice[i]->setTooltip (tr ("New random rhythm for this part"));
-        segmentLocks[i]->setButtonText (tr ("LOCK"));
-        segmentLocks[i]->setTooltip (tr ("Keep this part when you press NEW RIFF"));
-    }
 
     options.refreshText();
     updateOverlay.refreshText();
@@ -5627,75 +5687,9 @@ void FaseGroovePianoEditor::applyLanguage()
     morphOverlay.refreshText();
     dnaOverlay.refreshText();
     chordLab.refreshText();
-    variantsButton.setButtonText (tr ("VARIANTS"));
-    variantsButton.setTooltip (tr ("Chord variations: more soulful, gospel, deep or chromatic versions of your progression, to hear and keep"));
-    newFeelButton.setButtonText (tr ("NEW FEEL"));
-    newFeelButton.setTooltip (tr ("Another humanization of the same groove (repeatable: saved with the project)"));
-    feelStyleButton.setTooltip (tr ("How Humanize is shared: Even, Pianist (the top note sings), Laid-back bass, Tight bass. Click to change"));
-    dnaButton.setTooltip (tr ("Musical DNA: variations by intention (more soulful, funkier, more minimal, more energy, more sophisticated)"));
-    songButton.setButtonText (tr ("FULL SONG..."));
-    rollTab.setButtonText (tr ("PIANO ROLL"));
-    expandRollButton.setButtonText (tr ("EDIT NOTES"));
-    expandRollButton.setTooltip (tr ("Open the piano roll big, zoom in and edit the notes one by one (or double-click the piano roll)"));
-    generatedButton.setButtonText (tr ("BACK TO GENERATED"));
-    generatedButton.setTooltip (tr ("Forget your edits: the plug-in plays the generated notes again"));
     rollEditor.refreshText();
-    gridTab.setButtonText (tr ("EDIT GRID"));
-    velocityTab.setButtonText (tr ("VELOCITY"));
-    velocityTab.setTooltip (tr ("The velocity of every hit, as faders: drag to set it, double-click for automatic"));
-    velocityView.setTooltip (tr ("Drag a fader up or down (or across several) to set the velocity. Double-click: automatic again. Right-click: reset"));
-    rollTab.setTooltip (tr ("Every note the plug-in plays: chords, bass and fills, with the chord names"));
-    gridTab.setTooltip (tr ("The rhythm grid: click the steps to write your own groove"));
-    hearPianoButton.setButtonText (tr ("PIANO"));
-    hearBassButton.setButtonText (tr ("BASS"));
-    hearStringsButton.setButtonText (tr ("STRINGS"));
-    morphButton.setButtonText (tr ("MORPH"));
-    songButton.setTooltip (tr ("The whole song: arrange the sections, then drag or save it as one .mid, or one .mid per section"));
-    morphButton.setTooltip (tr ("Morph the groove step by step towards another one (locked parts stay)"));
-    coachButton.setTooltip (tr ("Voicing Coach: compare two voicings of your progression"));
     translateHostWindow();
 
-    // Tips for every control (shown when the mouse rests on it).
-    progLength.box.setTooltip (tr ("How many chords the progression has (1 to 8)"));
-    chordLength.box.setTooltip (tr ("How long each chord lasts, from half a bar to 4 bars"));
-    key.box.setTooltip (tr ("The key of the song"));
-    scale.box.setTooltip (tr ("Scale or mode: Dorian is the deep house classic"));
-    extension.box.setTooltip (tr ("How rich the chords are: triads, 7ths, 9ths, 11ths/13ths, 6/9, sus..."));
-    voicing.box.setTooltip (tr ("How the chord notes are spread on the keyboard"));
-    bass.box.setTooltip (tr ("What the left hand plays"));
-    registerKnob.setTip (tr ("Moves the right hand up or down the keyboard"));
-    strumKnob.setTip (tr ("Rolls the chord notes like a pianist instead of hitting them all together"));
-    strumDirButton.setTooltip (tr ("Direction of the roll: up, down, or alternating (up on the beat, down off it). Click to change"));
-    pattern.box.setTooltip (tr ("The rhythm of both hands, grouped by genre"));
-    section.box.setTooltip (tr ("Reshapes the groove for intro, main, break, build-up, drop and outro"));
-    fills.box.setTooltip (tr ("How often a fill leads into the next chord"));
-    fillStyle.box.setTooltip (tr ("What the fill plays"));
-    playMode.box.setTooltip (tr ("Play with the DAW, or while you hold a key (the key you hold sets the key)"));
-    swing.setTip (tr ("Delays the off-beat 16ths for a shuffled, human feel"));
-    gate.setTip (tr ("How long the chords ring: from short stabs to long chords"));
-    velocity.setTip (tr ("How hard the notes are played"));
-    humanize.setTip (tr ("Small timing and dynamics variations, like a real player"));
-    riffDensity.setTip (tr ("Random riffs only: from sparse stabs to busy chops"));
-    soundType.box.setTooltip (tr ("The guide sound you hear (the MIDI stays the same)"));
-    bassChannel.box.setTooltip (tr ("Bass on the same MIDI channel, or on channel 2 to play it with another instrument"));
-    tone.setTip (tr ("Brightness of the guide sound"));
-    reverb.setTip (tr ("Reverb on the guide sound"));
-    volume.setTip (tr ("Volume of the guide sound"));
-    chorus.setTip (tr ("Widens the guide sound"));
-    pump.setTip (tr ("Sidechain depth: ducks the guide sound like a kick sidechain"));
-    pumpRelease.setTip (tr ("How fast the sound comes back after each duck"));
-    pumpSource.box.setTooltip (tr ("Tempo: the duck follows the beat. Sidechain input: it follows the track you send to the plug-in's sidechain input (e.g. the kick)"));
-    sidechainMeter.setTooltip (tr ("The signal arriving at the sidechain input: if it stays grey, nothing is routed to the plug-in"));
-    pumpRate.box.setTooltip (tr ("How often the tempo sidechain ducks: every beat, 8th, half bar or 16th"));
-    soundToggle.setTooltip (tr ("Turns the built-in guide sound on or off (the MIDI keeps playing)"));
-    presetBox.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
-    presetBrowseButton.setTooltip (tr ("Ready-made progressions, grouped by style (they also set the scale)"));
-    rangeSlider.setTooltip (tr ("The chords' range: no chord note goes below the left thumb or above the right one (notes outside move by an octave)"));
-    clipLength.setTooltip (tr ("How long the exported MIDI clip is"));
-    clipPart.setTooltip (tr ("Which notes go into the clip: everything, piano only, bass only, strings only or separate tracks"));
-    dragTile.setTooltip (tr ("Drag this onto a track in your DAW to drop the groove as a MIDI clip"));
-    saveButton.setTooltip (tr ("Save the clip, or every part at once, as .mid files"));
-    optionsButton.setTooltip (tr ("Language, interface size, tips and credits"));
     for (auto* slot : slots)
         slot->setDegreeTip (tr ("Scale degree of this chord; the small arrows change its inversion"));
     currentKey = {};   // re-translates the key / scale line on the next timer tick

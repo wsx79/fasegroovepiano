@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "LinkClient.h"
 #include "LinkFile.h"
 #include "PlayClock.h"
 #include "RawParameters.h"
@@ -80,7 +81,8 @@ namespace ParamIDs
 class PadController;
 
 class FaseGroovePianoProcessor : public juce::AudioProcessor,
-                                 public sgk::Comping   // the comping under a leading guitar (engine/Comping.h)
+                                 public sgk::Comping,   // the comping under a leading guitar (engine/Comping.h)
+                                 private FaseGroove::LinkClient::Product
 {
 public:
     FaseGroovePianoProcessor();
@@ -428,26 +430,14 @@ private:
     bool pedalDown = false;   // CC64 sent down (lifted on a stop or a jump)
     int leadChecks = 0;
     void readGuitarLead();
-    // What the linked plug-ins share: genre, swing, tempo, DAW sync and the play button's clock
-    // (anchor: the system time, in high-resolution ms, at which that clock was at beat 0).
-    struct LinkState
-    {
-        int genre = -2;   // -1: no genre (a random or user groove)
-        float swing = -1.0f, bpm = -1.0f;
-        bool sync = false, playing = false, paused = false;
-        double anchor = -1.0;
-        int key = -1, scale = -1;   // shared only with KEY on (-1: not shared)
-        bool sameAs (const LinkState& o) const noexcept
-        {
-            return genre == o.genre && key == o.key && scale == o.scale && std::abs (swing - o.swing) < 0.001f && std::abs (bpm - o.bpm) < 0.01f && sync == o.sync
-                && playing == o.playing && paused == o.paused && std::abs (anchor - o.anchor) < 1.0;
-        }
-    };
-    LinkState linkShared;                      // what the link file says (or what we wrote)
-    juce::String linkSeenText;
-    FaseGroove::PolledFile linkPolled, leadPolled;   // message thread (LinkFile.h)
+    using LinkState = FaseGroove::LinkState;
+    FaseGroove::PolledFile leadPolled;         // message thread (LinkFile.h)
     std::atomic<double> linkAnchor { -1.0 };   // the shared clock while playing, -1 = none
-    LinkState localLinkState() const;
+    FaseGroove::LinkClient link { *this, previewOn, previewFromStart, linkAnchor, true };   // Link.xml (LinkClient.h)
+    LinkState localLinkState() const override;
+    juce::String linkGenreName (int genre) const override;
+    void followLinkedGroove (const juce::XmlElement& theirs) override;
+    void setLinkedParameter (const char* id, float plainValue) override { setParameterFromUI (id, plainValue); }
     mutable std::atomic<int> lastGenre { 0 };   // the genre of the last preset (a random or edited groove keeps it)
     FaseGroove::RawParameters rawParams;       // every parameter by ID, filled once (RawParameters.h)
 

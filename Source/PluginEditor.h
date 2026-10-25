@@ -849,7 +849,8 @@ private:
     UpdateOverlay updateOverlay;
     Updater::Checker updateChecker;
 
-    void applyLanguage();
+    void bindTexts();       // once: the fixed texts and tips, bound to the language
+    void applyLanguage();   // the rest, on a language change
     void buildPresetMenu();
     void mouseUp (const juce::MouseEvent&) override;
 

@@ -15,6 +15,7 @@
 #include "FamilyAudioEvidence.h"
 #include "TestSupport.h"
 #include "TestUpdater.h"
+#include "TestLink.h"
 #include "TestPlayHead.h"
 #include <string>
 #include <algorithm>
@@ -2196,6 +2197,7 @@ int main (int argc, char** argv)
     testSectionFillsNoStuckNotes();
     testUpdateSwap();
     FaseGrooveTests::checkUpdaterSafeguards();
+    FaseGrooveTests::checkLinkWithThreeInstances<FaseGroovePianoProcessor>();
     testEditedNotes();
     testLibrary();
     testRandomPianoKeepsBass();

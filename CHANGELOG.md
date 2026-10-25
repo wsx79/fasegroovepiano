@@ -6,6 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.9] - 2026-10-25
+
+- Changing the language keeps the selected item of every menu.
+- Link between FaseGroove plugins from the shared module (same Link.xml protocol).
+
 ## [0.31.8] - 2026-10-25
 
 - The knobs come from the shared FaseGroove widgets, with the caption under the knob. Sound and saved settings unchanged.

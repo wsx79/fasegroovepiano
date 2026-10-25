@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.9] - 2026-10-25
+
+- Cambiando lingua ogni menu mantiene la voce selezionata.
+- Collegamento tra i plugin FaseGroove dal modulo comune (stesso protocollo Link.xml).
+
 ## [0.31.8] - 2026-10-25
 
 - Le manopole vengono dai widget comuni FaseGroove, con la didascalia sotto la manopola. Suono e impostazioni salvate invariati.

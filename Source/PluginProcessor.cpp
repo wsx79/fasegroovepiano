@@ -2545,12 +2545,7 @@ juce::File FaseGroovePianoProcessor::writeSongSectionClip (int partIndex, ClipPa
 //==============================================================================
 juce::File FaseGroovePianoProcessor::linkFile()
 {
-    // Shared by every Fase Groove plug-in on this computer.
-    return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
-#if JUCE_MAC
-        .getChildFile ("Application Support")
-#endif
-        .getChildFile ("Fase Groove").getChildFile ("Link.xml");
+    return FaseGroove::LinkClient::file();
 }
 
 std::uint32_t FaseGroovePianoProcessor::compingSeed() const
@@ -2562,7 +2557,7 @@ std::uint32_t FaseGroovePianoProcessor::compingSeed() const
 void FaseGroovePianoProcessor::setKeyLinked (bool on)
 {
     keyLinked = on;
-    linkShared = {};   // switched on: this key goes out to the others
+    link.shareAgain();   // switched on: this key goes out to the others
     updateLink();
 }
 
@@ -2585,8 +2580,7 @@ void FaseGroovePianoProcessor::setLinked (bool on)
     linkOn = on;
     if (! on)
         guitarLeads = false;
-    linkSeenText = {};
-    linkShared = {};
+    link.reset();
     linkAnchor = -1.0;
 }
 
@@ -2668,99 +2662,40 @@ void FaseGroovePianoProcessor::updateLink()
         leadChecks = 0;
         readGuitarLead();
     }
+    link.update();
+}
 
-    const auto file = linkFile();
-    const auto me = juce::String::toHexString ((juce::pointer_sized_int) this);
+juce::String FaseGroovePianoProcessor::linkGenreName (int genre) const
+{
+    return sgk::grooveCategories()[(size_t) genre];
+}
 
-    // Someone else changed it: take what changed (their genre: the first groove of it, unless
-    // this one is already of that genre).
-    if (file.existsAsFile())
-        if (const auto text = linkPolled.read (file); text != linkSeenText)
+void FaseGroovePianoProcessor::followLinkedGroove (const juce::XmlElement& xml)
+{
+    // Their genre: the first groove of it, unless this one is already of that genre.
+    const auto genre = xml.getStringAttribute ("genre");
+    const auto& genres = sgk::grooveCategories();
+    for (size_t g = 0; g < genres.size(); ++g)
+        if (genre == genres[g] && (int) g != currentGenre())
         {
-            linkSeenText = text;
-            if (auto xml = juce::parseXML (text); xml != nullptr && xml->getStringAttribute ("instance") != me)
-            {
-                const auto genre = xml->getStringAttribute ("genre");
-                const auto& genres = sgk::grooveCategories();
-                for (size_t g = 0; g < genres.size(); ++g)
-                    if (genre == genres[g] && (int) g != currentGenre())
-                    {
-                        // A random or edited groove stays as it is: only its genre follows.
-                        lastGenre = (int) g;
-                        if (! juce::isPositiveAndBelow (juce::roundToInt (raw (ParamIDs::pattern)), (int) sgk::groovePatterns().size()))
-                            break;
-                        const auto& patterns = sgk::groovePatterns();
-                        for (size_t i = 0; i < patterns.size(); ++i)
-                            if (patterns[i].category == genres[g])
-                            {
-                                setParameterFromUI (ParamIDs::pattern, (float) i);
-                                break;
-                            }
-                    }
-                if (keyLinked.load() && xml->hasAttribute ("key"))   // the same key
+            // A random or edited groove stays as it is: only its genre follows.
+            lastGenre = (int) g;
+            if (! juce::isPositiveAndBelow (juce::roundToInt (raw (ParamIDs::pattern)), (int) sgk::groovePatterns().size()))
+                break;
+            const auto& patterns = sgk::groovePatterns();
+            for (size_t i = 0; i < patterns.size(); ++i)
+                if (patterns[i].category == genres[g])
                 {
-                    setParameterFromUI (ParamIDs::key, (float) juce::jlimit (0, 11, xml->getIntAttribute ("key")));
-                    if (xml->hasAttribute ("scale"))
-                        setParameterFromUI (ParamIDs::scale, (float) juce::jlimit (0, sgk::numScales - 1, xml->getIntAttribute ("scale")));
+                    setParameterFromUI (ParamIDs::pattern, (float) i);
+                    break;
                 }
-                if (xml->hasAttribute ("swing"))
-                    setParameterFromUI (ParamIDs::swing, juce::jlimit (0.0f, 1.5f, (float) xml->getDoubleAttribute ("swing")));
-                if (xml->hasAttribute ("bpm"))
-                    setParameterFromUI (ParamIDs::tempo, (float) xml->getDoubleAttribute ("bpm"));
-                if (xml->hasAttribute ("sync"))
-                    setParameterFromUI (ParamIDs::tempoSync, xml->getBoolAttribute ("sync") ? 1.0f : 0.0f);
-                if (xml->hasAttribute ("playing"))
-                {
-                    const double anchor = xml->getDoubleAttribute ("anchor", -1.0);
-                    if (xml->getBoolAttribute ("playing") && anchor >= 0.0)
-                    {
-                        linkAnchor = anchor;
-                        previewOn = true;
-                    }
-                    else
-                    {
-                        previewOn = false;
-                        previewFromStart = ! xml->getBoolAttribute ("paused");
-                        linkAnchor = -1.0;
-                    }
-                }
-                linkShared = localLinkState();
-                return;
-            }
         }
-
-    // We changed it: tell the others (a random or user groove has no genre). A new tempo while
-    // playing keeps the position on the clock.
-    auto now = localLinkState();
-    if (now.playing && now.anchor >= 0.0 && linkShared.bpm > 0.0f && std::abs (now.bpm - linkShared.bpm) >= 0.01f && ! now.sync)
+    if (keyLinked.load() && xml.hasAttribute ("key"))   // the same key
     {
-        const double t = juce::Time::getMillisecondCounterHiRes();
-        const double beat = (t - now.anchor) * linkShared.bpm / 60000.0;
-        linkAnchor = now.anchor = t - beat * 60000.0 / now.bpm;
+        setParameterFromUI (ParamIDs::key, (float) juce::jlimit (0, 11, xml.getIntAttribute ("key")));
+        if (xml.hasAttribute ("scale"))
+            setParameterFromUI (ParamIDs::scale, (float) juce::jlimit (0, sgk::numScales - 1, xml.getIntAttribute ("scale")));
     }
-    if (now.sameAs (linkShared))
-        return;
-
-    juce::XmlElement xml ("FaseGrooveLink");
-    xml.setAttribute ("from", JucePlugin_Name);
-    xml.setAttribute ("instance", me);
-    if (now.genre >= 0)
-        xml.setAttribute ("genre", sgk::grooveCategories()[(size_t) now.genre]);
-    xml.setAttribute ("swing", now.swing);   // 0 straight, 1 a triplet shuffle
-    xml.setAttribute ("bpm", now.bpm);
-    xml.setAttribute ("sync", now.sync);
-    xml.setAttribute ("playing", now.playing);
-    xml.setAttribute ("paused", now.paused);
-    xml.setAttribute ("anchor", juce::String (now.anchor, 3));
-    if (now.key >= 0)
-    {
-        xml.setAttribute ("key", now.key);
-        xml.setAttribute ("scale", now.scale);
-    }
-    file.getParentDirectory().createDirectory();
-    if (xml.writeTo (file))
-        linkSeenText = xml.toString();   // what was just written: no need to read it back
-    linkShared = now;
 }
 
 //==============================================================================

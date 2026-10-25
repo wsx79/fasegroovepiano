@@ -219,10 +219,13 @@ void bindItems (juce::ComboBox& box, const juce::StringArray& english, int first
     {
         if (safe == nullptr)
             return;
+        // The selection first: once the shown text differs from its item, getSelectedId() is 0.
+        const int selected = safe->getSelectedId();
         for (int i = 0; i < english.size(); ++i)
             safe->changeItemText (firstId + i, tr (english[i]));
-        safe->setText (safe->getItemText (safe->getSelectedItemIndex()), juce::dontSendNotification);
-        if (safe->getSelectedId() == 0)
+        if (selected != 0)
+            safe->setSelectedId (selected, juce::dontSendNotification);
+        else
             safe->setText ({}, juce::dontSendNotification);
     });
 }
