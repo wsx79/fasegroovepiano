@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(FaseGroovePiano VERSION 0.31.7 LANGUAGES C CXX)
+project(FaseGroovePiano VERSION 0.31.8 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -90,6 +90,14 @@ if(SGK_BUILD_PLUGIN)
         ThirdParty/fasegroove-common/Updater.cpp
         ThirdParty/fasegroove-common/UpdateOverlay.cpp)
     target_include_directories(FaseGroovePiano PUBLIC ThirdParty/fasegroove-common)
+
+    # The family's editor widgets (EditorWidgets.h) in place of the piano's own knob.
+    # OFF builds the piano's own, as before.
+    option(FGP_SHARED_WIDGETS "Use the shared Fase Groove editor widgets" ON)
+    if(FGP_SHARED_WIDGETS)
+        target_sources(FaseGroovePiano PRIVATE ThirdParty/fasegroove-common/EditorWidgets.cpp)
+        target_compile_definitions(FaseGroovePiano PUBLIC FGP_SHARED_WIDGETS=1)
+    endif()
 
     target_compile_definitions(FaseGroovePiano PUBLIC
         JUCE_WEB_BROWSER=0

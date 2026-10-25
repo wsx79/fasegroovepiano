@@ -32,6 +32,10 @@ inline juce::Colour partColour (sgk::Part part)
 using GrooveLookAndFeel = FamilyLookAndFeel;
 
 //==============================================================================
+#if FGP_SHARED_WIDGETS
+#include "EditorWidgets.h"
+using Knob = FaseGroove::Knob;   // the family's knob (FGP_SHARED_WIDGETS, CMakeLists.txt)
+#else
 /** Rotary knob with a caption. */
 class Knob : public juce::Component
 {
@@ -49,6 +53,7 @@ private:
     juce::Label label;
     juce::AudioProcessorValueTreeState::SliderAttachment attachment;
 };
+#endif
 
 /** Drop-down menu with a caption above it. */
 class Choice : public juce::Component

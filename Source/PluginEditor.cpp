@@ -67,6 +67,7 @@ namespace
 
 //==============================================================================
 //==============================================================================
+#if ! FGP_SHARED_WIDGETS
 Knob::Knob (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& captionText)
     : caption (captionText), attachment (state, paramId, slider)
 {
@@ -92,6 +93,7 @@ void Knob::resized()
     label.setBounds (r.removeFromTop (16));
     slider.setBounds (r);
 }
+#endif
 
 Choice::Choice (juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& captionText)
     : caption (captionText), parameter (state.getParameter (paramId))
@@ -5519,8 +5521,10 @@ void FaseGroovePianoEditor::applyLanguage()
     harmonyTabs[1].setTooltip (tr ("The bass: what the left hand plays under the chords"));
     harmonyTabs[2].setTooltip (tr ("The strings: a pad or stabs that follow the chords, on MIDI channel 3"));
     pianoRoll.showPart (pianoRoll.shownPart());   // its PIANO / BASS / STRINGS buttons
+#if ! FGP_SHARED_WIDGETS   // (the family knob follows the language by itself)
     for (auto* k : { &registerKnob, &strumKnob, &swing, &gate, &velocity, &humanize, &riffDensity, &tone, &reverb, &volume, &chorus, &pump, &pumpRelease })
         k->refreshText();
+#endif
 
     for (auto* c : { &progLength, &chordLength, &key, &scale, &extension, &voicing, &bass, &strings, &approach, &topLine, &movement, &variation, &grooveBars, &pattern, &section,
                      &fills, &fillStyle, &playMode, &bassChannel, &soundType, &pumpSource, &pumpRate })

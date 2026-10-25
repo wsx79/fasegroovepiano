@@ -6,6 +6,10 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.8] - 2026-10-25
+
+- The knobs come from the shared FaseGroove widgets, with the caption under the knob. Sound and saved settings unchanged.
+
 ## [0.31.7] - 2026-10-25
 
 - Safer updates: the download is checked (SHA-256, archive paths, size and time limits) and the installed version stays intact if anything fails. Same notice and buttons.

@@ -59,6 +59,8 @@ namespace FaseGroove
         Knob (juce::AudioProcessorValueTreeState&, const juce::String& paramId, const juce::String& caption);
         void resized() override;
         void setTip (const juce::String& tip) { Localisation::bindTip (slider, tip); }
+        /** The caption in an instrument's colour (what the control changes). */
+        void setAccent (juce::Colour c) { label.setColour (juce::Label::textColourId, c); }
 
     private:
         juce::Slider slider;
