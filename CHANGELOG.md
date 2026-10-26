@@ -6,6 +6,12 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.31.11 — 2026-10-26
+
+- Pinned shared-module SHA and complete inventory checked offline and against its canonical source in CI; Lead included in default sync/check.
+- Translation catalogs checked for duplicate keys, including multiline entries; intentional common/product overrides remain supported.
+- Removed the earlier shadowed Chords only translation, preserving the currently displayed French wording.
+
 ## [0.31.10] - 2026-10-25
 
 - The big piano roll opens on the same bars as the small one: with Groove realism on, the whole phrase with its variations, editable.

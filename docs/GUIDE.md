@@ -26,7 +26,7 @@ your DAW** and play it with your favourite piano, Rhodes or synth.
 
 ## 1. Installation
 
-This guide covers [v0.25.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.25.0). The existing controls and their positions are retained; shared buttons, menus and colours have a common style.
+This guide covers [v0.31.11](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.31.11). The existing controls and their positions are retained; shared buttons, menus and colours have a common style.
 
 ### Windows: the installer (easiest)
 

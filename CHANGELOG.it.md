@@ -6,6 +6,12 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## 0.31.11 — 2026-10-26
+
+- SHA e inventario completo del modulo comune verificati offline e contro la fonte canonica in CI; Lead incluso nel sync/check predefinito.
+- Cataloghi verificati contro chiavi duplicate, anche su più righe; gli override intenzionali prodotto/comune restano supportati.
+- Rimosso il doppione precedente di Chords only, mantenendo il francese attualmente visualizzato.
+
 ## [0.31.10] - 2026-10-25
 
 - Il piano roll grande si apre sulle stesse battute di quello piccolo: con Groove realistico attivo, l'intera frase con le variazioni, modificabile.

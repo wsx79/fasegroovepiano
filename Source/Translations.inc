@@ -95,7 +95,6 @@
         { "32 bars", "32 battute", "32 compases", "32 mesures", "32 Takte", "32 compassos" },
         { "Song: intro > drop > outro", "Brano: intro > drop > outro", "Tema: intro > drop > outro", "Morceau : intro > drop > outro", "Song: Intro > Drop > Outro", "Música: intro > drop > outro" },
         { "Chords + bass", "Accordi + basso", "Acordes + bajo", "Accords + basse", "Akkorde + Bass", "Acordes + baixo" },
-        { "Chords only", "Solo accordi", "Solo acordes", "Accords seuls", "Nur Akkorde", "Só acordes" },
         { "Bass only", "Solo basso", "Solo bajo", "Basse seule", "Nur Bass", "Só baixo" },
         { "Host transport", "Trasporto DAW", "Transporte de la DAW", "Transport de la DAW", "DAW-Transport", "Transporte da DAW" },
         { "Hold a key", "Tieni premuto un tasto", "Mantén una tecla", "Maintenir une touche", "Taste halten", "Segure uma tecla" },
