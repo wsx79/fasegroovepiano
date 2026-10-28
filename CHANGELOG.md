@@ -6,6 +6,10 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.31.12 — 2026-10-29
+
+- Held chords are released at the next chord change: a breakdown with half-bar chords no longer sounds the old chord over the new one. The last-bar fill and the push into the next hit keep their timing.
+
 ## 0.31.11 — 2026-10-26
 
 - Pinned shared-module SHA and complete inventory checked offline and against its canonical source in CI; Lead included in default sync/check.

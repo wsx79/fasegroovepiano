@@ -6,6 +6,10 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## 0.31.12 — 2026-10-29
+
+- Gli accordi tenuti vengono rilasciati al cambio successivo: un breakdown con accordi da mezza battuta non sovrappone più il vecchio accordo al nuovo. Il fill sull'ultima battuta e il push sul colpo successivo mantengono il loro timing.
+
 ## 0.31.11 — 2026-10-26
 
 - SHA e inventario completo del modulo comune verificati offline e contro la fonte canonica in CI; Lead incluso nel sync/check predefinito.
