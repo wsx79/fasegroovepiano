@@ -1646,8 +1646,18 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             return (holdLength (line, pos) + 1) * stepLength + 0.06;
 
         const double gate = std::clamp (s.gate, 0.05f, 1.0f);
+        // A held chord must not ring through the next chord change: a breakdown with
+        // half-bar chords would otherwise sound the old chord over the new one.
+        auto clampToChord = [&] (double beats)
+        {
+            if (s.stepsPerChord < 2)
+                return beats;
+            const long long slotStart = floorDiv (step, s.stepsPerChord) * s.stepsPerChord;
+            const double untilNext = (double) (s.stepsPerChord - (step - slotStart)) * stepLength;
+            return std::min (beats, std::max (0.04, untilNext * 0.98));
+        };
         if (const int hold = holdLength (line, pos); hold > 0 || line[(size_t) pos] == 'g')
-            return std::max (0.04, (hold + (hold > 0 ? gate : 0.6 * gate)) * stepLength);
+            return clampToChord (std::max (0.04, (hold + (hold > 0 ? gate : 0.6 * gate)) * stepLength));
 
         // Like a pianist, a hit rings into the space before the next one: Gate is the share of
         // that space it fills (a stab three 16ths before the next rings about two 16ths).
