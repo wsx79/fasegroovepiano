@@ -92,7 +92,7 @@ page. Development builds are under **[Actions](https://github.com/wsx79/fasegroo
 |---|---|---|
 | **Windows 10/11 (64-bit)** | **`FaseGroovePiano-Windows-Setup.exe`** | **Installer: choose VST3, Standalone or both** |
 | Windows 10/11 (64-bit) | `FaseGroovePiano-Windows.zip` | VST3 + Standalone (manual install) |
-| macOS 10.13+ (Intel & Apple Silicon) | `FaseGroovePiano-macOS.zip` | VST3 + AU + Standalone |
+| macOS 11+ (Intel & Apple Silicon) | `FaseGroovePiano-macOS.zip` | VST3 + AU + Standalone |
 | Linux | `FaseGroovePiano-Linux.zip` | VST3 + Standalone |
 
 To install, follow the [guide](docs/GUIDE.md#1-installation).

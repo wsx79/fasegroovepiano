@@ -6,6 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.13] — 2026-11-01
+
+- Corregge le build macOS che richiedevano il sistema del runner (macOS 26, oppure 15 per Arranger). Applica il target macOS 11 prima dell’inizializzazione dei compilatori, anche con cache CMake esistenti.
+- Verifica il minimo di sistema di entrambe le architetture Intel e Apple Silicon e i metadati dei bundle prima della firma; allinea la documentazione a macOS 11+.
+
 ## 0.31.12 — 2026-10-29
 
 - Gli accordi tenuti vengono rilasciati al cambio successivo: un breakdown con accordi da mezza battuta non sovrappone più il vecchio accordo al nuovo. Il fill sull'ultima battuta e il push sul colpo successivo mantengono il loro timing.

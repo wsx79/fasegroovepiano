@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Test macOS compatibility gate
+        run: python3 cmake/test_verify_macos.py
       - name: Verify module inventory and translation keys
         run: |
           python3 ThirdParty/fasegroove-common/VerifyModule.py
@@ -75,7 +77,12 @@ jobs:
             libxcursor-dev libxext-dev libfreetype-dev libfontconfig1-dev libxcomposite-dev
 
       - name: Configure
+        if: runner.os != 'macOS'
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Configure macOS deployment target
+        if: runner.os == 'macOS'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
 
       - name: Build
         run: cmake --build build --config Release --parallel 4
@@ -110,6 +117,10 @@ jobs:
       #   MACOS_CERTIFICATE_PASSWORD  password of that .p12
       #   MACOS_SIGN_IDENTITY         e.g. "Developer ID Application: Your Name (TEAMID)"
       #   APPLE_ID, APPLE_APP_PASSWORD (app-specific password), APPLE_TEAM_ID
+      - name: Verify macOS deployment target and universal bundles
+        if: runner.os == 'macOS'
+        run: python3 cmake/verify_macos.py "build/FaseGroovePiano_artefacts/Release/Standalone/Fase Groove Piano.app" "build/FaseGroovePiano_artefacts/Release/VST3/Fase Groove Piano.vst3" "build/FaseGroovePiano_artefacts/Release/AU/Fase Groove Piano.component"
+
       - name: Sign and notarize (macOS)
         if: runner.os == 'macOS'
         env:

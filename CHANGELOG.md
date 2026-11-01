@@ -6,6 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.13] — 2026-11-01
+
+- Fix macOS builds incorrectly requiring the runner OS (macOS 26, or 15 for Arranger). Apply the macOS 11 deployment target before compiler initialization, including existing CMake caches.
+- Verify both Intel and Apple Silicon deployment targets and bundle metadata before signing; align the documented minimum to macOS 11+.
+
 ## 0.31.12 — 2026-10-29
 
 - Held chords are released at the next chord change: a breakdown with half-bar chords no longer sounds the old chord over the new one. The last-bar fill and the push into the next hit keep their timing.

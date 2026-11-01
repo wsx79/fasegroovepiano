@@ -26,7 +26,7 @@ $changes
 |---|---|
 | **Windows 10/11 (64-bit) – installer** | \`FaseGroovePiano-Windows-Setup.exe\` – choose VST3, Standalone or both |
 | Windows 10/11 (64-bit) – zip | \`FaseGroovePiano-Windows.zip\` – VST3 + Standalone |
-| macOS 10.13+ (Intel & Apple Silicon) | \`FaseGroovePiano-macOS.zip\` – VST3 + AU + Standalone |
+| macOS 11+ (Intel & Apple Silicon) | \`FaseGroovePiano-macOS.zip\` – VST3 + AU + Standalone |
 | Linux | \`FaseGroovePiano-Linux.zip\` – VST3 + Standalone |
 
 User guide inside the zip: \`GUIDE.md\` (English) · \`GUIDA.md\` (Italiano).

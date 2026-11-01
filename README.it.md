@@ -94,7 +94,7 @@ sviluppo si trovano in **[Actions](https://github.com/wsx79/fasegroovepiano/acti
 |---|---|---|
 | **Windows 10/11 (64 bit)** | **`FaseGroovePiano-Windows-Setup.exe`** | **Installer: scegli VST3, Standalone o entrambi** |
 | Windows 10/11 (64 bit) | `FaseGroovePiano-Windows.zip` | VST3 + Standalone (installazione manuale) |
-| macOS 10.13+ (Intel e Apple Silicon) | `FaseGroovePiano-macOS.zip` | VST3 + AU + Standalone |
+| macOS 11+ (Intel e Apple Silicon) | `FaseGroovePiano-macOS.zip` | VST3 + AU + Standalone |
 | Linux | `FaseGroovePiano-Linux.zip` | VST3 + Standalone |
 
 Per l'installazione segui la [guida](docs/GUIDA.md#1-installazione).
