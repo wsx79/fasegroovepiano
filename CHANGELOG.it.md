@@ -6,11 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
-## Non ancora rilasciato
+## [0.31.14] — 2026-11-22
 
 - Ogni render di un brano è identico al campione: ogni nota inizializza il proprio rumore del martelletto e riparte con gli oscillatori da zero. Il pianoforte smette di calcolare le parziali scese sotto -100 dB (meno CPU). La voce guida condivisa ha un suono Sub Sine usato da Fase Groove Arranger; l’elenco dei suoni del plugin non cambia.
 
-## [0.31.13] — 2026-11-01
+## 0.31.13 — 2026-11-01
 
 - Corregge le build macOS che richiedevano il sistema del runner (macOS 26, oppure 15 per Arranger). Applica il target macOS 11 prima dell’inizializzazione dei compilatori, anche con cache CMake esistenti.
 - Verifica il minimo di sistema di entrambe le architetture Intel e Apple Silicon e i metadati dei bundle prima della firma; allinea la documentazione a macOS 11+.

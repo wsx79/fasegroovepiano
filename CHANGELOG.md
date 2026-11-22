@@ -6,11 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## [0.31.14] — 2026-11-22
 
 - Every render of a song is sample-identical: each note seeds its own hammer noise and restarts its oscillators. The grand piano stops computing partials once they decay below -100 dB (less CPU). The shared guide voice gains a Sub Sine sound used by Fase Groove Arranger; the plugin's sound list is unchanged.
 
-## [0.31.13] — 2026-11-01
+## 0.31.13 — 2026-11-01
 
 - Fix macOS builds incorrectly requiring the runner OS (macOS 26, or 15 for Arranger). Apply the macOS 11 deployment target before compiler initialization, including existing CMake caches.
 - Verify both Intel and Apple Silicon deployment targets and bundle metadata before signing; align the documented minimum to macOS 11+.
