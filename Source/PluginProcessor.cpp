@@ -174,7 +174,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FaseGroovePianoProcessor::cr
 
     // Sound
     add (std::make_unique<AudioParameterBool> (ParameterID { ParamIDs::sound, 1 }, "Guide Sound", true));
-    choice (ParamIDs::soundType, "Guide Sound Type", namesFrom (numGuideSounds, guideSoundName), 0);
+    choice (ParamIDs::soundType, "Guide Sound Type", namesFrom ((int) GuideSound::sub, guideSoundName), 0);
     unitFloat (ParamIDs::tone, "Tone", 0.0f, 0.5f);
     unitFloat (ParamIDs::reverb, "Reverb", 0.0f, 0.3f);
     unitFloat (ParamIDs::chorus, "Chorus", 0.0f, 0.0f);
@@ -1074,7 +1074,7 @@ void FaseGroovePianoProcessor::totalRandom()
     if (chance (40)) setParameterFromUI (ParamIDs::extension, (float) r.nextInt (sgk::numExtensions));
     if (chance (40)) setParameterFromUI (ParamIDs::voicing, (float) r.nextInt (sgk::numVoicings));
     if (chance (35)) setParameterFromUI (ParamIDs::bass, (float) (1 + r.nextInt (sgk::numBassModes - 1)));
-    if (chance (30)) setParameterFromUI (ParamIDs::soundType, (float) r.nextInt (numGuideSounds));
+    if (chance (30)) setParameterFromUI (ParamIDs::soundType, (float) r.nextInt ((int) GuideSound::sub));
     if (chance (35)) setParameterFromUI (ParamIDs::strings, (float) r.nextInt (sgk::numStringsModes));
     if (chance (30)) setParameterFromUI (ParamIDs::fills, (float) r.nextInt (4));
     setParameterFromUI (ParamIDs::swing, 0.05f + 0.35f * r.nextFloat());
