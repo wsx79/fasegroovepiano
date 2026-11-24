@@ -6,7 +6,11 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [0.31.14] — 2026-11-22
+## [0.31.15] — 2026-11-24
+
+- Bass lines: the "7" step of a line on a triad (no seventh in the chord) plays the fifth instead of an added flat seventh.
+
+## 0.31.14 — 2026-11-22
 
 - Every render of a song is sample-identical: each note seeds its own hammer noise and restarts its oscillators. The grand piano stops computing partials once they decay below -100 dB (less CPU). The shared guide voice gains a Sub Sine sound used by Fase Groove Arranger; the plugin's sound list is unchanged.
 

@@ -2208,7 +2208,7 @@ void GrooveEngine::collectBassLine (long long step, const GrooveSettings& s, con
         case '5': note = root + fifth; break;
         case 'L': note = root + fifth - 12 >= 28 ? root + fifth - 12 : root + fifth; break;
         case '3': note = root + (chord.third >= 0 ? chord.third : 4); break;
-        case '7': note = root + (chord.seventh >= 0 ? chord.seventh : 10); break;
+        case '7': note = root + (chord.seventh >= 0 ? chord.seventh : fifth); break;   // a triad has no seventh: its fifth
         case '6': note = root + sixth; break;
         case 'b': note = root + 3; break;
         case 'A': note = changeSoon ? target - 1 : root + fifth; break;   // chromatic step into the next root

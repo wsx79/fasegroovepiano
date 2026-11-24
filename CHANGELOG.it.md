@@ -6,7 +6,11 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
-## [0.31.14] — 2026-11-22
+## [0.31.15] — 2026-11-24
+
+- Linee di basso: il passo "7" di una linea su una triade (senza settima nell'accordo) suona la quinta invece di una settima minore aggiunta.
+
+## 0.31.14 — 2026-11-22
 
 - Ogni render di un brano è identico al campione: ogni nota inizializza il proprio rumore del martelletto e riparte con gli oscillatori da zero. Il pianoforte smette di calcolare le parziali scese sotto -100 dB (meno CPU). La voce guida condivisa ha un suono Sub Sine usato da Fase Groove Arranger; l’elenco dei suoni del plugin non cambia.
 
