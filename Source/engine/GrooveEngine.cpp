@@ -710,7 +710,7 @@ const std::vector<ProgressionPreset>& progressionPresets()
         { "Circle of 5ths  iii - vi - ii - V", 0, { 2, 5, 1, 4 }, "Circle of 5ths" },
         { "Full Circle  I-IV-vii-iii-vi-ii-V-I", 0, { 0, 3, 6, 2, 5, 1, 4, 0 }, "Circle of 5ths" },
         { "Minor Circle  i - iv - VII - III",  2, { 0, 3, 6, 2 }, "Circle of 5ths" },
-        { "Dorian Circle  i - iv - VII - III", 1, { 0, 3, 6, 2 }, "Circle of 5ths" },
+        { "Dorian Circle  i - IV - VII - III", 1, { 0, 3, 6, 2 }, "Circle of 5ths" },
         { "Jackin' Minor  i - iv",             2, { 0, 3 },       "Jackin' & funky" },
         { "Jackin' Groove  i - VII - VI - v",  2, { 0, 6, 5, 4 }, "Jackin' & funky" },
         { "Soulful Gospel  I - iii - IV - V",  0, { 0, 2, 3, 4 }, "Soulful & Gospel" },
@@ -727,11 +727,11 @@ const std::vector<ProgressionPreset>& progressionPresets()
         { "Neo Soul  ii - iii - IV - V",       0, { 1, 2, 3, 4 }, "Soulful & Gospel" },
         { "Jackin' Stab  i - III - IV",        1, { 0, 2, 3, 3 }, "Jackin' & funky" },
         { "Jack Swing  i - v - VII - IV",      1, { 0, 4, 6, 3 }, "Jackin' & funky" },
-        { "Funky Dominant  I7 - IV7",          3, { 0, 3 },       "Jackin' & funky" },
+        { "Funky Dominant  I7 - IV7",          3, { 0, 0 },       "Jackin' & funky", { 24, 29 } },   // both dominant (Mixolydian's IV is maj7)
         { "Disco Jack  ii - V - I - vi",       0, { 1, 4, 0, 5 }, "Jackin' & funky" },
         { "Ghetto Funk  i - iv - v - iv",      2, { 0, 3, 4, 3 }, "Jackin' & funky" },
         { "Phrygian Jack  i - bII",            5, { 0, 1 },       "Jackin' & funky" },
-        { "Lydian Jack  I7 - bVII",           10, { 0, 6, 0, 6 }, "Jackin' & funky" },
+        { "Lydian Jack  I7 - bVII",           10, { 0, 0, 0, 0 }, "Jackin' & funky", { 24, 10, 24, 10 } },   // the scale's own VII is augmented: bVII major as a free chord
         { "Chicago Bounce  i - VII - i - IV",  1, { 0, 6, 0, 3 }, "Jackin' & funky" },        // v1.14: chromatic (borrowed chords, dominants)
         { "Maj9 Drift  I - bIII - bVI - bVII", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 0, 3, 8, 10 } },
         { "Deep Planing  I - bVII - bVI - bVII", 0, { 0, 0, 0, 0 }, "Chromatic & borrowed", { 0, 10, 8, 10 } },
@@ -1639,13 +1639,13 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
         return std::clamp ((int) std::lround (v), 1, 127);
     };
 
-    auto durationFor = [&] (const std::string& line)
+    auto durationFor = [&] (const std::string& line, float gateValue = -1.0f)
     {
         // A tied push rings slightly past the next hit, which then extends it.
         if (pushTiesIntoNextHit (line, pos))
             return (holdLength (line, pos) + 1) * stepLength + 0.06;
 
-        const double gate = std::clamp (s.gate, 0.05f, 1.0f);
+        const double gate = std::clamp (gateValue >= 0.0f ? gateValue : s.gate, 0.05f, 1.0f);
         // A held chord must not ring through the next chord change: a breakdown with
         // half-bar chords would otherwise sound the old chord over the new one.
         auto clampToChord = [&] (double beats)
@@ -1787,7 +1787,10 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             // clamp requires lo <= hi; a run shorter than three notes cannot hold a third.
             if (scaleRun.size >= 3)
             {
-                const int idx = std::clamp (iTarget + 4 - k, 2, scaleRun.size - 1);
+                // the run starts at most four steps above the target, within the notes the set holds, and
+                // always walks down a step per hit (a clamp per hit repeated the top third)
+                const int start = std::min (iTarget + 4, scaleRun.size - 1);
+                const int idx = std::max (2, start - k);
                 pending.push_back ({ t, scaleRun[idx], vel, len * 0.8 });
                 pending.push_back ({ t, scaleRun[idx - 2], hitVelocity ('x', 0.8, 33), len * 0.8 });
             }
@@ -2110,7 +2113,7 @@ void GrooveEngine::collectStep (long long step, const GrooveSettings& s, const G
             const int root = cachedBassRoots[(size_t) slotFor (symbol)];
             // The chord's own 5th (a b5 on a half-diminished chord), not always a perfect one.
             const int fifthAbove = chords[(size_t) slotFor (symbol)].fifth >= 0 ? chords[(size_t) slotFor (symbol)].fifth : 7;
-            const double len = durationFor (pattern.leftHand);
+            const double len = durationFor (pattern.leftHand, s.bassGate);   // the bass's own gate (root, octaves, fifths, walk)
             const double t = (hitTime (90, human * hv.bassTime) + human * hv.bassLate * 0.02);
             const int vel = hitVelocity (symbol, 0.9, 91, human * hv.bassVel);
             const bool tie = isTiedFromPush (pattern.leftHand, pos);
@@ -2231,7 +2234,10 @@ void GrooveEngine::collectBassLine (long long step, const GrooveSettings& s, con
     const double len = std::max (0.04, steps * stepLength);
 
     // A bass player's touch: strong on the beat, softer in between, dead notes very soft.
-    double v = s.velocity * sectionVelocityScale (s.section) * (symbol == 'G' ? 0.45 : pos % 4 == 0 ? 0.95 : 0.82);
+    // the same energy curve as the piano: the third and fourth part of an evolving phrase lift a little
+    const int evolveStage = s.evolveBars > 0 ? (int) (mod (floorDiv (step, 16), s.evolveBars) * 4 / s.evolveBars) : 0;
+    const double evolveLift = evolveStage == 3 ? 1.06 : evolveStage == 2 ? 1.03 : 1.0;
+    double v = s.velocity * sectionVelocityScale (s.section) * evolveLift * (symbol == 'G' ? 0.45 : pos % 4 == 0 ? 0.95 : 0.82);
     v += human * hv.bassVel * 18.0 * (noise (step, seedSalt + 97) - 0.5) * 2.0;
     pending.push_back ({ t, note, std::clamp ((int) std::lround (v), 1, 127), len, false, Part::bass });
 }

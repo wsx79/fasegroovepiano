@@ -43,6 +43,8 @@ constexpr int numVoicings   = 11;
 const char* scaleName (int scale) noexcept;
 const std::array<int, 7>& scaleIntervals (int scale) noexcept;
 const char* noteName (int pitchClass) noexcept;
+/** Pitch spelling that follows the key signature (sharps in A, flats in Eb). */
+const char* spelledNote (int pitchClass, int keyRoot, int scale) noexcept;
 const char* extensionName (int ext) noexcept;
 const char* voicingName (int voicing) noexcept;
 
@@ -73,7 +75,7 @@ struct Chord
 Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept;
 
 /** e.g. "Am9", "D13", "Fmaj9", "Bm7b5", "Em7(11)". */
-std::string chordName (const Chord& chord);
+std::string chordName (const Chord& chord, int keyRoot = -1, int scale = 0);
 
 /** Roman numeral for the degree, cased by chord quality: "i", "IV", "vii°". */
 std::string romanNumeral (int degree, const Chord& chord);
@@ -111,3 +113,4 @@ float scaleFit (const Chord& chord, int keyRoot, int scale) noexcept;
 NoteSet pentatonicNotes (int keyRoot, int scale, int low, int high) noexcept;
 
 } // namespace sgk
+

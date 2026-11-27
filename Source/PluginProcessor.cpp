@@ -1193,11 +1193,20 @@ void FaseGroovePianoProcessor::rollNewRiff()
     const int genre = currentGenre();
     lastGenre = genre;
     const auto feel = sgk::genreRiffFeel (genre, (std::uint32_t) seed);   // each roll its own voicing and colour
-    setParameterFromUI (ParamIDs::voicing, (float) feel.voicing);
-    setParameterFromUI (ParamIDs::extension, (float) feel.extension);
-    setParameterFromUI (ParamIDs::scale, (float) feel.scale);
-    setParameterFromUI (ParamIDs::swing, feel.swing);
-    setParameterFromUI (ParamIDs::gate, feel.gate);
+    // A value the previous roll set is rolled again; one you changed since stays yours.
+    auto roll = [this] (const juce::String& id, float value, float& lastRolled)
+    {
+        if (lastRolled < -0.5f || std::abs (raw (id) - lastRolled) < 1.0e-4f)
+        {
+            setParameterFromUI (id, value);
+            lastRolled = value;
+        }
+    };
+    roll (ParamIDs::voicing, (float) feel.voicing, rolledFeel[0]);
+    roll (ParamIDs::extension, (float) feel.extension, rolledFeel[1]);
+    roll (ParamIDs::scale, (float) feel.scale, rolledFeel[2]);
+    roll (ParamIDs::swing, feel.swing, rolledFeel[3]);
+    roll (ParamIDs::gate, feel.gate, rolledFeel[4]);
 
     const auto s = currentSettings();
     auto current = sgk::GrooveEngine::basePattern (s);
@@ -1951,7 +1960,10 @@ void FaseGroovePianoProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     }
 
     samplesProcessed += numSamples;
-    midi.swapWith (outMidi);
+    // copied, not swapped: a swap would hand our reserved buffer to the host and keep the host's,
+    // which then grows (allocates) on the audio thread in the next block
+    midi.clear();
+    midi.addEvents (outMidi, 0, -1, 0);
 }
 
 //==============================================================================
@@ -2708,6 +2720,9 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     state.setProperty("familyGuideProfile",familyGuideProfile.load(),nullptr);
+    // The groove library's size: Random and User come after it, so a later library with more grooves
+    // can still find them in this project (see setStateInformation).
+    state.setProperty ("grooveCount", (int) sgk::groovePatterns().size(), nullptr);
 
     juce::String right, left, locks;
     for (int i = 0; i < sgk::userPatternLength; ++i)
@@ -2819,6 +2834,20 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
                 child.setProperty ("value", olderFeel ? 0.0f : ranged->convertFrom0to1 (ranged->getDefaultValue()), nullptr);
                 restored.appendChild (child, nullptr);
             }
+    // Random and User sit after the factory grooves: a project saved with another number of grooves
+    // keeps pointing at them (not at the factory groove that now has that index).
+    if (const int savedCount = (int) restored.getProperty ("grooveCount", -1); savedCount > 0 && savedCount != (int) sgk::groovePatterns().size())
+    {
+        auto child = restored.getChildWithProperty ("id", ParamIDs::pattern);
+        if (child.isValid())
+        {
+            const int saved = juce::roundToInt ((float) child.getProperty ("value"));
+            if (saved == savedCount)
+                child.setProperty ("value", (float) sgk::randomPatternIndex(), nullptr);
+            else if (saved == savedCount + 1)
+                child.setProperty ("value", (float) sgk::userPatternIndex(), nullptr);
+        }
+    }
     apvts.replaceState (restored);
     const auto& state = apvts.state;
     familyGuideProfile=juce::jlimit(-1,fgfamily::numGenres-1,(int)state.getProperty("familyGuideProfile",-1));

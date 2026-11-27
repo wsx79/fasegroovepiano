@@ -26,16 +26,20 @@ namespace
         // Chord tones count; colour tones a pianist adds (9ths, 6ths, maj7 / m7, 11ths) are free;
         // anything else counts against the chord.
         struct Kind { int tones[4]; double weights[4]; int numTones; int colours[3]; };
-        static constexpr Kind kinds[3] {
+        static constexpr Kind kinds[] {
             { { 0, 4, 7, 0 },  { 1.0, 1.0, 0.7, 0.0 }, 3, { 2, 9, 11 } },   // major (add9, 6, maj7)
             { { 0, 3, 7, 0 },  { 1.0, 1.0, 0.7, 0.0 }, 3, { 2, 10, 5 } },   // minor (9, m7, 11)
-            { { 0, 4, 7, 10 }, { 1.0, 1.0, 0.6, 0.9 }, 4, { 2, 9, 2 } },    // dominant 7 (9, 13)
+            { { 0, 4, 7, 10 }, { 1.0, 1.0, 0.6, 0.9 }, 4, { 1, 3, 9 } },    // dominant 7 (b9, #9, 13)
+            { { 0, 3, 6, 0 },  { 1.0, 1.0, 0.8, 0.0 }, 3, { 9, 10, 0 } },   // diminished (dim7, m7)
+            { { 0, 3, 6, 10 }, { 1.0, 1.0, 0.7, 0.8 }, 4, { 0, 0, 0 } },    // half-diminished
+            { { 0, 4, 8, 0 },  { 1.0, 1.0, 0.8, 0.0 }, 3, { 0, 0, 0 } },    // augmented
+            { { 0, 5, 7, 0 },  { 1.0, 1.0, 0.7, 0.0 }, 3, { 10, 2, 0 } },   // sus4 (b7, 9)
         };
 
         WindowChord best;
         double bestScore = -1.0e9;
         for (int root = 0; root < 12; ++root)
-            for (int k = 0; k < 3; ++k)
+            for (int k = 0; k < (int) (sizeof (kinds) / sizeof (kinds[0])); ++k)
             {
                 const auto& kind = kinds[k];
                 bool used[12] {};
@@ -61,6 +65,12 @@ namespace
                 const bool hasFifth = w[(size_t) ((root + 7) % 12)] > 1.0e-9;
                 if (! hasThird)
                     score -= (k == 1 ? 0.55 : 0.5) * total;   // every chord needs its 3rd; without it (sus) read it as major
+                // a diminished, half-diminished or augmented chord is one only with its altered 5th sounding
+                // (C under Dm7 voiced C F A C must not make it D half-diminished); a sus4 has no 3rd at all
+                if (k >= 3 && k <= 5 && w[(size_t) ((root + kind.tones[2]) % 12)] <= 1.0e-9)
+                    score -= 0.5 * total;
+                if (k == 6 && (w[(size_t) ((root + 3) % 12)] > 1.0e-9 || w[(size_t) ((root + 4) % 12)] > 1.0e-9))
+                    score -= 0.5 * total;
                 if (w[(size_t) root] <= 1.0e-9)
                     score -= 0.4 * total;   // rootless shapes are possible, but rarer
                 if (w[(size_t) root] > 1.0e-9 && hasThird && hasFifth)
@@ -227,11 +237,14 @@ HarmonyAnalysis analyzeHarmony (const std::vector<AnalyzedNote>& notes, int beat
     for (double x : totalChroma) sum += x;
     for (const auto& c : chords)
     {
-        static constexpr int third[3] { 4, 3, 4 };
+        // per kind (major, minor, dominant, diminished, half-diminished, augmented, sus4): third and fifth
+        static constexpr int third[7] { 4, 3, 4, 3, 3, 4, 5 };
+        static constexpr int fifth[7] { 7, 7, 7, 6, 6, 8, 7 };
+        const int kind = std::clamp (c.kind, 0, 6);
         const double w = sum / (double) chords.size();
         keyChroma[(size_t) c.root] += 1.5 * w;
-        keyChroma[(size_t) ((c.root + third[c.kind]) % 12)] += 1.0 * w;
-        keyChroma[(size_t) ((c.root + 7) % 12)] += 1.0 * w;
+        keyChroma[(size_t) ((c.root + third[kind]) % 12)] += 1.0 * w;
+        keyChroma[(size_t) ((c.root + fifth[kind]) % 12)] += 1.0 * w;
         if (c.kind == 2) keyChroma[(size_t) ((c.root + 10) % 12)] += 0.5 * w;
     }
     bool minor = false;
@@ -242,7 +255,7 @@ HarmonyAnalysis analyzeHarmony (const std::vector<AnalyzedNote>& notes, int beat
     int tonicMinor = 0, tonicMajor = 0;
     for (const auto& c : chords)
         if (c.root == result.keyRoot)
-            (c.kind == 1 ? tonicMinor : tonicMajor) += 1;
+            (c.kind == 1 || c.kind == 3 || c.kind == 4 ? tonicMinor : tonicMajor) += 1;
     if (tonicMinor > tonicMajor) minor = true;
     else if (tonicMajor > tonicMinor) minor = false;
     result.scale = 0;
@@ -287,7 +300,7 @@ HarmonyAnalysis analyzeHarmony (const std::vector<AnalyzedNote>& notes, int beat
         int bestVotes = 0;
         for (int k = i; k < std::min (numWindows, i + unit); ++k)
         {
-            const int key = chords[(size_t) k].root * 3 + chords[(size_t) k].kind;
+            const int key = chords[(size_t) k].root * 7 + chords[(size_t) k].kind;
             if (++votes[key] > bestVotes) { bestVotes = votes[key]; pick = chords[(size_t) k]; }
         }
         sequence.push_back (pick);
@@ -313,7 +326,13 @@ HarmonyAnalysis analyzeHarmony (const std::vector<AnalyzedNote>& notes, int beat
     for (int i = 0; i < period; ++i)
     {
         const auto& c = sequence[(size_t) i];
-        result.chordCodes.push_back (((c.root - result.keyRoot + 12) % 12) + 12 * c.kind);
+        {   // the free-chord codes hold major, minor and dominant: a half-diminished chord is the minor chord a
+            // minor third above (Bm7b5 = Dm6), a diminished one the dominant a major third below (G#dim7 = E7b9),
+            // an augmented or sus4 chord the major chord on its root
+            static constexpr int codeKind[7] { 0, 1, 2, 2, 1, 0, 0 }, codeShift[7] { 0, 0, 0, 8, 3, 0, 0 };
+            const int kind = std::clamp (c.kind, 0, 6);
+            result.chordCodes.push_back (((c.root + codeShift[kind] - result.keyRoot) % 12 + 12) % 12 + 12 * codeKind[kind]);
+        }
         fit += c.fit;
     }
     result.confidence = fit / std::max (1, period);
@@ -438,3 +457,4 @@ GroovePattern grooveFromNotes (const std::vector<AnalyzedNote>& notes, int beats
 }
 
 } // namespace sgk
+

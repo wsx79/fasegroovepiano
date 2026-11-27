@@ -148,6 +148,34 @@ const char* scaleName (int scale) noexcept          { return scaleNames[mod (sca
 const std::array<int, 7>& scaleIntervals (int scale) noexcept { return scales[(size_t) mod (scale, numScales)]; }
 const char* noteName (int pitchClass) noexcept      { return noteNames[mod (pitchClass, 12)]; }
 
+bool keySpellsFlats (int keyRoot, int scale) noexcept
+{
+    // Spell from the parent major of the mode, so A major uses C# and F major uses Bb.
+    int parent = mod (keyRoot, 12);
+    switch (mod (scale, numScales))
+    {
+        case 1: parent = mod (keyRoot - 2, 12); break;                 // Dorian
+        case 2: case 6: case 7: parent = mod (keyRoot + 3, 12); break; // minor family
+        case 3: case 11: parent = mod (keyRoot + 5, 12); break;        // Mixolydian
+        case 4: case 10: parent = mod (keyRoot - 5, 12); break;        // Lydian
+        case 5: case 12: parent = mod (keyRoot - 4, 12); break;        // Phrygian
+        case 8: parent = mod (keyRoot + 1, 12); break;                  // Locrian
+        default: break;
+    }
+    switch (parent)
+    {
+        case 1: case 3: case 5: case 6: case 8: case 10: return true;   // Db F Gb Ab Bb Eb
+        default: return false;
+    }
+}
+
+const char* spelledNote (int pitchClass, int keyRoot, int scale) noexcept
+{
+    static const char* const sharp[12] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+    static const char* const flat[12]  { "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B" };
+    return (keySpellsFlats (keyRoot, scale) ? flat : sharp)[mod (pitchClass, 12)];
+}
+
 const char* extensionName (int ext) noexcept
 {
     static const char* const names[numExtensions] { "Triads", "7ths", "9ths", "11ths / 13ths",
@@ -202,7 +230,7 @@ Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept
         c.seventh = above (6) % 12;
 
     // Gospel / soulful dominant on degree V, whatever the scale says.
-    const bool alteredV = ext == Extension::alteredDominant && degree == 4;
+    const bool alteredV = ext == Extension::alteredDominant && degree == 4 && s[4] == 7;
     if (alteredV)
     {
         c.third = 4;
@@ -277,9 +305,9 @@ Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept
     return c;
 }
 
-std::string chordName (const Chord& c)
+std::string chordName (const Chord& c, int keyRoot, int scale)
 {
-    const std::string root = noteName (c.rootPc);
+    const std::string root = keyRoot < 0 ? noteName (c.rootPc) : spelledNote (c.rootPc, keyRoot, scale);
 
     if (c.suspended)
     {
@@ -392,6 +420,7 @@ std::string chromaticNumeral (int keyRoot, const Chord& c)
 
     std::string r = c.third == 3 ? lower[semis] : upper[semis];
     if (c.third == 3 && c.fifth == 6)  r += (c.seventh == 10 ? "\xc3\xb8" : "\xc2\xb0");
+    if (c.third == 4 && c.fifth == 8)  r += "+";
     return r;
 }
 
@@ -804,6 +833,9 @@ VoicedChord voiceChord (const Chord& chord, Voicing voicing, int centre,
     }
 
     v.rightHand = best;
+    auto clampMidi = [] (NoteSet& notes) { for (int i = 0; i < notes.size; ++i) notes.notes[(size_t) i] = std::clamp (notes.notes[(size_t) i], 0, 127); };
+    clampMidi (v.rightHand);
+    clampMidi (v.leftHand);
     return v;
 }
 
@@ -855,16 +887,19 @@ float transitionScore (const Chord& a, const VoicedChord& va, const Chord& b, co
 
 NoteSet pentatonicNotes (int keyRoot, int scale, int low, int high) noexcept
 {
-    // Minor-third scales use 1 b3 4 5 b7, major-third scales 1 2 3 5 6.
-    static constexpr int minorDegrees[5] { 0, 2, 3, 4, 6 };
-    static constexpr int majorDegrees[5] { 0, 1, 2, 4, 5 };
-
-    const auto& s = scaleIntervals (scale);
-    const int* degrees = scaleIsMinor (scale) ? minorDegrees : majorDegrees;
-
+    // Five scale tones, not a walk of diatonic degrees (that walks off the pentatonic
+    // on Locrian, harmonic major, Mixolydian b6 and Phrygian dominant).
+    // Major and natural minor match the usual 1 2 3 5 6 and 1 b3 4 5 b7 sets.
+    static constexpr int tones[numScales][5] {
+        { 0, 2, 4, 7, 9 }, { 0, 3, 5, 7, 10 }, { 0, 3, 5, 7, 10 }, { 0, 2, 4, 7, 9 },
+        { 0, 2, 4, 7, 9 }, { 0, 3, 5, 7, 10 }, { 0, 3, 5, 7, 8 }, { 0, 3, 5, 7, 11 },
+        { 0, 1, 3, 6, 10 }, { 0, 2, 4, 7, 11 }, { 0, 2, 4, 7, 9 }, { 0, 2, 4, 7, 10 },
+        { 0, 1, 4, 7, 10 }
+    };
+    const auto& row = tones[mod (scale, numScales)];
     bool isMember[12] {};
     for (int i = 0; i < 5; ++i)
-        isMember[mod (keyRoot + s[(size_t) degrees[i]], 12)] = true;
+        isMember[mod (keyRoot + row[i], 12)] = true;
 
     NoteSet out;
     for (int n = low; n <= high; ++n)
@@ -875,3 +910,4 @@ NoteSet pentatonicNotes (int keyRoot, int scale, int low, int high) noexcept
 }
 
 } // namespace sgk
+

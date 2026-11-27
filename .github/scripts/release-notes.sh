@@ -5,7 +5,7 @@ set -euo pipefail
 version="${1#v}"
 
 changes=$(awk -v v="$version" '
-  /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found = 1; next } }
+  /^## / { if (found) exit; h = $0; sub(/^## \[?/, "", h); split(h, w, /[] ]/); if (w[1] == v) { found = 1; next } }
   found && /^\[[0-9]/ { exit }
   found { print }
 ' CHANGELOG.md)

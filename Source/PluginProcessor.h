@@ -401,6 +401,7 @@ public:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
 
 private:
+    std::array<float, 5> rolledFeel { -1.0f, -1.0f, -1.0f, -1.0f, -1.0f };   // what NEW RIFF last set (voicing, extension, scale, swing, gate)
     EditedLoop editedNotes, editedBase, playingNotes;   // the edits, the notes they were made on, what plays
     std::vector<EditedLoop> retiredLoops;              // message thread: replaced notes the audio thread may still hold
     void retirePlaying (EditedLoop next);

@@ -6,6 +6,16 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.31.16] — 2026-11-27
+
+- Import MIDI reads seven chord kinds (major, minor, dominant, diminished, half-diminished, augmented, sus4) without overflowing its tables; a half-diminished chord comes in as the minor chord a third above (Bm7b5 = Dm6), a diminished one as the dominant a third below (G#dim7 = E7b9). A diminished, augmented or sus chord counts only with its own fifth or fourth sounding, so Dm7 voiced C F A C stays D minor.
+- Harmony: Lydian Jack plays a major bVII (the scale's own VII is augmented); Funky Dominant plays two dominants; Dorian Circle is named i - IV - VII - III, as it plays. The altered V only where the fifth is perfect; pentatonics are right in every mode; chord names follow the key's spelling and show + on augmented chords.
+- The gospel thirds fill walks down a step each hit (it repeated the same third).
+- Bass: its gate works in root, octaves, root-fifth and walking; bass lines follow the phrase's energy lift.
+- NEW RIFF keeps a voicing, colour, scale, swing or gate you changed since the last roll.
+- Projects saved with another number of grooves keep their Random or User pattern.
+- No allocation on the audio thread when the MIDI output is handed to the host.
+
 ## [0.31.15] — 2026-11-24
 
 - Bass lines: the "7" step of a line on a triad (no seventh in the chord) plays the fifth instead of an added flat seventh.

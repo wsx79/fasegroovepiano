@@ -6,6 +6,16 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.31.16] — 2026-11-27
+
+- Import MIDI legge sette tipi di accordo (maggiore, minore, dominante, diminuito, semidiminuito, aumentato, sus4) senza uscire dalle sue tabelle; un semidiminuito entra come minore una terza sopra (Bm7b5 = Dm6), un diminuito come dominante una terza sotto (G#dim7 = E7b9). Un diminuito, aumentato o sus vale solo se suona la sua quinta o quarta, così Dm7 suonato C F A C resta Re minore.
+- Armonia: Lydian Jack suona un bVII maggiore (il VII della scala è aumentato); Funky Dominant suona due dominanti; Dorian Circle si chiama i - IV - VII - III, come suona. Il V alterato solo dove la quinta è giusta; pentatoniche giuste in ogni modo; i nomi degli accordi seguono l'armatura e mostrano + sugli aumentati.
+- Il fill gospel thirds scende di un grado a ogni colpo (ripeteva la stessa terza).
+- Basso: il suo gate funziona in root, octaves, root-fifth e walking; le linee di basso seguono la spinta d'energia della frase.
+- NEW RIFF tiene voicing, colore, scala, swing o gate che hai cambiato dall'ultimo tiro.
+- I progetti salvati con un altro numero di groove tengono il loro pattern Random o User.
+- Nessuna allocazione sul thread audio quando il MIDI in uscita passa all'host.
+
 ## [0.31.15] — 2026-11-24
 
 - Linee di basso: il passo "7" di una linea su una triade (senza settima nell'accordo) suona la quinta invece di una settima minore aggiunta.
