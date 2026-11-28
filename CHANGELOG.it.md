@@ -22,6 +22,7 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 - L'editor risolve il groove una volta per modifica (non per ogni cella disegnata); un tempo dell'host che oscilla di millesimi non ricostruisce più le cache; LINK è nel dizionario.
 - I nomi degli accordi seguono la tonalità ovunque (C# in La maggiore, non Db).
 - NEW RIFF torna a variare voicing, colore, scala, swing e gate dopo uno STYLE, un RESET, un preset o un progetto caricato; uno swing che arriva dal LINK non viene preso per una tua scelta.
+- Una tonalità o una scala ricevuta dal LINK lascia di nuovo variare la scala a NEW RIFF; il menu KEY mostra entrambe le grafie (C#/Db), e tonalità e note fuori scala nel resoconto dell'import seguono l'armatura.
 
 ## [0.31.15] — 2026-11-24
 

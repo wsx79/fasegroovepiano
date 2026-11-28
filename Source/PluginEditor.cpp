@@ -5326,14 +5326,14 @@ void FaseGroovePianoEditor::applyImport (const juce::File& file, const sgk::Harm
 
     static const char* const lengths[] { "1/2 bar", "1 bar", "2 bars", "4 bars" };
     juce::String text;
-    text << tr ("Key") << ": " << sgk::noteName (analysis.keyRoot) << " " << tr (sgk::scaleName (analysis.scale)) << "\n"
+    text << tr ("Key") << ": " << sgk::spelledNote (analysis.keyRoot, analysis.keyRoot, analysis.scale) << " " << tr (sgk::scaleName (analysis.scale)) << "\n"
          << tr ("Chords") << ": " << chords.joinIntoString ("  ") << "\n"
          << tr ("Each chord") << ": " << tr (lengths[juce::jlimit (0, 3, analysis.chordLengthChoice)]) << "\n"
          << tr ("Notes outside the scale") << ": " << juce::roundToInt (analysis.outOfScale * 100.0) << "%";
     juce::StringArray outside;
     for (int pc = 0; pc < 12; ++pc)
         if (analysis.outsideNotes[(size_t) pc])
-            outside.add (sgk::noteName (pc));
+            outside.add (sgk::spelledNote (pc, analysis.keyRoot, analysis.scale));
     if (! outside.isEmpty())
         text << " (" << outside.joinIntoString (", ") << ")";
     text << "\n" << tr ("Reliability") << ": "
@@ -6047,7 +6047,7 @@ void FaseGroovePianoEditor::timerCallback()
         // KEY shows the key itself: "KEY  A Dorian".
         const int key = juce::roundToInt (processor.raw (ParamIDs::key));
         const int scale = juce::roundToInt (processor.raw (ParamIDs::scale));
-        const auto text = tr ("KEY") + "  " + sgk::noteName (key) + " " + tr (sgk::scaleName (scale));
+        const auto text = tr ("KEY") + "  " + sgk::spelledNote (key, key, scale) + " " + tr (sgk::scaleName (scale));
         if (keyLinkButton.getButtonText() != text)
             keyLinkButton.setButtonText (text);
     }
@@ -6189,7 +6189,7 @@ void FaseGroovePianoEditor::timerCallback()
     const int shown = playingSlot >= 0 ? playingSlot : 0;
     const juce::String chordText = sgk::chordName (chords[(size_t) shown], s.keyRoot, (int) s.scale);
     const juce::String romanText = juce::String::fromUTF8 (sgk::GrooveEngine::numeralForSlot (s, shown).c_str());
-    const juce::String keyText = juce::String (sgk::noteName (s.keyRoot)) + " " + tr (sgk::scaleName (s.scale));
+    const juce::String keyText = juce::String (sgk::spelledNote (s.keyRoot, s.keyRoot, s.scale)) + " " + tr (sgk::scaleName (s.scale));
 
     if (chordText != currentChord || romanText != currentRoman || keyText != currentKey || showingHold != (heldRoot >= 0))
     {

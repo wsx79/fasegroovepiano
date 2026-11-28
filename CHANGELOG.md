@@ -22,6 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The editor resolves the groove once per change (not for every cell it draws); a host tempo drifting by thousandths no longer rebuilds the caches; LINK is in the dictionary.
 - Chord names follow the key everywhere (C# in A major, not Db).
 - NEW RIFF varies voicing, colour, scale, swing and gate again after a STYLE, a RESET, a preset or a loaded project; a swing coming from LINK is not taken for one you chose.
+- A key or scale received through LINK lets NEW RIFF vary the scale again; the KEY menu shows both spellings (C#/Db), and the key and the notes outside the scale in the import report follow the key signature.
 
 ## [0.31.15] — 2026-11-24
 

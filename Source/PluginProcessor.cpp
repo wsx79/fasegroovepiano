@@ -17,10 +17,8 @@ namespace
 {
     juce::StringArray noteNames()
     {
-        juce::StringArray names;
-        for (int i = 0; i < 12; ++i)
-            names.add (sgk::noteName (i));
-        return names;
+        // both spellings: the menu chooses the key, so it can't follow a key signature yet
+        return { "C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B" };
     }
 
     template <typename Fn>
@@ -2716,7 +2714,10 @@ void FaseGroovePianoProcessor::followLinkedGroove (const juce::XmlElement& xml)
     {
         setParameterFromUI (ParamIDs::key, (float) juce::jlimit (0, 11, xml.getIntAttribute ("key")));
         if (xml.hasAttribute ("scale"))
+        {
+            rolledFeel[2] = -1.0f;   // the linked scale is not yours: NEW RIFF varies it again
             setParameterFromUI (ParamIDs::scale, (float) juce::jlimit (0, sgk::numScales - 1, xml.getIntAttribute ("scale")));
+        }
     }
 }
 
