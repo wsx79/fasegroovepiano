@@ -281,6 +281,11 @@ public:
     bool loadGroove (const juce::File&);
     /** The groove saved or loaded last (its name): SAVE offers it again, saved with the project. */
     /** The last groove file's name: behind a lock, the host may save the state from another thread. */
+    /** A note with its octave ("C#4"), spelled in the current key (sharps in A, flats in Eb). */
+    juce::String noteLabel (int note) const
+    {
+        return juce::String (sgk::spelledNote (note, juce::roundToInt (raw (ParamIDs::key)), juce::roundToInt (raw (ParamIDs::scale)))) + juce::String (note / 12 - 1);
+    }
     juce::String grooveName() const { const juce::ScopedLock lock (grooveNameLock); return lastGrooveName; }
     void setGrooveName (const juce::String& name) { const juce::ScopedLock lock (grooveNameLock); lastGrooveName = name; }
 private:

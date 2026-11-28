@@ -26,7 +26,7 @@ suonarla col tuo piano, Rhodes o synth preferito.
 
 ## 1. Installazione
 
-Questa guida descrive la [v0.32.0](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.32.0). Controlli e posizioni sono conservati; pulsanti, menu e colori comuni hanno uno stile uniforme.
+Questa guida descrive la [v0.32.1](https://github.com/wsx79/fasegroovepiano/releases/tag/v0.32.1). Controlli e posizioni sono conservati; pulsanti, menu e colori comuni hanno uno stile uniforme.
 
 ### Windows: l'installer (il modo più semplice)
 

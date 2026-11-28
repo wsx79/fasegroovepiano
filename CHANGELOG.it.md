@@ -6,6 +6,10 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
+## [0.32.1] — 2026-11-28
+
+- Anche i nomi delle note con l'ottava (tastiera, range, piano roll) seguono l'armatura (C#4 in La maggiore, non Db4).
+
 ## [0.32.0] — 2026-11-28
 
 - Import MIDI legge sette tipi di accordo (maggiore, minore, dominante, diminuito, semidiminuito, aumentato, sus4) senza uscire dalle sue tabelle; un semidiminuito entra come minore una terza sopra (Bm7b5 = Dm6), un diminuito come dominante una terza sotto (G#dim7 = E7b9). Un diminuito, aumentato o sus vale solo se suona la sua quinta o quarta, così Dm7 suonato C F A C resta Re minore.

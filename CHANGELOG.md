@@ -6,6 +6,10 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.32.1] — 2026-11-28
+
+- Note names with their octave (keyboard, range, piano roll) follow the key signature too (C#4 in A major, not Db4).
+
 ## [0.32.0] — 2026-11-28
 
 - Import MIDI reads seven chord kinds (major, minor, dominant, diminished, half-diminished, augmented, sus4) without overflowing its tables; a half-diminished chord comes in as the minor chord a third above (Bm7b5 = Dm6), a diminished one as the dominant a third below (G#dim7 = E7b9). A diminished, augmented or sus chord counts only with its own fifth or fourth sounding, so Dm7 voiced C F A C stays D minor.

@@ -2117,7 +2117,7 @@ void VoicingCoach::paintSide (juce::Graphics& g, int side, const sgk::GrooveEngi
     g.setColour (colour.withAlpha (0.8f));
     g.strokePath (topLine, juce::PathStrokeType (1.6f));
 
-    auto noteName = [] (int n) { return juce::String (sgk::noteName (n)) + juce::String (n / 12 - 1); };
+    auto noteName = [this] (int n) { return processor.noteLabel (n); };
     g.setColour (Palette::text);
     g.setFont (font (13.0f));
     auto line = [&] (const juce::String& text) { g.drawText (text, stats.removeFromTop (19.0f), juce::Justification::centredLeft); };
@@ -3301,7 +3301,7 @@ void PianoRollEditor::updateStatus()
     else if (juce::isPositiveAndBelow (selected, (int) notes.size()))
     {
         const auto& n = notes[(size_t) selected];
-        text << "   |   " << sgk::noteName (n.note) << (n.note / 12 - 1) << "  " << tr ("Velocity") << " " << n.velocity
+        text << "   |   " << processor.noteLabel (n.note) << "  " << tr ("Velocity") << " " << n.velocity
              << "  " << tr (n.part == sgk::Part::bass ? "BASS" : "PIANO");
     }
     status = text;
@@ -3848,7 +3848,7 @@ void PianoRollEditor::paint (juce::Graphics& g)
             {
                 g.setColour (Palette::background);
                 g.setFont (font (juce::jmin (10.0f, rowH - 1.0f), true));
-                g.drawText (juce::String (sgk::noteName (n.note)) + juce::String (n.note / 12 - 1), r.reduced (3.0f, 0.0f), juce::Justification::centredLeft);
+                g.drawText (processor.noteLabel (n.note), r.reduced (3.0f, 0.0f), juce::Justification::centredLeft);
             }
         }
 
@@ -6238,7 +6238,7 @@ void FaseGroovePianoEditor::timerCallback()
         if (! rangeSlider.isMouseButtonDown()
             && (juce::roundToInt (rangeSlider.getMinValue()) != low || juce::roundToInt (rangeSlider.getMaxValue()) != high))
             rangeSlider.setMinAndMaxValues (low, high, juce::dontSendNotification);
-        auto noteText = [] (int n) { return juce::String (sgk::noteName (n)) + juce::String (n / 12 - 1); };
+        auto noteText = [this] (int n) { return processor.noteLabel (n); };
         const auto text = Localisation::upper (tr ("Chord range")) + "   " + (low <= 24 && high >= 108 ? tr ("all") : noteText (low) + " - " + noteText (high));
         if (rangeLabel.getText() != text)
             rangeLabel.setText (text, juce::dontSendNotification);
