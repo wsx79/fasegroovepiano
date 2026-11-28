@@ -433,7 +433,7 @@ void FaseGroovePianoProcessor::randomizeVelocities (bool chords, bool bass, int 
 
     for (int k = 0; k < sgk::numSegments; ++k)
     {
-        if (part >= 0 ? k != part : velocityLocked[(size_t) k])
+        if (part >= 0 ? k != part : velocityLocked[(size_t) k].load())
             continue;
 
         // The levels of part k, made for the hits of the half bar where it plays.
@@ -515,7 +515,7 @@ void FaseGroovePianoProcessor::resetToDefaults()
 
     clearFreeChords();
     resetUserPattern();
-    segmentLocked.fill (false);
+    for (auto& flag : segmentLocked) flag = false;
     lastBassMode = 1;
     lastStringsMode = 1;
     chordsMuted = false;
@@ -748,7 +748,7 @@ bool FaseGroovePianoProcessor::saveGroove (const juce::String& name)
     }
     const bool ok = xml.writeTo (grooveFolder().getChildFile (clean + ".fgg"));
     if (ok)
-        lastGrooveName = clean;
+        setGrooveName (clean);
     return ok;
 }
 
@@ -769,7 +769,7 @@ bool FaseGroovePianoProcessor::loadGroove (const juce::File& file)
     sgk::GroovePattern p;
     p.rightHand = right.toStdString();
     p.leftHand = left.toStdString();
-    lastGrooveName = file.getFileNameWithoutExtension();
+    setGrooveName (file.getFileNameWithoutExtension());
     for (int i = 0; i < sgk::numSegments; ++i)   // saved as heard: play the parts in order
         setParameterFromUI (ParamIDs::segment (i), (float) i);
     setUserPattern (p);
@@ -820,12 +820,12 @@ bool FaseGroovePianoProcessor::loadPreset (const juce::File& file)
         return false;
 
     // A preset is music, not window layout: keep the current size.
-    const auto scale = editorScale;
-    const auto shrink = shrinkWhileDragging;
-    const auto advanced = advancedView;
-    const auto grooveName = lastGrooveName;
+    const float scale = editorScale.load();
+    const bool shrink = shrinkWhileDragging.load();
+    const bool advanced = advancedView.load();
+    const auto savedName = grooveName();
     setStateInformation (data.getData(), (int) data.getSize());
-    lastGrooveName = grooveName;
+    setGrooveName (savedName);
     editorScale = scale;
     shrinkWhileDragging = shrink;
     advancedView = advanced;
@@ -1128,7 +1128,7 @@ sgk::GrooveSettings FaseGroovePianoProcessor::currentSettings() const
         s.strumDirection = juce::jlimit (0, 2, asInt (ParamIDs::strumDir));
         s.humanizeStyle = juce::jlimit (0, sgk::numHumanizeStyles - 1, asInt (ParamIDs::humanizeStyle));
         s.humanizeSeed = (std::uint32_t) juce::jmax (0, asInt (ParamIDs::humanizeSeed));
-        s.bpm = lastBpm.load();
+        s.bpm = std::round (lastBpm.load() * 100.0) / 100.0;   // a host tempo drifting by thousandths must not rebuild the caches every block
     }
     s.section = (sgk::Section) juce::jlimit (0, sgk::numSections - 1, asInt (ParamIDs::section));
     s.riffSeed = (std::uint32_t) asInt (ParamIDs::riffSeed);
@@ -1316,8 +1316,15 @@ int FaseGroovePianoProcessor::segmentAtStep (int displayedStep) const
 
 char FaseGroovePianoProcessor::stepSymbol (bool bassRow, int displayedStep) const
 {
-    const auto p = sgk::GrooveEngine::resolvePattern (currentSettings());
-    const auto& line = bassRow ? p.leftHand : p.rightHand;
+    // The editor asks for every cell of a repaint: the groove is resolved once per settings change.
+    const auto settings = currentSettings();
+    if (! stepCacheValid || ! sgk::GrooveEngine::sameSettings (stepCacheKey, settings))
+    {
+        stepCachePattern = sgk::GrooveEngine::resolvePattern (settings);
+        stepCacheKey = settings;
+        stepCacheValid = true;
+    }
+    const auto& line = bassRow ? stepCachePattern.leftHand : stepCachePattern.rightHand;
     return displayedStep >= 0 && displayedStep < (int) line.size() ? line[(size_t) displayedStep] : '.';
 }
 
@@ -1368,7 +1375,7 @@ void FaseGroovePianoProcessor::toggleBass()
     }
     else
     {
-        setParameterFromUI (ParamIDs::bass, (float) juce::jmax (1, lastBassMode));
+        setParameterFromUI (ParamIDs::bass, (float) juce::jmax (1, lastBassMode.load()));
     }
 }
 
@@ -2754,10 +2761,10 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
         state.setProperty ("velocityOrder", order, nullptr);
         state.setProperty ("velocityLocks", velLocks, nullptr);
     }
-    state.setProperty ("lastBassMode", lastBassMode, nullptr);
+    state.setProperty ("lastBassMode", lastBassMode.load(), nullptr);
     state.setProperty ("soloBass", chordsMuted.load(), nullptr);
     state.setProperty ("bassMuted", bassMuted.load(), nullptr);
-    state.setProperty ("lastGroove", lastGrooveName, nullptr);
+    state.setProperty ("lastGroove", grooveName(), nullptr);
     state.setProperty ("riffGenre", lastGenre.load(), nullptr);   // the genre a random riff is written in
     state.setProperty ("linkDrums", linkOn.load(), nullptr);
     state.setProperty ("linkKey", keyLinked.load(), nullptr);
@@ -2773,16 +2780,16 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
         state.setProperty ("songFills", fills.joinIntoString (","), nullptr);
         state.setProperty ("songVariations", variations.joinIntoString (","), nullptr);
     }
-    state.setProperty ("editorScale", editorScale, nullptr);
+    state.setProperty ("editorScale", editorScale.load(), nullptr);
     // (a new name in v2.15: the strip is on for everyone again, whatever v2.14 saved)
-    state.setProperty ("dragStrip", shrinkWhileDragging, nullptr);
-    state.setProperty ("advancedView", advancedView, nullptr);
+    state.setProperty ("dragStrip", shrinkWhileDragging.load(), nullptr);
+    state.setProperty ("advancedView", advancedView.load(), nullptr);
 
     juce::StringArray free;
     for (const auto& f : freeChords)
         free.add (juce::String (f.load()));
     state.setProperty ("freeChords", free.joinIntoString (","), nullptr);
-    state.setProperty ("freeCircle", freeCircle, nullptr);
+    state.setProperty ("freeCircle", freeCircle.load(), nullptr);
 
     // The notes edited in the piano roll and the generated notes they were made on:
     // "start length note velocity part origin" per note.
@@ -2895,7 +2902,7 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     lastBassMode = juce::jlimit (1, sgk::numBassModes - 1, (int) state.getProperty ("lastBassMode", 1));
     chordsMuted = (bool) state.getProperty ("soloBass", false);
     bassMuted = (bool) state.getProperty ("bassMuted", false);
-    lastGrooveName = state.getProperty ("lastGroove", juce::String()).toString();
+    setGrooveName (state.getProperty ("lastGroove", juce::String()).toString());
     // A random riff is written in the genre of the groove before it: without this it would reopen
     // as a house riff. (Older projects have no value: the house riff they played then.)
     lastGenre = juce::jlimit (0, (int) sgk::grooveCategories().size() - 1, (int) state.getProperty ("riffGenre", 0));
@@ -2926,7 +2933,9 @@ void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeIn
     freeCircle = (bool) state.getProperty ("freeCircle", false);
 
     {
-        const double length = (double) state.getProperty ("editedLength", 0.0);
+        // the same 64-bar ceiling as SET LOOP and the engine (1024 steps): a longer saved length is cut there
+        const double savedLength = (double) state.getProperty ("editedLength", 0.0);
+        const double length = savedLength > 0.0 ? juce::jlimit (4.0, 64.0 * 4.0, savedLength) : 0.0;
         auto read = [length] (const juce::String& text, bool& ok)
         {
             std::vector<sgk::LoopNote> notes;

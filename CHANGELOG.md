@@ -15,25 +15,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - NEW RIFF keeps a voicing, colour, scale, swing or gate you changed since the last roll.
 - Projects saved with another number of grooves keep their Random or User pattern.
 - No allocation on the audio thread when the MIDI output is handed to the host.
+- Variation Lab: a diminished chord becomes its dominant (B dim = G7) and a half-diminished one the minor chord a third above (Bm7b5 = Dm6), not a plain minor chord with the wrong fifth.
+- A random riff's two halves (A and B) never come out the same.
+- Preset names match their chords: Dark Deep I - bII, Phrygian Deep i - bII - i - bvii; the second Dorian Lift is Dorian Lilt.
+- The project state is read safely while the host saves from another thread; an edited loop longer than 64 bars is cut to 64 as SET LOOP does.
+- The editor resolves the groove once per change (not for every cell it draws); a host tempo drifting by thousandths no longer rebuilds the caches; LINK is in the dictionary.
 
 ## [0.31.15] — 2026-11-24
 
 - Bass lines: the "7" step of a line on a triad (no seventh in the chord) plays the fifth instead of an added flat seventh.
 
-## 0.31.14 — 2026-11-22
+## [0.31.14] — 2026-11-22
 
 - Every render of a song is sample-identical: each note seeds its own hammer noise and restarts its oscillators. The grand piano stops computing partials once they decay below -100 dB (less CPU). The shared guide voice gains a Sub Sine sound used by Fase Groove Arranger; the plugin's sound list is unchanged.
 
-## 0.31.13 — 2026-11-01
+## [0.31.13] — 2026-11-01
 
 - Fix macOS builds incorrectly requiring the runner OS (macOS 26, or 15 for Arranger). Apply the macOS 11 deployment target before compiler initialization, including existing CMake caches.
 - Verify both Intel and Apple Silicon deployment targets and bundle metadata before signing; align the documented minimum to macOS 11+.
 
-## 0.31.12 — 2026-10-29
+## [0.31.12] — 2026-10-29
 
 - Held chords are released at the next chord change: a breakdown with half-bar chords no longer sounds the old chord over the new one. The last-bar fill and the push into the next hit keep their timing.
 
-## 0.31.11 — 2026-10-26
+## [0.31.11] — 2026-10-26
 
 - Pinned shared-module SHA and complete inventory checked offline and against its canonical source in CI; Lead included in default sync/check.
 - Translation catalogs checked for duplicate keys, including multiline entries; intentional common/product overrides remain supported.

@@ -724,9 +724,14 @@ GroovePattern makeRandomPatternRaw (std::uint32_t seed, float densityIn)
         return half;
     };
 
-    const auto motif = decorate (makeHalf());      // A
+    const auto motifRhythm = makeHalf();
+    const auto motif = decorate (motifRhythm);      // A
     auto answer = makeHalf();                       // B
-    if (answer == motif)
+    // compared before the accents and ghosts (the decorated A never equalled a plain B, so A A could
+    // happen): another try or two, then the rhythm reversed. Only a seed that drew A = B changes.
+    for (int attempt = 0; attempt < 3 && answer == motifRhythm; ++attempt)
+        answer = makeHalf();
+    if (answer == motifRhythm)
         answer = std::string (answer.rbegin(), answer.rend());
     answer = decorate (answer);
 

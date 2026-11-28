@@ -720,8 +720,8 @@ const std::vector<ProgressionPreset>& progressionPresets()
         { "Gospel Plagal  I - iv - V - I",     9, { 0, 3, 4, 0 }, "Soulful & Gospel" },
         { "Lydian Dom Funk  I7#11 - II",       10, { 0, 1 },      "Modal & exotic" },
         { "Soul Borrowed  I - iv - bVII - I",  11, { 0, 3, 6, 0 }, "Soulful & Gospel" },
-        { "Dark Deep  I - II (Phrygian dom.)", 12, { 0, 1 },      "Modal & exotic" },
-        { "Phrygian Deep  i - II - i - vii",   5, { 0, 1, 0, 6 }, "Modal & exotic" },
+        { "Dark Deep  I - bII (Phrygian dom.)", 12, { 0, 1 },      "Modal & exotic" },
+        { "Phrygian Deep  i - bII - i - bvii",   5, { 0, 1, 0, 6 }, "Modal & exotic" },
         { "Deep House Classic  vi - IV - I - V", 0, { 5, 3, 0, 4 }, "Deep house" },
         { "Jackin' Dorian  i - IV - i - v",    1, { 0, 3, 0, 4 }, "Jackin' & funky" },
         { "Neo Soul  ii - iii - IV - V",       0, { 1, 2, 3, 4 }, "Soulful & Gospel" },
@@ -797,7 +797,7 @@ const std::vector<ProgressionPreset>& progressionPresets()
         { "Dorian Pull  i - ii - v",                 1, { 0, 1, 4 }, "Deep house" },
         { "Dorian Step Down  i - v - IV - III",      1, { 0, 4, 3, 2 }, "Deep house" },
         { "Dorian Glide  i - VII - IV",              1, { 0, 6, 3 }, "Deep house" },
-        { "Dorian Lift  i - IV - ii - IV",           1, { 0, 3, 1, 3 }, "Deep house" },
+        { "Dorian Lilt  i - IV - ii - IV",           1, { 0, 3, 1, 3 }, "Deep house" },
         { "Dorian Rise  i - ii - v - v",             1, { 0, 1, 4, 4 }, "Deep house" },
         { "Dorian Walk  i - IV - ii - III",          1, { 0, 3, 1, 2 }, "Deep house" },
         { "Dorian Bloom  i - VII - III - IV",        1, { 0, 6, 2, 3 }, "Deep house" },
@@ -1022,7 +1022,7 @@ GrooveEngine::GrooveEngine()
 {
     offTime.fill (-1.0);
     pending.reserve (512);
-    scratch.reserve (128);
+    scratch.reserve (256);   // as the pending notes: a full block of note-offs never grows here
 }
 
 bool GrooveEngine::anyNoteSounding() const noexcept
@@ -2305,8 +2305,12 @@ std::vector<int> GrooveEngine::progressionCodes (const GrooveSettings& s)
     for (int i = 0; i < len; ++i)
     {
         const auto c = chordForSlot (s, i);
-        const int kind = c.third == 3 ? 1 : c.seventh == 10 ? 2 : 0;
-        codes.push_back (mod (c.rootPc - s.keyRoot, 12) + 12 * kind);
+        // the codes hold major, minor and dominant: a half-diminished chord is the minor chord a minor
+        // third above (Bm7b5 = Dm6), a diminished one the dominant a major third below (B dim = G7, rootless)
+        const bool flatFifth = c.third == 3 && c.fifth == 6;
+        const int kind = flatFifth ? (c.seventh == 10 ? 1 : 2) : c.third == 3 ? 1 : c.seventh == 10 ? 2 : 0;
+        const int root = flatFifth ? (c.seventh == 10 ? c.rootPc + 3 : c.rootPc - 4) : c.rootPc;
+        codes.push_back (mod (root - s.keyRoot, 12) + 12 * kind);
     }
     return codes;
 }

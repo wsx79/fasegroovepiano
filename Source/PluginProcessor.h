@@ -196,9 +196,9 @@ public:
     static constexpr int stringsChannel = 3;
 
     // Editor preferences, saved with the project.
-    float editorScale = 1.0f;
-    bool shrinkWhileDragging = true;    // while dragging a clip the window becomes a thin strip, so the DAW is free
-    bool advancedView = false;   // the panels show every control (ADVANCED) or only the main ones
+    std::atomic<float> editorScale { 1.0f };   // (atomics: the host may save the state from another thread)
+    std::atomic<bool> shrinkWhileDragging { true };    // while dragging a clip the window becomes a thin strip, so the DAW is free
+    std::atomic<bool> advancedView { false };   // the panels show every control (ADVANCED) or only the main ones
 
     /** Replaces the progression with a random soulful-house one of the current length. */
     void rollNewProgression();
@@ -280,7 +280,13 @@ public:
     bool saveGroove (const juce::String& name);
     bool loadGroove (const juce::File&);
     /** The groove saved or loaded last (its name): SAVE offers it again, saved with the project. */
+    /** The last groove file's name: behind a lock, the host may save the state from another thread. */
+    juce::String grooveName() const { const juce::ScopedLock lock (grooveNameLock); return lastGrooveName; }
+    void setGrooveName (const juce::String& name) { const juce::ScopedLock lock (grooveNameLock); lastGrooveName = name; }
+private:
     juce::String lastGrooveName;
+    juce::CriticalSection grooveNameLock;
+public:
 
     // LINK: genre and swing shared with Fase Groove Drums (and other Fase Groove instances).
     bool isLinked() const { return linkOn.load(); }
@@ -312,7 +318,7 @@ public:
     void setFreeChord (int slot, int code);          // code: sgk::noFreeChord or sgk::freeChordCode()
     int freeChord (int slot) const                   { return freeChords[(size_t) juce::jlimit (0, sgk::maxProgressionLength - 1, slot)].load(); }
     void clearFreeChords();
-    bool freeCircle = false;                         // circle of fifths accepts any chord (saved with the project)
+    std::atomic<bool> freeCircle { false };                         // circle of fifths accepts any chord (saved with the project)
 
     //==============================================================================
     enum class ClipPart { all = 0, chords, bass, tracks, strings };   // tracks: one MIDI file, piano / bass / fills / strings on separate tracks
@@ -479,9 +485,9 @@ private:
     int levelIndex (int displayedStep) const;
     bool makeUserPattern();
     std::array<std::atomic<int>, sgk::numSegments> velocityOrder;
-    std::array<bool, sgk::numSegments> velocityLocked {};
+    std::array<std::atomic<bool>, sgk::numSegments> velocityLocked {};
     void resetSegmentVelocities (int segment, bool chords, bool bass);
-    std::array<bool, sgk::numSegments> segmentLocked {};
+    std::array<std::atomic<bool>, sgk::numSegments> segmentLocked {};
     std::array<std::atomic<int>, 6> songBars;                 // per song section (0 = left out)
     std::array<std::atomic<std::uint32_t>, 6> songVariation;  // 0 = the groove as it is
     std::array<std::atomic<int>, 6> songFill;                 // see setSongFill
@@ -493,7 +499,11 @@ private:
                                        ClipPart, const juce::String& name, const juce::String& songPart) const;
     std::array<std::atomic<int>, sgk::maxProgressionLength> freeChords;
     void resetUserPattern();
-    int lastBassMode = 1;
+    std::atomic<int> lastBassMode { 1 };
+    // stepSymbol's resolved groove (message thread only)
+    mutable sgk::GrooveSettings stepCacheKey;
+    mutable sgk::GroovePattern stepCachePattern;
+    mutable bool stepCacheValid = false;
     int lastStringsMode = 1;
 
     sgk::GrooveEngine engine;

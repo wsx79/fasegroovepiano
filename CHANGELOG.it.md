@@ -15,25 +15,30 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 - NEW RIFF tiene voicing, colore, scala, swing o gate che hai cambiato dall'ultimo tiro.
 - I progetti salvati con un altro numero di groove tengono il loro pattern Random o User.
 - Nessuna allocazione sul thread audio quando il MIDI in uscita passa all'host.
+- Variation Lab: un accordo diminuito diventa la sua dominante (B dim = G7) e un semidiminuito il minore una terza sopra (Bm7b5 = Dm6), non un minore semplice con la quinta sbagliata.
+- Le due metà (A e B) di un riff casuale non escono mai uguali.
+- I nomi dei preset corrispondono agli accordi: Dark Deep I - bII, Phrygian Deep i - bII - i - bvii; il secondo Dorian Lift è Dorian Lilt.
+- Lo stato del progetto si legge in sicurezza mentre l'host salva da un altro thread; un loop modificato più lungo di 64 battute si ferma a 64 come fa SET LOOP.
+- L'editor risolve il groove una volta per modifica (non per ogni cella disegnata); un tempo dell'host che oscilla di millesimi non ricostruisce più le cache; LINK è nel dizionario.
 
 ## [0.31.15] — 2026-11-24
 
 - Linee di basso: il passo "7" di una linea su una triade (senza settima nell'accordo) suona la quinta invece di una settima minore aggiunta.
 
-## 0.31.14 — 2026-11-22
+## [0.31.14] — 2026-11-22
 
 - Ogni render di un brano è identico al campione: ogni nota inizializza il proprio rumore del martelletto e riparte con gli oscillatori da zero. Il pianoforte smette di calcolare le parziali scese sotto -100 dB (meno CPU). La voce guida condivisa ha un suono Sub Sine usato da Fase Groove Arranger; l’elenco dei suoni del plugin non cambia.
 
-## 0.31.13 — 2026-11-01
+## [0.31.13] — 2026-11-01
 
 - Corregge le build macOS che richiedevano il sistema del runner (macOS 26, oppure 15 per Arranger). Applica il target macOS 11 prima dell’inizializzazione dei compilatori, anche con cache CMake esistenti.
 - Verifica il minimo di sistema di entrambe le architetture Intel e Apple Silicon e i metadati dei bundle prima della firma; allinea la documentazione a macOS 11+.
 
-## 0.31.12 — 2026-10-29
+## [0.31.12] — 2026-10-29
 
 - Gli accordi tenuti vengono rilasciati al cambio successivo: un breakdown con accordi da mezza battuta non sovrappone più il vecchio accordo al nuovo. Il fill sull'ultima battuta e il push sul colpo successivo mantengono il loro timing.
 
-## 0.31.11 — 2026-10-26
+## [0.31.11] — 2026-10-26
 
 - SHA e inventario completo del modulo comune verificati offline e contro la fonte canonica in CI; Lead incluso nel sync/check predefinito.
 - Cataloghi verificati contro chiavi duplicate, anche su più righe; gli override intenzionali prodotto/comune restano supportati.
