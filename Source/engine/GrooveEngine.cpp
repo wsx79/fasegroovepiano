@@ -2258,7 +2258,7 @@ GrooveEngine::VoicingReport GrooveEngine::voicingReport (const GrooveSettings& s
         for (int k = 0; k < voiced[(size_t) i].rightHand.size; ++k) all.add (voiced[(size_t) i].rightHand[k]);
         all.sort();
         r.chordNotes.push_back (all);
-        r.names.push_back (chordName (chords[(size_t) i]));
+        r.names.push_back (chordName (chords[(size_t) i], s.keyRoot, (int) s.scale));
         if (all.size > 0)
         {
             r.lowest = std::min (r.lowest, all.lowest());

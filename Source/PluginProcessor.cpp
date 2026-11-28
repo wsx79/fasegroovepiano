@@ -504,6 +504,7 @@ bool FaseGroovePianoProcessor::hasStepVelocities() const
 
 void FaseGroovePianoProcessor::resetToDefaults()
 {
+    forgetRolledFeel();   // the feel set here is not yours: the next NEW RIFF varies it again
     familyGuideProfile=-1;
     for (auto* p : getParameters())
         if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*> (p))
@@ -965,6 +966,7 @@ void FaseGroovePianoProcessor::applyAnalysis (const sgk::HarmonyAnalysis& a)
 
 void FaseGroovePianoProcessor::applyStyle (int index)
 {
+    forgetRolledFeel();   // the feel set here is not yours: the next NEW RIFF varies it again
     if (! juce::isPositiveAndBelow (index, (int) std::size (styles)))
         return;
 
@@ -2043,6 +2045,7 @@ int FaseGroovePianoProcessor::saveSongSections (const juce::File& folder, ClipPa
 
 void FaseGroovePianoProcessor::applyIntention (int intention, bool keepRhythm, bool keepHarmony)
 {
+    forgetRolledFeel();   // the feel set here is not yours: the next NEW RIFF varies it again
     const auto which = (sgk::Intention) juce::jlimit (0, sgk::numIntentions - 1, intention);
     const auto s = currentSettings();
     auto nudge = [this] (const char* id, float delta, float lo, float hi)
@@ -2511,7 +2514,7 @@ juce::String FaseGroovePianoProcessor::clipFileName (int bars, ClipPart part) co
 
     juce::StringArray chords;
     for (int i = 0; i < juce::jmin (s.progressionLength, 4); ++i)
-        chords.add (sgk::chordName (sgk::GrooveEngine::chordForSlot (s, i)));
+        chords.add (sgk::chordName (sgk::GrooveEngine::chordForSlot (s, i), s.keyRoot, (int) s.scale));
     if (s.progressionLength > 4)
         chords.add ("etc");
 
@@ -2822,6 +2825,7 @@ void FaseGroovePianoProcessor::getStateInformation (juce::MemoryBlock& destData)
 
 void FaseGroovePianoProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
+    forgetRolledFeel();   // the feel set here is not yours: the next NEW RIFF varies it again
     auto xml = getXmlFromBinary (data, sizeInBytes);
     if (xml == nullptr || ! xml->hasTagName (apvts.state.getType()))
         return;

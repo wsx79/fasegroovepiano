@@ -6,7 +6,7 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [0.31.16] — 2026-11-27
+## [0.32.0] — 2026-11-28
 
 - Import MIDI reads seven chord kinds (major, minor, dominant, diminished, half-diminished, augmented, sus4) without overflowing its tables; a half-diminished chord comes in as the minor chord a third above (Bm7b5 = Dm6), a diminished one as the dominant a third below (G#dim7 = E7b9). A diminished, augmented or sus chord counts only with its own fifth or fourth sounding, so Dm7 voiced C F A C stays D minor.
 - Harmony: Lydian Jack plays a major bVII (the scale's own VII is augmented); Funky Dominant plays two dominants; Dorian Circle is named i - IV - VII - III, as it plays. The altered V only where the fifth is perfect; pentatonics are right in every mode; chord names follow the key's spelling and show + on augmented chords.
@@ -20,6 +20,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Preset names match their chords: Dark Deep I - bII, Phrygian Deep i - bII - i - bvii; the second Dorian Lift is Dorian Lilt.
 - The project state is read safely while the host saves from another thread; an edited loop longer than 64 bars is cut to 64 as SET LOOP does.
 - The editor resolves the groove once per change (not for every cell it draws); a host tempo drifting by thousandths no longer rebuilds the caches; LINK is in the dictionary.
+- Chord names follow the key everywhere (C# in A major, not Db).
+- NEW RIFF varies voicing, colour, scale, swing and gate again after a STYLE, a RESET, a preset or a loaded project; a swing coming from LINK is not taken for one you chose.
 
 ## [0.31.15] — 2026-11-24
 

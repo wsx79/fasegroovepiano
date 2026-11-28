@@ -6,7 +6,7 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
-## [0.31.16] — 2026-11-27
+## [0.32.0] — 2026-11-28
 
 - Import MIDI legge sette tipi di accordo (maggiore, minore, dominante, diminuito, semidiminuito, aumentato, sus4) senza uscire dalle sue tabelle; un semidiminuito entra come minore una terza sopra (Bm7b5 = Dm6), un diminuito come dominante una terza sotto (G#dim7 = E7b9). Un diminuito, aumentato o sus vale solo se suona la sua quinta o quarta, così Dm7 suonato C F A C resta Re minore.
 - Armonia: Lydian Jack suona un bVII maggiore (il VII della scala è aumentato); Funky Dominant suona due dominanti; Dorian Circle si chiama i - IV - VII - III, come suona. Il V alterato solo dove la quinta è giusta; pentatoniche giuste in ogni modo; i nomi degli accordi seguono l'armatura e mostrano + sugli aumentati.
@@ -20,6 +20,8 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la n
 - I nomi dei preset corrispondono agli accordi: Dark Deep I - bII, Phrygian Deep i - bII - i - bvii; il secondo Dorian Lift è Dorian Lilt.
 - Lo stato del progetto si legge in sicurezza mentre l'host salva da un altro thread; un loop modificato più lungo di 64 battute si ferma a 64 come fa SET LOOP.
 - L'editor risolve il groove una volta per modifica (non per ogni cella disegnata); un tempo dell'host che oscilla di millesimi non ricostruisce più le cache; LINK è nel dizionario.
+- I nomi degli accordi seguono la tonalità ovunque (C# in La maggiore, non Db).
+- NEW RIFF torna a variare voicing, colore, scala, swing e gate dopo uno STYLE, un RESET, un preset o un progetto caricato; uno swing che arriva dal LINK non viene preso per una tua scelta.
 
 ## [0.31.15] — 2026-11-24
 

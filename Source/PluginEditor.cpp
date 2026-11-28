@@ -1584,7 +1584,7 @@ void GrooveBrowser::rebuildList()
             }
             juce::StringArray names;
             for (int k = 0; k < s.progressionLength; ++k)
-                names.add (sgk::chordName (sgk::GrooveEngine::chordForSlot (s, k)));
+                names.add (sgk::chordName (sgk::GrooveEngine::chordForSlot (s, k), s.keyRoot, (int) s.scale));
 
             Entry e;
             e.name = name.upToFirstOccurrenceOf ("  ", false, false);
@@ -4090,7 +4090,7 @@ juce::String ChordLab::namesOf (const std::vector<int>& codes) const
     {
         const int kind = code / 12;
         const int scale = kind == 2 ? 3 : kind == 1 ? 1 : 0;   // dominant / minor / major, as free chords are built
-        names.add (sgk::chordName (sgk::buildChord ((s.keyRoot + code % 12) % 12, scale, 0, s.extension)));
+        names.add (sgk::chordName (sgk::buildChord ((s.keyRoot + code % 12) % 12, scale, 0, s.extension), s.keyRoot, (int) s.scale));
     }
     return names.joinIntoString ("  ");
 }
@@ -5322,7 +5322,7 @@ void FaseGroovePianoEditor::applyImport (const juce::File& file, const sgk::Harm
     const auto s = processor.currentSettings();
     juce::StringArray chords;
     for (int i = 0; i < s.progressionLength; ++i)
-        chords.add (sgk::chordName (sgk::GrooveEngine::chordForSlot (s, i)));
+        chords.add (sgk::chordName (sgk::GrooveEngine::chordForSlot (s, i), s.keyRoot, (int) s.scale));
 
     static const char* const lengths[] { "1/2 bar", "1 bar", "2 bars", "4 bars" };
     juce::String text;
@@ -5950,7 +5950,7 @@ std::vector<PianoRollView::ChordSpan> FaseGroovePianoEditor::chordSpansFor (cons
     {
         const int slot = sgk::GrooveEngine::slotForStep ((long long) (k * s.stepsPerChord), s);
         spans.push_back ({ k * chordBeats, juce::jmin (chordBeats, length - k * chordBeats),
-                           sgk::chordName (sgk::GrooveEngine::chordForSlot (s, slot)) });
+                           sgk::chordName (sgk::GrooveEngine::chordForSlot (s, slot), s.keyRoot, (int) s.scale) });
     }
     return spans;
 }
@@ -6181,13 +6181,13 @@ void FaseGroovePianoEditor::timerCallback()
     {
         const bool enabled = i < s.progressionLength;
         const auto chord = sgk::GrooveEngine::chordForSlot (s, i);
-        slots[i]->setInfo (sgk::chordName (chord), juce::String::fromUTF8 (sgk::GrooveEngine::numeralForSlot (s, i).c_str()),
+        slots[i]->setInfo (sgk::chordName (chord, s.keyRoot, (int) s.scale), juce::String::fromUTF8 (sgk::GrooveEngine::numeralForSlot (s, i).c_str()),
                            enabled, enabled && i == playingSlot, s.freeChords[(size_t) i] >= 0, s.progression[(size_t) i],
                            enabled ? harmony.slot[(size_t) i] : 1.0f);
     }
 
     const int shown = playingSlot >= 0 ? playingSlot : 0;
-    const juce::String chordText = sgk::chordName (chords[(size_t) shown]);
+    const juce::String chordText = sgk::chordName (chords[(size_t) shown], s.keyRoot, (int) s.scale);
     const juce::String romanText = juce::String::fromUTF8 (sgk::GrooveEngine::numeralForSlot (s, shown).c_str());
     const juce::String keyText = juce::String (sgk::noteName (s.keyRoot)) + " " + tr (sgk::scaleName (s.scale));
 

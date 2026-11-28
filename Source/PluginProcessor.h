@@ -407,7 +407,8 @@ public:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
 
 private:
-    std::array<float, 5> rolledFeel { -1.0f, -1.0f, -1.0f, -1.0f, -1.0f };   // what NEW RIFF last set (voicing, extension, scale, swing, gate)
+    std::array<float, 5> rolledFeel { -1.0f, -1.0f, -1.0f, -1.0f, -1.0f };
+    void forgetRolledFeel() noexcept { rolledFeel.fill (-1.0f); }   // what NEW RIFF last set (voicing, extension, scale, swing, gate)
     EditedLoop editedNotes, editedBase, playingNotes;   // the edits, the notes they were made on, what plays
     std::vector<EditedLoop> retiredLoops;              // message thread: replaced notes the audio thread may still hold
     void retirePlaying (EditedLoop next);
@@ -444,7 +445,12 @@ private:
     LinkState localLinkState() const override;
     juce::String linkGenreName (int genre) const override;
     void followLinkedGroove (const juce::XmlElement& theirs) override;
-    void setLinkedParameter (const char* id, float plainValue) override { setParameterFromUI (id, plainValue); }
+    void setLinkedParameter (const char* id, float plainValue) override
+    {
+        if (juce::String (id) == ParamIDs::swing)
+            rolledFeel[3] = -1.0f;   // the linked swing is not yours: NEW RIFF varies it again
+        setParameterFromUI (id, plainValue);
+    }
     mutable std::atomic<int> lastGenre { 0 };   // the genre of the last preset (a random or edited groove keeps it)
     FaseGroove::RawParameters rawParams;       // every parameter by ID, filled once (RawParameters.h)
 
