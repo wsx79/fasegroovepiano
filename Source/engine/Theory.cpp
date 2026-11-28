@@ -155,7 +155,7 @@ bool keySpellsFlats (int keyRoot, int scale) noexcept
     switch (mod (scale, numScales))
     {
         case 1: parent = mod (keyRoot - 2, 12); break;                 // Dorian
-        case 2: case 6: case 7: parent = mod (keyRoot + 3, 12); break; // minor family
+        case 2: case 6: case 7: case 9: parent = mod (keyRoot + 3, 12); break; // minor family (and harmonic major: its b6 is a flat, Abmaj7#5 in C)
         case 3: case 11: parent = mod (keyRoot + 5, 12); break;        // Mixolydian
         case 4: case 10: parent = mod (keyRoot - 5, 12); break;        // Lydian
         case 5: case 12: parent = mod (keyRoot - 4, 12); break;        // Phrygian
@@ -274,10 +274,16 @@ Chord buildChord (int keyRoot, int scale, int degree, Extension ext) noexcept
 
     if (ext == Extension::eleventh)
     {
+        // only the consonant colours: a natural 13th on a major chord (the 11th clashes with a major
+        // third), a perfect 11th on the others. Harmonic and melodic minor, Lydian dominant,
+        // Mixolydian b6 and Phrygian dominant would give a b13 or a diminished 11th (Bdim7 with D and Eb).
         if (c.third == 4)
-            c.thirteenth = above (12) % 12;  // the 11th clashes with a major third
-        else
-            c.eleventh = above (10) % 12;
+        {
+            if (above (12) % 12 == 9)
+                c.thirteenth = 9;
+        }
+        else if (above (10) % 12 == 5)
+            c.eleventh = 5;
     }
 
     // sus4: the 4th replaces the 3rd, only where it is a perfect 4th over a perfect 5th.

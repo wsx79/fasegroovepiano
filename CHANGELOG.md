@@ -6,9 +6,13 @@ All notable changes to **Fase Groove Piano**, version by version.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [0.32.1] — 2026-11-28
+## [0.33.0] — 2026-11-28
 
 - Note names with their octave (keyboard, range, piano roll) follow the key signature too (C#4 in A major, not Db4).
+- Notes ending in a host's count-in or pre-roll (before beat 0) get their note-off: they hung, and through MIDI out they held external instruments too.
+- Strings "Rise into chords": the pad is no longer struck again on each chord's last beat in playback (it differed from the MIDI export).
+- "11ths / 13ths" adds only the natural 13th on major chords and the perfect 11th on the others: harmonic and melodic minor, Lydian dominant, Mixolydian b6 and Phrygian dominant no longer get a b13 or a diminished 11th.
+- Harmonic major spells its flat sixth (Abmaj7#5 in C); a high Register keeps the top note's neighbour inside the chord range.
 
 ## [0.32.0] — 2026-11-28
 

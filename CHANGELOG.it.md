@@ -6,9 +6,13 @@ Tutte le novità di **Fase Groove Piano**, versione per versione.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e la numerazione
 [Semantic Versioning](https://semver.org/lang/it/).
 
-## [0.32.1] — 2026-11-28
+## [0.33.0] — 2026-11-28
 
 - Anche i nomi delle note con l'ottava (tastiera, range, piano roll) seguono l'armatura (C#4 in La maggiore, non Db4).
+- Le note che finiscono nel count-in o nel pre-roll dell'host (prima del beat 0) ricevono il note-off: restavano appese, e tramite il MIDI out bloccavano anche gli strumenti esterni.
+- Archi "Rise into chords": in riproduzione il pad non viene più ribattuto sull'ultimo beat di ogni accordo (era diverso dall'export MIDI).
+- "11ths / 13ths" aggiunge solo la 13ª naturale sugli accordi maggiori e l'11ª giusta sugli altri: minore armonica e melodica, Lydian dominant, Mixolydian b6 e Phrygian dominant non hanno più una b13 o un'11ª diminuita.
+- La maggiore armonica scrive la sesta bemolle (Abmaj7#5 in C); con Register alto la nota vicina della voce alta resta nel range degli accordi.
 
 ## [0.32.0] — 2026-11-28
 
