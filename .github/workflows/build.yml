@@ -91,10 +91,9 @@ jobs:
         run: ctest --test-dir build -C Release --output-on-failure
 
       # The industry plug-in validator (VST3 load, state, parameters, processing at several rates and
-      # block sizes). Informative until it has a green run on every plug-in: then drop continue-on-error.
+      # block sizes): a release never ships a plug-in it rejects.
       - name: pluginval (VST3, strictness 5)
         if: runner.os == 'Linux'
-        continue-on-error: true
         run: |
           curl -sSL -o pluginval.zip https://github.com/Tracktion/pluginval/releases/download/v1.0.3/pluginval_Linux.zip
           unzip -oq pluginval.zip
